@@ -331,3 +331,4 @@ $RECYCLE.BIN/
 # Project
 tmp
 out
+*.local.*
