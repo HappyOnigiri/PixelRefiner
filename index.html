@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel Refiner | AIドット絵の最適化・背景透過ツール</title>
+    <meta
+      name="description"
+      content="AIで生成したドット絵を、ゲーム素材として使えるクオリティに。アンチエイリアス除去・背景透過を数秒で完了します。"
+    />
+    <meta
+      name="keywords"
+      content="ドット絵, AI, アンチエイリアス除去, 背景透過, ゲーム素材, Pixel Refiner, ピクセルアート"
+    />
+    <link rel="icon" href="/favicon.ico" />
+
+    <style>
+      html,
+      body {
+        background-color: #0f1115;
+      }
+      .app {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      body.loaded .app {
+        opacity: 1;
+      }
+    </style>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pixel-refiner.vercel.app/" />
+    <meta
+      property="og:title"
+      content="Pixel Refiner | AIドット絵の最適化・背景透過ツール"
+    />
+    <meta
+      property="og:description"
+      content="AIで生成したドット絵を、ゲーム素材として使えるクオリティに。アンチエイリアス除去・背景透過を数秒で完了します。"
+    />
+    <meta
+      property="og:image"
+      content="https://pixel-refiner.vercel.app/ogp.png"
+    />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://pixel-refiner.vercel.app/" />
+    <meta
+      property="twitter:title"
+      content="Pixel Refiner | AIドット絵の最適化・背景透過ツール"
+    />
+    <meta
+      property="twitter:description"
+      content="AIで生成したドット絵を、ゲーム素材として使えるクオリティに。アンチエイリアス除去・背景透過を数秒で完了します。"
+    />
+    <meta
+      property="twitter:image"
+      content="https://pixel-refiner.vercel.app/ogp.png"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <h1><span class="logo-p">P</span>ixel Refiner</h1>
+      <p class="app-description">
+        AIで生成したドット絵を、<span class="text-highlight">ゲーム素材</span
+        >として使えるクオリティに。<br />
+        <span class="text-highlight">アンチエイリアス除去</span>・<span
+          class="text-highlight"
+          >背景透過</span
+        >を数秒で完了します。
+      </p>
+
+      <div class="row">
+        <div class="panel input-panel" id="drop-area">
+          <h2>入力画像</h2>
+          <div class="status">サイズ: <span id="input-size">-</span></div>
+          <div class="canvas-container">
+            <div class="placeholder">
+              <div class="drop-icon">
+                <img src="/folder.png" alt="Folder" />
+              </div>
+              <div class="drop-text">
+                画像をここにドラッグ＆ドロップ<br />
+                <span class="drop-subtext">または クリックして選択</span>
+              </div>
+            </div>
+            <canvas id="original-canvas"></canvas>
+          </div>
+          <input
+            id="file-input"
+            type="file"
+            accept="image/*"
+            style="display: none"
+          />
+        </div>
+
+        <div class="panel output-panel" id="output-panel">
+          <h2>処理結果</h2>
+          <div class="status-bar">
+            <div class="status-text">
+              サイズ: <span id="output-size">-</span>
+            </div>
+            <div class="controls-right">
+              <div class="bg-selector" id="bg-selector">
+                <button
+                  type="button"
+                  class="bg-btn bg-checkered active"
+                  data-bg="checkered"
+                  title="背景: 格子模様"
+                ></button>
+                <button
+                  type="button"
+                  class="bg-btn bg-white"
+                  data-bg="white"
+                  title="背景: 白"
+                ></button>
+                <button
+                  type="button"
+                  class="bg-btn bg-black"
+                  data-bg="black"
+                  title="背景: 黒"
+                ></button>
+                <button
+                  type="button"
+                  class="bg-btn bg-green"
+                  data-bg="green"
+                  title="背景: 緑"
+                ></button>
+              </div>
+              <label
+                class="zoom-toggle"
+                title="グリッドを表示する（拡大時のみ有効）"
+              >
+                <input type="checkbox" id="grid-output" checked />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="3" y1="15" x2="21" y2="15"></line>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                  <line x1="15" y1="3" x2="15" y2="21"></line>
+                </svg>
+              </label>
+              <label class="zoom-toggle" title="拡大表示する">
+                <input type="checkbox" id="zoom-output" checked />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <line x1="8" y1="11" x2="14" y2="11"></line>
+                  <line x1="11" y1="8" x2="11" y2="14"></line>
+                </svg>
+              </label>
+            </div>
+          </div>
+          <div class="canvas-container">
+            <div class="placeholder">
+              <div class="drop-text">処理結果がここに表示されます</div>
+            </div>
+            <div
+              class="loading-overlay"
+              id="loading-overlay"
+              style="display: none"
+            >
+              <div class="spinner"></div>
+              <div class="loading-text">処理中...</div>
+            </div>
+            <canvas id="result-canvas"></canvas>
+            <canvas id="grid-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="process-button" type="button" class="action-button">
+          処理を実行
+        </button>
+        <div class="download-group">
+          <button
+            id="download-button"
+            type="button"
+            class="action-button download-button"
+            disabled
+          >
+            ダウンロード
+          </button>
+          <button
+            id="download-dropdown-button"
+            type="button"
+            class="action-button download-dropdown-button"
+            disabled
+          >
+            ▼
+          </button>
+          <div id="download-menu" class="download-menu">
+            <button type="button" data-scale="2">x2</button>
+            <button type="button" data-scale="4">x4</button>
+            <button type="button" data-scale="8">x8</button>
+            <button type="button" data-scale="16">x16</button>
+            <button type="button" data-scale="32">x32</button>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="settings-panel"
+        class="panel settings-panel"
+        style="display: none"
+      >
+        <h2>設定</h2>
+        <!-- file-upload-section removed -->
+
+        <div class="grid-settings">
+          <label>
+            <span class="label-text">
+              減色ステップ
+              <span
+                id="help-quant-step"
+                class="help"
+                data-tooltip="グリッド検出用の減色レベルを設定します。&#10;&#10;【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。&#10;【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                >?</span
+              >
+            </span>
+            <input id="quant-step" type="number" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              サンプル範囲
+              <span
+                id="help-sample-window"
+                class="help"
+                data-tooltip="各ドットの色を決める際の参照範囲（ピクセル数）です。&#10;&#10;【大】ノイズが除去され色が安定しますが、細部のディテールが失われやすくなります。&#10;【小】元画像を忠実に再現しますが、位置ズレやノイズの影響を強く受けます。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                >?</span
+              >
+            </span>
+            <input id="sample-window" type="number" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              背景色の許容差
+              <span
+                id="help-tolerance"
+                class="help"
+                data-tooltip="背景色と判定する色の類似度（誤差範囲）です。&#10;&#10;【大】圧縮ノイズなどで色が多少ブレていても背景として透過できますが、必要な色まで消える可能性があります。&#10;【小】厳密に背景色のみを透過しますが、ノイズが残りやすくなります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                >?</span
+              >
+            </span>
+            <input id="tolerance" type="number" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              指定ピクセル(横)
+              <span
+                class="help"
+                data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
+                >?</span
+              >
+            </span>
+            <input id="force-pixels-w" type="number" placeholder="自動" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              指定ピクセル(縦)
+              <span
+                class="help"
+                data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
+                >?</span
+              >
+            </span>
+            <input id="force-pixels-h" type="number" placeholder="自動" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              事前の背景透過
+              <span
+                class="help"
+                data-tooltip="グリッド検出を行う【前】に、背景色を無視します。&#10;&#10;メリット: 余白が広い画像でも、本体部分のグリッドを正しく検出しやすくなります。&#10;注意: 背景と同じ色がキャラクター内にある場合、検出精度が下がる可能性があります。"
+                >?</span
+              >
+            </span>
+            <input id="pre-remove" type="checkbox" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              事後の背景透過
+              <span
+                class="help"
+                data-tooltip="処理完了【後】に、背景色を透明に置き換えて出力します。&#10;&#10;メリット: 背景透明のPNGとして保存できます。&#10;注意: グリッド検出処理自体には影響しません。"
+                >?</span
+              >
+            </span>
+            <input id="post-remove" type="checkbox" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              内側の背景も透過
+              <span
+                class="help"
+                data-tooltip="背景透過時に、四隅と近い背景色を画像全体で透過にします。&#10;&#10;メリット: ドーナツ穴など「内側に閉じ込められた背景色」も透明にできます。&#10;注意: 背景と同じ色がキャラクター内にある場合、それも透明になる可能性があります。"
+                >?</span
+              >
+            </span>
+            <input id="remove-inner-background" type="checkbox" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              自動トリム
+              <span
+                class="help"
+                data-tooltip="出力結果を「内容物のある範囲」に合わせて自動でトリミングします。&#10;&#10;余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。"
+                >?</span
+              >
+            </span>
+            <input id="trim-to-content" type="checkbox" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              浮きノイズを無視
+              <span
+                class="help"
+                data-tooltip="背景に囲まれて浮いている小さな島（連結成分）を背景扱いにして除去します。&#10;&#10;微小ノイズが、内容物BBox/自動グリッド推定を引っ張るのを防ぎます。&#10;注意: 離れた別オブジェクトがある画像では、それも除去される可能性があります。"
+                >?</span
+              >
+            </span>
+            <input id="ignore-floating" type="checkbox" />
+          </label>
+
+          <label>
+            <span class="label-text">
+              浮きノイズ上限(%)
+              <span
+                id="help-floating-max-percent"
+                class="help"
+                data-tooltip="「浮きノイズを無視」をONにしたとき、除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。&#10;例: 1% → (幅×高さ×0.01) px&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                >?</span
+              >
+            </span>
+            <input id="floating-max-percent" type="number" step="0.1" />
+          </label>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/browser/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,838 @@
+import {
+	clampInt,
+	clampOptionalInt,
+	PROCESS_DEFAULTS,
+	PROCESS_RANGES,
+} from "../shared/config";
+import type { PixelGrid, RawImage } from "../shared/types";
+import { type DetectOptions, detectGrid } from "./detector";
+import { floodFillTransparent } from "./floodfill";
+
+const cloneImage = (img: RawImage): RawImage => ({
+	width: img.width,
+	height: img.height,
+	data: new Uint8ClampedArray(img.data),
+});
+
+const medianOf = (values: number[]): number => {
+	if (values.length === 0) return 0;
+	const sorted = [...values].sort((a, b) => a - b);
+	const mid = Math.floor(sorted.length / 2);
+	if (sorted.length % 2 === 0) {
+		return (sorted[mid - 1] + sorted[mid]) / 2;
+	}
+	return sorted[mid];
+};
+
+export const downsample = (
+	img: RawImage,
+	grid: PixelGrid,
+	sampleWindow = 3,
+): RawImage => {
+	const cellW = grid.cellW;
+	const cellH = grid.cellH;
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const outW =
+		grid.outW ?? Math.max(1, Math.floor((img.width - cropX) / cellW));
+	const outH =
+		grid.outH ?? Math.max(1, Math.floor((img.height - cropY) / cellH));
+	const half = Math.max(0, Math.floor(sampleWindow / 2));
+	const out = new Uint8ClampedArray(outW * outH * 4);
+
+	const roundHalfUp = (x: number): number => Math.floor(x + 0.5);
+	const cw = Math.round(cellW);
+	const ch = Math.round(cellH);
+	const useInt = Math.abs(cellW - cw) < 1e-6 && Math.abs(cellH - ch) < 1e-6;
+
+	for (let j = 0; j < outH; j += 1) {
+		for (let i = 0; i < outW; i += 1) {
+			let cx: number;
+			let cy: number;
+			if (useInt) {
+				cx = cropX + i * cw + Math.floor(cw / 2);
+				cy = cropY + j * ch + Math.floor(ch / 2);
+			} else {
+				cx = roundHalfUp(cropX + (i + 0.5) * cellW);
+				cy = roundHalfUp(cropY + (j + 0.5) * cellH);
+			}
+			const x0 = Math.min(img.width - 1, Math.max(0, cx - half));
+			const x1 = Math.min(img.width, Math.max(1, cx + half + 1));
+			const y0 = Math.min(img.height - 1, Math.max(0, cy - half));
+			const y1 = Math.min(img.height, Math.max(1, cy + half + 1));
+
+			const valuesR: number[] = [];
+			const valuesG: number[] = [];
+			const valuesB: number[] = [];
+			const valuesA: number[] = [];
+			const valuesAllR: number[] = [];
+			const valuesAllG: number[] = [];
+			const valuesAllB: number[] = [];
+			const valuesAllA: number[] = [];
+
+			for (let y = y0; y < y1; y += 1) {
+				for (let x = x0; x < x1; x += 1) {
+					const idx = (y * img.width + x) * 4;
+					const r = img.data[idx];
+					const g = img.data[idx + 1];
+					const b = img.data[idx + 2];
+					const a = img.data[idx + 3];
+					valuesAllR.push(r);
+					valuesAllG.push(g);
+					valuesAllB.push(b);
+					valuesAllA.push(a);
+					if (a >= 16) {
+						valuesR.push(r);
+						valuesG.push(g);
+						valuesB.push(b);
+						valuesA.push(a);
+					}
+				}
+			}
+
+			const useOpaque = valuesA.length > 0;
+			const r = medianOf(useOpaque ? valuesR : valuesAllR);
+			const g = medianOf(useOpaque ? valuesG : valuesAllG);
+			const b = medianOf(useOpaque ? valuesB : valuesAllB);
+			const a = medianOf(useOpaque ? valuesA : valuesAllA);
+
+			const outIdx = (j * outW + i) * 4;
+			out[outIdx] = r;
+			out[outIdx + 1] = g;
+			out[outIdx + 2] = b;
+			out[outIdx + 3] = a;
+		}
+	}
+
+	return { width: outW, height: outH, data: out };
+};
+
+const removeBackgroundByFloodFill = (
+	img: RawImage,
+	tolerance: number,
+): RawImage => {
+	const out = cloneImage(img);
+	const corners: Array<[number, number]> = [
+		[0, 0],
+		[img.width - 1, 0],
+		[0, img.height - 1],
+		[img.width - 1, img.height - 1],
+	];
+	for (const [x, y] of corners) {
+		floodFillTransparent(out, x, y, tolerance);
+	}
+	return out;
+};
+
+const removeBackground = (
+	img: RawImage,
+	tolerance: number,
+	removeInnerBackground: boolean,
+	bgTargets: Array<[number, number, number]>,
+): RawImage => {
+	const out = removeBackgroundByFloodFill(img, tolerance);
+	if (!removeInnerBackground) return out;
+
+	// 入力画像（クロップ前）の四隅から推定した「背景色候補」を、画像全体に適用する。
+	// これにより、クロップ後に四隅が背景色ではない場合でも「内側背景」を透過にできる。
+	if (bgTargets.length === 0) return out;
+
+	for (let i = 0; i < out.data.length; i += 4) {
+		const a = out.data[i + 3];
+		if (a === 0) continue;
+		const r = out.data[i];
+		const g = out.data[i + 1];
+		const b = out.data[i + 2];
+		for (const [tr, tg, tb] of bgTargets) {
+			if (
+				Math.abs(r - tr) <= tolerance &&
+				Math.abs(g - tg) <= tolerance &&
+				Math.abs(b - tb) <= tolerance
+			) {
+				out.data[i + 3] = 0;
+				break;
+			}
+		}
+	}
+	return out;
+};
+
+const getCornerBackgroundTargets = (
+	img: RawImage,
+	alphaThreshold = 16,
+): Array<[number, number, number]> => {
+	const w = img.width;
+	const h = img.height;
+	const corners: Array<[number, number]> = [
+		[0, 0],
+		[w - 1, 0],
+		[0, h - 1],
+		[w - 1, h - 1],
+	];
+	const keys = new Set<string>();
+	const targets: Array<[number, number, number]> = [];
+	for (const [x, y] of corners) {
+		const idx = (y * w + x) * 4;
+		const r = img.data[idx];
+		const g = img.data[idx + 1];
+		const b = img.data[idx + 2];
+		const a = img.data[idx + 3];
+		// 透明な角はRGBが信用できない場合があるので除外する
+		if (a < alphaThreshold) continue;
+		const key = `${r},${g},${b}`;
+		if (!keys.has(key)) {
+			keys.add(key);
+			targets.push([r, g, b]);
+		}
+	}
+	return targets;
+};
+
+export type ProcessOptions = DetectOptions & {
+	preRemoveBackground?: boolean;
+	postRemoveBackground?: boolean;
+	/**
+	 * 内容物BBoxでトリムした後、指定したピクセルサイズ(W×H)に強制変換する。
+	 * 有効なときは自動グリッド検出(detectGrid)を行わない。
+	 *
+	 * 注意:
+	 * - 有効条件は forcePixelsW/H の両方が指定されていること
+	 * - 拡大が必要な場合は最近傍相当（sampleWindow=1）で変換する
+	 */
+	forcePixelsW?: number;
+	forcePixelsH?: number;
+	/**
+	 * 背景除去（pre/post/トリム用マスク）で、四隅と近い背景色を画像全体で透過にする。
+	 * 四隅から連結していない「内側の背景色」（例: ドーナツ穴）も透過できる。
+	 */
+	removeInnerBackground?: boolean;
+	backgroundTolerance?: number;
+	sampleWindow?: number;
+	trimToContent?: boolean;
+	trimAlphaThreshold?: number;
+	/**
+	 * 背景に囲まれて浮いている「小さな島」（連結成分）を背景扱いにして除去する。
+	 * 微小ノイズで内容物BBox/グリッド推定が引っ張られるのを防ぐ。
+	 *
+	 * 注意: 画像内に「離れた別オブジェクト」がある場合、それも除去されうるため既定はOFF。
+	 */
+	ignoreFloatingContent?: boolean;
+	/**
+	 * ignoreFloatingContent=true のとき、除去対象とみなす最大ピクセル数（元画像ピクセル）。
+	 */
+	floatingMaxPixels?: number;
+	/**
+	 * trimToContent=true のとき、背景除去→BBoxクロップした領域から出力グリッド(outW/outH)を推定する。
+	 */
+	autoGridFromTrimmed?: boolean;
+	/**
+	 * デバッグ用に中間画像を取り出すためのフック。
+	 * ブラウザ環境でも動くよう、PNG書き出し等は呼び出し側で行う。
+	 */
+	debugHook?: (
+		name: string,
+		img: RawImage,
+		meta?: Record<string, unknown>,
+	) => void;
+};
+
+const normalizeProcessOptions = (
+	options: ProcessOptions | undefined,
+): {
+	detect: DetectOptions;
+	preRemoveBackground: boolean;
+	postRemoveBackground: boolean;
+	forcePixelsW?: number;
+	forcePixelsH?: number;
+	removeInnerBackground: boolean;
+	backgroundTolerance: number;
+	sampleWindow: number;
+	trimToContent: boolean;
+	trimAlphaThreshold: number;
+	autoGridFromTrimmed: boolean;
+	ignoreFloatingContent: boolean;
+	floatingMaxPixels: number;
+	debugHook?: ProcessOptions["debugHook"];
+} => {
+	const raw = options ?? {};
+
+	const detect: DetectOptions = {
+		...raw,
+		detectionQuantStep: clampInt(
+			raw.detectionQuantStep ?? PROCESS_RANGES.detectionQuantStep.default,
+			PROCESS_RANGES.detectionQuantStep,
+		),
+	};
+
+	const preRemoveBackground =
+		raw.preRemoveBackground ?? PROCESS_DEFAULTS.preRemoveBackground;
+	const postRemoveBackground =
+		raw.postRemoveBackground ?? PROCESS_DEFAULTS.postRemoveBackground;
+	const forcePixelsW = clampOptionalInt(
+		raw.forcePixelsW,
+		PROCESS_RANGES.forcePixelsW,
+	);
+	const forcePixelsH = clampOptionalInt(
+		raw.forcePixelsH,
+		PROCESS_RANGES.forcePixelsH,
+	);
+	const removeInnerBackground =
+		raw.removeInnerBackground ?? PROCESS_DEFAULTS.removeInnerBackground;
+	const backgroundTolerance = clampInt(
+		raw.backgroundTolerance ?? PROCESS_RANGES.backgroundTolerance.default,
+		PROCESS_RANGES.backgroundTolerance,
+	);
+	const sampleWindow = clampInt(
+		raw.sampleWindow ?? PROCESS_RANGES.sampleWindow.default,
+		PROCESS_RANGES.sampleWindow,
+	);
+	const trimToContent = raw.trimToContent ?? PROCESS_DEFAULTS.trimToContent;
+	const trimAlphaThreshold = clampInt(
+		raw.trimAlphaThreshold ?? PROCESS_RANGES.trimAlphaThreshold.default,
+		PROCESS_RANGES.trimAlphaThreshold,
+	);
+	const autoGridFromTrimmed =
+		raw.autoGridFromTrimmed ??
+		(PROCESS_DEFAULTS.autoGridFromTrimmed && trimToContent);
+	const ignoreFloatingContent =
+		raw.ignoreFloatingContent ?? PROCESS_DEFAULTS.ignoreFloatingContent;
+	const floatingMaxPixels = clampInt(
+		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
+		PROCESS_RANGES.floatingMaxPixels,
+	);
+
+	return {
+		detect,
+		preRemoveBackground,
+		postRemoveBackground,
+		forcePixelsW,
+		forcePixelsH,
+		removeInnerBackground,
+		backgroundTolerance,
+		sampleWindow,
+		trimToContent,
+		trimAlphaThreshold,
+		autoGridFromTrimmed,
+		ignoreFloatingContent,
+		floatingMaxPixels,
+		debugHook: raw.debugHook,
+	};
+};
+
+const removeSmallFloatingComponentsInPlace = (
+	working: RawImage,
+	masked: RawImage,
+	alphaThreshold: number,
+	maxPixels: number,
+): { removedComponents: number; removedPixels: number } => {
+	if (maxPixels <= 0) return { removedComponents: 0, removedPixels: 0 };
+	if (working.width !== masked.width || working.height !== masked.height) {
+		throw new Error("working と masked のサイズが一致しません。");
+	}
+	const w = masked.width;
+	const h = masked.height;
+	const n = w * h;
+	const visited = new Uint8Array(n);
+
+	let compId = 0;
+	let largestId = -1;
+	let largestSize = 0;
+	const small: Array<{ id: number; pixels: number[]; size: number }> = [];
+
+	const isOpaque = (p: number): boolean =>
+		masked.data[p * 4 + 3] >= alphaThreshold;
+
+	for (let p = 0; p < n; p += 1) {
+		if (visited[p]) continue;
+		if (!isOpaque(p)) continue;
+
+		compId += 1;
+		const id = compId;
+		const queue: number[] = [p];
+		visited[p] = 1;
+
+		let size = 0;
+		let pixels: number[] = [];
+		let storing = true;
+
+		while (queue.length > 0) {
+			const cur = queue.pop() as number;
+			size += 1;
+			if (storing) {
+				pixels.push(cur);
+				if (pixels.length > maxPixels) {
+					// これ以上は除去対象にならないので、記録をやめる
+					storing = false;
+					pixels = [];
+				}
+			}
+
+			const x = cur % w;
+			const y = (cur / w) | 0;
+
+			// 4-neighborhood
+			if (x > 0) {
+				const p2 = cur - 1;
+				if (!visited[p2] && isOpaque(p2)) {
+					visited[p2] = 1;
+					queue.push(p2);
+				}
+			}
+			if (x + 1 < w) {
+				const p2 = cur + 1;
+				if (!visited[p2] && isOpaque(p2)) {
+					visited[p2] = 1;
+					queue.push(p2);
+				}
+			}
+			if (y > 0) {
+				const p2 = cur - w;
+				if (!visited[p2] && isOpaque(p2)) {
+					visited[p2] = 1;
+					queue.push(p2);
+				}
+			}
+			if (y + 1 < h) {
+				const p2 = cur + w;
+				if (!visited[p2] && isOpaque(p2)) {
+					visited[p2] = 1;
+					queue.push(p2);
+				}
+			}
+		}
+
+		if (size > largestSize) {
+			largestSize = size;
+			largestId = id;
+		}
+		// 除去候補（小さいもの）だけ座標を保持しておく
+		if (size <= maxPixels && pixels.length > 0) {
+			small.push({ id, pixels, size });
+		}
+	}
+
+	// 最大の連結成分は「本体」とみなし、除去候補でも残す
+	let removedComponents = 0;
+	let removedPixels = 0;
+	for (const comp of small) {
+		if (comp.id === largestId) continue;
+		removedComponents += 1;
+		removedPixels += comp.size;
+		for (const p of comp.pixels) {
+			const aIdx = p * 4 + 3;
+			masked.data[aIdx] = 0;
+			working.data[aIdx] = 0;
+		}
+	}
+	return { removedComponents, removedPixels };
+};
+
+const findOpaqueBounds = (
+	img: RawImage,
+	alphaThreshold: number,
+): { x: number; y: number; w: number; h: number } | null => {
+	const w = img.width;
+	const h = img.height;
+	let minX = w;
+	let minY = h;
+	let maxX = -1;
+	let maxY = -1;
+
+	for (let y = 0; y < h; y += 1) {
+		for (let x = 0; x < w; x += 1) {
+			const idx = (y * w + x) * 4;
+			const a = img.data[idx + 3];
+			if (a >= alphaThreshold) {
+				if (x < minX) minX = x;
+				if (y < minY) minY = y;
+				if (x > maxX) maxX = x;
+				if (y > maxY) maxY = y;
+			}
+		}
+	}
+
+	if (maxX < minX || maxY < minY) {
+		return null;
+	}
+	return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+};
+
+const cropRawImage = (
+	img: RawImage,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+): RawImage => {
+	const out = new Uint8ClampedArray(w * h * 4);
+	for (let j = 0; j < h; j += 1) {
+		for (let i = 0; i < w; i += 1) {
+			const srcIdx = ((y + j) * img.width + (x + i)) * 4;
+			const dstIdx = (j * w + i) * 4;
+			out[dstIdx] = img.data[srcIdx];
+			out[dstIdx + 1] = img.data[srcIdx + 1];
+			out[dstIdx + 2] = img.data[srcIdx + 2];
+			out[dstIdx + 3] = img.data[srcIdx + 3];
+		}
+	}
+	return { width: w, height: h, data: out };
+};
+
+const getPixelAt = (
+	img: RawImage,
+	x: number,
+	y: number,
+): [number, number, number, number] => {
+	const idx = (y * img.width + x) * 4;
+	return [
+		img.data[idx],
+		img.data[idx + 1],
+		img.data[idx + 2],
+		img.data[idx + 3],
+	];
+};
+
+const searchGridFromTrimmed = (
+	cropped: RawImage,
+	mask: RawImage,
+	sampleWindow: number,
+): {
+	outW: number;
+	outH: number;
+	cellW: number;
+	cellH: number;
+	offsetX: number;
+	offsetY: number;
+} | null => {
+	// 比率に基づき outH を振って outW を決める（探索空間を抑える）
+	const ratio = cropped.width / Math.max(1, cropped.height);
+	const outHMin = Math.max(2, Math.floor(cropped.height / 32));
+	// 1セルが小さすぎる（=過分割）と常に誤差が下がってしまうため、最低でも 4px/セル程度を要求する
+	const outHMax = Math.min(
+		128,
+		Math.max(outHMin, Math.floor(cropped.height / 4)),
+	);
+
+	let best: {
+		outW: number;
+		outH: number;
+		cellW: number;
+		cellH: number;
+		score: number;
+	} | null = null;
+
+	for (let outH = outHMin; outH <= outHMax; outH += 1) {
+		const outW = Math.max(2, Math.round(outH * ratio));
+		if (outW > 256 || outH > 256) continue;
+
+		const cellW = cropped.width / outW;
+		const cellH = cropped.height / outH;
+		if (!(cellW > 1 && cellH > 1)) continue;
+
+		const grid: PixelGrid = {
+			cellW,
+			cellH,
+			offsetX: 0,
+			offsetY: 0,
+			outW,
+			outH,
+			cropX: 0,
+			cropY: 0,
+			cropW: cropped.width,
+			cropH: cropped.height,
+			score: 0,
+		};
+		const small = downsample(cropped, grid, sampleWindow);
+
+		// 再構成誤差（背景は mask の alpha=0 を無視）
+		let err = 0;
+		let n = 0;
+		for (let y = 0; y < cropped.height; y += 1) {
+			for (let x = 0; x < cropped.width; x += 1) {
+				const ma = mask.data[(y * mask.width + x) * 4 + 3];
+				if (ma < 16) continue;
+				const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
+				const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
+				const [r0, g0, b0] = getPixelAt(cropped, x, y);
+				const idx = (j * outW + i) * 4;
+				const r1 = small.data[idx];
+				const g1 = small.data[idx + 1];
+				const b1 = small.data[idx + 2];
+				err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
+				n += 1;
+			}
+		}
+		if (n === 0) continue;
+
+		const reconErr = err / n;
+		// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
+		const complexityPenalty = 0.0025 * (outW * outH);
+		const score = reconErr + complexityPenalty;
+
+		if (!best || score < best.score) {
+			best = { outW, outH, cellW, cellH, score };
+		}
+	}
+
+	if (!best) return null;
+	return {
+		outW: best.outW,
+		outH: best.outH,
+		cellW: best.cellW,
+		cellH: best.cellH,
+		offsetX: 0,
+		offsetY: 0,
+	};
+};
+
+export const processImage = (
+	img: RawImage,
+	options: ProcessOptions = {},
+): { result: RawImage; grid: PixelGrid } => {
+	const o = normalizeProcessOptions(options);
+	const bgTargets = o.removeInnerBackground
+		? getCornerBackgroundTargets(img, 16)
+		: [];
+
+	const working = o.preRemoveBackground
+		? removeBackgroundByFloodFill(img, o.backgroundTolerance)
+		: cloneImage(img);
+
+	o.debugHook?.("00-input", img);
+	o.debugHook?.("01-working", working, {
+		preRemoveBackground: o.preRemoveBackground,
+	});
+	const trimToContent = o.trimToContent;
+	const trimAlphaThreshold = o.trimAlphaThreshold;
+
+	// force: 内容物BBoxでトリム → 指定ピクセル(W×H)へ強制変換（自動検出は行わない）
+	if (o.forcePixelsW !== undefined && o.forcePixelsH !== undefined) {
+		const bgTol = o.backgroundTolerance;
+		const masked = removeBackground(
+			working,
+			bgTol,
+			o.removeInnerBackground,
+			bgTargets,
+		);
+		if (o.ignoreFloatingContent) {
+			const { removedComponents, removedPixels } =
+				removeSmallFloatingComponentsInPlace(
+					working,
+					masked,
+					trimAlphaThreshold,
+					o.floatingMaxPixels,
+				);
+			if (o.debugHook && removedPixels > 0) {
+				o.debugHook("01b-working-ignore-floating", working, {
+					floatingMaxPixels: o.floatingMaxPixels,
+					removedComponents,
+					removedPixels,
+					forced: true,
+				});
+			}
+		}
+		o.debugHook?.("02-pre-downsample-masked", masked, {
+			bgTol,
+			forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
+		});
+		const b = findOpaqueBounds(masked, trimAlphaThreshold);
+		if (!b) {
+			throw new Error("内容物が見つからないため指定ピクセル変換できません。");
+		}
+		const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
+		o.debugHook?.("03-pre-downsample-bg-trimmed", cropped, {
+			bounds: b,
+			forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
+		});
+
+		const outW = o.forcePixelsW;
+		const outH = o.forcePixelsH;
+		const cellW = cropped.width / outW;
+		const cellH = cropped.height / outH;
+		const g: PixelGrid = {
+			cellW,
+			cellH,
+			offsetX: 0,
+			offsetY: 0,
+			outW,
+			outH,
+			cropX: 0,
+			cropY: 0,
+			cropW: cropped.width,
+			cropH: cropped.height,
+			score: 0,
+		};
+
+		// 拡大が必要な場合は最近傍相当（sampleWindow=1）にする
+		const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
+		const down2 = downsample(cropped, g, sw);
+		o.debugHook?.("05-downsampled", down2, {
+			sampleWindow: sw,
+			forced: true,
+		});
+
+		const result2 = o.postRemoveBackground
+			? removeBackground(
+					down2,
+					o.backgroundTolerance,
+					o.removeInnerBackground,
+					bgTargets,
+				)
+			: down2;
+		o.debugHook?.("99-result", result2, {
+			postRemoveBackground: o.postRemoveBackground,
+			forced: true,
+		});
+		return { result: result2, grid: g };
+	}
+
+	// auto: まず背景トリム（縮小前）した領域から outW/outH を推定して、そのまま縮小する
+	// （隙間の多い画像でも、内容物領域にフォーカスして安定させたい）
+	const autoGridFromTrimmed = o.autoGridFromTrimmed;
+
+	// 縮小前（downsample前）に「背景トリミング後」の見た目を確認できるように出力する。
+	// 実処理のパイプラインは変えず、デバッグ用途のみで算出する。
+	const bgTol = o.backgroundTolerance;
+	const maskedForDebugOrAuto =
+		o.debugHook || autoGridFromTrimmed || o.ignoreFloatingContent
+			? removeBackground(working, bgTol, o.removeInnerBackground, bgTargets)
+			: null;
+
+	if (maskedForDebugOrAuto && o.ignoreFloatingContent) {
+		const { removedComponents, removedPixels } =
+			removeSmallFloatingComponentsInPlace(
+				working,
+				maskedForDebugOrAuto,
+				trimAlphaThreshold,
+				o.floatingMaxPixels,
+			);
+		if (o.debugHook && removedPixels > 0) {
+			o.debugHook("01b-working-ignore-floating", working, {
+				floatingMaxPixels: o.floatingMaxPixels,
+				removedComponents,
+				removedPixels,
+			});
+		}
+	}
+	if (maskedForDebugOrAuto && o.debugHook) {
+		o.debugHook("02-pre-downsample-masked", maskedForDebugOrAuto, {
+			bgTol,
+		});
+		const b = findOpaqueBounds(maskedForDebugOrAuto, trimAlphaThreshold);
+		if (b) {
+			const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
+			o.debugHook("03-pre-downsample-bg-trimmed", cropped, { bounds: b });
+		}
+	}
+
+	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
+		const b = findOpaqueBounds(maskedForDebugOrAuto, trimAlphaThreshold);
+		if (b) {
+			const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
+			const croppedMask = cropRawImage(
+				maskedForDebugOrAuto,
+				b.x,
+				b.y,
+				b.w,
+				b.h,
+			);
+			o.debugHook?.("03-pre-downsample-bg-trimmed", cropped, {
+				bounds: b,
+			});
+
+			const sw = o.sampleWindow;
+			const est = searchGridFromTrimmed(cropped, croppedMask, sw);
+			if (est) {
+				const g: PixelGrid = {
+					cellW: est.cellW,
+					cellH: est.cellH,
+					offsetX: 0,
+					offsetY: 0,
+					outW: est.outW,
+					outH: est.outH,
+					cropX: 0,
+					cropY: 0,
+					cropW: cropped.width,
+					cropH: cropped.height,
+					score: 0,
+				};
+				const down2 = downsample(cropped, g, sw);
+				o.debugHook?.("05-downsampled", down2, {
+					sampleWindow: sw,
+					autoFromTrimmed: true,
+				});
+
+				const result2 = o.postRemoveBackground
+					? removeBackground(
+							down2,
+							o.backgroundTolerance,
+							o.removeInnerBackground,
+							bgTargets,
+						)
+					: down2;
+				o.debugHook?.("99-result", result2, {
+					postRemoveBackground: o.postRemoveBackground,
+					autoFromTrimmed: true,
+				});
+
+				return { result: result2, grid: g };
+			}
+		}
+	}
+
+	const grid = detectGrid(working, o.detect);
+	o.debugHook?.("04-grid-crop", working, {
+		grid,
+	});
+	const down = downsample(working, grid, o.sampleWindow);
+	o.debugHook?.("05-downsampled", down, {
+		sampleWindow: o.sampleWindow,
+	});
+
+	let trimmed = down;
+	let trimmedGrid = grid;
+	if (trimToContent) {
+		// 背景（四隅から連結）を透過化した上で、内容物のBBoxでセル単位にトリムする。
+		// これにより、上下左右に大きな余白がある画像でも outW/outH を「内容物」に合わせられる。
+		const bgTol = o.backgroundTolerance;
+		const masked = removeBackground(
+			down,
+			bgTol,
+			o.removeInnerBackground,
+			bgTargets,
+		);
+		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
+		const b = findOpaqueBounds(masked, trimAlphaThreshold);
+		if (
+			b &&
+			(b.x !== 0 || b.y !== 0 || b.w !== down.width || b.h !== down.height)
+		) {
+			trimmed = cropRawImage(down, b.x, b.y, b.w, b.h);
+			o.debugHook?.("07-trimmed", trimmed, { bounds: b });
+			const baseCropX = grid.cropX ?? grid.offsetX;
+			const baseCropY = grid.cropY ?? grid.offsetY;
+			trimmedGrid = {
+				...grid,
+				outW: b.w,
+				outH: b.h,
+				cropX: baseCropX + b.x * grid.cellW,
+				cropY: baseCropY + b.y * grid.cellH,
+				cropW: b.w * grid.cellW,
+				cropH: b.h * grid.cellH,
+			};
+		}
+	}
+
+	const result = o.postRemoveBackground
+		? removeBackground(
+				trimmed,
+				o.backgroundTolerance,
+				o.removeInnerBackground,
+				bgTargets,
+			)
+		: trimmed;
+	o.debugHook?.("99-result", result, {
+		postRemoveBackground: o.postRemoveBackground,
+	});
+	return { result, grid: trimmedGrid };
+};
