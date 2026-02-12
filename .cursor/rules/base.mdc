@@ -67,6 +67,7 @@ TypeScript (Vanilla), Vite, Vitest を使用しており、UIフレームワー�
 2. 新しい型が必要な場合は `src/shared/types.ts` に追加する。
 3. 設定値はハードコードせず `src/shared/config.ts` の `PROCESS_RANGES` や `PROCESS_DEFAULTS` を使用・更新する。
 4. 説明コメント（JSDoc等）は日本語で記述する。
+5. **コード変更後は必ず `make ci` を実行し、リンターチェックとテストが通過することを確認する。**
 
 ### パフォーマンスへの配慮
 - `Uint8ClampedArray` のコピーコストを意識する。
