@@ -1,5 +1,7 @@
 # Pixel Refiner
 
+<video src=".github/assets/demo.mp4" width="100%" controls autoplay loop muted></video>
+
 **Pixel Refiner** は、AI生成などで作られたドット絵（ピクセルアート）を、素材として実用的なクオリティに最適化するWebツールです。
 アンチエイリアスの除去、グリッドの自動検出、背景透過などの処理をブラウザ上で高速に行います。
 
