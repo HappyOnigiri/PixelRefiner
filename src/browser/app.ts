@@ -1,5 +1,7 @@
+import { wrap } from "comlink";
 import { upscaleNearest } from "../core/ops";
-import { processImage } from "../core/processor";
+import type { ProcessOptions } from "../core/processor";
+import type { ProcessorWorker } from "../core/worker";
 import {
 	clampInt,
 	clampNumber,
@@ -8,6 +10,13 @@ import {
 } from "../shared/config";
 import type { RawImage } from "../shared/types";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
+
+// Workerのインスタンス化
+const workerInstance = new Worker(
+	new URL("../core/worker.ts", import.meta.url),
+	{ type: "module" },
+);
+const processor = wrap<ProcessorWorker>(workerInstance);
 
 type Elements = {
 	dropArea: HTMLElement;
@@ -463,7 +472,7 @@ export const initApp = (): void => {
 		container?.classList.add("grid-enabled");
 	};
 
-	const runProcessing = () => {
+	const runProcessing = async () => {
 		const img = currentImage;
 		if (!img) {
 			showError("先に画像を選択してください。");
@@ -473,98 +482,100 @@ export const initApp = (): void => {
 		els.loadingOverlay.style.display = "flex";
 		els.outputPanel.classList.add("is-processing");
 
-		// UIの更新を待つために setTimeout を使用
-		setTimeout(() => {
-			try {
-				const parseOptionalInt = (
-					input: HTMLInputElement,
-					range: { min: number; max: number; default: number },
-				): number | undefined => {
-					const s = input.value.trim();
-					if (s === "") return undefined;
-					const n = Number(s);
-					if (!Number.isFinite(n)) return undefined;
-					return clampInt(n, range);
-				};
+		try {
+			const parseOptionalInt = (
+				input: HTMLInputElement,
+				range: { min: number; max: number; default: number },
+			): number | undefined => {
+				const s = input.value.trim();
+				if (s === "") return undefined;
+				const n = Number(s);
+				if (!Number.isFinite(n)) return undefined;
+				return clampInt(n, range);
+			};
 
-				const detectionQuantStep = clampInt(
-					Number(els.quantStepInput.value),
-					PROCESS_RANGES.detectionQuantStep,
-				);
-				const forcePixelsW = parseOptionalInt(
-					els.forcePixelsWInput,
-					PROCESS_RANGES.forcePixelsW,
-				);
-				const forcePixelsH = parseOptionalInt(
-					els.forcePixelsHInput,
-					PROCESS_RANGES.forcePixelsH,
-				);
-				const sampleWindow = clampInt(
-					Number(els.sampleWindowInput.value),
-					PROCESS_RANGES.sampleWindow,
-				);
-				const tolerance = clampInt(
-					Number(els.toleranceInput.value),
-					PROCESS_RANGES.backgroundTolerance,
-				);
-				const floatingMaxPercent = clampNumber(
-					Number(els.floatingMaxPercentInput.value),
-					PROCESS_RANGES.floatingMaxPercent,
-				);
-				const totalPixels = img.width * img.height;
-				const floatingMaxPixels =
-					floatingMaxPercent <= 0
-						? 0
-						: Math.min(
-								totalPixels,
-								Math.max(
-									1,
-									Math.ceil((floatingMaxPercent / 100) * totalPixels),
-								),
-							);
-				const { result } = processImage(img, {
-					detectionQuantStep,
-					forcePixelsW,
-					forcePixelsH,
-					preRemoveBackground: els.preRemoveCheck.checked,
-					postRemoveBackground: els.postRemoveCheck.checked,
-					removeInnerBackground: els.removeInnerBackgroundCheck.checked,
-					backgroundTolerance: tolerance,
-					sampleWindow,
-					trimToContent: els.trimToContentCheck.checked,
-					ignoreFloatingContent: els.ignoreFloatingCheck.checked,
-					floatingMaxPixels,
-					bgExtractionMethod: els.bgExtractionMethod
-						.value as ProcessOptions["bgExtractionMethod"],
-					bgRgb: els.bgRgbInput.value,
-				});
-				currentResult = result;
-				els.downloadButton.disabled = false;
-				els.downloadDropdownButton.disabled = false;
+			const detectionQuantStep = clampInt(
+				Number(els.quantStepInput.value),
+				PROCESS_RANGES.detectionQuantStep,
+			);
+			const forcePixelsW = parseOptionalInt(
+				els.forcePixelsWInput,
+				PROCESS_RANGES.forcePixelsW,
+			);
+			const forcePixelsH = parseOptionalInt(
+				els.forcePixelsHInput,
+				PROCESS_RANGES.forcePixelsH,
+			);
+			const sampleWindow = clampInt(
+				Number(els.sampleWindowInput.value),
+				PROCESS_RANGES.sampleWindow,
+			);
+			const tolerance = clampInt(
+				Number(els.toleranceInput.value),
+				PROCESS_RANGES.backgroundTolerance,
+			);
+			const floatingMaxPercent = clampNumber(
+				Number(els.floatingMaxPercentInput.value),
+				PROCESS_RANGES.floatingMaxPercent,
+			);
+			const totalPixels = img.width * img.height;
+			const floatingMaxPixels =
+				floatingMaxPercent <= 0
+					? 0
+					: Math.min(
+							totalPixels,
+							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
+						);
 
-				// ダウンロードメニューのサイズ表示を更新
-				els.downloadMenu.querySelectorAll("button").forEach((btn) => {
-					const scale = Number(btn.dataset.scale);
-					if (scale) {
-						btn.textContent = `x${scale} (${result.width * scale}x${result.height * scale})`;
-					}
-				});
+			const { result } = await processor.process(img, {
+				detectionQuantStep,
+				forcePixelsW,
+				forcePixelsH,
+				preRemoveBackground: els.preRemoveCheck.checked,
+				postRemoveBackground: els.postRemoveCheck.checked,
+				removeInnerBackground: els.removeInnerBackgroundCheck.checked,
+				backgroundTolerance: tolerance,
+				sampleWindow,
+				trimToContent: els.trimToContentCheck.checked,
+				ignoreFloatingContent: els.ignoreFloatingCheck.checked,
+				floatingMaxPixels,
+				bgExtractionMethod: els.bgExtractionMethod
+					.value as ProcessOptions["bgExtractionMethod"],
+				bgRgb: els.bgRgbInput.value,
+			});
 
-				drawRawImageToCanvas(result, els.resultCanvas);
-				// 処理結果が更新されたらグリッドも再描画
-				// DOMの更新（canvasの表示サイズ確定）を待つために少し遅らせる
-				requestAnimationFrame(() => {
-					updateGrid();
-				});
-				els.outputPanel.classList.add("has-image");
-				els.outputSize.textContent = `${result.width}x${result.height} px`;
-			} catch (err) {
-				showError(`処理失敗: ${(err as Error).message}`);
-			} finally {
-				els.loadingOverlay.style.display = "none";
-				els.outputPanel.classList.remove("is-processing");
-			}
-		}, 10);
+			// 転送されたデータは元のスレッドで使えなくなる（Comlinkの挙動に依存するが、
+			// 基本的にRawImageは再利用しない設計なので、ここで再代入しておく）
+			// ただし、Comlinkはデフォルトでコピー（構造化複製）を行うため、
+			// 明示的に transfer を使わない限り currentImage は維持される。
+			// 今回はシンプルさを優先してコピーのままにする。
+
+			currentResult = result;
+			els.downloadButton.disabled = false;
+			els.downloadDropdownButton.disabled = false;
+
+			// ダウンロードメニューのサイズ表示を更新
+			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
+				const scale = Number(btn.dataset.scale);
+				if (scale) {
+					btn.textContent = `x${scale} (${result.width * scale}x${result.height * scale})`;
+				}
+			});
+
+			drawRawImageToCanvas(result, els.resultCanvas);
+			// 処理結果が更新されたらグリッドも再描画
+			// DOMの更新（canvasの表示サイズ確定）を待つために少し遅らせる
+			requestAnimationFrame(() => {
+				updateGrid();
+			});
+			els.outputPanel.classList.add("has-image");
+			els.outputSize.textContent = `${result.width}x${result.height} px`;
+		} catch (err) {
+			showError(`処理失敗: ${(err as Error).message}`);
+		} finally {
+			els.loadingOverlay.style.display = "none";
+			els.outputPanel.classList.remove("is-processing");
+		}
 	};
 
 	const loadFile = async (file: File) => {
