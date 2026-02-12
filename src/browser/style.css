@@ -802,6 +802,17 @@ input[type="checkbox"] {
   opacity: 0.7;
 }
 
+.app-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
 @media (max-width: 640px) {
   .footer-content {
     flex-direction: column;
