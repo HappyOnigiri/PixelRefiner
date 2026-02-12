@@ -26,6 +26,24 @@ const writeRawImageAsPng = async (
 	await writeFile(outPath, buf);
 };
 
+/**
+ * PNGの「完全透過ピクセル(alpha=0)のRGB値」は見た目に影響しないが、
+ * 生成ツールによってRGBが0埋めだったり元値が残ったりして差分になりうる。
+ * テストではalpha=0のRGBを0に正規化してから比較する。
+ */
+const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
+	const out = new Uint8ClampedArray(img.data);
+	for (let i = 0; i < out.length; i += 4) {
+		const a = out[i + 3];
+		if (a === 0) {
+			out[i] = 0;
+			out[i + 1] = 0;
+			out[i + 2] = 0;
+		}
+	}
+	return out;
+};
+
 describe("processImage", () => {
 	describe("forcePixelsW/H", () => {
 		const mkImg = (): RawImage => {
@@ -480,6 +498,49 @@ describe("processImage", () => {
 				}
 			}
 			expect(alphas.some((a) => a === 0)).toBe(true);
+		});
+	});
+
+	describe("test5", () => {
+		let img: RawImage;
+		let expected: RawImage;
+
+		beforeAll(async () => {
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/test5.png", import.meta.url),
+			);
+			img = await readPngAsRawImage(imgPath);
+
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test5-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
+		});
+
+		it("自動トリム(trimToContent)をOFFにしても、期待画像と一致する", () => {
+			const { result, grid } = processImage(img, {
+				detectionQuantStep: 64,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
+				removeInnerBackground: true,
+				backgroundTolerance: 32,
+				sampleWindow: 3,
+				trimToContent: false, // 自動トリムをOFF
+				trimAlphaThreshold: 16,
+				ignoreFloatingContent: true,
+				floatingMaxPixels: 50000,
+				autoGridFromTrimmed: true,
+			});
+
+			// 期待値PNGと完全一致（サイズ・ピクセル）
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expect(grid.outW).toBe(expected.width);
+			expect(grid.outH).toBe(expected.height);
+
+			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
+				Buffer.from(normalizeTransparentRgb(expected)),
+			);
 		});
 	});
 

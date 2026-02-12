@@ -270,8 +270,7 @@ const normalizeProcessOptions = (
 		PROCESS_RANGES.trimAlphaThreshold,
 	);
 	const autoGridFromTrimmed =
-		raw.autoGridFromTrimmed ??
-		(PROCESS_DEFAULTS.autoGridFromTrimmed && trimToContent);
+		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 	const disableGridDetection =
@@ -1212,6 +1211,8 @@ export const processImage = (
 		}
 	}
 
+	let grid: PixelGrid | null = null;
+
 	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
 		log("Auto grid from trimmed mode");
 		const b = findOpaqueBounds(maskedForDebugOrAuto, trimAlphaThreshold);
@@ -1239,65 +1240,46 @@ export const processImage = (
 				est,
 			);
 			if (est) {
-				const g: PixelGrid = {
+				// NOTE:
+				// - トリムOFF時でも「内容物BBoxからの推定グリッド」は使いたい（潰れ対策）。
+				// - ただしトリムOFFは背景（余白）を残すだけなので、縮小は全体(working)に適用する。
+				//   これにより、中心オブジェクトのセル数（見かけサイズ）は一定になりやすい。
+				const outW = Math.max(1, Math.floor(working.width / est.cellW));
+				const outH = Math.max(1, Math.floor(working.height / est.cellH));
+				grid = {
 					cellW: est.cellW,
 					cellH: est.cellH,
 					offsetX: 0,
 					offsetY: 0,
-					outW: est.outW,
-					outH: est.outH,
+					outW,
+					outH,
 					cropX: 0,
 					cropY: 0,
-					cropW: cropped.width,
-					cropH: cropped.height,
+					cropW: outW * est.cellW,
+					cropH: outH * est.cellH,
 					score: 0,
 				};
-				const downsampleStart = performance.now();
-				const down2 = downsample(cropped, g, sw);
-				log(
-					`Downsampling (auto) done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
-				);
-				o.debugHook?.("05-downsampled", down2, {
-					sampleWindow: sw,
+				o.debugHook?.("04-grid-crop", working, {
+					grid,
 					autoFromTrimmed: true,
+					bounds: b,
 				});
-
-				const postBgStart = performance.now();
-				const result2 = o.postRemoveBackground
-					? removeBackground(
-							down2,
-							o.backgroundTolerance,
-							o.removeInnerBackground,
-							bgTargets,
-							o.bgExtractionMethod,
-							o.bgRgb,
-						)
-					: down2;
-				log(
-					`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
-				);
-				o.debugHook?.("99-result", result2, {
-					postRemoveBackground: o.postRemoveBackground,
-					autoFromTrimmed: true,
-				});
-
-				log(
-					`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
-				);
-				return { result: result2, grid: g };
 			}
 		}
 	}
 
-	const detectStart = performance.now();
-	const grid = detectGrid(working, { ...o.detect, debug: o.debug });
-	log(
-		`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
-		grid,
-	);
-	o.debugHook?.("04-grid-crop", working, {
-		grid,
-	});
+	if (!grid) {
+		const detectStart = performance.now();
+		grid = detectGrid(working, { ...o.detect, debug: o.debug });
+		log(
+			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
+			grid,
+		);
+		o.debugHook?.("04-grid-crop", working, {
+			grid,
+		});
+	}
+
 	const downsampleStart = performance.now();
 	const down = downsample(working, grid, o.sampleWindow);
 	log(
