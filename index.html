@@ -225,157 +225,170 @@
       <details id="settings-panel" class="panel settings-panel">
         <summary>詳細設定</summary>
         <div class="settings-content">
-          <div class="grid-settings">
-            <label class="setting-item">
-              <span class="label-text">
-                減色ステップ
-                <span
-                  id="help-quant-step"
-                  class="help"
-                  data-tooltip="グリッド検出用の減色レベルを設定します。&#10;&#10;【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。&#10;【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
-                  >?</span
-                >
-              </span>
-              <div class="input-with-slider">
-                <input id="quant-step-slider" type="range" />
-                <input id="quant-step" type="number" />
-              </div>
-            </label>
+          <div class="settings-group">
+            <h3 class="settings-group-title">グリッド検出</h3>
+            <div class="grid-settings">
+              <label class="setting-item">
+                <span class="label-text">
+                  減色ステップ
+                  <span
+                    id="help-quant-step"
+                    class="help"
+                    data-tooltip="グリッド検出用の減色レベルを設定します。&#10;&#10;【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。&#10;【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    >?</span
+                  >
+                </span>
+                <div class="input-with-slider">
+                  <input id="quant-step-slider" type="range" />
+                  <input id="quant-step" type="number" />
+                </div>
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                サンプル範囲
-                <span
-                  id="help-sample-window"
-                  class="help"
-                  data-tooltip="各ドットの色を決める際の参照範囲（ピクセル数）です。&#10;&#10;【大】ノイズが除去され色が安定しますが、細部のディテールが失われやすくなります。&#10;【小】元画像を忠実に再現しますが、位置ズレやノイズの影響を強く受けます。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
-                  >?</span
-                >
-              </span>
-              <div class="input-with-slider">
-                <input id="sample-window-slider" type="range" />
-                <input id="sample-window" type="number" />
-              </div>
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  サンプル範囲
+                  <span
+                    id="help-sample-window"
+                    class="help"
+                    data-tooltip="各ドットの色を決める際の参照範囲（ピクセル数）です。&#10;&#10;【大】ノイズが除去され色が安定しますが、細部のディテールが失われやすくなります。&#10;【小】元画像を忠実に再現しますが、位置ズレやノイズの影響を強く受けます。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    >?</span
+                  >
+                </span>
+                <div class="input-with-slider">
+                  <input id="sample-window-slider" type="range" />
+                  <input id="sample-window" type="number" />
+                </div>
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                背景色の許容差
-                <span
-                  id="help-tolerance"
-                  class="help"
-                  data-tooltip="背景色と判定する色の類似度（誤差範囲）です。&#10;&#10;【大】圧縮ノイズなどで色が多少ブレていても背景として透過できますが、必要な色まで消える可能性があります。&#10;【小】厳密に背景色のみを透過しますが、ノイズが残りやすくなります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
-                  >?</span
-                >
-              </span>
-              <div class="input-with-slider">
-                <input id="tolerance-slider" type="range" />
-                <input id="tolerance" type="number" />
-              </div>
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  指定ピクセル(横)
+                  <span
+                    class="help"
+                    data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
+                    >?</span
+                  >
+                </span>
+                <input id="force-pixels-w" type="number" placeholder="自動" />
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                指定ピクセル(横)
-                <span
-                  class="help"
-                  data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
-                  >?</span
-                >
-              </span>
-              <input id="force-pixels-w" type="number" placeholder="自動" />
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  指定ピクセル(縦)
+                  <span
+                    class="help"
+                    data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
+                    >?</span
+                  >
+                </span>
+                <input id="force-pixels-h" type="number" placeholder="自動" />
+              </label>
+            </div>
+          </div>
 
-            <label class="setting-item">
-              <span class="label-text">
-                指定ピクセル(縦)
-                <span
-                  class="help"
-                  data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
-                  >?</span
-                >
-              </span>
-              <input id="force-pixels-h" type="number" placeholder="自動" />
-            </label>
+          <div class="settings-group">
+            <h3 class="settings-group-title">背景透過</h3>
+            <div class="grid-settings">
+              <label class="setting-item">
+                <span class="label-text">
+                  背景色の許容差
+                  <span
+                    id="help-tolerance"
+                    class="help"
+                    data-tooltip="背景色と判定する色の類似度（誤差範囲）です。&#10;&#10;【大】圧縮ノイズなどで色が多少ブレていても背景として透過できますが、必要な色まで消える可能性があります。&#10;【小】厳密に背景色のみを透過しますが、ノイズが残りやすくなります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    >?</span
+                  >
+                </span>
+                <div class="input-with-slider">
+                  <input id="tolerance-slider" type="range" />
+                  <input id="tolerance" type="number" />
+                </div>
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                事前の背景透過
-                <span
-                  class="help"
-                  data-tooltip="グリッド検出を行う【前】に、背景色を無視します。&#10;&#10;メリット: 余白が広い画像でも、本体部分のグリッドを正しく検出しやすくなります。&#10;注意: 背景と同じ色がキャラクター内にある場合、検出精度が下がる可能性があります。"
-                  >?</span
-                >
-              </span>
-              <input id="pre-remove" type="checkbox" />
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  事前の背景透過
+                  <span
+                    class="help"
+                    data-tooltip="グリッド検出を行う【前】に、背景色を無視します。&#10;&#10;メリット: 余白が広い画像でも、本体部分のグリッドを正しく検出しやすくなります。&#10;注意: 背景と同じ色がキャラクター内にある場合、検出精度が下がる可能性があります。"
+                    >?</span
+                  >
+                </span>
+                <input id="pre-remove" type="checkbox" />
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                事後の背景透過
-                <span
-                  class="help"
-                  data-tooltip="処理完了【後】に、背景色を透明に置き換えて出力します。&#10;&#10;メリット: 背景透明のPNGとして保存できます。&#10;注意: グリッド検出処理自体には影響しません。"
-                  >?</span
-                >
-              </span>
-              <input id="post-remove" type="checkbox" />
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  事後の背景透過
+                  <span
+                    class="help"
+                    data-tooltip="処理完了【後】に、背景色を透明に置き換えて出力します。&#10;&#10;メリット: 背景透明のPNGとして保存できます。&#10;注意: グリッド検出処理自体には影響しません。"
+                    >?</span
+                  >
+                </span>
+                <input id="post-remove" type="checkbox" />
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                内側の背景も透過
-                <span
-                  class="help"
-                  data-tooltip="背景透過時に、四隅と近い背景色を画像全体で透過にします。&#10;&#10;メリット: ドーナツ穴など「内側に閉じ込められた背景色」も透明にできます。&#10;注意: 背景と同じ色がキャラクター内にある場合、それも透明になる可能性があります。"
-                  >?</span
-                >
-              </span>
-              <input id="remove-inner-background" type="checkbox" />
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  内側の背景も透過
+                  <span
+                    class="help"
+                    data-tooltip="背景透過時に、四隅と近い背景色を画像全体で透過にします。&#10;&#10;メリット: ドーナツ穴など「内側に閉じ込められた背景色」も透明にできます。&#10;注意: 背景と同じ色がキャラクター内にある場合、それも透明になる可能性があります。"
+                    >?</span
+                  >
+                </span>
+                <input id="remove-inner-background" type="checkbox" />
+              </label>
+            </div>
+          </div>
 
-            <label class="setting-item">
-              <span class="label-text">
-                自動トリム
-                <span
-                  class="help"
-                  data-tooltip="出力結果を「内容物のある範囲」に合わせて自動でトリミングします。&#10;&#10;余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。"
-                  >?</span
-                >
-              </span>
-              <input id="trim-to-content" type="checkbox" />
-            </label>
+          <div class="settings-group">
+            <h3 class="settings-group-title">ノイズ・トリミング</h3>
+            <div class="grid-settings">
+              <label class="setting-item">
+                <span class="label-text">
+                  自動トリム
+                  <span
+                    class="help"
+                    data-tooltip="出力結果を「内容物のある範囲」に合わせて自動でトリミングします。&#10;&#10;余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。"
+                    >?</span
+                  >
+                </span>
+                <input id="trim-to-content" type="checkbox" />
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                浮きノイズを無視
-                <span
-                  class="help"
-                  data-tooltip="背景に囲まれて浮いている小さな島（連結成分）を背景扱いにして除去します。&#10;&#10;微小ノイズが、内容物BBox/自動グリッド推定を引っ張るのを防ぎます。&#10;注意: 離れた別オブジェクトがある画像では、それも除去される可能性があります。"
-                  >?</span
-                >
-              </span>
-              <input id="ignore-floating" type="checkbox" />
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  浮きノイズを無視
+                  <span
+                    class="help"
+                    data-tooltip="背景に囲まれて浮いている小さな島（連結成分）を背景扱いにして除去します。&#10;&#10;微小ノイズが、内容物BBox/自動グリッド推定を引っ張るのを防ぎます。&#10;注意: 離れた別オブジェクトがある画像では、それも除去される可能性があります。"
+                    >?</span
+                  >
+                </span>
+                <input id="ignore-floating" type="checkbox" />
+              </label>
 
-            <label class="setting-item">
-              <span class="label-text">
-                浮きノイズ上限(%)
-                <span
-                  class="help"
-                  data-tooltip="「浮きノイズを無視」をONにしたとき、除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。&#10;例: 1% → (幅×高さ×0.01) px&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
-                  >?</span
-                >
-              </span>
-              <div class="input-with-slider">
-                <input
-                  id="floating-max-percent-slider"
-                  type="range"
-                  step="0.1"
-                />
-                <input id="floating-max-percent" type="number" step="0.1" />
-              </div>
-            </label>
+              <label class="setting-item">
+                <span class="label-text">
+                  浮きノイズ上限(%)
+                  <span
+                    class="help"
+                    data-tooltip="「浮きノイズを無視」をONにしたとき、除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。&#10;例: 1% → (幅×高さ×0.01) px&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    >?</span
+                  >
+                </span>
+                <div class="input-with-slider">
+                  <input
+                    id="floating-max-percent-slider"
+                    type="range"
+                    step="0.1"
+                  />
+                  <input id="floating-max-percent" type="number" step="0.1" />
+                </div>
+              </label>
+            </div>
           </div>
         </div>
       </details>

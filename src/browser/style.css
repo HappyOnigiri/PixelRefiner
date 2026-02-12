@@ -142,7 +142,6 @@ h2::before {
 
 .settings-panel {
   padding: 0;
-  overflow: hidden;
 }
 
 .settings-panel summary {
@@ -189,6 +188,35 @@ h2::before {
 
 .settings-content {
   padding: 0 24px 24px;
+}
+
+.settings-group {
+  margin-bottom: 24px;
+}
+
+.settings-group:last-child {
+  margin-bottom: 0;
+}
+
+.settings-group-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-group-title::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 12px;
+  background: var(--primary);
+  border-radius: 1px;
 }
 
 .panel:hover {
@@ -712,6 +740,18 @@ input[type="checkbox"] {
   white-space: pre-wrap;
   margin-bottom: 8px;
   text-align: left;
+  pointer-events: none;
+}
+
+.setting-item:nth-child(2n) .help:hover::after {
+  left: auto;
+  right: 0;
+  transform: translateX(0);
+}
+
+.setting-item:nth-child(2n-1) .help:hover::after {
+  left: 0;
+  transform: translateX(0);
 }
 
 /* Footer */
