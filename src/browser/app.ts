@@ -42,6 +42,14 @@ type Elements = {
 	outputPanel: HTMLElement;
 	settingsPanel: HTMLElement;
 	loadingOverlay: HTMLElement;
+	bgExtractionMethod: HTMLSelectElement;
+	rgbPickerContainer: HTMLElement;
+	bgRgbInput: HTMLInputElement;
+	bgColorInput: HTMLInputElement;
+	eyedropperButton: HTMLButtonElement;
+	eyedropperModal: HTMLElement;
+	closeEyedropperModal: HTMLButtonElement;
+	eyedropperCanvas: HTMLCanvasElement;
 };
 
 const getElements = (): Elements => {
@@ -89,6 +97,14 @@ const getElements = (): Elements => {
 		outputPanel: get<HTMLElement>("output-panel"),
 		settingsPanel: get<HTMLElement>("settings-panel"),
 		loadingOverlay: get<HTMLElement>("loading-overlay"),
+		bgExtractionMethod: get<HTMLSelectElement>("bg-extraction-method"),
+		rgbPickerContainer: get<HTMLElement>("rgb-picker-container"),
+		bgRgbInput: get<HTMLInputElement>("bg-rgb-input"),
+		bgColorInput: get<HTMLInputElement>("bg-color-input"),
+		eyedropperButton: get<HTMLButtonElement>("eyedropper-button"),
+		eyedropperModal: get<HTMLElement>("eyedropper-modal"),
+		closeEyedropperModal: get<HTMLButtonElement>("close-eyedropper-modal"),
+		eyedropperCanvas: get<HTMLCanvasElement>("eyedropper-canvas"),
 	};
 };
 
@@ -179,6 +195,81 @@ export const initApp = (): void => {
 			console.error("設定の復元に失敗しました:", e);
 		}
 	};
+
+	// スポイト機能の状態
+	const openEyedropperModal = () => {
+		if (!currentImage) return;
+		els.eyedropperModal.style.display = "flex";
+		drawRawImageToCanvas(currentImage, els.eyedropperCanvas);
+	};
+
+	const closeEyedropperModal = () => {
+		els.eyedropperModal.style.display = "none";
+	};
+
+	// RGB入力の同期
+	const updateRgbInputs = (hex: string) => {
+		els.bgRgbInput.value = hex;
+		els.bgColorInput.value = hex;
+	};
+
+	els.bgExtractionMethod.addEventListener("change", () => {
+		const method = els.bgExtractionMethod.value;
+		els.rgbPickerContainer.style.display = method === "rgb" ? "flex" : "none";
+	});
+
+	els.bgRgbInput.addEventListener("input", () => {
+		let val = els.bgRgbInput.value.trim();
+		if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
+			if (!val.startsWith("#")) val = `#${val}`;
+			els.bgColorInput.value = val;
+		}
+	});
+
+	els.bgColorInput.addEventListener("input", () => {
+		els.bgRgbInput.value = els.bgColorInput.value;
+	});
+
+	els.eyedropperButton.addEventListener("click", (e) => {
+		e.stopPropagation();
+		if (!currentImage) {
+			showError("先に画像を選択してください。");
+			return;
+		}
+		openEyedropperModal();
+	});
+
+	els.closeEyedropperModal.addEventListener("click", closeEyedropperModal);
+
+	els.eyedropperModal.addEventListener("click", (e) => {
+		if (e.target === els.eyedropperModal) {
+			closeEyedropperModal();
+		}
+	});
+
+	els.eyedropperCanvas.addEventListener("click", (e) => {
+		if (!currentImage) return;
+
+		const rect = els.eyedropperCanvas.getBoundingClientRect();
+		// モーダル内のキャンバスは等倍表示なので、クリック座標をそのまま画像座標として扱う
+		// ただし、CSSでのスケーリングがある場合は考慮が必要
+		const x = Math.floor(
+			((e.clientX - rect.left) / rect.width) * currentImage.width,
+		);
+		const y = Math.floor(
+			((e.clientY - rect.top) / rect.height) * currentImage.height,
+		);
+
+		if (x >= 0 && x < currentImage.width && y >= 0 && y < currentImage.height) {
+			const idx = (y * currentImage.width + x) * 4;
+			const r = currentImage.data[idx];
+			const g = currentImage.data[idx + 1];
+			const b = currentImage.data[idx + 2];
+			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+			updateRgbInputs(hex);
+			closeEyedropperModal();
+		}
+	});
 
 	// 設定ファイルのデフォルト/範囲を UI に反映
 	const applyConfigToUi = () => {
@@ -443,6 +534,9 @@ export const initApp = (): void => {
 					trimToContent: els.trimToContentCheck.checked,
 					ignoreFloatingContent: els.ignoreFloatingCheck.checked,
 					floatingMaxPixels,
+					bgExtractionMethod: els.bgExtractionMethod
+						.value as ProcessOptions["bgExtractionMethod"],
+					bgRgb: els.bgRgbInput.value,
 				});
 				currentResult = result;
 				els.downloadButton.disabled = false;

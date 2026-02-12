@@ -66,6 +66,26 @@
         >を数秒で完了します。
       </p>
 
+      <!-- Eyedropper Modal -->
+      <div id="eyedropper-modal" class="modal" style="display: none">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>背景色を選択</h3>
+            <button id="close-eyedropper-modal" class="close-button">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-instruction">
+              画像内の背景にしたい色をクリックしてください
+            </p>
+            <div class="modal-canvas-container">
+              <canvas id="eyedropper-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row">
         <div class="panel input-panel" id="drop-area">
           <h2>入力画像</h2>
@@ -283,6 +303,78 @@
           <div class="settings-group">
             <h3 class="settings-group-title">背景透過</h3>
             <div class="grid-settings">
+              <label class="setting-item">
+                <span class="label-text">
+                  背景抽出方法
+                  <span
+                    class="help"
+                    data-tooltip="背景色をどこから抽出するか選択します。&#10;&#10;透過しない: 背景透過を行いません。&#10;各四隅: 指定した角のピクセルを背景色とします。&#10;RGB指定: 指定した色を背景色とします。"
+                    >?</span
+                  >
+                </span>
+                <select id="bg-extraction-method">
+                  <option value="none">透過しない</option>
+                  <option value="top-left" selected>左上（デフォルト）</option>
+                  <option value="bottom-left">左下</option>
+                  <option value="top-right">右上</option>
+                  <option value="bottom-right">右下</option>
+                  <option value="rgb">RGB指定</option>
+                </select>
+              </label>
+
+              <div
+                id="rgb-picker-container"
+                class="setting-item"
+                style="display: none"
+              >
+                <span class="label-text">
+                  背景色(RGB)
+                  <span
+                    class="help"
+                    data-tooltip="背景色として扱う色を16進数(例: #ffffff)で指定します。&#10;スポイトボタンで画像から色を選択することもできます。"
+                    >?</span
+                  >
+                </span>
+                <div class="rgb-input-group">
+                  <input id="bg-rgb-input" type="text" placeholder="#ffffff" />
+                  <input
+                    id="bg-color-input"
+                    type="color"
+                    style="
+                      width: 40px;
+                      height: 32px;
+                      padding: 0;
+                      border: none;
+                      background: none;
+                    "
+                  />
+                  <button
+                    id="eyedropper-button"
+                    type="button"
+                    class="icon-button"
+                    title="スポイトで画像から色を選択"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m2 22 1-1h3l9-9"></path>
+                      <path d="M3 21v-3l9-9"></path>
+                      <path
+                        d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l-3-3Z"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
               <label class="setting-item">
                 <span class="label-text">
                   背景色の許容差

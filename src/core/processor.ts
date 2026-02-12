@@ -107,87 +107,6 @@ export const downsample = (
 	return { width: outW, height: outH, data: out };
 };
 
-const removeBackgroundByFloodFill = (
-	img: RawImage,
-	tolerance: number,
-): RawImage => {
-	const out = cloneImage(img);
-	const corners: Array<[number, number]> = [
-		[0, 0],
-		[img.width - 1, 0],
-		[0, img.height - 1],
-		[img.width - 1, img.height - 1],
-	];
-	for (const [x, y] of corners) {
-		floodFillTransparent(out, x, y, tolerance);
-	}
-	return out;
-};
-
-const removeBackground = (
-	img: RawImage,
-	tolerance: number,
-	removeInnerBackground: boolean,
-	bgTargets: Array<[number, number, number]>,
-): RawImage => {
-	const out = removeBackgroundByFloodFill(img, tolerance);
-	if (!removeInnerBackground) return out;
-
-	// 入力画像（クロップ前）の四隅から推定した「背景色候補」を、画像全体に適用する。
-	// これにより、クロップ後に四隅が背景色ではない場合でも「内側背景」を透過にできる。
-	if (bgTargets.length === 0) return out;
-
-	for (let i = 0; i < out.data.length; i += 4) {
-		const a = out.data[i + 3];
-		if (a === 0) continue;
-		const r = out.data[i];
-		const g = out.data[i + 1];
-		const b = out.data[i + 2];
-		for (const [tr, tg, tb] of bgTargets) {
-			if (
-				Math.abs(r - tr) <= tolerance &&
-				Math.abs(g - tg) <= tolerance &&
-				Math.abs(b - tb) <= tolerance
-			) {
-				out.data[i + 3] = 0;
-				break;
-			}
-		}
-	}
-	return out;
-};
-
-const getCornerBackgroundTargets = (
-	img: RawImage,
-	alphaThreshold = 16,
-): Array<[number, number, number]> => {
-	const w = img.width;
-	const h = img.height;
-	const corners: Array<[number, number]> = [
-		[0, 0],
-		[w - 1, 0],
-		[0, h - 1],
-		[w - 1, h - 1],
-	];
-	const keys = new Set<string>();
-	const targets: Array<[number, number, number]> = [];
-	for (const [x, y] of corners) {
-		const idx = (y * w + x) * 4;
-		const r = img.data[idx];
-		const g = img.data[idx + 1];
-		const b = img.data[idx + 2];
-		const a = img.data[idx + 3];
-		// 透明な角はRGBが信用できない場合があるので除外する
-		if (a < alphaThreshold) continue;
-		const key = `${r},${g},${b}`;
-		if (!keys.has(key)) {
-			keys.add(key);
-			targets.push([r, g, b]);
-		}
-	}
-	return targets;
-};
-
 export type ProcessOptions = DetectOptions & {
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
@@ -226,6 +145,20 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	autoGridFromTrimmed?: boolean;
 	/**
+	 * 背景抽出方法
+	 */
+	bgExtractionMethod?:
+		| "none"
+		| "top-left"
+		| "bottom-left"
+		| "top-right"
+		| "bottom-right"
+		| "rgb";
+	/**
+	 * RGB指定時の背景色 (#rrggbb)
+	 */
+	bgRgb?: string;
+	/**
 	 * デバッグ用に中間画像を取り出すためのフック。
 	 * ブラウザ環境でも動くよう、PNG書き出し等は呼び出し側で行う。
 	 */
@@ -252,6 +185,14 @@ const normalizeProcessOptions = (
 	autoGridFromTrimmed: boolean;
 	ignoreFloatingContent: boolean;
 	floatingMaxPixels: number;
+	bgExtractionMethod:
+		| "none"
+		| "top-left"
+		| "bottom-left"
+		| "top-right"
+		| "bottom-right"
+		| "rgb";
+	bgRgb?: string;
 	debugHook?: ProcessOptions["debugHook"];
 } => {
 	const raw = options ?? {};
@@ -300,6 +241,8 @@ const normalizeProcessOptions = (
 		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
 		PROCESS_RANGES.floatingMaxPixels,
 	);
+	const bgExtractionMethod = raw.bgExtractionMethod ?? "top-left";
+	const bgRgb = raw.bgRgb;
 
 	return {
 		detect,
@@ -315,8 +258,160 @@ const normalizeProcessOptions = (
 		autoGridFromTrimmed,
 		ignoreFloatingContent,
 		floatingMaxPixels,
+		bgExtractionMethod,
+		bgRgb,
 		debugHook: raw.debugHook,
 	};
+};
+
+const removeBackgroundByFloodFill = (
+	img: RawImage,
+	tolerance: number,
+	method:
+		| "none"
+		| "top-left"
+		| "bottom-left"
+		| "top-right"
+		| "bottom-right"
+		| "rgb" = "top-left",
+	bgRgb?: string,
+): RawImage => {
+	if (method === "none") return cloneImage(img);
+
+	const out = cloneImage(img);
+	const w = img.width;
+	const h = img.height;
+
+	if (method === "rgb" && bgRgb) {
+		const hex = bgRgb.replace("#", "");
+		const r = parseInt(hex.substring(0, 2), 16);
+		const g = parseInt(hex.substring(2, 4), 16);
+		const b = parseInt(hex.substring(4, 6), 16);
+
+		// 指定色のピクセルを全走査してシードにする
+		// 効率化のため、visited配列を共有して重複走査を防ぐ
+		const visited = new Uint8Array(w * h);
+		for (let y = 0; y < h; y++) {
+			for (let x = 0; x < w; x++) {
+				const idx = y * w + x;
+				if (visited[idx]) continue;
+
+				const dataIdx = idx * 4;
+				if (
+					Math.abs(img.data[dataIdx] - r) <= tolerance &&
+					Math.abs(img.data[idx + 1] - g) <= tolerance &&
+					Math.abs(img.data[idx + 2] - b) <= tolerance
+				) {
+					// 既に透過処理済みのピクセルはスキップ
+					if (out.data[dataIdx + 3] !== 0) {
+						floodFillTransparent(out, x, y, tolerance, visited);
+					}
+				}
+				visited[idx] = 1;
+			}
+		}
+		return out;
+	}
+
+	const corners: Array<[number, number]> = [];
+	if (method === "top-left") corners.push([0, 0]);
+	else if (method === "bottom-left") corners.push([0, h - 1]);
+	else if (method === "top-right") corners.push([w - 1, 0]);
+	else if (method === "bottom-right") corners.push([w - 1, h - 1]);
+
+	for (const [x, y] of corners) {
+		floodFillTransparent(out, x, y, tolerance);
+	}
+	return out;
+};
+
+const removeBackground = (
+	img: RawImage,
+	tolerance: number,
+	removeInnerBackground: boolean,
+	bgTargets: Array<[number, number, number]>,
+	method:
+		| "none"
+		| "top-left"
+		| "bottom-left"
+		| "top-right"
+		| "bottom-right"
+		| "rgb" = "top-left",
+	bgRgb?: string,
+): RawImage => {
+	if (method === "none") return cloneImage(img);
+
+	const out = removeBackgroundByFloodFill(img, tolerance, method, bgRgb);
+	if (!removeInnerBackground) return out;
+
+	// 入力画像（クロップ前）から推定した「背景色候補」を、画像全体に適用する。
+	if (bgTargets.length === 0) return out;
+
+	for (let i = 0; i < out.data.length; i += 4) {
+		const a = out.data[i + 3];
+		if (a === 0) continue;
+		const r = out.data[i];
+		const g = out.data[i + 1];
+		const b = out.data[i + 2];
+		for (const [tr, tg, tb] of bgTargets) {
+			if (
+				Math.abs(r - tr) <= tolerance &&
+				Math.abs(g - tg) <= tolerance &&
+				Math.abs(b - tb) <= tolerance
+			) {
+				out.data[i + 3] = 0;
+				break;
+			}
+		}
+	}
+	return out;
+};
+
+const getBackgroundTargets = (
+	img: RawImage,
+	method:
+		| "none"
+		| "top-left"
+		| "bottom-left"
+		| "top-right"
+		| "bottom-right"
+		| "rgb",
+	bgRgb?: string,
+	alphaThreshold = 16,
+): Array<[number, number, number]> => {
+	if (method === "none") return [];
+	if (method === "rgb" && bgRgb) {
+		const hex = bgRgb.replace("#", "");
+		const r = parseInt(hex.substring(0, 2), 16);
+		const g = parseInt(hex.substring(2, 4), 16);
+		const b = parseInt(hex.substring(4, 6), 16);
+		return [[r, g, b]];
+	}
+
+	const w = img.width;
+	const h = img.height;
+	const points: Array<[number, number]> = [];
+	if (method === "top-left") points.push([0, 0]);
+	else if (method === "bottom-left") points.push([0, h - 1]);
+	else if (method === "top-right") points.push([w - 1, 0]);
+	else if (method === "bottom-right") points.push([w - 1, h - 1]);
+
+	const keys = new Set<string>();
+	const targets: Array<[number, number, number]> = [];
+	for (const [x, y] of points) {
+		const idx = (y * w + x) * 4;
+		const r = img.data[idx];
+		const g = img.data[idx + 1];
+		const b = img.data[idx + 2];
+		const a = img.data[idx + 3];
+		if (a < alphaThreshold) continue;
+		const key = `${r},${g},${b}`;
+		if (!keys.has(key)) {
+			keys.add(key);
+			targets.push([r, g, b]);
+		}
+	}
+	return targets;
 };
 
 const removeSmallFloatingComponentsInPlace = (
@@ -591,11 +686,16 @@ export const processImage = (
 ): { result: RawImage; grid: PixelGrid } => {
 	const o = normalizeProcessOptions(options);
 	const bgTargets = o.removeInnerBackground
-		? getCornerBackgroundTargets(img, 16)
+		? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
 		: [];
 
 	const working = o.preRemoveBackground
-		? removeBackgroundByFloodFill(img, o.backgroundTolerance)
+		? removeBackgroundByFloodFill(
+				img,
+				o.backgroundTolerance,
+				o.bgExtractionMethod,
+				o.bgRgb,
+			)
 		: cloneImage(img);
 
 	o.debugHook?.("00-input", img);
@@ -613,6 +713,8 @@ export const processImage = (
 			bgTol,
 			o.removeInnerBackground,
 			bgTargets,
+			o.bgExtractionMethod,
+			o.bgRgb,
 		);
 		if (o.ignoreFloatingContent) {
 			const { removedComponents, removedPixels } =
@@ -677,6 +779,8 @@ export const processImage = (
 					o.backgroundTolerance,
 					o.removeInnerBackground,
 					bgTargets,
+					o.bgExtractionMethod,
+					o.bgRgb,
 				)
 			: down2;
 		o.debugHook?.("99-result", result2, {
@@ -695,7 +799,14 @@ export const processImage = (
 	const bgTol = o.backgroundTolerance;
 	const maskedForDebugOrAuto =
 		o.debugHook || autoGridFromTrimmed || o.ignoreFloatingContent
-			? removeBackground(working, bgTol, o.removeInnerBackground, bgTargets)
+			? removeBackground(
+					working,
+					bgTol,
+					o.removeInnerBackground,
+					bgTargets,
+					o.bgExtractionMethod,
+					o.bgRgb,
+				)
 			: null;
 
 	if (maskedForDebugOrAuto && o.ignoreFloatingContent) {
@@ -768,6 +879,8 @@ export const processImage = (
 							o.backgroundTolerance,
 							o.removeInnerBackground,
 							bgTargets,
+							o.bgExtractionMethod,
+							o.bgRgb,
 						)
 					: down2;
 				o.debugHook?.("99-result", result2, {
@@ -800,6 +913,8 @@ export const processImage = (
 			bgTol,
 			o.removeInnerBackground,
 			bgTargets,
+			o.bgExtractionMethod,
+			o.bgRgb,
 		);
 		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
@@ -829,6 +944,8 @@ export const processImage = (
 				o.backgroundTolerance,
 				o.removeInnerBackground,
 				bgTargets,
+				o.bgExtractionMethod,
+				o.bgRgb,
 			)
 		: trimmed;
 	o.debugHook?.("99-result", result, {
