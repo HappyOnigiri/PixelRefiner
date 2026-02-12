@@ -291,19 +291,24 @@ const removeBackgroundByFloodFill = (
 		// 指定色のピクセルを全走査してシードにする
 		// 効率化のため、visited配列を共有して重複走査を防ぐ
 		const visited = new Uint8Array(w * h);
+		const src32 = new Uint32Array(img.data.buffer);
 		for (let y = 0; y < h; y++) {
 			for (let x = 0; x < w; x++) {
 				const idx = y * w + x;
 				if (visited[idx]) continue;
 
-				const dataIdx = idx * 4;
+				const pixel = src32[idx];
+				const pr = pixel & 0xff;
+				const pg = (pixel >> 8) & 0xff;
+				const pb = (pixel >> 16) & 0xff;
+
 				if (
-					Math.abs(img.data[dataIdx] - r) <= tolerance &&
-					Math.abs(img.data[idx + 1] - g) <= tolerance &&
-					Math.abs(img.data[idx + 2] - b) <= tolerance
+					Math.abs(pr - r) <= tolerance &&
+					Math.abs(pg - g) <= tolerance &&
+					Math.abs(pb - b) <= tolerance
 				) {
 					// 既に透過処理済みのピクセルはスキップ
-					if (out.data[dataIdx + 3] !== 0) {
+					if (out.data[idx * 4 + 3] !== 0) {
 						floodFillTransparent(out, x, y, tolerance, visited);
 					}
 				}
@@ -350,9 +355,13 @@ const removeBackground = (
 	for (let i = 0; i < out.data.length; i += 4) {
 		const a = out.data[i + 3];
 		if (a === 0) continue;
-		const r = out.data[i];
-		const g = out.data[i + 1];
-		const b = out.data[i + 2];
+
+		const out32 = new Uint32Array(out.data.buffer);
+		const pixel = out32[i / 4];
+		const r = pixel & 0xff;
+		const g = (pixel >> 8) & 0xff;
+		const b = (pixel >> 16) & 0xff;
+
 		for (const [tr, tg, tb] of bgTargets) {
 			if (
 				Math.abs(r - tr) <= tolerance &&
@@ -560,14 +569,14 @@ const cropRawImage = (
 	h: number,
 ): RawImage => {
 	const out = new Uint8ClampedArray(w * h * 4);
+	const out32 = new Uint32Array(out.buffer);
+	const src32 = new Uint32Array(img.data.buffer);
+
 	for (let j = 0; j < h; j += 1) {
+		const srcRowIdx = (y + j) * img.width + x;
+		const dstRowIdx = j * w;
 		for (let i = 0; i < w; i += 1) {
-			const srcIdx = ((y + j) * img.width + (x + i)) * 4;
-			const dstIdx = (j * w + i) * 4;
-			out[dstIdx] = img.data[srcIdx];
-			out[dstIdx + 1] = img.data[srcIdx + 1];
-			out[dstIdx + 2] = img.data[srcIdx + 2];
-			out[dstIdx + 3] = img.data[srcIdx + 3];
+			out32[dstRowIdx + i] = src32[srcRowIdx + i];
 		}
 	}
 	return { width: w, height: h, data: out };

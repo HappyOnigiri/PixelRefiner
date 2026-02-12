@@ -46,17 +46,18 @@ export const posterize = (img: RawImage, step: number): RawImage => {
 		};
 	}
 	const out = new Uint8ClampedArray(img.data.length);
+	const src32 = new Uint32Array(img.data.buffer);
 	for (let i = 0; i < img.data.length; i += 4) {
-		out[i] = Math.min(255, Math.max(0, Math.floor(img.data[i] / step) * step));
-		out[i + 1] = Math.min(
-			255,
-			Math.max(0, Math.floor(img.data[i + 1] / step) * step),
-		);
-		out[i + 2] = Math.min(
-			255,
-			Math.max(0, Math.floor(img.data[i + 2] / step) * step),
-		);
-		out[i + 3] = img.data[i + 3];
+		const pixel = src32[i / 4];
+		const r = pixel & 0xff;
+		const g = (pixel >> 8) & 0xff;
+		const b = (pixel >> 16) & 0xff;
+		const a = (pixel >> 24) & 0xff;
+
+		out[i] = Math.min(255, Math.max(0, Math.floor(r / step) * step));
+		out[i + 1] = Math.min(255, Math.max(0, Math.floor(g / step) * step));
+		out[i + 2] = Math.min(255, Math.max(0, Math.floor(b / step) * step));
+		out[i + 3] = a;
 	}
 	return { width: img.width, height: img.height, data: out };
 };
@@ -89,25 +90,23 @@ export const upscaleNearest = (img: RawImage, scale: number): RawImage => {
 
 	const newWidth = img.width * scale;
 	const newHeight = img.height * scale;
-	const newData = new Uint8ClampedArray(newWidth * newHeight * 4);
+	const out = new Uint8ClampedArray(newWidth * newHeight * 4);
+	const out32 = new Uint32Array(out.buffer);
+	const src32 = new Uint32Array(img.data.buffer);
 
 	for (let y = 0; y < newHeight; y++) {
 		const srcY = Math.floor(y / scale);
+		const dstRowIdx = y * newWidth;
+		const srcRowIdx = srcY * img.width;
 		for (let x = 0; x < newWidth; x++) {
 			const srcX = Math.floor(x / scale);
-			const srcIdx = (srcY * img.width + srcX) * 4;
-			const dstIdx = (y * newWidth + x) * 4;
-
-			newData[dstIdx] = img.data[srcIdx];
-			newData[dstIdx + 1] = img.data[srcIdx + 1];
-			newData[dstIdx + 2] = img.data[srcIdx + 2];
-			newData[dstIdx + 3] = img.data[srcIdx + 3];
+			out32[dstRowIdx + x] = src32[srcRowIdx + srcX];
 		}
 	}
 
 	return {
 		width: newWidth,
 		height: newHeight,
-		data: newData,
+		data: out,
 	};
 };
