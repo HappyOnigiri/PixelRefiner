@@ -33,6 +33,7 @@ export const PROCESS_DEFAULTS = {
 	autoGridFromTrimmed: true,
 	ignoreFloatingContent: true,
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
+	debug: import.meta.env.DEV,
 } as const;
 
 export const clampInt = (value: number, range: IntRange): number => {

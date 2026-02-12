@@ -4,7 +4,7 @@ import {
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
-import type { PixelGrid, RawImage } from "../shared/types";
+import type { Pixel, PixelGrid, RawImage } from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
 
@@ -197,9 +197,11 @@ const normalizeProcessOptions = (
 		| "bottom-right"
 		| "rgb";
 	bgRgb?: string;
+	debug?: boolean;
 	debugHook?: ProcessOptions["debugHook"];
 } => {
 	const raw = options ?? {};
+	const debug = raw.debug ?? PROCESS_DEFAULTS.debug;
 
 	const detect: DetectOptions = {
 		...raw,
@@ -264,6 +266,7 @@ const normalizeProcessOptions = (
 		floatingMaxPixels,
 		bgExtractionMethod,
 		bgRgb,
+		debug,
 		debugHook: raw.debugHook,
 	};
 };
@@ -718,10 +721,29 @@ export const processImage = (
 	options: ProcessOptions = {},
 ): { result: RawImage; grid: PixelGrid } => {
 	const o = normalizeProcessOptions(options);
+	const startTime = performance.now();
+	const log = (...args: unknown[]) => {
+		if (o.debug) {
+			console.log("[Processor]", ...args);
+		}
+	};
+
+	log("Processing started", {
+		width: img.width,
+		height: img.height,
+		options: o,
+	});
+
+	const bgTargetsStart = performance.now();
 	const bgTargets = o.removeInnerBackground
 		? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
 		: [];
+	log(
+		`Background targets extracted in ${(performance.now() - bgTargetsStart).toFixed(2)}ms`,
+		bgTargets,
+	);
 
+	const workingStart = performance.now();
 	const working = o.preRemoveBackground
 		? removeBackgroundByFloodFill(
 				img,
@@ -730,6 +752,9 @@ export const processImage = (
 				o.bgRgb,
 			)
 		: cloneImage(img);
+	log(
+		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
+	);
 
 	o.debugHook?.("00-input", img);
 	o.debugHook?.("01-working", working, {
@@ -750,6 +775,7 @@ export const processImage = (
 			o.bgRgb,
 		);
 		if (o.ignoreFloatingContent) {
+			const floatingStart = performance.now();
 			const { removedComponents, removedPixels } =
 				removeSmallFloatingComponentsInPlace(
 					working,
@@ -757,6 +783,10 @@ export const processImage = (
 					trimAlphaThreshold,
 					o.floatingMaxPixels,
 				);
+			log(
+				`Floating components removed in ${(performance.now() - floatingStart).toFixed(2)}ms`,
+				{ removedComponents, removedPixels },
+			);
 			if (o.debugHook && removedPixels > 0) {
 				o.debugHook("01b-working-ignore-floating", working, {
 					floatingMaxPixels: o.floatingMaxPixels,
@@ -770,10 +800,15 @@ export const processImage = (
 			bgTol,
 			forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
 		});
+		const boundsStart = performance.now();
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
 		if (!b) {
 			throw new Error("内容物が見つからないため指定ピクセル変換できません。");
 		}
+		log(
+			`Opaque bounds found in ${(performance.now() - boundsStart).toFixed(2)}ms`,
+			b,
+		);
 		const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
 		o.debugHook?.("03-pre-downsample-bg-trimmed", cropped, {
 			bounds: b,
@@ -784,6 +819,9 @@ export const processImage = (
 		const outH = o.forcePixelsH;
 		const cellW = cropped.width / outW;
 		const cellH = cropped.height / outH;
+		log(
+			`Forced pixel size mode: ${outW}x${outH} (cell: ${cellW.toFixed(2)}x${cellH.toFixed(2)})`,
+		);
 		const g: PixelGrid = {
 			cellW,
 			cellH,
@@ -800,12 +838,17 @@ export const processImage = (
 
 		// 拡大が必要な場合は最近傍相当（sampleWindow=1）にする
 		const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
+		const downsampleStart = performance.now();
 		const down2 = downsample(cropped, g, sw);
+		log(
+			`Downsampling (forced) done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
+		);
 		o.debugHook?.("05-downsampled", down2, {
 			sampleWindow: sw,
 			forced: true,
 		});
 
+		const postBgStart = performance.now();
 		const result2 = o.postRemoveBackground
 			? removeBackground(
 					down2,
@@ -816,10 +859,16 @@ export const processImage = (
 					o.bgRgb,
 				)
 			: down2;
+		log(
+			`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
+		);
 		o.debugHook?.("99-result", result2, {
 			postRemoveBackground: o.postRemoveBackground,
 			forced: true,
 		});
+		log(
+			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
+		);
 		return { result: result2, grid: g };
 	}
 
@@ -830,6 +879,7 @@ export const processImage = (
 	// 縮小前（downsample前）に「背景トリミング後」の見た目を確認できるように出力する。
 	// 実処理のパイプラインは変えず、デバッグ用途のみで算出する。
 	const bgTol = o.backgroundTolerance;
+	const maskedStart = performance.now();
 	const maskedForDebugOrAuto =
 		o.debugHook || autoGridFromTrimmed || o.ignoreFloatingContent
 			? removeBackground(
@@ -841,8 +891,14 @@ export const processImage = (
 					o.bgRgb,
 				)
 			: null;
+	if (maskedForDebugOrAuto) {
+		log(
+			`Masked image for debug/auto created in ${(performance.now() - maskedStart).toFixed(2)}ms`,
+		);
+	}
 
 	if (maskedForDebugOrAuto && o.ignoreFloatingContent) {
+		const floatingStart = performance.now();
 		const { removedComponents, removedPixels } =
 			removeSmallFloatingComponentsInPlace(
 				working,
@@ -850,6 +906,10 @@ export const processImage = (
 				trimAlphaThreshold,
 				o.floatingMaxPixels,
 			);
+		log(
+			`Floating components removed in ${(performance.now() - floatingStart).toFixed(2)}ms`,
+			{ removedComponents, removedPixels },
+		);
 		if (o.debugHook && removedPixels > 0) {
 			o.debugHook("01b-working-ignore-floating", working, {
 				floatingMaxPixels: o.floatingMaxPixels,
@@ -870,6 +930,7 @@ export const processImage = (
 	}
 
 	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
+		log("Auto grid from trimmed mode");
 		const b = findOpaqueBounds(maskedForDebugOrAuto, trimAlphaThreshold);
 		if (b) {
 			const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
@@ -885,7 +946,12 @@ export const processImage = (
 			});
 
 			const sw = o.sampleWindow;
+			const searchStart = performance.now();
 			const est = searchGridFromTrimmed(cropped, croppedMask, sw);
+			log(
+				`Grid search from trimmed done in ${(performance.now() - searchStart).toFixed(2)}ms`,
+				est,
+			);
 			if (est) {
 				const g: PixelGrid = {
 					cellW: est.cellW,
@@ -900,12 +966,17 @@ export const processImage = (
 					cropH: cropped.height,
 					score: 0,
 				};
+				const downsampleStart = performance.now();
 				const down2 = downsample(cropped, g, sw);
+				log(
+					`Downsampling (auto) done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
+				);
 				o.debugHook?.("05-downsampled", down2, {
 					sampleWindow: sw,
 					autoFromTrimmed: true,
 				});
 
+				const postBgStart = performance.now();
 				const result2 = o.postRemoveBackground
 					? removeBackground(
 							down2,
@@ -916,21 +987,36 @@ export const processImage = (
 							o.bgRgb,
 						)
 					: down2;
+				log(
+					`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
+				);
 				o.debugHook?.("99-result", result2, {
 					postRemoveBackground: o.postRemoveBackground,
 					autoFromTrimmed: true,
 				});
 
+				log(
+					`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
+				);
 				return { result: result2, grid: g };
 			}
 		}
 	}
 
-	const grid = detectGrid(working, o.detect);
+	const detectStart = performance.now();
+	const grid = detectGrid(working, { ...o.detect, debug: o.debug });
+	log(
+		`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
+		grid,
+	);
 	o.debugHook?.("04-grid-crop", working, {
 		grid,
 	});
+	const downsampleStart = performance.now();
 	const down = downsample(working, grid, o.sampleWindow);
+	log(
+		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
+	);
 	o.debugHook?.("05-downsampled", down, {
 		sampleWindow: o.sampleWindow,
 	});
@@ -938,6 +1024,7 @@ export const processImage = (
 	let trimmed = down;
 	let trimmedGrid = grid;
 	if (trimToContent) {
+		const trimStart = performance.now();
 		// 背景（四隅から連結）を透過化した上で、内容物のBBoxでセル単位にトリムする。
 		// これにより、上下左右に大きな余白がある画像でも outW/outH を「内容物」に合わせられる。
 		const bgTol = o.backgroundTolerance;
@@ -968,9 +1055,18 @@ export const processImage = (
 				cropW: b.w * grid.cellW,
 				cropH: b.h * grid.cellH,
 			};
+			log(
+				`Trimmed to content in ${(performance.now() - trimStart).toFixed(2)}ms`,
+				b,
+			);
+		} else {
+			log(
+				`No trimming needed or possible in ${(performance.now() - trimStart).toFixed(2)}ms`,
+			);
 		}
 	}
 
+	const postBgStart = performance.now();
 	const result = o.postRemoveBackground
 		? removeBackground(
 				trimmed,
@@ -981,8 +1077,12 @@ export const processImage = (
 				o.bgRgb,
 			)
 		: trimmed;
+	log(
+		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
+	);
 	o.debugHook?.("99-result", result, {
 		postRemoveBackground: o.postRemoveBackground,
 	});
+	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
 	return { result, grid: trimmedGrid };
 };
