@@ -162,6 +162,12 @@ export const initApp = (): void => {
 	const els = getElements();
 	let currentImage: RawImage | null = null;
 	let currentResult: RawImage | null = null;
+	let lastBgChecks: {
+		preRemove: boolean;
+		postRemove: boolean;
+		removeInner: boolean;
+		ignoreFloating: boolean;
+	} | null = null;
 
 	const saveSettings = () => {
 		const activeBgBtn = els.bgSelector.querySelector(
@@ -425,6 +431,30 @@ export const initApp = (): void => {
 		const isBgDisabled = method === "none";
 		const isFloatingDisabled = !els.ignoreFloatingCheck.checked;
 
+		// 「透過しない」の場合は背景透過関連の処理が走らないように状態自体もOFFにする
+		// （disabled だけだと checked=true のまま worker に渡ってしまい、浮きノイズ除去が有効になる）
+		if (isBgDisabled) {
+			if (!lastBgChecks) {
+				lastBgChecks = {
+					preRemove: els.preRemoveCheck.checked,
+					postRemove: els.postRemoveCheck.checked,
+					removeInner: els.removeInnerBackgroundCheck.checked,
+					ignoreFloating: els.ignoreFloatingCheck.checked,
+				};
+			}
+			els.preRemoveCheck.checked = false;
+			els.postRemoveCheck.checked = false;
+			els.removeInnerBackgroundCheck.checked = false;
+			els.ignoreFloatingCheck.checked = false;
+		} else if (lastBgChecks) {
+			// 「透過しない」から戻したときに、直前の状態を復元する
+			els.preRemoveCheck.checked = lastBgChecks.preRemove;
+			els.postRemoveCheck.checked = lastBgChecks.postRemove;
+			els.removeInnerBackgroundCheck.checked = lastBgChecks.removeInner;
+			els.ignoreFloatingCheck.checked = lastBgChecks.ignoreFloating;
+			lastBgChecks = null;
+		}
+
 		// 背景透過に関連する項目の制御
 		[
 			els.toleranceInput,
@@ -652,30 +682,37 @@ export const initApp = (): void => {
 				PROCESS_RANGES.floatingMaxPercent,
 			);
 			const totalPixels = img.width * img.height;
-			const floatingMaxPixels =
-				floatingMaxPercent <= 0
+			const method = els.bgExtractionMethod
+				.value as ProcessOptions["bgExtractionMethod"];
+			const bgEnabled = method !== "none";
+			const ignoreFloatingEnabled =
+				bgEnabled && els.ignoreFloatingCheck.checked;
+
+			const floatingMaxPixels = ignoreFloatingEnabled
+				? floatingMaxPercent <= 0
 					? 0
 					: Math.min(
 							totalPixels,
 							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
-						);
+						)
+				: 0;
 
 			const { result } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
-				preRemoveBackground: els.preRemoveCheck.checked,
-				postRemoveBackground: els.postRemoveCheck.checked,
-				removeInnerBackground: els.removeInnerBackgroundCheck.checked,
+				preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
+				postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
+				removeInnerBackground:
+					bgEnabled && els.removeInnerBackgroundCheck.checked,
 				backgroundTolerance: tolerance,
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 				disableGridDetection: els.disableGridDetectionCheck.checked,
-				ignoreFloatingContent: els.ignoreFloatingCheck.checked,
+				ignoreFloatingContent: ignoreFloatingEnabled,
 				floatingMaxPixels,
-				bgExtractionMethod: els.bgExtractionMethod
-					.value as ProcessOptions["bgExtractionMethod"],
+				bgExtractionMethod: method,
 				bgRgb: els.bgRgbInput.value,
 			});
 
