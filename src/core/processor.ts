@@ -45,6 +45,9 @@ export const downsample = (
 	const ch = Math.round(cellH);
 	const useInt = Math.abs(cellW - cw) < 1e-6 && Math.abs(cellH - ch) < 1e-6;
 
+	const imgData = img.data;
+	const imgW = img.width;
+
 	for (let j = 0; j < outH; j += 1) {
 		for (let i = 0; i < outW; i += 1) {
 			let cx: number;
@@ -56,8 +59,8 @@ export const downsample = (
 				cx = roundHalfUp(cropX + (i + 0.5) * cellW);
 				cy = roundHalfUp(cropY + (j + 0.5) * cellH);
 			}
-			const x0 = Math.min(img.width - 1, Math.max(0, cx - half));
-			const x1 = Math.min(img.width, Math.max(1, cx + half + 1));
+			const x0 = Math.min(imgW - 1, Math.max(0, cx - half));
+			const x1 = Math.min(imgW, Math.max(1, cx + half + 1));
 			const y0 = Math.min(img.height - 1, Math.max(0, cy - half));
 			const y1 = Math.min(img.height, Math.max(1, cy + half + 1));
 
@@ -71,12 +74,13 @@ export const downsample = (
 			const valuesAllA: number[] = [];
 
 			for (let y = y0; y < y1; y += 1) {
+				const rowOffset = y * imgW;
 				for (let x = x0; x < x1; x += 1) {
-					const idx = (y * img.width + x) * 4;
-					const r = img.data[idx];
-					const g = img.data[idx + 1];
-					const b = img.data[idx + 2];
-					const a = img.data[idx + 3];
+					const idx = (rowOffset + x) * 4;
+					const r = imgData[idx];
+					const g = imgData[idx + 1];
+					const b = imgData[idx + 2];
+					const a = imgData[idx + 3];
 					valuesAllR.push(r);
 					valuesAllG.push(g);
 					valuesAllB.push(b);
@@ -582,7 +586,7 @@ const cropRawImage = (
 	return { width: w, height: h, data: out };
 };
 
-const getPixelAt = (
+const _getPixelAt = (
 	img: RawImage,
 	x: number,
 	y: number,
@@ -659,22 +663,30 @@ const searchGridFromTrimmed = (
 		// 再構成誤差（背景は mask の alpha=0 を無視）
 		let err = 0;
 		let n = 0;
-		const currentPx: Pixel = [0, 0, 0, 0];
+		const croppedData = cropped.data;
+		const croppedW = cropped.width;
+		const maskData = mask.data;
+		const smallData = small.data;
+
 		for (let y = 0; y < cropped.height; y += 1) {
-			for (let x = 0; x < cropped.width; x += 1) {
-				const ma = mask.data[(y * mask.width + x) * 4 + 3];
+			const rowOffset = y * croppedW;
+			for (let x = 0; x < croppedW; x += 1) {
+				const pixelIdx = rowOffset + x;
+				const ma = maskData[pixelIdx * 4 + 3];
 				if (ma < 16) continue;
 				const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
 				const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
-				getPixelAt(cropped, x, y, currentPx);
-				const idx = (j * outW + i) * 4;
-				const r1 = small.data[idx];
-				const g1 = small.data[idx + 1];
-				const b1 = small.data[idx + 2];
-				err +=
-					Math.abs(currentPx[0] - r1) +
-					Math.abs(currentPx[1] - g1) +
-					Math.abs(currentPx[2] - b1);
+
+				const srcIdx = pixelIdx * 4;
+				const r0 = croppedData[srcIdx];
+				const g0 = croppedData[srcIdx + 1];
+				const b0 = croppedData[srcIdx + 2];
+
+				const dstIdx = (j * outW + i) * 4;
+				const r1 = smallData[dstIdx];
+				const g1 = smallData[dstIdx + 1];
+				const b1 = smallData[dstIdx + 2];
+				err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
 				n += 1;
 			}
 		}

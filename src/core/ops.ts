@@ -71,6 +71,8 @@ export const extractStrip = (
 	if (axis === "y") {
 		const y = Math.min(img.height - 1, Math.max(0, Math.round(pos)));
 		for (let x = 0; x < img.width; x += 1) {
+			// ここでは strip に追加するため新しい配列が必要だが、
+			// getPixel(img, x, y) を直接呼ぶ
 			strip.push(getPixel(img, x, y));
 		}
 		return strip;
