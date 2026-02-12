@@ -48,8 +48,8 @@ AIで生成したドット絵は、しばしば「ドットがぼやけている
 ### インストール
 
 ```bash
-git clone https://github.com/your-username/pixel-refiner.git
-cd pixel-refiner
+git clone https://github.com/HappyOnigiri/PixelRefiner.git
+cd PixelRefiner
 npm install
 ```
 
