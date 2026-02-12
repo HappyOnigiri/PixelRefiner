@@ -252,6 +252,16 @@ h2::before {
   gap: 8px;
 }
 
+.setting-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+.setting-item.full-width {
+  grid-column: 1 / -1;
+}
+
 .input-with-slider {
   display: flex;
   align-items: center;

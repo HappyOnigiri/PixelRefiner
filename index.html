@@ -242,6 +242,18 @@
           <div class="settings-group">
             <h3 class="settings-group-title">グリッド検出</h3>
             <div class="grid-settings">
+              <label class="setting-item full-width">
+                <span class="label-text">
+                  グリッド検出無効 (等倍ドット絵モード)
+                  <span
+                    class="help"
+                    data-tooltip="入力が既に等倍のドット絵である場合に、グリッド検出と縮小をスキップします。&#10;&#10;背景トリミングや背景透過は、他の設定に従って引き続き実行されます。"
+                    >?</span
+                  >
+                </span>
+                <input id="disable-grid-detection" type="checkbox" />
+              </label>
+
               <label class="setting-item">
                 <span class="label-text">
                   減色ステップ
@@ -297,6 +309,18 @@
                 </span>
                 <input id="force-pixels-h" type="number" placeholder="自動" />
               </label>
+
+              <label class="setting-item">
+                <span class="label-text">
+                  高速モード
+                  <span
+                    class="help"
+                    data-tooltip="ONにすると、効率的なアルゴリズムで探索を高速化します。&#10;OFFにすると、より広範囲を精密に探索します。&#10;&#10;自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。"
+                    >?</span
+                  >
+                </span>
+                <input id="fast-auto-grid-from-trimmed" type="checkbox" />
+              </label>
             </div>
           </div>
 
@@ -322,16 +346,12 @@
                 </select>
               </label>
 
-              <div
-                id="rgb-picker-container"
-                class="setting-item"
-                style="display: none"
-              >
+              <div id="rgb-picker-container" class="setting-item">
                 <span class="label-text">
                   背景色(RGB)
                   <span
                     class="help"
-                    data-tooltip="背景色として扱う色を16進数(例: #ffffff)で指定します。&#10;スポイトボタンで画像から色を選択することもできます。"
+                    data-tooltip="背景色として扱う色を16進数(例: #ffffff)で指定します。&#10;四隅指定時は自動で色がセットされます。スポイトボタンで画像から色を選択することもできます。"
                     >?</span
                   >
                 </span>
@@ -426,35 +446,6 @@
                 </span>
                 <input id="remove-inner-background" type="checkbox" />
               </label>
-            </div>
-          </div>
-
-          <div class="settings-group">
-            <h3 class="settings-group-title">ノイズ・トリミング</h3>
-            <div class="grid-settings">
-              <label class="setting-item">
-                <span class="label-text">
-                  自動トリム
-                  <span
-                    class="help"
-                    data-tooltip="出力結果を「内容物のある範囲」に合わせて自動でトリミングします。&#10;&#10;余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。"
-                    >?</span
-                  >
-                </span>
-                <input id="trim-to-content" type="checkbox" />
-              </label>
-
-              <label class="setting-item">
-                <span class="label-text">
-                  高速モード
-                  <span
-                    class="help"
-                    data-tooltip="ONにすると、効率的なアルゴリズムで探索を高速化します。&#10;OFFにすると、より広範囲を精密に探索します。&#10;&#10;自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。"
-                    >?</span
-                  >
-                </span>
-                <input id="fast-auto-grid-from-trimmed" type="checkbox" />
-              </label>
 
               <label class="setting-item">
                 <span class="label-text">
@@ -472,6 +463,7 @@
                 <span class="label-text">
                   浮きノイズ上限(%)
                   <span
+                    id="help-floating-max-percent"
                     class="help"
                     data-tooltip="「浮きノイズを無視」をONにしたとき、除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。&#10;例: 1% → (幅×高さ×0.01) px&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
                     >?</span
@@ -485,6 +477,23 @@
                   />
                   <input id="floating-max-percent" type="number" step="0.1" />
                 </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">トリミング</h3>
+            <div class="grid-settings">
+              <label class="setting-item">
+                <span class="label-text">
+                  自動トリム
+                  <span
+                    class="help"
+                    data-tooltip="出力結果を「内容物のある範囲」に合わせて自動でトリミングします。&#10;&#10;余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。"
+                    >?</span
+                  >
+                </span>
+                <input id="trim-to-content" type="checkbox" />
               </label>
             </div>
           </div>

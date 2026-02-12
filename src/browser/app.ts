@@ -42,6 +42,7 @@ type Elements = {
 	removeInnerBackgroundCheck: HTMLInputElement;
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
+	disableGridDetectionCheck: HTMLInputElement;
 	ignoreFloatingCheck: HTMLInputElement;
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
@@ -98,6 +99,7 @@ const getElements = (): Elements => {
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
 			"fast-auto-grid-from-trimmed",
 		),
+		disableGridDetectionCheck: get<HTMLInputElement>("disable-grid-detection"),
 		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
@@ -226,21 +228,28 @@ export const initApp = (): void => {
 		els.bgColorInput.value = hex;
 	};
 
-	els.bgExtractionMethod.addEventListener("change", () => {
-		const method = els.bgExtractionMethod.value;
-		els.rgbPickerContainer.style.display = method === "rgb" ? "flex" : "none";
-	});
+	els.closeEyedropperModal.addEventListener("click", closeEyedropperModal);
 
 	els.bgRgbInput.addEventListener("input", () => {
 		let val = els.bgRgbInput.value.trim();
 		if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
 			if (!val.startsWith("#")) val = `#${val}`;
 			els.bgColorInput.value = val;
+			// 手動入力されたらRGB指定モードに切り替え
+			if (els.bgExtractionMethod.value !== "rgb") {
+				els.bgExtractionMethod.value = "rgb";
+				updateBgDisabledStates();
+			}
 		}
 	});
 
 	els.bgColorInput.addEventListener("input", () => {
 		els.bgRgbInput.value = els.bgColorInput.value;
+		// 手動入力されたらRGB指定モードに切り替え
+		if (els.bgExtractionMethod.value !== "rgb") {
+			els.bgExtractionMethod.value = "rgb";
+			updateBgDisabledStates();
+		}
 	});
 
 	els.eyedropperButton.addEventListener("click", (e) => {
@@ -251,8 +260,6 @@ export const initApp = (): void => {
 		}
 		openEyedropperModal();
 	});
-
-	els.closeEyedropperModal.addEventListener("click", closeEyedropperModal);
 
 	els.eyedropperModal.addEventListener("click", (e) => {
 		if (e.target === els.eyedropperModal) {
@@ -280,6 +287,9 @@ export const initApp = (): void => {
 			const b = currentImage.data[idx + 2];
 			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 			updateRgbInputs(hex);
+			// スポイトで選択されたらRGB指定モードに切り替え
+			els.bgExtractionMethod.value = "rgb";
+			updateBgDisabledStates();
 			closeEyedropperModal();
 		}
 	});
@@ -334,6 +344,8 @@ export const initApp = (): void => {
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
+		els.disableGridDetectionCheck.checked =
+			PROCESS_DEFAULTS.disableGridDetection;
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
 		const applyTooltipRange = (
@@ -378,6 +390,121 @@ export const initApp = (): void => {
 	syncSliderAndInput(els.sampleWindowSlider, els.sampleWindowInput);
 	syncSliderAndInput(els.toleranceSlider, els.toleranceInput);
 	syncSliderAndInput(els.floatingMaxPercentSlider, els.floatingMaxPercentInput);
+
+	// グリッド検出無効時のUI制御
+	const updateDisabledStates = () => {
+		const disabled = els.disableGridDetectionCheck.checked;
+		[
+			els.quantStepInput,
+			els.quantStepSlider,
+			els.forcePixelsWInput,
+			els.forcePixelsHInput,
+			els.sampleWindowInput,
+			els.sampleWindowSlider,
+			els.fastAutoGridFromTrimmedCheck,
+		].forEach((el) => {
+			if (el instanceof HTMLInputElement) {
+				el.disabled = disabled;
+				const item = el.closest(".setting-item");
+				if (item) {
+					item.classList.toggle("disabled", disabled);
+				}
+			}
+		});
+	};
+
+	els.disableGridDetectionCheck.addEventListener(
+		"change",
+		updateDisabledStates,
+	);
+	updateDisabledStates();
+
+	// 背景抽出方法変更時のUI制御
+	const updateBgDisabledStates = () => {
+		const method = els.bgExtractionMethod.value;
+		const isBgDisabled = method === "none";
+		const isFloatingDisabled = !els.ignoreFloatingCheck.checked;
+
+		// 背景透過に関連する項目の制御
+		[
+			els.toleranceInput,
+			els.toleranceSlider,
+			els.preRemoveCheck,
+			els.postRemoveCheck,
+			els.removeInnerBackgroundCheck,
+			els.ignoreFloatingCheck,
+		].forEach((el) => {
+			if (el instanceof HTMLInputElement) {
+				el.disabled = isBgDisabled;
+				const item = el.closest(".setting-item");
+				if (item) {
+					item.classList.toggle("disabled", isBgDisabled);
+				}
+			}
+		});
+
+		// 浮きノイズ上限の制御（背景透過が無効、または浮きノイズ無視がOFFの時に無効化）
+		const disableFloatingMax = isBgDisabled || isFloatingDisabled;
+		[els.floatingMaxPercentInput, els.floatingMaxPercentSlider].forEach(
+			(el) => {
+				if (el instanceof HTMLInputElement) {
+					el.disabled = disableFloatingMax;
+					const item = el.closest(".setting-item");
+					if (item) {
+						item.classList.toggle("disabled", disableFloatingMax);
+					}
+				}
+			},
+		);
+
+		// RGB指定時のコンテナ表示制御（常に表示するように変更）
+		// els.rgbPickerContainer.style.display = method === "rgb" ? "flex" : "none";
+
+		// RGB入力とスポイトボタンの有効/無効制御
+		const rgbContainer = els.rgbPickerContainer;
+
+		if (isBgDisabled) {
+			rgbContainer.classList.add("disabled");
+		} else {
+			rgbContainer.classList.remove("disabled");
+		}
+
+		[els.bgRgbInput, els.bgColorInput, els.eyedropperButton].forEach((el) => {
+			if (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) {
+				el.disabled = isBgDisabled;
+			}
+		});
+	};
+
+	const updateBgColorFromMethod = () => {
+		const method = els.bgExtractionMethod.value;
+		if (method !== "none" && method !== "rgb" && currentImage) {
+			const w = currentImage.width;
+			const h = currentImage.height;
+			let x = 0;
+			let y = 0;
+			if (method === "bottom-left") y = h - 1;
+			else if (method === "top-right") x = w - 1;
+			else if (method === "bottom-right") {
+				x = w - 1;
+				y = h - 1;
+			}
+			const idx = (y * w + x) * 4;
+			const r = currentImage.data[idx];
+			const g = currentImage.data[idx + 1];
+			const b = currentImage.data[idx + 2];
+			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+			updateRgbInputs(hex);
+		}
+	};
+
+	els.bgExtractionMethod.addEventListener("change", () => {
+		updateBgDisabledStates();
+		updateBgColorFromMethod();
+	});
+	els.ignoreFloatingCheck.addEventListener("change", updateBgDisabledStates);
+	updateBgDisabledStates();
+
 	loadSettings();
 
 	// 設定変更時に保存するための共通リスナー（表示条件のみ）
@@ -544,6 +671,7 @@ export const initApp = (): void => {
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
+				disableGridDetection: els.disableGridDetectionCheck.checked,
 				ignoreFloatingContent: els.ignoreFloatingCheck.checked,
 				floatingMaxPixels,
 				bgExtractionMethod: els.bgExtractionMethod
@@ -577,6 +705,9 @@ export const initApp = (): void => {
 			});
 			els.outputPanel.classList.add("has-image");
 			els.outputSize.textContent = `${result.width}x${result.height} px`;
+
+			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
+			updateBgColorFromMethod();
 		} catch (err) {
 			showError(`処理失敗: ${(err as Error).message}`);
 		} finally {

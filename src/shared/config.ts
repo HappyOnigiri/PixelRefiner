@@ -33,6 +33,8 @@ export const PROCESS_DEFAULTS = {
 	autoGridFromTrimmed: true,
 	// autoGridFromTrimmed のグリッド推定を高速化する（結果が変わる可能性あり）
 	fastAutoGridFromTrimmed: true,
+	// グリッド検出と縮小を無効にする（等倍ドット絵用）
+	disableGridDetection: false,
 	ignoreFloatingContent: true,
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	debug: import.meta.env.DEV,

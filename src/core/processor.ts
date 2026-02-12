@@ -173,6 +173,11 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	fastAutoGridFromTrimmed?: boolean;
 	/**
+	 * グリッド検出と縮小を無効にする（等倍ドット絵用）。
+	 * 背景トリミングと背景透過は引き続き有効。
+	 */
+	disableGridDetection?: boolean;
+	/**
 	 * 背景抽出方法
 	 */
 	bgExtractionMethod?:
@@ -212,6 +217,7 @@ const normalizeProcessOptions = (
 	trimAlphaThreshold: number;
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
+	disableGridDetection: boolean;
 	ignoreFloatingContent: boolean;
 	floatingMaxPixels: number;
 	bgExtractionMethod:
@@ -268,6 +274,8 @@ const normalizeProcessOptions = (
 		(PROCESS_DEFAULTS.autoGridFromTrimmed && trimToContent);
 	const fastAutoGridFromTrimmed =
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
+	const disableGridDetection =
+		raw.disableGridDetection ?? PROCESS_DEFAULTS.disableGridDetection;
 	const ignoreFloatingContent =
 		raw.ignoreFloatingContent ?? PROCESS_DEFAULTS.ignoreFloatingContent;
 	const floatingMaxPixels = clampInt(
@@ -290,6 +298,7 @@ const normalizeProcessOptions = (
 		trimAlphaThreshold,
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
+		disableGridDetection,
 		ignoreFloatingContent,
 		floatingMaxPixels,
 		bgExtractionMethod,
@@ -1075,6 +1084,75 @@ export const processImage = (
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
 		return { result: result2, grid: g };
+	}
+
+	// disableGridDetection: グリッド検出と縮小をスキップ
+	if (o.disableGridDetection) {
+		const bgTol = o.backgroundTolerance;
+		const masked = removeBackground(
+			working,
+			bgTol,
+			o.removeInnerBackground,
+			bgTargets,
+			o.bgExtractionMethod,
+			o.bgRgb,
+		);
+		if (o.ignoreFloatingContent) {
+			removeSmallFloatingComponentsInPlace(
+				working,
+				masked,
+				trimAlphaThreshold,
+				o.floatingMaxPixels,
+			);
+		}
+
+		let resultImg = working;
+		let outW = working.width;
+		let outH = working.height;
+		let cropX = 0;
+		let cropY = 0;
+
+		if (o.trimToContent) {
+			const b = findOpaqueBounds(masked, trimAlphaThreshold);
+			if (b) {
+				resultImg = cropRawImage(working, b.x, b.y, b.w, b.h);
+				outW = b.w;
+				outH = b.h;
+				cropX = b.x;
+				cropY = b.y;
+			}
+		}
+
+		const g: PixelGrid = {
+			cellW: 1,
+			cellH: 1,
+			offsetX: 0,
+			offsetY: 0,
+			outW,
+			outH,
+			cropX,
+			cropY,
+			cropW: outW,
+			cropH: outH,
+			score: 1,
+		};
+
+		const result = o.postRemoveBackground
+			? removeBackground(
+					resultImg,
+					o.backgroundTolerance,
+					o.removeInnerBackground,
+					bgTargets,
+					o.bgExtractionMethod,
+					o.bgRgb,
+				)
+			: resultImg;
+
+		log(
+			`Grid detection disabled mode: ${outW}x${outH}`,
+			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
+		);
+		return { result, grid: g };
 	}
 
 	// auto: まず背景トリム（縮小前）した領域から outW/outH を推定して、そのまま縮小する

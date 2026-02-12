@@ -482,4 +482,70 @@ describe("processImage", () => {
 			expect(alphas.some((a) => a === 0)).toBe(true);
 		});
 	});
+
+	describe("disableGridDetection", () => {
+		const mkImg = (): RawImage => {
+			const w = 10;
+			const h = 10;
+			const data = new Uint8ClampedArray(w * h * 4);
+			const set = (
+				x: number,
+				y: number,
+				r: number,
+				g: number,
+				b: number,
+				a: number,
+			) => {
+				const idx = (y * w + x) * 4;
+				data[idx] = r;
+				data[idx + 1] = g;
+				data[idx + 2] = b;
+				data[idx + 3] = a;
+			};
+			// background (white)
+			for (let y = 0; y < h; y += 1) {
+				for (let x = 0; x < w; x += 1) {
+					set(x, y, 255, 255, 255, 255);
+				}
+			}
+			// object: 4x4 black block at (2, 2)
+			for (let y = 2; y < 6; y += 1) {
+				for (let x = 2; x < 6; x += 1) {
+					set(x, y, 0, 0, 0, 255);
+				}
+			}
+			return { width: w, height: h, data };
+		};
+
+		it("disableGridDetection=true のとき、縮小されず等倍で出力される", () => {
+			const img = mkImg();
+			const { result, grid } = processImage(img, {
+				disableGridDetection: true,
+				trimToContent: false,
+			});
+
+			expect(result.width).toBe(10);
+			expect(result.height).toBe(10);
+			expect(grid.cellW).toBe(1);
+			expect(grid.cellH).toBe(1);
+		});
+
+		it("disableGridDetection=true かつ trimToContent=true のとき、トリミングのみ行われる", () => {
+			const img = mkImg();
+			const { result, grid } = processImage(img, {
+				disableGridDetection: true,
+				trimToContent: true,
+				preRemoveBackground: true,
+				backgroundTolerance: 0,
+			});
+
+			// 4x4 black block at (2, 2)
+			expect(result.width).toBe(4);
+			expect(result.height).toBe(4);
+			expect(grid.cropX).toBe(2);
+			expect(grid.cropY).toBe(2);
+			expect(grid.cellW).toBe(1);
+			expect(grid.cellH).toBe(1);
+		});
+	});
 });
