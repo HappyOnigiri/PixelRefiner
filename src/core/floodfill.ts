@@ -18,13 +18,14 @@ export const floodFillTransparent = (
 	startX: number,
 	startY: number,
 	tolerance: number,
+	visitedExternal?: Uint8Array,
 ): void => {
 	if (startX < 0 || startY < 0 || startX >= img.width || startY >= img.height) {
 		return;
 	}
 	const seed = getPixel(img, startX, startY);
 	const target: [number, number, number] = [seed[0], seed[1], seed[2]];
-	const visited = new Uint8Array(img.width * img.height);
+	const visited = visitedExternal ?? new Uint8Array(img.width * img.height);
 	const stack: Array<[number, number]> = [[startX, startY]];
 
 	while (stack.length > 0) {
