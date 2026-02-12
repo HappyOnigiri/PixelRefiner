@@ -21,16 +21,20 @@ type Elements = {
 	inputSize: HTMLElement;
 	outputSize: HTMLElement;
 	quantStepInput: HTMLInputElement;
+	quantStepSlider: HTMLInputElement;
 	forcePixelsWInput: HTMLInputElement;
 	forcePixelsHInput: HTMLInputElement;
 	sampleWindowInput: HTMLInputElement;
+	sampleWindowSlider: HTMLInputElement;
 	toleranceInput: HTMLInputElement;
+	toleranceSlider: HTMLInputElement;
 	preRemoveCheck: HTMLInputElement;
 	postRemoveCheck: HTMLInputElement;
 	removeInnerBackgroundCheck: HTMLInputElement;
 	trimToContentCheck: HTMLInputElement;
 	ignoreFloatingCheck: HTMLInputElement;
 	floatingMaxPercentInput: HTMLInputElement;
+	floatingMaxPercentSlider: HTMLInputElement;
 	zoomOutputCheck: HTMLInputElement;
 	gridOutputCheck: HTMLInputElement;
 	gridCanvas: HTMLCanvasElement;
@@ -60,10 +64,13 @@ const getElements = (): Elements => {
 		inputSize: get<HTMLElement>("input-size"),
 		outputSize: get<HTMLElement>("output-size"),
 		quantStepInput: get<HTMLInputElement>("quant-step"),
+		quantStepSlider: get<HTMLInputElement>("quant-step-slider"),
 		forcePixelsWInput: get<HTMLInputElement>("force-pixels-w"),
 		forcePixelsHInput: get<HTMLInputElement>("force-pixels-h"),
 		sampleWindowInput: get<HTMLInputElement>("sample-window"),
+		sampleWindowSlider: get<HTMLInputElement>("sample-window-slider"),
 		toleranceInput: get<HTMLInputElement>("tolerance"),
+		toleranceSlider: get<HTMLInputElement>("tolerance-slider"),
 		preRemoveCheck: get<HTMLInputElement>("pre-remove"),
 		postRemoveCheck: get<HTMLInputElement>("post-remove"),
 		removeInnerBackgroundCheck: get<HTMLInputElement>(
@@ -72,6 +79,9 @@ const getElements = (): Elements => {
 		trimToContentCheck: get<HTMLInputElement>("trim-to-content"),
 		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
+		floatingMaxPercentSlider: get<HTMLInputElement>(
+			"floating-max-percent-slider",
+		),
 		zoomOutputCheck: get<HTMLInputElement>("zoom-output"),
 		gridOutputCheck: get<HTMLInputElement>("grid-output"),
 		gridCanvas: get<HTMLCanvasElement>("grid-canvas"),
@@ -174,18 +184,37 @@ export const initApp = (): void => {
 	const applyConfigToUi = () => {
 		const setNumberInput = (
 			input: HTMLInputElement,
+			slider: HTMLInputElement | null,
 			range: { min: number; max: number; default: number },
 		) => {
 			input.min = String(range.min);
 			input.max = String(range.max);
 			input.value = String(range.default);
+			if (slider) {
+				slider.min = String(range.min);
+				slider.max = String(range.max);
+				slider.value = String(range.default);
+			}
 		};
 
-		setNumberInput(els.quantStepInput, PROCESS_RANGES.detectionQuantStep);
-		setNumberInput(els.sampleWindowInput, PROCESS_RANGES.sampleWindow);
-		setNumberInput(els.toleranceInput, PROCESS_RANGES.backgroundTolerance);
+		setNumberInput(
+			els.quantStepInput,
+			els.quantStepSlider,
+			PROCESS_RANGES.detectionQuantStep,
+		);
+		setNumberInput(
+			els.sampleWindowInput,
+			els.sampleWindowSlider,
+			PROCESS_RANGES.sampleWindow,
+		);
+		setNumberInput(
+			els.toleranceInput,
+			els.toleranceSlider,
+			PROCESS_RANGES.backgroundTolerance,
+		);
 		setNumberInput(
 			els.floatingMaxPercentInput,
+			els.floatingMaxPercentSlider,
 			PROCESS_RANGES.floatingMaxPercent,
 		);
 
@@ -226,7 +255,23 @@ export const initApp = (): void => {
 		);
 	};
 
+	const syncSliderAndInput = (
+		slider: HTMLInputElement,
+		input: HTMLInputElement,
+	) => {
+		slider.addEventListener("input", () => {
+			input.value = slider.value;
+		});
+		input.addEventListener("input", () => {
+			slider.value = input.value;
+		});
+	};
+
 	applyConfigToUi();
+	syncSliderAndInput(els.quantStepSlider, els.quantStepInput);
+	syncSliderAndInput(els.sampleWindowSlider, els.sampleWindowInput);
+	syncSliderAndInput(els.toleranceSlider, els.toleranceInput);
+	syncSliderAndInput(els.floatingMaxPercentSlider, els.floatingMaxPercentInput);
 	loadSettings();
 
 	// 設定変更時に保存するための共通リスナー（表示条件のみ）

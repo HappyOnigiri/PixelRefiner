@@ -213,9 +213,35 @@ h2::before {
 
 .grid-settings {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px 24px;
   margin-bottom: 24px;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-with-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.input-with-slider input[type="range"] {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.input-with-slider input[type="number"] {
+  width: 70px;
+  text-align: right;
 }
 
 /* Canvas Container & Placeholder */
