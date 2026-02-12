@@ -18,5 +18,8 @@
     "typescript": "latest",
     "vite": "latest",
     "vitest": "latest"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^1.6.1"
   }
 }
