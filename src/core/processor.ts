@@ -15,13 +15,15 @@ const cloneImage = (img: RawImage): RawImage => ({
 });
 
 const medianOf = (values: number[]): number => {
-	if (values.length === 0) return 0;
-	const sorted = [...values].sort((a, b) => a - b);
-	const mid = Math.floor(sorted.length / 2);
-	if (sorted.length % 2 === 0) {
-		return (sorted[mid - 1] + sorted[mid]) / 2;
+	const n = values.length;
+	if (n === 0) return 0;
+	// 結果に影響しない（中央値のみ必要）ため、コピーせず in-place にソートする。
+	values.sort((a, b) => a - b);
+	const mid = Math.floor(n / 2);
+	if (n % 2 === 0) {
+		return (values[mid - 1] + values[mid]) / 2;
 	}
-	return sorted[mid];
+	return values[mid];
 };
 
 export const downsample = (
@@ -43,35 +45,50 @@ export const downsample = (
 	const roundHalfUp = (x: number): number => Math.floor(x + 0.5);
 	const cw = Math.round(cellW);
 	const ch = Math.round(cellH);
+	const cwHalf = Math.floor(cw / 2);
+	const chHalf = Math.floor(ch / 2);
 	const useInt = Math.abs(cellW - cw) < 1e-6 && Math.abs(cellH - ch) < 1e-6;
 
 	const imgData = img.data;
 	const imgW = img.width;
+	const imgH = img.height;
+	const imgWMax = imgW - 1;
+	const imgHMax = imgH - 1;
+
+	// 各ピクセルごとの配列生成を避け、再利用する（値の列と順序は維持）。
+	const valuesR: number[] = [];
+	const valuesG: number[] = [];
+	const valuesB: number[] = [];
+	const valuesA: number[] = [];
+	const valuesAllR: number[] = [];
+	const valuesAllG: number[] = [];
+	const valuesAllB: number[] = [];
+	const valuesAllA: number[] = [];
 
 	for (let j = 0; j < outH; j += 1) {
 		for (let i = 0; i < outW; i += 1) {
 			let cx: number;
 			let cy: number;
 			if (useInt) {
-				cx = cropX + i * cw + Math.floor(cw / 2);
-				cy = cropY + j * ch + Math.floor(ch / 2);
+				cx = cropX + i * cw + cwHalf;
+				cy = cropY + j * ch + chHalf;
 			} else {
 				cx = roundHalfUp(cropX + (i + 0.5) * cellW);
 				cy = roundHalfUp(cropY + (j + 0.5) * cellH);
 			}
-			const x0 = Math.min(imgW - 1, Math.max(0, cx - half));
+			const x0 = Math.min(imgWMax, Math.max(0, cx - half));
 			const x1 = Math.min(imgW, Math.max(1, cx + half + 1));
-			const y0 = Math.min(img.height - 1, Math.max(0, cy - half));
-			const y1 = Math.min(img.height, Math.max(1, cy + half + 1));
+			const y0 = Math.min(imgHMax, Math.max(0, cy - half));
+			const y1 = Math.min(imgH, Math.max(1, cy + half + 1));
 
-			const valuesR: number[] = [];
-			const valuesG: number[] = [];
-			const valuesB: number[] = [];
-			const valuesA: number[] = [];
-			const valuesAllR: number[] = [];
-			const valuesAllG: number[] = [];
-			const valuesAllB: number[] = [];
-			const valuesAllA: number[] = [];
+			valuesR.length = 0;
+			valuesG.length = 0;
+			valuesB.length = 0;
+			valuesA.length = 0;
+			valuesAllR.length = 0;
+			valuesAllG.length = 0;
+			valuesAllB.length = 0;
+			valuesAllA.length = 0;
 
 			for (let y = y0; y < y1; y += 1) {
 				const rowOffset = y * imgW;
@@ -359,11 +376,11 @@ const removeBackground = (
 	// 入力画像（クロップ前）から推定した「背景色候補」を、画像全体に適用する。
 	if (bgTargets.length === 0) return out;
 
+	const out32 = new Uint32Array(out.data.buffer);
 	for (let i = 0; i < out.data.length; i += 4) {
 		const a = out.data[i + 3];
 		if (a === 0) continue;
 
-		const out32 = new Uint32Array(out.data.buffer);
 		const pixel = out32[i / 4];
 		const r = pixel & 0xff;
 		const g = (pixel >> 8) & 0xff;
