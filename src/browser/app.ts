@@ -419,11 +419,6 @@ export const initApp = (): void => {
 				});
 				els.outputPanel.classList.add("has-image");
 				els.outputSize.textContent = `${result.width}x${result.height} px`;
-
-				// 初回変換完了時に設定パネルを表示
-				if (els.settingsPanel.style.display === "none") {
-					els.settingsPanel.style.display = "";
-				}
 			} catch (err) {
 				showError(`処理失敗: ${(err as Error).message}`);
 			} finally {

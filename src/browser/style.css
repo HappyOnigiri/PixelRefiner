@@ -140,6 +140,57 @@ h2::before {
   flex-direction: column;
 }
 
+.settings-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.settings-panel summary {
+  padding: 24px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none; /* Remove default arrow */
+  user-select: none;
+}
+
+.settings-panel summary::-webkit-details-marker {
+  display: none; /* Remove default arrow for Safari */
+}
+
+.settings-panel summary::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Arrow icon */
+.settings-panel summary::after {
+  content: '▼';
+  font-size: 0.7rem;
+  margin-left: auto;
+  transition: transform 0.2s;
+  color: var(--text-dim);
+}
+
+.settings-panel[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.settings-content {
+  padding: 0 24px 24px;
+}
+
 .panel:hover {
   border-color: #3f4451;
 }
