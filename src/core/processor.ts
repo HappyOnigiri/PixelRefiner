@@ -577,8 +577,16 @@ const getPixelAt = (
 	img: RawImage,
 	x: number,
 	y: number,
-): [number, number, number, number] => {
+	out?: Pixel,
+): Pixel => {
 	const idx = (y * img.width + x) * 4;
+	if (out) {
+		out[0] = img.data[idx];
+		out[1] = img.data[idx + 1];
+		out[2] = img.data[idx + 2];
+		out[3] = img.data[idx + 3];
+		return out;
+	}
 	return [
 		img.data[idx],
 		img.data[idx + 1],
@@ -642,18 +650,22 @@ const searchGridFromTrimmed = (
 		// 再構成誤差（背景は mask の alpha=0 を無視）
 		let err = 0;
 		let n = 0;
+		const currentPx: Pixel = [0, 0, 0, 0];
 		for (let y = 0; y < cropped.height; y += 1) {
 			for (let x = 0; x < cropped.width; x += 1) {
 				const ma = mask.data[(y * mask.width + x) * 4 + 3];
 				if (ma < 16) continue;
 				const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
 				const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
-				const [r0, g0, b0] = getPixelAt(cropped, x, y);
+				getPixelAt(cropped, x, y, currentPx);
 				const idx = (j * outW + i) * 4;
 				const r1 = small.data[idx];
 				const g1 = small.data[idx + 1];
 				const b1 = small.data[idx + 2];
-				err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
+				err +=
+					Math.abs(currentPx[0] - r1) +
+					Math.abs(currentPx[1] - g1) +
+					Math.abs(currentPx[2] - b1);
 				n += 1;
 			}
 		}

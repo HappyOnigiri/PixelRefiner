@@ -28,6 +28,7 @@ export const floodFillTransparent = (
 	const visited = visitedExternal ?? new Uint8Array(img.width * img.height);
 	const stack: Array<[number, number]> = [[startX, startY]];
 
+	const currentPx: Pixel = [0, 0, 0, 0];
 	while (stack.length > 0) {
 		const [x, y] = stack.pop() as [number, number];
 		const idx = y * img.width + x;
@@ -35,14 +36,20 @@ export const floodFillTransparent = (
 			continue;
 		}
 		visited[idx] = 1;
-		const px = getPixel(img, x, y);
-		if (!withinTolerance([px[0], px[1], px[2]], target, tolerance)) {
+		getPixel(img, x, y, currentPx);
+		if (
+			!withinTolerance(
+				[currentPx[0], currentPx[1], currentPx[2]],
+				target,
+				tolerance,
+			)
+		) {
 			continue;
 		}
-		if (px[3] === 0) {
+		if (currentPx[3] === 0) {
 			continue;
 		}
-		setPixel(img, x, y, [px[0], px[1], px[2], 0]);
+		setPixel(img, x, y, [currentPx[0], currentPx[1], currentPx[2], 0]);
 		if (x > 0) stack.push([x - 1, y]);
 		if (x < img.width - 1) stack.push([x + 1, y]);
 		if (y > 0) stack.push([x, y - 1]);

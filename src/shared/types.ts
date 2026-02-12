@@ -4,7 +4,7 @@ export type RawImage = {
 	data: Uint8ClampedArray; // RGBA
 };
 
-export type Pixel = [number, number, number, number];
+export type Pixel = [number, number, number, number] | Uint8ClampedArray;
 
 export type PixelGrid = {
 	cellW: number;

@@ -25,21 +25,18 @@ export const getRunLengths = (
 	if (strip.length === 0) {
 		return [];
 	}
-	const opaque = strip.map((p) => p[3] >= alphaThreshold);
-	if (!opaque.some(Boolean)) {
-		return [];
-	}
 
 	const segments: Segment[] = [];
 	const n = strip.length;
 	let i = 0;
 	while (i < n) {
-		if (!opaque[i]) {
+		const px = strip[i];
+		if (px[3] < alphaThreshold) {
 			i += 1;
 			continue;
 		}
 		const segStart = i;
-		while (i < n && opaque[i]) {
+		while (i < n && strip[i][3] >= alphaThreshold) {
 			i += 1;
 		}
 		const segEnd = i;
@@ -49,16 +46,18 @@ export const getRunLengths = (
 		}
 		const runs: Run[] = [];
 		let runStart = 0;
+		const firstPx = seg[0];
 		let prev: [number, number, number] = [
-			quantize(seg[0][0], quantStep),
-			quantize(seg[0][1], quantStep),
-			quantize(seg[0][2], quantStep),
+			quantize(firstPx[0], quantStep),
+			quantize(firstPx[1], quantStep),
+			quantize(firstPx[2], quantStep),
 		];
 		for (let k = 1; k < seg.length; k += 1) {
+			const kPx = seg[k];
 			const cur: [number, number, number] = [
-				quantize(seg[k][0], quantStep),
-				quantize(seg[k][1], quantStep),
-				quantize(seg[k][2], quantStep),
+				quantize(kPx[0], quantStep),
+				quantize(kPx[1], quantStep),
+				quantize(kPx[2], quantStep),
 			];
 			if (!colorEq(cur, prev)) {
 				runs.push({

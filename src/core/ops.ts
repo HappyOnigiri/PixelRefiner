@@ -1,10 +1,22 @@
 import type { Axis, Pixel, RawImage } from "../shared/types";
 
-export const getPixel = (img: RawImage, x: number, y: number): Pixel => {
+export const getPixel = (
+	img: RawImage,
+	x: number,
+	y: number,
+	out?: Pixel,
+): Pixel => {
 	const clampedX = Math.min(img.width - 1, Math.max(0, x));
 	const clampedY = Math.min(img.height - 1, Math.max(0, y));
 	const idx = (clampedY * img.width + clampedX) * 4;
 	const d = img.data;
+	if (out) {
+		out[0] = d[idx];
+		out[1] = d[idx + 1];
+		out[2] = d[idx + 2];
+		out[3] = d[idx + 3];
+		return out;
+	}
 	return [d[idx], d[idx + 1], d[idx + 2], d[idx + 3]];
 };
 
