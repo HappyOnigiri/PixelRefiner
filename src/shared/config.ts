@@ -31,6 +31,8 @@ export const PROCESS_DEFAULTS = {
 	// 出力後に内容物BBoxでトリムする（既定はON）
 	trimToContent: true,
 	autoGridFromTrimmed: true,
+	// autoGridFromTrimmed のグリッド推定を高速化する（結果が変わる可能性あり）
+	fastAutoGridFromTrimmed: true,
 	ignoreFloatingContent: true,
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	debug: import.meta.env.DEV,

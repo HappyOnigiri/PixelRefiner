@@ -41,6 +41,7 @@ type Elements = {
 	postRemoveCheck: HTMLInputElement;
 	removeInnerBackgroundCheck: HTMLInputElement;
 	trimToContentCheck: HTMLInputElement;
+	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	ignoreFloatingCheck: HTMLInputElement;
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
@@ -94,6 +95,9 @@ const getElements = (): Elements => {
 			"remove-inner-background",
 		),
 		trimToContentCheck: get<HTMLInputElement>("trim-to-content"),
+		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
+			"fast-auto-grid-from-trimmed",
+		),
 		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
@@ -328,6 +332,8 @@ export const initApp = (): void => {
 		els.removeInnerBackgroundCheck.checked =
 			PROCESS_DEFAULTS.removeInnerBackground;
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
+		els.fastAutoGridFromTrimmedCheck.checked =
+			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
 		const applyTooltipRange = (
@@ -537,6 +543,7 @@ export const initApp = (): void => {
 				backgroundTolerance: tolerance,
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
+				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 				ignoreFloatingContent: els.ignoreFloatingCheck.checked,
 				floatingMaxPixels,
 				bgExtractionMethod: els.bgExtractionMethod
