@@ -1,0 +1,24 @@
+{
+  "name": "Pixel Refiner",
+  "short_name": "PixelRefiner",
+  "description": "AIで生成したドット絵を、ゲーム素材として使えるクオリティに最適化するツール",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/ogp.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["design", "developer tools", "utilities"]
+}

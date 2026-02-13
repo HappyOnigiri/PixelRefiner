@@ -1,0 +1,7 @@
+# Pixel Refiner - robots.txt
+User-agent: *
+Allow: /
+Disallow:
+
+# Sitemap
+Sitemap: https://pixel-refiner.app/sitemap.xml
