@@ -421,6 +421,50 @@
           </div>
         </div>
 
+        <div class="quick-settings">
+          <div class="settings-group">
+            <h3 class="settings-group-title">減色</h3>
+            <div class="grid-settings">
+              <label class="setting-item">
+                <span class="label-text">
+                  減色モード
+                  <span
+                    class="help"
+                    data-tooltip="出力結果の色数を制限します。&#10;&#10;ドット絵らしい色使いに整えたい場合に有効です。&#10;無効: 減色を行いません。&#10;Game Boy / PICO-8 / NES: 各ゲーム機のパレットを使用します。&#10;色数指定 (Auto): 指定した色数に自動で減色します。"
+                    >?</span
+                  >
+                </span>
+                <select id="reduce-color-mode">
+                  <option value="none">無効</option>
+                  <option value="mono">モノクロ</option>
+                  <option value="gb_legacy">ゲームボーイ (初代)</option>
+                  <option value="gb_pocket">ゲームボーイ (ポケット)</option>
+                  <option value="gb_light">ゲームボーイ (ライト)</option>
+                  <option value="pico8">PICO-8</option>
+                  <option value="nes" selected>ファミコン (NES)</option>
+                  <option value="auto">色数指定 (自動)</option>
+                </select>
+              </label>
+
+              <label id="color-count-setting" class="setting-item">
+                <span class="label-text">
+                  色数
+                  <span
+                    id="help-color-count"
+                    class="help"
+                    data-tooltip="出力する最大の色数を指定します。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    >?</span
+                  >
+                </span>
+                <div class="input-with-slider">
+                  <input id="color-count-slider" type="range" />
+                  <input id="color-count" type="number" />
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
         <details id="settings-panel" class="panel settings-panel">
           <summary>詳細設定</summary>
           <div class="settings-content">
@@ -685,50 +729,6 @@
                     >
                   </span>
                   <input id="trim-to-content" type="checkbox" />
-                </label>
-              </div>
-            </div>
-
-            <div class="settings-group">
-              <h3 class="settings-group-title">減色</h3>
-              <div class="grid-settings">
-                <label class="setting-item">
-                  <span class="label-text">
-                    減色モード
-                    <span
-                      class="help"
-                      data-tooltip="出力結果の色数を制限します。&#10;&#10;ドット絵らしい色使いに整えたい場合に有効です。&#10;無効: 減色を行いません。&#10;Game Boy / PICO-8 / NES: 各ゲーム機のパレットを使用します。&#10;色数指定 (Auto): 指定した色数に自動で減色します。"
-                      >?</span
-                    >
-                  </span>
-                  <select id="reduce-color-mode">
-                    <option value="none">無効</option>
-                    <option value="gb_legacy">Game Boy (Legacy)</option>
-                    <option value="gb_pocket" selected>
-                      Game Boy (Pocket)
-                    </option>
-                    <option value="gb_light">Game Boy (Light)</option>
-                    <option value="pico8">PICO-8</option>
-                    <option value="nes">NES</option>
-                    <option value="mono">Monochrome</option>
-                    <option value="auto">色数指定 (Auto)</option>
-                  </select>
-                </label>
-
-                <label id="color-count-setting" class="setting-item">
-                  <span class="label-text">
-                    色数
-                    <span
-                      id="help-color-count"
-                      class="help"
-                      data-tooltip="出力する最大の色数を指定します。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
-                      >?</span
-                    >
-                  </span>
-                  <div class="input-with-slider">
-                    <input id="color-count-slider" type="range" />
-                    <input id="color-count" type="number" />
-                  </div>
                 </label>
               </div>
             </div>

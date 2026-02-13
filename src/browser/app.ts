@@ -365,7 +365,7 @@ export const initApp = (): void => {
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.disableGridDetectionCheck.checked =
 			PROCESS_DEFAULTS.disableGridDetection;
-		els.reduceColorModeSelect.value = "none";
+		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
 		const applyTooltipRange = (
