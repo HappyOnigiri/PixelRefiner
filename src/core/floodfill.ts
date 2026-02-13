@@ -1,4 +1,4 @@
-import type { RawImage } from "../shared/types";
+import type { Pixel, RawImage } from "../shared/types";
 import { getPixel, setPixel } from "./ops";
 
 const withinTolerance = (

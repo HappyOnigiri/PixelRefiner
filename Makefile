@@ -15,12 +15,14 @@ ci:
 	$(MAKE) html-fix-diff
 	$(MAKE) ts-check-diff
 	$(MAKE) html-check-diff
+	$(MAKE) type-check
 	$(MAKE) test
 
 # CI（サーバ）向け: 自動修正せず、差分があれば失敗
 ci-check:
 	$(MAKE) ts-check-diff
 	$(MAKE) html-check-diff
+	$(MAKE) type-check
 	$(MAKE) test
 
 test:
@@ -29,6 +31,9 @@ test:
 test-debug:
 	rm -rf tmp/debug
 	PIXELATE_DEBUG_IMAGES=1 npm run test
+
+type-check:
+	npx tsc --noEmit
 
 ts-check-diff:
 	@files="$$( ( \
