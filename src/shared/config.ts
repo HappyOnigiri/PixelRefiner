@@ -10,7 +10,7 @@ export const PROCESS_RANGES = {
 	// processor: downsample median window
 	sampleWindow: { min: 1, max: 9, default: 3 } as const,
 	// flood fill tolerance (per channel)
-	backgroundTolerance: { min: 0, max: 255, default: 32 } as const,
+	backgroundTolerance: { min: 0, max: 255, default: 64 } as const,
 	// bbox threshold for trimming
 	trimAlphaThreshold: { min: 1, max: 255, default: 16 } as const,
 	// UI: remove small floating islands threshold (% of total pixels)
