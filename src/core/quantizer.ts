@@ -1,4 +1,4 @@
-import type { Oklab, PixelData } from "../shared/types";
+import type { Oklab, PixelData, RGB } from "../shared/types";
 import { oklabToRgb, rgbToOklab } from "./colorUtils";
 
 export class OklabKMeans {
@@ -142,6 +142,52 @@ export class OklabKMeans {
 			}
 		}
 		return centroids;
+	}
+
+	private colorDistanceSq(c1: Oklab, c2: Oklab): number {
+		const dL = c1.L - c2.L;
+		const da = c1.a - c2.a;
+		const db = c1.b - c2.b;
+		return dL * dL + da * da + db * db;
+	}
+}
+
+/**
+ * Fixed palette quantization using Oklab distance
+ */
+export class PaletteQuantizer {
+	private paletteLabs: Oklab[];
+
+	constructor(private palette: RGB[]) {
+		this.paletteLabs = palette.map((rgb) => rgbToOklab(rgb));
+	}
+
+	quantize(pixels: PixelData[]): PixelData[] {
+		const memo = new Map<number, number>(); // RGB key -> palette index
+
+		return pixels.map((p) => {
+			if (p.alpha === 0) return p;
+			const key = (p.r << 16) | (p.g << 8) | p.b;
+
+			let paletteIdx = memo.get(key);
+			if (paletteIdx === undefined) {
+				const lab = rgbToOklab(p);
+				let minDist = Number.MAX_VALUE;
+				paletteIdx = 0;
+
+				for (let i = 0; i < this.paletteLabs.length; i++) {
+					const dist = this.colorDistanceSq(lab, this.paletteLabs[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						paletteIdx = i;
+					}
+				}
+				memo.set(key, paletteIdx);
+			}
+
+			const rgb = this.palette[paletteIdx];
+			return { ...rgb, alpha: p.alpha };
+		});
 	}
 
 	private colorDistanceSq(c1: Oklab, c2: Oklab): number {

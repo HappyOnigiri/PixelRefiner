@@ -43,9 +43,10 @@ type Elements = {
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	disableGridDetectionCheck: HTMLInputElement;
-	reduceColorsCheck: HTMLInputElement;
+	reduceColorModeSelect: HTMLSelectElement;
 	colorCountInput: HTMLInputElement;
 	colorCountSlider: HTMLInputElement;
+	colorCountSetting: HTMLElement;
 	ignoreFloatingCheck: HTMLInputElement;
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
@@ -103,9 +104,10 @@ const getElements = (): Elements => {
 			"fast-auto-grid-from-trimmed",
 		),
 		disableGridDetectionCheck: get<HTMLInputElement>("disable-grid-detection"),
-		reduceColorsCheck: get<HTMLInputElement>("reduce-colors"),
+		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
 		colorCountInput: get<HTMLInputElement>("color-count"),
 		colorCountSlider: get<HTMLInputElement>("color-count-slider"),
+		colorCountSetting: get<HTMLElement>("color-count-setting"),
 		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
@@ -363,7 +365,7 @@ export const initApp = (): void => {
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.disableGridDetectionCheck.checked =
 			PROCESS_DEFAULTS.disableGridDetection;
-		els.reduceColorsCheck.checked = PROCESS_DEFAULTS.reduceColors;
+		els.reduceColorModeSelect.value = "none";
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
 		const applyTooltipRange = (
@@ -440,17 +442,18 @@ export const initApp = (): void => {
 
 	// 減色設定のUI制御
 	const updateReduceColorsDisabledStates = () => {
-		const disabled = !els.reduceColorsCheck.checked;
+		const mode = els.reduceColorModeSelect.value;
+		const isAuto = mode === "auto";
+
+		// 色数設定の表示・非表示
+		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
+
 		[els.colorCountInput, els.colorCountSlider].forEach((el) => {
-			el.disabled = disabled;
-			const item = el.closest(".setting-item");
-			if (item) {
-				item.classList.toggle("disabled", disabled);
-			}
+			el.disabled = !isAuto;
 		});
 	};
 
-	els.reduceColorsCheck.addEventListener(
+	els.reduceColorModeSelect.addEventListener(
 		"change",
 		updateReduceColorsDisabledStates,
 	);
@@ -735,6 +738,9 @@ export const initApp = (): void => {
 				PROCESS_RANGES.colorCount,
 			);
 
+			const reduceColorMode = els.reduceColorModeSelect.value;
+			const reduceColors = reduceColorMode !== "none";
+
 			const { result } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
@@ -748,7 +754,8 @@ export const initApp = (): void => {
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 				disableGridDetection: els.disableGridDetectionCheck.checked,
-				reduceColors: els.reduceColorsCheck.checked,
+				reduceColors,
+				reduceColorMode,
 				colorCount,
 				ignoreFloatingContent: ignoreFloatingEnabled,
 				floatingMaxPixels,

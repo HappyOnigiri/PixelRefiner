@@ -3,11 +3,18 @@ import {
 	clampOptionalInt,
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
+	RETRO_PALETTES,
 } from "../shared/config";
-import type { Pixel, PixelData, PixelGrid, RawImage } from "../shared/types";
+import type {
+	Pixel,
+	PixelData,
+	PixelGrid,
+	RawImage,
+	RGB,
+} from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
-import { OklabKMeans } from "./quantizer";
+import { OklabKMeans, PaletteQuantizer } from "./quantizer";
 
 const cloneImage = (img: RawImage): RawImage => ({
 	width: img.width,
@@ -183,6 +190,10 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	reduceColors?: boolean;
 	/**
+	 * 減色モード
+	 */
+	reduceColorMode?: string;
+	/**
 	 * 減色後の色数。
 	 */
 	colorCount?: number;
@@ -228,6 +239,7 @@ const normalizeProcessOptions = (
 	fastAutoGridFromTrimmed: boolean;
 	disableGridDetection: boolean;
 	reduceColors: boolean;
+	reduceColorMode: string;
 	colorCount: number;
 	ignoreFloatingContent: boolean;
 	floatingMaxPixels: number;
@@ -287,6 +299,8 @@ const normalizeProcessOptions = (
 	const disableGridDetection =
 		raw.disableGridDetection ?? PROCESS_DEFAULTS.disableGridDetection;
 	const reduceColors = raw.reduceColors ?? PROCESS_DEFAULTS.reduceColors;
+	const reduceColorMode =
+		raw.reduceColorMode ?? PROCESS_DEFAULTS.reduceColorMode;
 	const colorCount = clampInt(
 		raw.colorCount ?? PROCESS_DEFAULTS.colorCount,
 		PROCESS_RANGES.colorCount,
@@ -315,6 +329,7 @@ const normalizeProcessOptions = (
 		fastAutoGridFromTrimmed,
 		disableGridDetection,
 		reduceColors,
+		reduceColorMode,
 		colorCount,
 		ignoreFloatingContent,
 		floatingMaxPixels,
@@ -1381,8 +1396,27 @@ export const processImage = (
 			});
 		}
 
-		const quantizer = new OklabKMeans(o.colorCount);
-		const reducedPixels = quantizer.quantize(pixelData);
+		let reducedPixels: PixelData[];
+		if (o.reduceColorMode === "auto") {
+			const quantizer = new OklabKMeans(o.colorCount);
+			reducedPixels = quantizer.quantize(pixelData);
+		} else {
+			const paletteDef = RETRO_PALETTES[o.reduceColorMode];
+			if (paletteDef) {
+				const colors = paletteDef.colors.map((hex) => {
+					const r = parseInt(hex.slice(1, 3), 16);
+					const g = parseInt(hex.slice(3, 5), 16);
+					const b = parseInt(hex.slice(5, 7), 16);
+					return { r, g, b };
+				});
+				const quantizer = new PaletteQuantizer(colors);
+				reducedPixels = quantizer.quantize(pixelData);
+			} else {
+				// Fallback to auto if palette not found
+				const quantizer = new OklabKMeans(o.colorCount);
+				reducedPixels = quantizer.quantize(pixelData);
+			}
+		}
 
 		const newData = new Uint8ClampedArray(result.data.length);
 		for (let i = 0; i < reducedPixels.length; i++) {
@@ -1394,7 +1428,7 @@ export const processImage = (
 		}
 		finalResult = { ...result, data: newData };
 		log(
-			`Color reduction (${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+			`Color reduction (${o.reduceColorMode}, ${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
 		);
 	}
 

@@ -694,17 +694,24 @@
               <div class="grid-settings">
                 <label class="setting-item">
                   <span class="label-text">
-                    減色を有効にする
+                    減色モード
                     <span
                       class="help"
-                      data-tooltip="出力結果の色数を制限します。&#10;&#10;ドット絵らしい色使いに整えたい場合に有効です。K-means法とOklab色空間を使用して、知覚的に近い色にまとめます。"
+                      data-tooltip="出力結果の色数を制限します。&#10;&#10;ドット絵らしい色使いに整えたい場合に有効です。&#10;無効: 減色を行いません。&#10;Game Boy / PICO-8 / NES: 各ゲーム機のパレットを使用します。&#10;色数指定 (Auto): 指定した色数に自動で減色します。"
                       >?</span
                     >
                   </span>
-                  <input id="reduce-colors" type="checkbox" />
+                  <select id="reduce-color-mode">
+                    <option value="none">無効</option>
+                    <option value="gb">Game Boy</option>
+                    <option value="pico8">PICO-8</option>
+                    <option value="nes">NES</option>
+                    <option value="mono">Monochrome</option>
+                    <option value="auto">色数指定 (Auto)</option>
+                  </select>
                 </label>
 
-                <label class="setting-item">
+                <label id="color-count-setting" class="setting-item">
                   <span class="label-text">
                     色数
                     <span

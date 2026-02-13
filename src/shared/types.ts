@@ -40,3 +40,9 @@ export interface Oklab {
 export interface PixelData extends RGB {
 	alpha: number; // 0-255 (Alpha)
 }
+
+export interface Palette {
+	id: string;
+	name: string;
+	colors: RGB[];
+}
