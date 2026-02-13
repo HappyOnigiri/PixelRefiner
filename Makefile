@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug
 
 # コードの変更を検知して再ビルドを実行
 watch-dev:
@@ -25,6 +25,9 @@ ci-check:
 
 test:
 	npm run test
+
+test-debug:
+	PIXELATE_DEBUG_IMAGES=1 npm run test
 
 ts-check-diff:
 	@files="$$( ( \
