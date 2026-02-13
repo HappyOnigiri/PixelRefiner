@@ -4,9 +4,10 @@ import {
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
-import type { Pixel, PixelGrid, RawImage } from "../shared/types";
+import type { Pixel, PixelData, PixelGrid, RawImage } from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
+import { OklabKMeans } from "./quantizer";
 
 const cloneImage = (img: RawImage): RawImage => ({
 	width: img.width,
@@ -178,6 +179,14 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	disableGridDetection?: boolean;
 	/**
+	 * 減色を有効にする。
+	 */
+	reduceColors?: boolean;
+	/**
+	 * 減色後の色数。
+	 */
+	colorCount?: number;
+	/**
 	 * 背景抽出方法
 	 */
 	bgExtractionMethod?:
@@ -218,6 +227,8 @@ const normalizeProcessOptions = (
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	disableGridDetection: boolean;
+	reduceColors: boolean;
+	colorCount: number;
 	ignoreFloatingContent: boolean;
 	floatingMaxPixels: number;
 	bgExtractionMethod:
@@ -275,6 +286,11 @@ const normalizeProcessOptions = (
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 	const disableGridDetection =
 		raw.disableGridDetection ?? PROCESS_DEFAULTS.disableGridDetection;
+	const reduceColors = raw.reduceColors ?? PROCESS_DEFAULTS.reduceColors;
+	const colorCount = clampInt(
+		raw.colorCount ?? PROCESS_DEFAULTS.colorCount,
+		PROCESS_RANGES.colorCount,
+	);
 	const ignoreFloatingContent =
 		raw.ignoreFloatingContent ?? PROCESS_DEFAULTS.ignoreFloatingContent;
 	const floatingMaxPixels = clampInt(
@@ -298,6 +314,8 @@ const normalizeProcessOptions = (
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		disableGridDetection,
+		reduceColors,
+		colorCount,
 		ignoreFloatingContent,
 		floatingMaxPixels,
 		bgExtractionMethod,
@@ -1348,9 +1366,43 @@ export const processImage = (
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
-	o.debugHook?.("99-result", result, {
+
+	// 減色処理
+	let finalResult = result;
+	if (o.reduceColors) {
+		const quantStart = performance.now();
+		const pixelData: PixelData[] = [];
+		for (let i = 0; i < result.data.length; i += 4) {
+			pixelData.push({
+				r: result.data[i],
+				g: result.data[i + 1],
+				b: result.data[i + 2],
+				alpha: result.data[i + 3],
+			});
+		}
+
+		const quantizer = new OklabKMeans(o.colorCount);
+		const reducedPixels = quantizer.quantize(pixelData);
+
+		const newData = new Uint8ClampedArray(result.data.length);
+		for (let i = 0; i < reducedPixels.length; i++) {
+			const p = reducedPixels[i];
+			newData[i * 4] = p.r;
+			newData[i * 4 + 1] = p.g;
+			newData[i * 4 + 2] = p.b;
+			newData[i * 4 + 3] = p.alpha;
+		}
+		finalResult = { ...result, data: newData };
+		log(
+			`Color reduction (${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+		);
+	}
+
+	o.debugHook?.("99-result", finalResult, {
 		postRemoveBackground: o.postRemoveBackground,
+		reduceColors: o.reduceColors,
+		colorCount: o.colorCount,
 	});
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
-	return { result, grid: trimmedGrid };
+	return { result: finalResult, grid: trimmedGrid };
 };

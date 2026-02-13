@@ -23,3 +23,20 @@ export type PixelGrid = {
 };
 
 export type Axis = "x" | "y";
+
+export interface RGB {
+	r: number; // 0-255
+	g: number; // 0-255
+	b: number; // 0-255
+}
+
+export interface Oklab {
+	L: number; // Lightness
+	a: number; // Green-Red component
+	b: number; // Blue-Yellow component
+}
+
+// 透過情報付きのピクセルデータ
+export interface PixelData extends RGB {
+	alpha: number; // 0-255 (Alpha)
+}

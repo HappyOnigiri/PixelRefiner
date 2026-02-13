@@ -20,6 +20,8 @@ export const PROCESS_RANGES = {
 	// force output pixel size (after BBox trim)
 	forcePixelsW: { min: 1, max: 1024, default: 0 } as const,
 	forcePixelsH: { min: 1, max: 1024, default: 0 } as const,
+	// color reduction
+	colorCount: { min: 2, max: 256, default: 32 } as const,
 } as const satisfies Record<string, IntRange>;
 
 export const PROCESS_DEFAULTS = {
@@ -37,6 +39,8 @@ export const PROCESS_DEFAULTS = {
 	disableGridDetection: false,
 	ignoreFloatingContent: true,
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
+	reduceColors: false,
+	colorCount: PROCESS_RANGES.colorCount.default,
 	debug: import.meta.env.DEV,
 } as const;
 

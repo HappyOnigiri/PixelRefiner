@@ -43,6 +43,9 @@ type Elements = {
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	disableGridDetectionCheck: HTMLInputElement;
+	reduceColorsCheck: HTMLInputElement;
+	colorCountInput: HTMLInputElement;
+	colorCountSlider: HTMLInputElement;
 	ignoreFloatingCheck: HTMLInputElement;
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
@@ -100,6 +103,9 @@ const getElements = (): Elements => {
 			"fast-auto-grid-from-trimmed",
 		),
 		disableGridDetectionCheck: get<HTMLInputElement>("disable-grid-detection"),
+		reduceColorsCheck: get<HTMLInputElement>("reduce-colors"),
+		colorCountInput: get<HTMLInputElement>("color-count"),
+		colorCountSlider: get<HTMLInputElement>("color-count-slider"),
 		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
@@ -337,6 +343,11 @@ export const initApp = (): void => {
 			els.floatingMaxPercentSlider,
 			PROCESS_RANGES.floatingMaxPercent,
 		);
+		setNumberInput(
+			els.colorCountInput,
+			els.colorCountSlider,
+			PROCESS_RANGES.colorCount,
+		);
 
 		els.forcePixelsWInput.min = String(PROCESS_RANGES.forcePixelsW.min);
 		els.forcePixelsWInput.max = String(PROCESS_RANGES.forcePixelsW.max);
@@ -352,6 +363,7 @@ export const initApp = (): void => {
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.disableGridDetectionCheck.checked =
 			PROCESS_DEFAULTS.disableGridDetection;
+		els.reduceColorsCheck.checked = PROCESS_DEFAULTS.reduceColors;
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
 		const applyTooltipRange = (
@@ -377,6 +389,7 @@ export const initApp = (): void => {
 			"help-floating-max-percent",
 			PROCESS_RANGES.floatingMaxPercent,
 		);
+		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
 	};
 
 	const syncSliderAndInput = (
@@ -396,6 +409,7 @@ export const initApp = (): void => {
 	syncSliderAndInput(els.sampleWindowSlider, els.sampleWindowInput);
 	syncSliderAndInput(els.toleranceSlider, els.toleranceInput);
 	syncSliderAndInput(els.floatingMaxPercentSlider, els.floatingMaxPercentInput);
+	syncSliderAndInput(els.colorCountSlider, els.colorCountInput);
 
 	// グリッド検出無効時のUI制御
 	const updateDisabledStates = () => {
@@ -423,6 +437,25 @@ export const initApp = (): void => {
 		"change",
 		updateDisabledStates,
 	);
+
+	// 減色設定のUI制御
+	const updateReduceColorsDisabledStates = () => {
+		const disabled = !els.reduceColorsCheck.checked;
+		[els.colorCountInput, els.colorCountSlider].forEach((el) => {
+			el.disabled = disabled;
+			const item = el.closest(".setting-item");
+			if (item) {
+				item.classList.toggle("disabled", disabled);
+			}
+		});
+	};
+
+	els.reduceColorsCheck.addEventListener(
+		"change",
+		updateReduceColorsDisabledStates,
+	);
+	updateReduceColorsDisabledStates();
+
 	updateDisabledStates();
 
 	// 背景抽出方法変更時のUI制御
@@ -697,6 +730,11 @@ export const initApp = (): void => {
 						)
 				: 0;
 
+			const colorCount = clampInt(
+				Number(els.colorCountInput.value),
+				PROCESS_RANGES.colorCount,
+			);
+
 			const { result } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
@@ -710,6 +748,8 @@ export const initApp = (): void => {
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 				disableGridDetection: els.disableGridDetectionCheck.checked,
+				reduceColors: els.reduceColorsCheck.checked,
+				colorCount,
 				ignoreFloatingContent: ignoreFloatingEnabled,
 				floatingMaxPixels,
 				bgExtractionMethod: method,

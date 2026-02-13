@@ -688,6 +688,39 @@
                 </label>
               </div>
             </div>
+
+            <div class="settings-group">
+              <h3 class="settings-group-title">減色</h3>
+              <div class="grid-settings">
+                <label class="setting-item">
+                  <span class="label-text">
+                    減色を有効にする
+                    <span
+                      class="help"
+                      data-tooltip="出力結果の色数を制限します。&#10;&#10;ドット絵らしい色使いに整えたい場合に有効です。K-means法とOklab色空間を使用して、知覚的に近い色にまとめます。"
+                      >?</span
+                    >
+                  </span>
+                  <input id="reduce-colors" type="checkbox" />
+                </label>
+
+                <label class="setting-item">
+                  <span class="label-text">
+                    色数
+                    <span
+                      id="help-color-count"
+                      class="help"
+                      data-tooltip="出力する最大の色数を指定します。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                      >?</span
+                    >
+                  </span>
+                  <div class="input-with-slider">
+                    <input id="color-count-slider" type="range" />
+                    <input id="color-count" type="number" />
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
         </details>
       </main>
