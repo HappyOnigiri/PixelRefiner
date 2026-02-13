@@ -28,9 +28,17 @@ export const RETRO_PALETTES: Record<
 	string,
 	{ name: string; colors: string[] }
 > = {
-	gb: {
-		name: "Game Boy",
+	gb_legacy: {
+		name: "Game Boy (Legacy)",
 		colors: ["#0f380f", "#306230", "#8bac0f", "#9bbc0f"],
+	},
+	gb_pocket: {
+		name: "Game Boy (Pocket)",
+		colors: ["#000000", "#545454", "#a8a8a8", "#ffffff"],
+	},
+	gb_light: {
+		name: "Game Boy (Light)",
+		colors: ["#004040", "#15605d", "#308880", "#00e0e0"],
 	},
 	pico8: {
 		name: "PICO-8",
@@ -144,7 +152,7 @@ export const PROCESS_DEFAULTS = {
 	ignoreFloatingContent: true,
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
-	reduceColorMode: "auto", // "auto" | "gb" | "pico8" | "nes" | "mono" | "custom"
+	reduceColorMode: "auto", // "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
 	colorCount: PROCESS_RANGES.colorCount.default,
 	debug: import.meta.env.DEV,
 } as const;
