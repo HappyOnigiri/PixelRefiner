@@ -27,6 +27,7 @@ test:
 	npm run test
 
 test-debug:
+	rm -rf tmp/debug
 	PIXELATE_DEBUG_IMAGES=1 npm run test
 
 ts-check-diff:
