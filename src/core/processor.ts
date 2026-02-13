@@ -5,13 +5,7 @@ import {
 	PROCESS_RANGES,
 	RETRO_PALETTES,
 } from "../shared/config";
-import type {
-	Pixel,
-	PixelData,
-	PixelGrid,
-	RawImage,
-	RGB,
-} from "../shared/types";
+import type { Pixel, PixelData, PixelGrid, RawImage } from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
@@ -181,10 +175,11 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	fastAutoGridFromTrimmed?: boolean;
 	/**
-	 * グリッド検出と縮小を無効にする（等倍ドット絵用）。
+	 * グリッド検出と縮小を有効にする（デフォルトON）。
+	 * OFFにすると、グリッド検出と縮小をスキップします（等倍ドット絵用）。
 	 * 背景トリミングと背景透過は引き続き有効。
 	 */
-	disableGridDetection?: boolean;
+	enableGridDetection?: boolean;
 	/**
 	 * 減色を有効にする。
 	 */
@@ -237,7 +232,7 @@ const normalizeProcessOptions = (
 	trimAlphaThreshold: number;
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
-	disableGridDetection: boolean;
+	enableGridDetection: boolean;
 	reduceColors: boolean;
 	reduceColorMode: string;
 	colorCount: number;
@@ -296,8 +291,8 @@ const normalizeProcessOptions = (
 		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
-	const disableGridDetection =
-		raw.disableGridDetection ?? PROCESS_DEFAULTS.disableGridDetection;
+	const enableGridDetection =
+		raw.enableGridDetection ?? PROCESS_DEFAULTS.enableGridDetection;
 	const reduceColors = raw.reduceColors ?? PROCESS_DEFAULTS.reduceColors;
 	const reduceColorMode =
 		raw.reduceColorMode ?? PROCESS_DEFAULTS.reduceColorMode;
@@ -327,7 +322,7 @@ const normalizeProcessOptions = (
 		trimAlphaThreshold,
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
-		disableGridDetection,
+		enableGridDetection,
 		reduceColors,
 		reduceColorMode,
 		colorCount,
@@ -1118,8 +1113,8 @@ export const processImage = (
 		return { result: result2, grid: g };
 	}
 
-	// disableGridDetection: グリッド検出と縮小をスキップ
-	if (o.disableGridDetection) {
+	// enableGridDetection: グリッド検出と縮小をスキップ
+	if (!o.enableGridDetection) {
 		const bgTol = o.backgroundTolerance;
 		const masked = removeBackground(
 			working,

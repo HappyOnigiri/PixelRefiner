@@ -42,7 +42,7 @@ type Elements = {
 	removeInnerBackgroundCheck: HTMLInputElement;
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
-	disableGridDetectionCheck: HTMLInputElement;
+	enableGridDetectionCheck: HTMLInputElement;
 	reduceColorModeSelect: HTMLSelectElement;
 	colorCountInput: HTMLInputElement;
 	colorCountSlider: HTMLInputElement;
@@ -103,7 +103,7 @@ const getElements = (): Elements => {
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
 			"fast-auto-grid-from-trimmed",
 		),
-		disableGridDetectionCheck: get<HTMLInputElement>("disable-grid-detection"),
+		enableGridDetectionCheck: get<HTMLInputElement>("enable-grid-detection"),
 		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
 		colorCountInput: get<HTMLInputElement>("color-count"),
 		colorCountSlider: get<HTMLInputElement>("color-count-slider"),
@@ -363,8 +363,7 @@ export const initApp = (): void => {
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
-		els.disableGridDetectionCheck.checked =
-			PROCESS_DEFAULTS.disableGridDetection;
+		els.enableGridDetectionCheck.checked = PROCESS_DEFAULTS.enableGridDetection;
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
@@ -415,7 +414,8 @@ export const initApp = (): void => {
 
 	// グリッド検出無効時のUI制御
 	const updateDisabledStates = () => {
-		const disabled = els.disableGridDetectionCheck.checked;
+		const enabled = els.enableGridDetectionCheck.checked;
+		const disabled = !enabled;
 		[
 			els.quantStepInput,
 			els.quantStepSlider,
@@ -435,10 +435,7 @@ export const initApp = (): void => {
 		});
 	};
 
-	els.disableGridDetectionCheck.addEventListener(
-		"change",
-		updateDisabledStates,
-	);
+	els.enableGridDetectionCheck.addEventListener("change", updateDisabledStates);
 
 	// 減色設定のUI制御
 	const updateReduceColorsDisabledStates = () => {
@@ -753,7 +750,7 @@ export const initApp = (): void => {
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
-				disableGridDetection: els.disableGridDetectionCheck.checked,
+				enableGridDetection: els.enableGridDetectionCheck.checked,
 				reduceColors,
 				reduceColorMode,
 				colorCount,

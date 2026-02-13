@@ -500,9 +500,9 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("disableGridDetection", () => {
+	describe("enableGridDetection", () => {
 		beforeAll(() => {
-			cleanDebugDir("disableGridDetection");
+			cleanDebugDir("enableGridDetection");
 		});
 
 		const mkImg = (): RawImage => {
@@ -538,14 +538,14 @@ describe("processImage", () => {
 			return { width: w, height: h, data };
 		};
 
-		it("disableGridDetection=true のとき、縮小されず等倍で出力される", () => {
+		it("enableGridDetection=false のとき、縮小されず等倍で出力される", () => {
 			const img = mkImg();
 			const { result, grid } = processImage(img, {
-				disableGridDetection: true,
+				enableGridDetection: false,
 				trimToContent: false,
 				debugHook: makeDebugHook(
-					"disableGridDetection",
-					"disableGridDetection=true_縮小されず等倍で出力",
+					"enableGridDetection",
+					"enableGridDetection=false_縮小されず等倍で出力",
 				),
 			});
 
@@ -555,16 +555,16 @@ describe("processImage", () => {
 			expect(grid.cellH).toBe(1);
 		});
 
-		it("disableGridDetection=true かつ trimToContent=true のとき、トリミングのみ行われる", () => {
+		it("enableGridDetection=false かつ trimToContent=true のとき、トリミングのみ行われる", () => {
 			const img = mkImg();
 			const { result, grid } = processImage(img, {
-				disableGridDetection: true,
+				enableGridDetection: false,
 				trimToContent: true,
 				preRemoveBackground: true,
 				backgroundTolerance: 0,
 				debugHook: makeDebugHook(
-					"disableGridDetection",
-					"disableGridDetection=true_かつ_trimToContent=true_トリミングのみ",
+					"enableGridDetection",
+					"enableGridDetection=false_かつ_trimToContent=true_トリミングのみ",
 				),
 			});
 

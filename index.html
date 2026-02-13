@@ -473,14 +473,14 @@
               <div class="grid-settings">
                 <label class="setting-item full-width">
                   <span class="label-text">
-                    グリッド検出無効 (等倍ドット絵モード)
+                    グリッド検出有効
                     <span
                       class="help"
-                      data-tooltip="入力が既に等倍のドット絵である場合に、グリッド検出と縮小をスキップします。&#10;&#10;背景トリミングや背景透過は、他の設定に従って引き続き実行されます。"
+                      data-tooltip="入力画像からグリッドを自動検出し、ドット単位に縮小・最適化します。&#10;&#10;OFFにすると、グリッド検出と縮小をスキップします（既に等倍のドット絵である場合に有効です）。背景トリミングや背景透過は、他の設定に従って引き続き実行されます。"
                       >?</span
                     >
                   </span>
-                  <input id="disable-grid-detection" type="checkbox" />
+                  <input id="enable-grid-detection" type="checkbox" checked />
                 </label>
 
                 <label class="setting-item">
