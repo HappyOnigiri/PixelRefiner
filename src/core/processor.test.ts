@@ -162,38 +162,82 @@ describe("processImage", () => {
 		});
 	});
 
-	it("指定ピクセル(forcePixelsW/H)で 22x22 に強制変換できる", async () => {
-		cleanDebugDir("test1");
+	describe("test1", () => {
+		let img: RawImage;
+		let expected: RawImage;
 
-		const imgPath = fileURLToPath(
-			new URL("../../test/fixtures/test1.png", import.meta.url),
-		);
-		const img = await readPngAsRawImage(imgPath);
-
-		const { result, grid } = processImage(img, {
-			forcePixelsW: 22,
-			forcePixelsH: 22,
-			detectionQuantStep: 64,
-			preRemoveBackground: true,
-			postRemoveBackground: true,
-			removeInnerBackground: true,
-			backgroundTolerance: 64,
-			sampleWindow: 3,
-			trimToContent: false,
-			trimAlphaThreshold: 16,
-			ignoreFloatingContent: false,
-			floatingMaxPixels: 50000,
-			autoGridFromTrimmed: false,
-			debugHook: makeDebugHook(
-				"test1",
-				"指定ピクセル(forcePixelsW/H)で_22x22_に強制変換できる",
-			),
+		beforeAll(async () => {
+			cleanDebugDir("test1");
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/test1.png", import.meta.url),
+			);
+			img = await readPngAsRawImage(imgPath);
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test1-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
 		});
 
-		expect(result.width).toBe(22);
-		expect(result.height).toBe(22);
-		expect(grid.outW).toBe(22);
-		expect(grid.outH).toBe(22);
+		it("サイズを指定する（forcePixelsW/H=22/22）: 期待画像と完全一致する", () => {
+			const expNorm = normalizeTransparentRgb(expected);
+			const { result, grid } = processImage(img, {
+				forcePixelsW: 22,
+				forcePixelsH: 22,
+				detectionQuantStep: 64,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
+				removeInnerBackground: true,
+				backgroundTolerance: 64,
+				sampleWindow: 3,
+				trimToContent: false,
+				trimAlphaThreshold: 16,
+				ignoreFloatingContent: false,
+				floatingMaxPixels: 50000,
+				autoGridFromTrimmed: false,
+				debugHook: makeDebugHook(
+					"test1",
+					"サイズ指定(forcePixelsW/H=22/22)_期待画像と完全一致",
+				),
+			});
+
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expect(grid.outW).toBe(22);
+			expect(grid.outH).toBe(22);
+			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
+				Buffer.from(expNorm),
+			);
+		});
+
+		it("高速モードOFF、浮きノイズOFF: 期待画像と完全一致する", () => {
+			const expNorm = normalizeTransparentRgb(expected);
+			const { result, grid } = processImage(img, {
+				detectionQuantStep: 64,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
+				removeInnerBackground: true,
+				backgroundTolerance: 64,
+				sampleWindow: 3,
+				trimToContent: true,
+				trimAlphaThreshold: 16,
+				autoGridFromTrimmed: true,
+				fastAutoGridFromTrimmed: false, // 高速モードOFF
+				ignoreFloatingContent: false, // 浮きノイズOFF
+				floatingMaxPixels: 50000,
+				debugHook: makeDebugHook(
+					"test1",
+					"高速モードOFF(fastAutoGridFromTrimmed=false)_浮きノイズOFF(ignoreFloatingContent=false)_期待画像と完全一致",
+				),
+			});
+
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expect(grid.outW).toBe(22);
+			expect(grid.outH).toBe(22);
+			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
+				Buffer.from(expNorm),
+			);
+		});
 	});
 
 	describe("test2", () => {
