@@ -1,10 +1,14 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PNG } from "pngjs";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
 import { processImage } from "./processor";
+
+const DEBUG_IMAGES = Boolean(process.env.PIXELATE_DEBUG_IMAGES);
+const DEBUG_ROOT = path.resolve("tmp/debug/test");
 
 const readPngAsRawImage = async (filePath: string): Promise<RawImage> => {
 	const buf = await readFile(filePath);
@@ -16,14 +20,11 @@ const readPngAsRawImage = async (filePath: string): Promise<RawImage> => {
 	};
 };
 
-const writeRawImageAsPng = async (
-	outPath: string,
-	img: RawImage,
-): Promise<void> => {
+const writeRawImageAsPngSync = (outPath: string, img: RawImage): void => {
 	const png = new PNG({ width: img.width, height: img.height });
 	png.data = Buffer.from(img.data);
 	const buf = PNG.sync.write(png);
-	await writeFile(outPath, buf);
+	writeFileSync(outPath, buf);
 };
 
 /**
@@ -44,8 +45,43 @@ const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
 	return out;
 };
 
+const sanitizeForPath = (s: string): string => {
+	const out = s
+		.trim()
+		.replace(/[\\/]/g, "_")
+		.replace(/[:*?"<>|]/g, "_")
+		.replace(/\s+/g, "_");
+	return out.length > 0 ? out.slice(0, 120) : "unnamed";
+};
+
+const cleanDebugDir = (testcaseName: string): void => {
+	if (!DEBUG_IMAGES) return;
+	const dir = path.join(DEBUG_ROOT, sanitizeForPath(testcaseName));
+	rmSync(dir, { recursive: true, force: true });
+};
+
+const makeDebugHook = (testcaseName: string, testName: string) => {
+	if (!DEBUG_IMAGES) return undefined;
+
+	const dir = path.join(
+		DEBUG_ROOT,
+		sanitizeForPath(testcaseName),
+		sanitizeForPath(testName),
+	);
+	mkdirSync(dir, { recursive: true });
+
+	return (name: string, raw: RawImage) => {
+		const filename = `${sanitizeForPath(name)}.png`;
+		writeRawImageAsPngSync(path.join(dir, filename), raw);
+	};
+};
+
 describe("processImage", () => {
 	describe("forcePixelsW/H", () => {
+		beforeAll(() => {
+			cleanDebugDir("forcePixelsW_H");
+		});
+
 		const mkImg = (): RawImage => {
 			const w = 10;
 			const h = 10;
@@ -102,6 +138,10 @@ describe("processImage", () => {
 				...base,
 				ignoreFloatingContent: false,
 				floatingMaxPixels: 4,
+				debugHook: makeDebugHook(
+					"forcePixelsW_H",
+					"ignoreFloatingContent=false",
+				),
 			});
 			// 浮きノイズ(8,8)まで含むBBox: x=1..8, y=1..8 => 8x8
 			expect(gridNoIgnore.cropW).toBe(8);
@@ -111,6 +151,10 @@ describe("processImage", () => {
 				...base,
 				ignoreFloatingContent: true,
 				floatingMaxPixels: 4,
+				debugHook: makeDebugHook(
+					"forcePixelsW_H",
+					"ignoreFloatingContent=true",
+				),
 			});
 			// 浮きノイズ除去後のBBox: x=1..4, y=1..4 => 4x4
 			expect(gridIgnore.cropW).toBe(4);
@@ -119,6 +163,8 @@ describe("processImage", () => {
 	});
 
 	it("指定ピクセル(forcePixelsW/H)で 22x22 に強制変換できる", async () => {
+		cleanDebugDir("test1");
+
 		const imgPath = fileURLToPath(
 			new URL("../../test/fixtures/test1.png", import.meta.url),
 		);
@@ -138,6 +184,10 @@ describe("processImage", () => {
 			ignoreFloatingContent: false,
 			floatingMaxPixels: 50000,
 			autoGridFromTrimmed: false,
+			debugHook: makeDebugHook(
+				"test1",
+				"指定ピクセル(forcePixelsW/H)で_22x22_に強制変換できる",
+			),
 		});
 
 		expect(result.width).toBe(22);
@@ -148,16 +198,25 @@ describe("processImage", () => {
 
 	describe("test2", () => {
 		let img: RawImage;
+		let expected: RawImage;
 
 		beforeAll(async () => {
+			cleanDebugDir("test2");
 			const imgPath = fileURLToPath(
 				new URL("../../test/fixtures/test2.png", import.meta.url),
 			);
 			img = await readPngAsRawImage(imgPath);
+
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test2-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("指定ピクセル(forcePixelsW/H)=46/13 で 46x13 に強制変換できる", () => {
-			const { result, grid } = processImage(img, {
+		it("指定ピクセル(forcePixelsW/H)=46/13 で 46x13 に強制変換され、期待画像と完全一致する", () => {
+			const expNorm = normalizeTransparentRgb(expected);
+
+			const baseOpts = {
 				forcePixelsW: 46,
 				forcePixelsH: 13,
 				detectionQuantStep: 64,
@@ -171,245 +230,62 @@ describe("processImage", () => {
 				ignoreFloatingContent: false,
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: false,
+			} as const;
+
+			const { result, grid } = processImage(img, {
+				...baseOpts,
+				forcePixelsW: 46,
+				forcePixelsH: 13,
+				debugHook: makeDebugHook(
+					"test2",
+					"指定ピクセル(forcePixelsW/H)=46/13_で_46x13_に強制変換され、期待画像と完全一致する",
+				),
 			});
 
+			// 期待値PNGと完全一致（サイズ・ピクセル）
 			expect(result.width).toBe(46);
 			expect(result.height).toBe(13);
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(46);
 			expect(grid.outH).toBe(13);
-		});
 
-		it("デバッグ用に中間画像を出力できる", async () => {
-			if (!process.env.PIXELATE_DEBUG_IMAGES) {
-				// 通常のテスト実行でファイル生成を避ける
-				return;
-			}
-
-			// デバッグ実行のたびにクリーンな状態で比較できるよう、tmp/debug 配下を掃除する
-			const debugRoot = path.resolve("tmp/debug");
-			await rm(debugRoot, { recursive: true, force: true });
-
-			const outDir = path.join(debugRoot, "test2");
-			await mkdir(outDir, { recursive: true });
-
-			const writes: Array<Promise<void>> = [];
-			const { result } = processImage(img, {
-				detectionQuantStep: 64,
-				preRemoveBackground: true,
-				postRemoveBackground: true,
-				removeInnerBackground: true,
-				backgroundTolerance: 64,
-				sampleWindow: 3,
+			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
+				Buffer.from(expNorm),
+			);
+			const { result: resultTrim, grid: gridTrim } = processImage(img, {
+				...baseOpts,
 				trimToContent: true,
-				trimAlphaThreshold: 32,
-				ignoreFloatingContent: false,
-				floatingMaxPixels: 50000,
-				autoGridFromTrimmed: true,
-				debugHook: (name, raw) => {
-					// 毎回同じファイル名で上書きし、差分比較しやすくする（サイズ情報は含めない）
-					const filename = `${name}.png`;
-					writes.push(writeRawImageAsPng(path.join(outDir, filename), raw));
-				},
+				debugHook: makeDebugHook(
+					"test2",
+					"trimToContent=true_でもサイズは変わらない",
+				),
 			});
-			await Promise.all(writes);
-
-			// フックが動いていればOK（詳細は tmp/debug/test2 を目視確認）
-			expect(result.width).toBeGreaterThan(0);
-			expect(result.height).toBeGreaterThan(0);
-		});
-
-		it.each([
-			[
-				"背景透過なし（基準）",
-				{
-					detectionQuantStep: 64,
-					preRemoveBackground: false,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 64,
-					sampleWindow: 3,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 46, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"量子化ステップを小さくする",
-				{
-					detectionQuantStep: 32,
-					preRemoveBackground: false,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 64,
-					sampleWindow: 3,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 46, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"量子化ステップを大きくする",
-				{
-					detectionQuantStep: 128,
-					preRemoveBackground: false,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 64,
-					sampleWindow: 3,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 45, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"サンプル窓を 1 にする",
-				{
-					detectionQuantStep: 64,
-					preRemoveBackground: false,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 64,
-					sampleWindow: 1,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 46, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"サンプル窓を 5 にする",
-				{
-					detectionQuantStep: 64,
-					preRemoveBackground: false,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 64,
-					sampleWindow: 5,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 46, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"検出前に背景除去する (tol=8)",
-				{
-					detectionQuantStep: 64,
-					preRemoveBackground: true,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 8,
-					sampleWindow: 3,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 45, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"検出前に背景除去する (tol=32)",
-				{
-					detectionQuantStep: 64,
-					preRemoveBackground: true,
-					postRemoveBackground: false,
-					removeInnerBackground: true,
-					backgroundTolerance: 32,
-					sampleWindow: 3,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 45, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-			[
-				"変換後に背景除去する",
-				{
-					detectionQuantStep: 64,
-					preRemoveBackground: false,
-					postRemoveBackground: true,
-					removeInnerBackground: true,
-					backgroundTolerance: 16,
-					sampleWindow: 3,
-					trimToContent: false,
-					trimAlphaThreshold: 16,
-					ignoreFloatingContent: false,
-					floatingMaxPixels: 50000,
-					autoGridFromTrimmed: false,
-				} as const,
-				{ wMin: 46, wMax: 46, hMin: 13, hMax: 13 } as const,
-			],
-		])("オプションを変えても 46x13 に強制変換される: %s", (_label, opts, exp) => {
-			const { result, grid } = processImage(img, {
-				forcePixelsW: 46,
-				forcePixelsH: 13,
-				...opts,
-			});
-
-			expect(result.width).toBeGreaterThanOrEqual(exp.wMin);
-			expect(result.width).toBeLessThanOrEqual(exp.wMax);
-			expect(result.height).toBeGreaterThanOrEqual(exp.hMin);
-			expect(result.height).toBeLessThanOrEqual(exp.hMax);
-			expect(grid.outW).toBe(result.width);
-			expect(grid.outH).toBe(result.height);
-		});
-
-		it("trimToContent=true でも指定ピクセルが優先され、サイズは変わらない", () => {
-			const { result, grid } = processImage(img, {
-				forcePixelsW: 46,
-				forcePixelsH: 13,
-				detectionQuantStep: 64,
-				preRemoveBackground: true,
-				postRemoveBackground: true,
-				removeInnerBackground: true,
-				backgroundTolerance: 16,
-				sampleWindow: 3,
-				trimToContent: true,
-				trimAlphaThreshold: 16,
-				ignoreFloatingContent: false,
-				floatingMaxPixels: 50000,
-				autoGridFromTrimmed: false,
-			});
-
-			expect(result.width).toBe(46);
-			expect(result.height).toBe(13);
-			expect(grid.outW).toBe(result.width);
-			expect(grid.outH).toBe(result.height);
+			expect(resultTrim.width).toBe(46);
+			expect(resultTrim.height).toBe(13);
+			expect(gridTrim.outW).toBe(46);
+			expect(gridTrim.outH).toBe(13);
 		});
 	});
 
 	describe("test3", () => {
 		let img: RawImage;
+		let expected: RawImage;
 
 		beforeAll(async () => {
+			cleanDebugDir("test3");
 			const imgPath = fileURLToPath(
 				new URL("../../test/fixtures/test3.png", import.meta.url),
 			);
 			img = await readPngAsRawImage(imgPath);
+
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test3-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("デフォルトオプションで 88x61 になる", async () => {
-			const debugRoot = path.resolve("tmp/debug");
-			const outDir = path.join(debugRoot, "test3");
-			await mkdir(outDir, { recursive: true });
-
-			const writes: Array<Promise<void>> = [];
+		it("期待画像と完全一致する（サイズ・ピクセル）", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -422,52 +298,79 @@ describe("processImage", () => {
 				ignoreFloatingContent: false,
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
-				debugHook: (name, raw) => {
-					const filename = `${name}.png`;
-					writes.push(writeRawImageAsPng(path.join(outDir, filename), raw));
-				},
+				debugHook: makeDebugHook(
+					"test3",
+					"期待画像と完全一致する（サイズ・ピクセル）",
+				),
 			});
-			await Promise.all(writes);
 
-			console.log(`Detected size: ${result.width}x${result.height}`);
-			console.log(`Grid:`, grid);
-
+			// 期待値PNGと完全一致（サイズ・ピクセル）
 			expect(result.width).toBe(88);
 			expect(result.height).toBe(61);
+			expect(expected.width).toBe(88);
+			expect(expected.height).toBe(61);
+
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(88);
 			expect(grid.outH).toBe(61);
-		}, 20000);
+
+			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
+				Buffer.from(normalizeTransparentRgb(expected)),
+			);
+		});
 	});
 
 	describe("test4", () => {
 		let img: RawImage;
+		let expected: RawImage;
 
 		beforeAll(async () => {
+			cleanDebugDir("test4");
 			const imgPath = fileURLToPath(
 				new URL("../../test/fixtures/test4.png", import.meta.url),
 			);
 			img = await readPngAsRawImage(imgPath);
+
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test4-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("浮きノイズ除去を有効にすると、22x21 になる", () => {
+		it("期待画像と完全一致する（サイズ・ピクセル）", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
 				removeInnerBackground: true,
-				backgroundTolerance: 64,
+				backgroundTolerance: 96,
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				ignoreFloatingContent: true,
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
+				debugHook: makeDebugHook(
+					"test4",
+					"期待画像と完全一致する（サイズ・ピクセル）",
+				),
 			});
 
+			// 期待値PNGと完全一致（サイズ・ピクセル）
 			expect(result.width).toBe(22);
 			expect(result.height).toBe(21);
+			expect(expected.width).toBe(22);
+			expect(expected.height).toBe(21);
+
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(22);
 			expect(grid.outH).toBe(21);
+
+			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
+				Buffer.from(normalizeTransparentRgb(expected)),
+			);
 		});
 
 		it("内側に閉じ込められた背景色（ドーナツ穴）も透過できる", () => {
@@ -476,13 +379,17 @@ describe("processImage", () => {
 				preRemoveBackground: true,
 				postRemoveBackground: true,
 				removeInnerBackground: true,
-				backgroundTolerance: 64,
+				backgroundTolerance: 96,
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				ignoreFloatingContent: true,
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
+				debugHook: makeDebugHook(
+					"test4",
+					"内側に閉じ込められた背景色（ドーナツ穴）も透過できる",
+				),
 			});
 
 			// 中心付近（内側背景）の alpha が 0 になることを確認する
@@ -506,6 +413,7 @@ describe("processImage", () => {
 		let expected: RawImage;
 
 		beforeAll(async () => {
+			cleanDebugDir("test5");
 			const imgPath = fileURLToPath(
 				new URL("../../test/fixtures/test5.png", import.meta.url),
 			);
@@ -530,6 +438,10 @@ describe("processImage", () => {
 				ignoreFloatingContent: true,
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
+				debugHook: makeDebugHook(
+					"test5",
+					"自動トリム(trimToContent)_OFFでも期待画像と一致する",
+				),
 			});
 
 			// 期待値PNGと完全一致（サイズ・ピクセル）
@@ -545,6 +457,10 @@ describe("processImage", () => {
 	});
 
 	describe("disableGridDetection", () => {
+		beforeAll(() => {
+			cleanDebugDir("disableGridDetection");
+		});
+
 		const mkImg = (): RawImage => {
 			const w = 10;
 			const h = 10;
@@ -583,6 +499,10 @@ describe("processImage", () => {
 			const { result, grid } = processImage(img, {
 				disableGridDetection: true,
 				trimToContent: false,
+				debugHook: makeDebugHook(
+					"disableGridDetection",
+					"disableGridDetection=true_縮小されず等倍で出力",
+				),
 			});
 
 			expect(result.width).toBe(10);
@@ -598,6 +518,10 @@ describe("processImage", () => {
 				trimToContent: true,
 				preRemoveBackground: true,
 				backgroundTolerance: 0,
+				debugHook: makeDebugHook(
+					"disableGridDetection",
+					"disableGridDetection=true_かつ_trimToContent=true_トリミングのみ",
+				),
 			});
 
 			// 4x4 black block at (2, 2)
