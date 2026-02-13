@@ -264,16 +264,16 @@ describe("processImage", () => {
 				forcePixelsW: 46,
 				forcePixelsH: 13,
 				detectionQuantStep: 64,
-				preRemoveBackground: false,
-				postRemoveBackground: false,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
 				removeInnerBackground: true,
 				backgroundTolerance: 64,
 				sampleWindow: 3,
-				trimToContent: false,
-				trimAlphaThreshold: 16,
-				ignoreFloatingContent: false,
-				floatingMaxPixels: 50000,
-				autoGridFromTrimmed: false,
+				trimToContent: true,
+				trimAlphaThreshold: 64,
+				ignoreFloatingContent: true,
+				floatingMaxPixels: 0,
+				autoGridFromTrimmed: true,
 			} as const;
 
 			const { result, grid } = processImage(img, {
