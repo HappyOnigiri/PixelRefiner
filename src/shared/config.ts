@@ -152,7 +152,7 @@ export const PROCESS_DEFAULTS = {
 	ignoreFloatingContent: true,
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
-	reduceColorMode: "auto", // "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
+	reduceColorMode: "nes", // "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
 	colorCount: PROCESS_RANGES.colorCount.default,
 	debug: import.meta.env.DEV,
 } as const;
