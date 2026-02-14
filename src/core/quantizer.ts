@@ -363,7 +363,37 @@ export class PaletteQuantizer {
 				paletteIdx = 0;
 
 				for (let i = 0; i < this.paletteLabs.length; i++) {
-					const dist = this.colorDistanceSq(lab, this.paletteLabs[i]);
+					const targetLab = this.paletteLabs[i];
+					const targetRgb = this.palette[i];
+
+					// Oklab distance
+					let dist = this.colorDistanceSq(lab, targetLab);
+
+					// 暗いピクセルの場合、茶色などの暗色に引っ張られないよう
+					// 純粋な黒（L=0）への判定にバイアスをかけるか、RGB距離を補助的に使用する。
+					// 特に NES の黒 (#000000) と茶色 (#503000) の誤判定を防ぐ。
+					const isTargetBlack =
+						targetRgb.r === 0 && targetRgb.g === 0 && targetRgb.b === 0;
+
+					if (isTargetBlack) {
+						// L=0.2 程度（sRGBで約45-50）以下の極めて暗いピクセルのみバイアスをかける。
+						// こうすることで、Game Boy パレットなどの「暗いグレー」が黒に判定されるのを防ぐ。
+						if (lab.L < 0.2) {
+							const lBias = (0.2 - lab.L) * 1.5;
+							dist -= lBias * lBias;
+						}
+					}
+
+					// RGB 空間での距離も補助的に使用する（極めて暗い色のみ）。
+					if (lab.L < 0.1) {
+						const dR = (p.r - targetRgb.r) / 255;
+						const dG = (p.g - targetRgb.g) / 255;
+						const dB = (p.b - targetRgb.b) / 255;
+						const rgbDistSq = dR * dR + dG * dG + dB * dB;
+						const rgbWeight = 0.5 - lab.L;
+						dist += rgbDistSq * rgbWeight;
+					}
+
 					if (dist < minDist) {
 						minDist = dist;
 						paletteIdx = i;
@@ -399,7 +429,29 @@ export class PaletteQuantizer {
 				let bestIdx = 0;
 
 				for (let i = 0; i < this.paletteLabs.length; i++) {
-					const dist = this.colorDistanceSq(lab, this.paletteLabs[i]);
+					const targetLab = this.paletteLabs[i];
+					const targetRgb = this.palette[i];
+
+					let dist = this.colorDistanceSq(lab, targetLab);
+
+					const isTargetBlack =
+						targetRgb.r === 0 && targetRgb.g === 0 && targetRgb.b === 0;
+					if (isTargetBlack) {
+						if (lab.L < 0.2) {
+							const lBias = (0.2 - lab.L) * 1.5;
+							dist -= lBias * lBias;
+						}
+					}
+
+					if (lab.L < 0.1) {
+						const dR = (p.r - targetRgb.r) / 255;
+						const dG = (p.g - targetRgb.g) / 255;
+						const dB = (p.b - targetRgb.b) / 255;
+						const rgbDistSq = dR * dR + dG * dG + dB * dB;
+						const rgbWeight = 0.5 - lab.L;
+						dist += rgbDistSq * rgbWeight;
+					}
+
 					if (dist < minDist) {
 						minDist = dist;
 						bestIdx = i;
