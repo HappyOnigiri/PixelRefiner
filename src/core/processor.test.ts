@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 import { PNG } from "pngjs";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
-import { processImage } from "./processor";
+import {
+	FastGridSearchFromTrimmed,
+	LegacyGridSearchFromTrimmed,
+	processImage,
+} from "./processor";
 
 const DEBUG_IMAGES = Boolean(process.env.PIXELATE_DEBUG_IMAGES);
 const DEBUG_ROOT = path.resolve("tmp/debug/test");
@@ -794,6 +798,64 @@ describe("processImage", () => {
 			}
 			// 背景(白)とオブジェクト(黒)の2色になるはず
 			expect(colors.size).toBeLessThanOrEqual(2);
+		});
+	});
+
+	describe("Grid Search Strategies Consistency", () => {
+		it("FastモードとLegacyモードが同じ結果を導き出すか (シンプルな画像)", () => {
+			// 16x16 のグリッド画像を作成 (8x8セルが2x2並んでいる想定)
+			const width = 16;
+			const height = 16;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y++) {
+				for (let x = 0; x < width; x++) {
+					const idx = (y * width + x) * 4;
+					const isCell1 = Math.floor(x / 8) % 2 === Math.floor(y / 8) % 2;
+					const color = isCell1 ? 255 : 0;
+					data[idx] = color;
+					data[idx + 1] = color;
+					data[idx + 2] = color;
+					data[idx + 3] = 255;
+				}
+			}
+			const img: RawImage = { width, height, data };
+			const mask: RawImage = {
+				width,
+				height,
+				data: new Uint8ClampedArray(data),
+			};
+
+			// 内部クラスにアクセスするために型をキャストして使用
+			const legacy = new (
+				LegacyGridSearchFromTrimmed as unknown as {
+					new (): {
+						search: (img: RawImage, mask: RawImage, sw: number) => unknown;
+					};
+				}
+			)();
+			const fast = new (
+				FastGridSearchFromTrimmed as unknown as {
+					new (): {
+						search: (img: RawImage, mask: RawImage, sw: number) => unknown;
+					};
+				}
+			)();
+
+			const resLegacy = legacy.search(img, mask, 3) as {
+				outW: number;
+				outH: number;
+			} | null;
+			const resFast = fast.search(img, mask, 3) as {
+				outW: number;
+				outH: number;
+			} | null;
+
+			expect(resLegacy).not.toBeNull();
+			expect(resFast).not.toBeNull();
+			if (resLegacy && resFast) {
+				expect(resFast.outW).toBe(resLegacy.outW);
+				expect(resFast.outH).toBe(resLegacy.outH);
+			}
 		});
 	});
 });

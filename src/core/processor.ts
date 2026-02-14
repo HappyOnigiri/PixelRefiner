@@ -630,6 +630,9 @@ const removeSmallFloatingComponentsInPlace = (
 	return { removedComponents, removedPixels };
 };
 
+export const _removeSmallFloatingComponentsInPlace =
+	removeSmallFloatingComponentsInPlace;
+
 const findOpaqueBounds = (
 	img: RawImage,
 	alphaThreshold: number,
@@ -821,7 +824,9 @@ interface GridSearchFromTrimmedStrategy {
 	) => GridEstimateFromTrimmed | null;
 }
 
-class LegacyGridSearchFromTrimmed implements GridSearchFromTrimmedStrategy {
+export class LegacyGridSearchFromTrimmed
+	implements GridSearchFromTrimmedStrategy
+{
 	search(
 		cropped: RawImage,
 		mask: RawImage,
@@ -831,7 +836,9 @@ class LegacyGridSearchFromTrimmed implements GridSearchFromTrimmedStrategy {
 	}
 }
 
-class FastGridSearchFromTrimmed implements GridSearchFromTrimmedStrategy {
+export class FastGridSearchFromTrimmed
+	implements GridSearchFromTrimmedStrategy
+{
 	private scan(
 		cropped: RawImage,
 		mask: RawImage,

@@ -109,4 +109,70 @@ describe("detector.ts (helpers)", () => {
 			expect(() => detectGrid(img)).not.toThrow();
 		});
 	});
+
+	describe("estimateFromSegments (Unit Test)", () => {
+		// estimateFromSegments は export されていないため、
+		// テスト用に export するか、あるいは detectGrid を通じて間接的にテストする。
+		// ここでは detectGrid を使って、合成データで精度を検証する。
+
+		it("完璧なストライプ模様から正解のセルサイズを検出できること", () => {
+			// 16x16, 8px周期のストライプ
+			// 黒(0,0,0)と白(255,255,255)の境界が 8px ごとに現れる
+			const width = 16;
+			const height = 16;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y++) {
+				for (let x = 0; x < width; x++) {
+					const idx = (y * width + x) * 4;
+					// 8px ごとに色を変える
+					const isBlack =
+						Math.floor(x / 8) % 2 === 0 && Math.floor(y / 8) % 2 === 0;
+					const color = isBlack ? 0 : 255;
+					data[idx] = color;
+					data[idx + 1] = color;
+					data[idx + 2] = color;
+					data[idx + 3] = 255;
+				}
+			}
+			const img: RawImage = { width, height, data };
+			// autoMaxCells を小さく制限して、確実に 8px が選ばれるようにする (16/8 = 2 cells)
+			const grid = detectGrid(img, { autoMaxCellsW: 2, autoMaxCellsH: 2 });
+
+			expect(grid.cellW).toBe(8);
+			expect(grid.cellH).toBe(8);
+			expect(grid.offsetX).toBe(0);
+			expect(grid.offsetY).toBe(0);
+		});
+
+		it("オフセットがある場合でも正しく検出できること", () => {
+			// 24x24, 4px周期, オフセット(2, 2)
+			const width = 24;
+			const height = 24;
+			const cell = 4;
+			const offX = 2;
+			const offY = 2;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y++) {
+				for (let x = 0; x < width; x++) {
+					const idx = (y * width + x) * 4;
+					const isBlack =
+						Math.floor((x - offX) / cell) % 2 === 0 &&
+						Math.floor((y - offY) / cell) % 2 === 0;
+					const color = isBlack ? 0 : 255;
+					data[idx] = color;
+					data[idx + 1] = color;
+					data[idx + 2] = color;
+					data[idx + 3] = 255;
+				}
+			}
+			const img: RawImage = { width, height, data };
+			// 24 / 4 = 6 cells
+			const grid = detectGrid(img, { autoMaxCellsW: 6, autoMaxCellsH: 6 });
+
+			expect(grid.cellW).toBe(cell);
+			expect(grid.cellH).toBe(cell);
+			expect(grid.offsetX).toBe(offX);
+			expect(grid.offsetY).toBe(offY);
+		});
+	});
 });
