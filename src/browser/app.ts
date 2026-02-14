@@ -224,6 +224,8 @@ export const initApp = (): void => {
 		removeInner: boolean;
 	} | null = null;
 
+	let isGridManuallyToggled = false;
+
 	const saveSettings = () => {
 		const activeBgBtn = els.bgSelector.querySelector(
 			".bg-btn.active",
@@ -978,6 +980,18 @@ export const initApp = (): void => {
 			// 今回はシンプルさを優先してコピーのままにする。
 
 			currentResult = result;
+
+			// 256pxを超える場合はデフォルトでグリッドをOFFにする（手動でONにしていない場合）
+			if (!isGridManuallyToggled) {
+				if (result.width > 256 || result.height > 256) {
+					if (els.gridOutputCheck.checked) {
+						els.gridOutputCheck.checked = false;
+						// グリッドをクリア
+						clearGrid();
+					}
+				}
+			}
+
 			// Sort the palette for better visualization
 			const sortedPalette = sortPalette(extractedPalette);
 			currentExtractedPalette = sortedPalette;
@@ -1023,6 +1037,8 @@ export const initApp = (): void => {
 			// Let's keep it if the user imported it. But if they just drop an image, maybe we shouldn't reset.
 			// However, if they drop a GPL file, we handle that separately.
 			// For now, let's NOT reset fixed palette so users can batch process with the same palette.
+
+			isGridManuallyToggled = false; // 新しい画像が読み込まれたら手動フラグをリセット
 
 			els.downloadButton.style.display = "none";
 			els.downloadDropdownButton.style.display = "none";
@@ -1268,6 +1284,7 @@ export const initApp = (): void => {
 	});
 
 	els.gridOutputCheck.addEventListener("change", () => {
+		isGridManuallyToggled = true;
 		if (els.gridOutputCheck.checked) {
 			// グリッドONなら拡大もON
 			if (!els.zoomOutputCheck.checked) {
