@@ -60,7 +60,6 @@ type Elements = {
 	gridCanvas: HTMLCanvasElement;
 	bgSelector: HTMLElement;
 	outputPanel: HTMLElement;
-	settingsPanel: HTMLElement;
 	loadingOverlay: HTMLElement;
 	bgExtractionMethod: HTMLSelectElement;
 	rgbPickerContainer: HTMLElement;
@@ -127,7 +126,6 @@ const getElements = (): Elements => {
 		gridCanvas: get<HTMLCanvasElement>("grid-canvas"),
 		bgSelector: get<HTMLElement>("bg-selector"),
 		outputPanel: get<HTMLElement>("output-panel"),
-		settingsPanel: get<HTMLElement>("settings-panel"),
 		loadingOverlay: get<HTMLElement>("loading-overlay"),
 		bgExtractionMethod: get<HTMLSelectElement>("bg-extraction-method"),
 		rgbPickerContainer: get<HTMLElement>("rgb-picker-container"),

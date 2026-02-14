@@ -40,7 +40,7 @@ body {
 }
 
 .app {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 40px 24px;
   display: flex;
@@ -163,7 +163,7 @@ h2::before {
 main {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 40px;
 }
 
 /* Panels */
@@ -178,67 +178,10 @@ main {
   flex-direction: column;
 }
 
-.settings-panel {
-  padding: 0;
-}
 
-.settings-panel summary {
-  padding: 32px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  list-style: none;
-  /* Remove default arrow */
-  user-select: none;
-}
-
-.settings-panel summary::-webkit-details-marker {
-  display: none;
-  /* Remove default arrow for Safari */
-}
-
-.settings-panel summary::before {
-  content: '';
-  display: block;
-  width: 4px;
-  height: 16px;
-  background: var(--accent);
-  border-radius: 2px;
-  box-shadow: 0 0 8px var(--accent);
-}
-
-/* Arrow icon */
-.settings-panel summary::after {
-  content: '▼';
-  font-size: 0.7rem;
-  margin-left: auto;
-  transition: transform 0.2s;
-  color: var(--text-dim);
-}
-
-.settings-panel[open] summary::after {
-  transform: rotate(180deg);
-}
-
-.settings-content {
-  padding: 0 32px 32px;
-}
 
 .settings-group {
-  margin-bottom: 24px;
-}
-
-.settings-panel .settings-group {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 40px;
 }
 
 .settings-group:last-child {
@@ -280,16 +223,33 @@ main {
 }
 
 /* Layout helpers */
-.row {
+.app-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: 1fr;
   gap: 40px;
+}
+
+@media (min-width: 900px) {
+  .app-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .col-preview {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.row {
+  display: none;
+  /* Deprecated */
 }
 
 .grid-settings {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 24px 32px;
+  gap: 32px 32px;
   margin-bottom: 24px;
 }
 
@@ -621,9 +581,28 @@ select:focus {
 
 /* Actions */
 .actions {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1400px;
+  background: rgba(24, 27, 33, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 32px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.app {
+  padding-bottom: 120px;
+  /* Space for the sticky bar */
 }
 
 .quick-settings {
@@ -632,11 +611,10 @@ select:focus {
   border-radius: var(--radius-md);
   padding: 32px;
   box-shadow: var(--shadow-md);
+  margin-top: 40px;
 }
 
-.quick-settings .settings-group {
-  margin-bottom: 0;
-}
+
 
 /* Button */
 .action-button {
