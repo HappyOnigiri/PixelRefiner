@@ -143,6 +143,94 @@ export const sortPalette = (palette: RGB[]): RGB[] => {
 };
 
 /**
+ * Median cut algorithm to select representative colors from a palette.
+ * Recursively divides the color space to find the most diverse colors.
+ */
+const medianCut = (colors: RGB[], maxColors: number): RGB[] => {
+	if (colors.length <= maxColors) {
+		return colors;
+	}
+
+	// Create buckets for recursive division
+	const buckets: RGB[][] = [colors];
+
+	while (buckets.length < maxColors) {
+		// Find the bucket with the largest range
+		let maxRange = -1;
+		let maxBucketIndex = 0;
+		let maxChannel: "r" | "g" | "b" = "r";
+
+		for (let i = 0; i < buckets.length; i++) {
+			const bucket = buckets[i];
+			if (bucket.length === 1) continue;
+
+			// Calculate range for each channel
+			const rRange = getRange(bucket, "r");
+			const gRange = getRange(bucket, "g");
+			const bRange = getRange(bucket, "b");
+
+			const range = Math.max(rRange, gRange, bRange);
+			if (range > maxRange) {
+				maxRange = range;
+				maxBucketIndex = i;
+				if (rRange >= gRange && rRange >= bRange) {
+					maxChannel = "r";
+				} else if (gRange >= bRange) {
+					maxChannel = "g";
+				} else {
+					maxChannel = "b";
+				}
+			}
+		}
+
+		// If no bucket can be split, break
+		if (maxRange === -1) break;
+
+		// Split the bucket at the median
+		const bucket = buckets[maxBucketIndex];
+		bucket.sort((a, b) => a[maxChannel] - b[maxChannel]);
+		const median = Math.floor(bucket.length / 2);
+
+		buckets.splice(
+			maxBucketIndex,
+			1,
+			bucket.slice(0, median),
+			bucket.slice(median),
+		);
+	}
+
+	// Return the average color of each bucket
+	return buckets.map((bucket) => {
+		const sum = bucket.reduce(
+			(acc, c) => ({
+				r: acc.r + c.r,
+				g: acc.g + c.g,
+				b: acc.b + c.b,
+			}),
+			{ r: 0, g: 0, b: 0 },
+		);
+		return {
+			r: Math.round(sum.r / bucket.length),
+			g: Math.round(sum.g / bucket.length),
+			b: Math.round(sum.b / bucket.length),
+		};
+	});
+};
+
+/**
+ * Calculate the range of a color channel in a bucket.
+ */
+const getRange = (colors: RGB[], channel: "r" | "g" | "b"): number => {
+	let min = 255;
+	let max = 0;
+	for (const c of colors) {
+		if (c[channel] < min) min = c[channel];
+		if (c[channel] > max) max = c[channel];
+	}
+	return max - min;
+};
+
+/**
  * Extracts unique colors from ImageData.
  * @param imageData - The ImageData to extract colors from
  * @param maxColors - Maximum number of colors to return (default: no limit)
@@ -175,11 +263,13 @@ export const extractColorsFromImage = (
 	const totalColors = colors.length;
 
 	// If maxColors is specified and we have more colors than the limit,
-	// sort by luminance and return the top N colors
+	// use median cut algorithm to select representative colors
 	if (maxColors !== undefined && colors.length > maxColors) {
-		const sorted = sortPalette(colors);
+		const selected = medianCut(colors, maxColors);
+		// Sort the selected colors by luminance for consistent display
+		const sorted = sortPalette(selected);
 		return {
-			colors: sorted.slice(0, maxColors),
+			colors: sorted,
 			totalColors,
 		};
 	}
