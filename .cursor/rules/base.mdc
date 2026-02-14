@@ -41,6 +41,7 @@ It uses TypeScript (Vanilla), Vite, and Vitest, and does not use UI frameworks (
 - Since no UI framework is used, use `document.getElementById` or `querySelector`.
 - Retrieve elements through type-safe functions, like the `getElements` helper pattern in `app.ts`.
 - Manage state with local variables or closures within `app.ts`.
+- **i18n:** When adding or changing `data-i18n` or `data-i18n-attr` attributes in HTML, always register corresponding translation keys in **both `ja` and `en`** sections of `src/browser/i18n.ts`. Forgetting to register keys will cause raw key strings (e.g. `setting.xxx`) to be displayed in the UI.
 
 ### Testing (Vitest)
 - Write logic tests in `src/core/*.test.ts`.
