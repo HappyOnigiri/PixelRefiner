@@ -5,7 +5,13 @@ import {
 	PROCESS_RANGES,
 	RETRO_PALETTES,
 } from "../shared/config";
-import type { Pixel, PixelData, PixelGrid, RawImage } from "../shared/types";
+import type {
+	Pixel,
+	PixelData,
+	PixelGrid,
+	RawImage,
+	RGB,
+} from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
@@ -130,6 +136,12 @@ export const downsample = (
 	return { width: outW, height: outH, data: out };
 };
 
+export type ProcessResult = {
+	result: RawImage;
+	grid: PixelGrid;
+	extractedPalette: RGB[];
+};
+
 export type ProcessOptions = DetectOptions & {
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
@@ -191,6 +203,10 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	ditherStrength?: number;
 	/**
+	 * 固定パレット
+	 */
+	fixedPalette?: RGB[];
+	/**
 	 * 背景抽出方法
 	 */
 	bgExtractionMethod?:
@@ -245,7 +261,7 @@ const normalizeProcessOptions = (
 	reduceColorMode: string;
 	colorCount: number;
 	ditherStrength: number;
-
+	fixedPalette?: RGB[];
 	floatingMaxPixels: number;
 	bgExtractionMethod:
 		| "none"
@@ -340,6 +356,7 @@ const normalizeProcessOptions = (
 		reduceColorMode,
 		colorCount,
 		ditherStrength,
+		fixedPalette: raw.fixedPalette,
 
 		floatingMaxPixels,
 		bgExtractionMethod,
@@ -676,6 +693,7 @@ const applyColorReduction = (
 	colorCount: number,
 	ditherStrength: number,
 	log: (...args: unknown[]) => void,
+	customPalette?: RGB[],
 ): RawImage => {
 	const quantStart = performance.now();
 	const pixelData: PixelData[] = [];
@@ -692,7 +710,7 @@ const applyColorReduction = (
 	// K-meansがSFCの色空間内で最適なパレットを選べるようにする
 	let workingPixelData = pixelData;
 	const isSfcMode = mode === "sfc_sprite" || mode === "sfc_bg";
-	if (isSfcMode) {
+	if (isSfcMode && !customPalette) {
 		workingPixelData = pixelData.map((p) => ({
 			r: Math.round(p.r / 8) * 8,
 			g: Math.round(p.g / 8) * 8,
@@ -702,7 +720,19 @@ const applyColorReduction = (
 	}
 
 	let reducedPixels: PixelData[];
-	if (mode === "auto" || isSfcMode) {
+	if (customPalette) {
+		const quantizer = new PaletteQuantizer(customPalette);
+		if (ditherStrength > 0) {
+			reducedPixels = quantizer.dither(
+				workingPixelData,
+				img.width,
+				img.height,
+				ditherStrength / 100,
+			);
+		} else {
+			reducedPixels = quantizer.quantize(workingPixelData);
+		}
+	} else if (mode === "auto" || isSfcMode) {
 		let count = colorCount;
 		if (mode === "sfc_sprite") count = 16;
 		else if (mode === "sfc_bg") count = 256;
@@ -768,6 +798,24 @@ const applyColorReduction = (
 	);
 
 	return { ...img, data: newData };
+};
+
+const extractUsedColors = (img: RawImage): RGB[] => {
+	const colors = new Set<string>();
+	const result: RGB[] = [];
+	for (let i = 0; i < img.data.length; i += 4) {
+		const a = img.data[i + 3];
+		if (a < 16) continue; // Transparency threshold
+		const r = img.data[i];
+		const g = img.data[i + 1];
+		const b = img.data[i + 2];
+		const key = `${r},${g},${b}`;
+		if (!colors.has(key)) {
+			colors.add(key);
+			result.push({ r, g, b });
+		}
+	}
+	return result;
 };
 
 const _getPixelAt = (
@@ -1081,7 +1129,7 @@ const legacySearchGridFromTrimmed = (
 export const processImage = (
 	img: RawImage,
 	options: ProcessOptions = {},
-): { result: RawImage; grid: PixelGrid } => {
+): ProcessResult => {
 	const o = normalizeProcessOptions(options);
 	const startTime = performance.now();
 	const log = (...args: unknown[]) => {
@@ -1227,13 +1275,14 @@ export const processImage = (
 
 		// 減色処理
 		let finalResult = result2;
-		if (o.reduceColors) {
+		if (o.reduceColors || o.fixedPalette) {
 			finalResult = applyColorReduction(
 				result2,
 				o.reduceColorMode,
 				o.colorCount,
 				o.ditherStrength,
 				log,
+				o.fixedPalette,
 			);
 		}
 
@@ -1244,7 +1293,8 @@ export const processImage = (
 		log(
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
-		return { result: finalResult, grid: g };
+		const extracted = extractUsedColors(finalResult);
+		return { result: finalResult, grid: g, extractedPalette: extracted };
 	}
 
 	// enableGridDetection: グリッド検出と縮小をスキップ
@@ -1267,16 +1317,27 @@ export const processImage = (
 			);
 		}
 
-		let resultImg = working;
+		let finalResult = working;
 		let outW = working.width;
 		let outH = working.height;
 		let cropX = 0;
 		let cropY = 0;
 
+		if (o.reduceColors || o.fixedPalette) {
+			finalResult = applyColorReduction(
+				working,
+				o.reduceColorMode,
+				o.colorCount,
+				o.ditherStrength,
+				log,
+				o.fixedPalette,
+			);
+		}
+
 		if (o.trimToContent) {
 			const b = findOpaqueBounds(masked, trimAlphaThreshold);
 			if (b) {
-				resultImg = cropRawImage(working, b.x, b.y, b.w, b.h);
+				finalResult = cropRawImage(finalResult, b.x, b.y, b.w, b.h);
 				outW = b.w;
 				outH = b.h;
 				cropX = b.x;
@@ -1284,54 +1345,33 @@ export const processImage = (
 			}
 		}
 
-		const g: PixelGrid = {
-			cellW: 1,
-			cellH: 1,
-			offsetX: 0,
-			offsetY: 0,
-			outW,
-			outH,
-			cropX,
-			cropY,
-			cropW: outW,
-			cropH: outH,
-			score: 1,
-		};
-
-		const result = o.postRemoveBackground
-			? removeBackground(
-					resultImg,
-					o.backgroundTolerance,
-					o.removeInnerBackground,
-					bgTargets,
-					o.bgExtractionMethod,
-					o.bgRgb,
-				)
-			: resultImg;
-
-		// 減色処理
-		let finalResult = result;
-		if (o.reduceColors) {
-			finalResult = applyColorReduction(
-				result,
-				o.reduceColorMode,
-				o.colorCount,
-				o.ditherStrength,
-				log,
-			);
-		}
-
 		o.debugHook?.("99-result", finalResult, {
-			postRemoveBackground: o.postRemoveBackground,
-			reduceColors: o.reduceColors,
-			colorCount: o.colorCount,
-			gridDetectionDisabled: true,
+			noGridDetection: true,
+			trimmed: o.trimToContent,
 		});
+
+		const extracted = extractUsedColors(finalResult);
 		log(
-			`Grid detection disabled mode: ${outW}x${outH}`,
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
-		return { result: finalResult, grid: g };
+
+		return {
+			result: finalResult,
+			grid: {
+				cellW: 1,
+				cellH: 1,
+				offsetX: 0,
+				offsetY: 0,
+				outW,
+				outH,
+				cropX,
+				cropY,
+				cropW: outW,
+				cropH: outH,
+				score: 0,
+			},
+			extractedPalette: extracted,
+		};
 	}
 
 	// auto: まず背景トリム（縮小前）した領域から outW/outH を推定して、そのまま縮小する
@@ -1531,13 +1571,14 @@ export const processImage = (
 
 	// 減色処理
 	let finalResult = result;
-	if (o.reduceColors) {
+	if (o.reduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
 			result,
 			o.reduceColorMode,
 			o.colorCount,
 			o.ditherStrength,
 			log,
+			o.fixedPalette,
 		);
 	}
 
@@ -1547,5 +1588,11 @@ export const processImage = (
 		colorCount: o.colorCount,
 	});
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
-	return { result: finalResult, grid: trimmedGrid };
+
+	const extracted = extractUsedColors(finalResult);
+	return {
+		result: finalResult,
+		grid: trimmedGrid,
+		extractedPalette: extracted,
+	};
 };

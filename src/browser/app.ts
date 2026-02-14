@@ -8,7 +8,13 @@ import {
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
-import type { RawImage } from "../shared/types";
+import type { RawImage, RGB } from "../shared/types";
+import {
+	generateGPL,
+	generatePaletteImage,
+	parseGPL,
+	sortPalette,
+} from "../utils/palette";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 
@@ -69,7 +75,19 @@ type Elements = {
 	eyedropperModal: HTMLElement;
 	closeEyedropperModal: HTMLButtonElement;
 	eyedropperCanvas: HTMLCanvasElement;
+
 	autoProcessToggle: HTMLInputElement;
+
+	// Palette UI
+	// Palette UI
+	paletteColors: HTMLElement;
+	exportGPLButton: HTMLButtonElement;
+	exportPNGButton: HTMLButtonElement;
+	fixedPaletteImportButton: HTMLButtonElement;
+	showPaletteButton: HTMLButtonElement;
+	paletteModal: HTMLElement;
+	closePaletteModal: HTMLButtonElement;
+	paletteFileInput: HTMLInputElement;
 };
 
 const getElements = (): Elements => {
@@ -137,6 +155,16 @@ const getElements = (): Elements => {
 		closeEyedropperModal: get<HTMLButtonElement>("close-eyedropper-modal"),
 		eyedropperCanvas: get<HTMLCanvasElement>("eyedropper-canvas"),
 		autoProcessToggle: get<HTMLInputElement>("auto-process-toggle"),
+		paletteColors: get<HTMLElement>("palette-colors"),
+		exportGPLButton: get<HTMLButtonElement>("export-gpl-button"),
+		exportPNGButton: get<HTMLButtonElement>("export-png-button"),
+		fixedPaletteImportButton: get<HTMLButtonElement>(
+			"fixed-palette-import-button",
+		),
+		showPaletteButton: get<HTMLButtonElement>("show-palette-button"),
+		paletteModal: get<HTMLElement>("palette-modal"),
+		closePaletteModal: get<HTMLButtonElement>("close-palette-modal"),
+		paletteFileInput: get<HTMLInputElement>("palette-file-input"),
 	};
 };
 
@@ -146,7 +174,7 @@ const getElements = (): Elements => {
 const showError = (message: string) => {
 	const toast = document.createElement("div");
 	toast.className = "error-toast";
-	toast.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> <span>${message}</span>`;
+	toast.innerHTML = `< svg xmlns = "http://www.w3.org/2000/svg" width = "20" height = "20" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="2" stroke - linecap="round" stroke - linejoin="round" > <circle cx="12" cy = "12" r = "10" > </circle><line x1="12" y1="8" x2="12" y2="12"></line > <line x1="12" y1 = "16" x2 = "12.01" y2 = "16" > </line></svg > <span>${message} </span>`;
 	document.body.appendChild(toast);
 
 	// 次のフレームで表示開始
@@ -180,6 +208,9 @@ export const initApp = (): void => {
 	const els = getElements();
 	let currentImage: RawImage | null = null;
 	let currentResult: RawImage | null = null;
+
+	let currentExtractedPalette: RGB[] = [];
+	let currentFixedPalette: RGB[] | undefined;
 	let lastBgChecks: {
 		preRemove: boolean;
 		postRemove: boolean;
@@ -497,28 +528,48 @@ export const initApp = (): void => {
 	els.enableGridDetectionCheck.addEventListener("change", updateDisabledStates);
 
 	// 減色設定のUI制御
+	const updatePaletteButtonVisibility = () => {
+		const mode = els.reduceColorModeSelect.value;
+		const isFixed = mode === "fixed";
+		const hasImage = currentImage !== null;
+
+		// In Fixed mode, Import is shown. (Only if image is set)
+		els.fixedPaletteImportButton.style.display =
+			isFixed && hasImage ? "flex" : "none";
+
+		// "Show Palette" is shown if we have a palette results. (Only if image is set)
+		const hasPalette = currentExtractedPalette.length > 0;
+		els.showPaletteButton.style.display =
+			hasPalette && hasImage ? "flex" : "none";
+	};
+
 	const updateReduceColorsDisabledStates = () => {
 		const mode = els.reduceColorModeSelect.value;
+		const isNone = mode === "none";
 		const isAuto = mode === "auto";
-		const isEnabled = mode !== "none";
 
-		// 色数設定の表示・非表示（Autoモードの時のみ表示）
+		// Enable/Disable sections based on mode
+		const isEnabled = !isNone;
+
 		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
+		els.colorCountInput.disabled = !isAuto;
+		els.colorCountSlider.disabled = !isAuto;
 
-		[els.colorCountInput, els.colorCountSlider].forEach((el) => {
-			el.disabled = !isAuto;
-		});
-
-		// ディザリング設定の表示・非表示（減色が有効な時のみ表示）
 		els.ditherStrengthSetting.style.display = isEnabled ? "flex" : "none";
 		els.ditherStrengthInput.disabled = !isEnabled;
 		els.ditherStrengthSlider.disabled = !isEnabled;
+
+		updatePaletteButtonVisibility();
 	};
 
-	els.reduceColorModeSelect.addEventListener(
-		"change",
-		updateReduceColorsDisabledStates,
-	);
+	els.reduceColorModeSelect.addEventListener("change", () => {
+		updateReduceColorsDisabledStates();
+		// If we switch away from Fixed, clear the fixed palette
+		if (els.reduceColorModeSelect.value !== "fixed") {
+			currentFixedPalette = undefined;
+		}
+		triggerAutoProcess();
+	});
 
 	// ディザリング設定のUI制御（常に表示、ただし減色モードがNone以外のときのみ有効など検討可能）
 	// 現状はシンプルに維持
@@ -770,6 +821,48 @@ export const initApp = (): void => {
 		container?.classList.add("grid-enabled");
 	};
 
+	const updatePaletteDisplay = () => {
+		els.paletteColors.innerHTML = "";
+		if (currentExtractedPalette.length === 0) {
+			// els.paletteSection.style.display = "none";
+			updatePaletteButtonVisibility();
+			return;
+		}
+
+		// els.paletteSection.style.display = "block";
+		updatePaletteButtonVisibility();
+
+		currentExtractedPalette.forEach((color) => {
+			const hex =
+				"#" +
+				[color.r, color.g, color.b]
+					.map((x) => x.toString(16).padStart(2, "0"))
+					.join("");
+			const swatch = document.createElement("div");
+			swatch.className = "color-swatch";
+			swatch.style.backgroundColor = hex;
+			swatch.dataset.tooltip = hex.toUpperCase();
+			swatch.addEventListener("click", () => {
+				navigator.clipboard.writeText(hex.toUpperCase()).then(() => {
+					const originalTooltip = swatch.getAttribute("data-tooltip") || "";
+					swatch.setAttribute("data-tooltip", "Copied!");
+					swatch.classList.add("copied");
+					setTimeout(() => {
+						swatch.classList.remove("copied");
+						swatch.setAttribute("data-tooltip", originalTooltip);
+					}, 1500);
+				});
+				updateRgbInputs(hex);
+				// Also select this color if in RGB mode
+				if (els.bgExtractionMethod.value === "rgb") {
+					els.bgExtractionMethod.dispatchEvent(new Event("change"));
+				}
+				updateReduceColorsDisabledStates();
+			});
+			els.paletteColors.appendChild(swatch);
+		});
+	};
+
 	const runProcessing = async () => {
 		const img = currentImage;
 		if (!img) {
@@ -842,9 +935,9 @@ export const initApp = (): void => {
 				Number(els.ditherStrengthInput.value),
 				PROCESS_RANGES.ditherStrength,
 			);
-			const ditherEnabled = ditherStrength > 0;
+			const _ditherEnabled = ditherStrength > 0;
 
-			const { result } = await processor.process(img, {
+			const { result, extractedPalette } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
@@ -864,6 +957,7 @@ export const initApp = (): void => {
 				floatingMaxPixels,
 				bgExtractionMethod: method,
 				bgRgb: els.bgRgbInput.value,
+				fixedPalette: currentFixedPalette,
 			});
 
 			// 転送されたデータは元のスレッドで使えなくなる（Comlinkの挙動に依存するが、
@@ -872,7 +966,15 @@ export const initApp = (): void => {
 			// 明示的に transfer を使わない限り currentImage は維持される。
 			// 今回はシンプルさを優先してコピーのままにする。
 
+			// 明示的に transfer を使わない限り currentImage は維持される。
+			// 今回はシンプルさを優先してコピーのままにする。
+
 			currentResult = result;
+			// Sort the palette for better visualization
+			const sortedPalette = sortPalette(extractedPalette);
+			currentExtractedPalette = sortedPalette;
+
+			updatePaletteDisplay();
 			els.downloadButton.disabled = false;
 			els.downloadDropdownButton.disabled = false;
 
@@ -907,7 +1009,13 @@ export const initApp = (): void => {
 		try {
 			const raw = await imageToRawImage(file);
 			currentImage = raw;
+
 			currentResult = null; // 新しい画像が読み込まれたら結果をリセット
+			currentFixedPalette = undefined; // Reset fixed palette on new image load? Or keep it?
+			// Let's keep it if the user imported it. But if they just drop an image, maybe we shouldn't reset.
+			// However, if they drop a GPL file, we handle that separately.
+			// For now, let's NOT reset fixed palette so users can batch process with the same palette.
+
 			els.downloadButton.disabled = true;
 			els.downloadDropdownButton.disabled = true;
 			els.downloadMenu.classList.remove("show");
@@ -921,7 +1029,9 @@ export const initApp = (): void => {
 			// 自動処理の実行
 			runProcessing();
 		} catch (err) {
+			// 失敗時はUIをリセット
 			currentImage = null;
+			updateReduceColorsDisabledStates();
 			showError(`${i18n.t("error.load_failed")}: ${(err as Error).message}`);
 		}
 	};
@@ -963,18 +1073,131 @@ export const initApp = (): void => {
 		loadFile(files[0]);
 	});
 
-	els.dropArea.addEventListener("drop", (e) => {
+	els.dropArea.addEventListener("drop", async (e) => {
 		const dt = (e as DragEvent).dataTransfer;
 		const files = dt?.files;
 		if (files && files.length > 0) {
-			loadFile(files[0]);
-			// Update file input to match (optional but good for consistency)
-			if (files.length > 0) {
+			const file = files[0];
+			if (file.name.toLowerCase().endsWith(".gpl")) {
+				// Handle palette file
+				const text = await file.text();
+				const palette = parseGPL(text);
+				if (palette.length > 0) {
+					if (palette.length > 0) {
+						currentFixedPalette = palette;
+						els.reduceColorModeSelect.value = "fixed";
+						updateReduceColorsDisabledStates();
+						runProcessing();
+					}
+				}
+			} else {
+				loadFile(file);
+				// Update file input to match (optional but good for consistency)
 				const container = new DataTransfer();
-				container.items.add(files[0]);
+				container.items.add(file);
 				els.fileInput.files = container.files;
 			}
 		}
+	});
+
+	// Palette Import/Export
+	els.exportGPLButton.addEventListener("click", () => {
+		if (currentExtractedPalette.length === 0) return;
+		const content = generateGPL(currentExtractedPalette, "PixelRefiner Export");
+		const blob = new Blob([content], { type: "text/plain" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "palette.gpl";
+		link.click();
+		URL.revokeObjectURL(url);
+	});
+
+	els.exportPNGButton.addEventListener("click", async () => {
+		if (currentExtractedPalette.length === 0) return;
+		const blob = await generatePaletteImage(currentExtractedPalette);
+		if (!blob) return;
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "palette.png";
+		link.click();
+		URL.revokeObjectURL(url);
+	});
+
+	els.fixedPaletteImportButton.addEventListener("click", () => {
+		els.paletteFileInput.click();
+	});
+
+	els.showPaletteButton.addEventListener("click", () => {
+		els.paletteModal.style.display = "flex";
+	});
+
+	els.closePaletteModal.addEventListener("click", () => {
+		els.paletteModal.style.display = "none";
+	});
+
+	// Close on background click
+	els.paletteModal.addEventListener("click", (e) => {
+		if (e.target === els.paletteModal) {
+			els.paletteModal.style.display = "none";
+		}
+	});
+
+	els.paletteFileInput.addEventListener("change", async (e) => {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+
+		try {
+			if (file.name.toLowerCase().endsWith(".gpl")) {
+				const text = await file.text();
+				const palette = parseGPL(text);
+				if (palette.length > 0) {
+					currentFixedPalette = palette;
+					els.reduceColorModeSelect.value = "fixed";
+					updateReduceColorsDisabledStates();
+					runProcessing();
+				}
+			} else if (file.name.toLowerCase().endsWith(".png")) {
+				const img = new Image();
+				img.onload = () => {
+					const canvas = document.createElement("canvas");
+					canvas.width = img.width;
+					canvas.height = img.height;
+					const ctx = canvas.getContext("2d");
+					if (!ctx) return;
+					ctx.drawImage(img, 0, 0);
+					const data = ctx.getImageData(0, 0, img.width, img.height).data;
+					const colors: RGB[] = [];
+					const seen = new Set<string>();
+
+					for (let i = 0; i < data.length; i += 4) {
+						if (data[i + 3] < 128) continue; // Skip transparent
+						const r = data[i];
+						const g = data[i + 1];
+						const b = data[i + 2];
+						const key = `${r},${g},${b}`;
+						if (!seen.has(key)) {
+							seen.add(key);
+							colors.push({ r, g, b });
+						}
+					}
+
+					if (colors.length > 0) {
+						currentFixedPalette = colors;
+						els.reduceColorModeSelect.value = "fixed";
+						updateReduceColorsDisabledStates();
+						runProcessing();
+					}
+				};
+				img.src = URL.createObjectURL(file);
+			}
+		} catch (err) {
+			console.error(err);
+			showError(i18n.t("error.load_failed"));
+		}
+		// Reset input
+		els.paletteFileInput.value = "";
 	});
 
 	els.processButton.addEventListener("click", () => {

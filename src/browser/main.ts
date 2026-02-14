@@ -1,5 +1,6 @@
 import { inject } from "@vercel/analytics";
 import { initApp } from "./app";
+import { initTooltip } from "./tooltip";
 import "./style.css";
 
 inject();
@@ -12,4 +13,6 @@ window.addEventListener("DOMContentLoaded", () => {
 	if (versionEl) {
 		versionEl.textContent = `v${import.meta.env.APP_VERSION}`;
 	}
+
+	initTooltip();
 });

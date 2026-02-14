@@ -269,7 +269,8 @@ main {
   grid-column: 1 / -1;
 }
 
-.input-with-slider {
+.input-with-slider,
+.input-with-button {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -502,7 +503,7 @@ select:focus {
   backdrop-filter: blur(4px);
 }
 
-.modal-content {
+.modal .modal-content {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -625,6 +626,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .action-button.download-button {
@@ -926,38 +928,7 @@ select:focus {
   position: relative;
 }
 
-.help:hover::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 240px;
-  padding: 8px 12px;
-  background: #2d3342;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  font-size: 12px;
-  line-height: 1.4;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md);
-  z-index: 100;
-  white-space: pre-wrap;
-  margin-bottom: 8px;
-  text-align: left;
-  pointer-events: none;
-}
 
-.setting-item:nth-child(2n) .help:hover::after {
-  left: auto;
-  right: 0;
-  transform: translateX(0);
-}
-
-.setting-item:nth-child(2n-1) .help:hover::after {
-  left: 0;
-  transform: translateX(0);
-}
 
 /* Footer */
 .app-footer {
@@ -1023,4 +994,170 @@ select:focus {
     flex-direction: column;
     gap: 12px;
   }
+}
+
+/* Palette Section */
+.palette-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-color);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.palette-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.palette-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.color-swatch:hover {
+  transform: scale(1.2) translateY(-2px);
+  z-index: 10;
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+
+.palette-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.small-button {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  flex: 0 1 auto;
+}
+
+.outline-button {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+.outline-button:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Palette Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay .modal-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+}
+
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-main);
+}
+
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  /* Take remaining space */
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-panel);
+}
+
+.palette-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  /* Removed margin-top as it's now in footer */
+}
+
+/* Custom Tooltip (JS managed) */
+.custom-tooltip {
+  position: fixed;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+  white-space: pre-wrap;
+  max-width: 300px;
+}
+
+.custom-tooltip.show {
+  opacity: 1;
 }

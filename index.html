@@ -249,31 +249,6 @@
       </header>
 
       <main>
-        <!-- Eyedropper Modal -->
-        <div id="eyedropper-modal" class="modal" style="display: none">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h3 data-i18n="modal.eyedropper.title">
-                Select Background Color
-              </h3>
-              <button id="close-eyedropper-modal" class="close-button">
-                &times;
-              </button>
-            </div>
-            <div class="modal-body">
-              <p
-                class="modal-instruction"
-                data-i18n="modal.eyedropper.instruction"
-              >
-                Click on the color in the image you want to set as background
-              </p>
-              <div class="modal-canvas-container">
-                <canvas id="eyedropper-canvas"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="app-grid">
           <div class="col-main">
             <section
@@ -330,7 +305,10 @@
                 </h3>
                 <!-- ... settings content ... -->
                 <div class="grid-settings">
-                  <label class="setting-item">
+                  <label
+                    id="color-mode-setting"
+                    class="setting-item full-width"
+                  >
                     <span class="label-text">
                       <span data-i18n="setting.color_mode">Reduction Mode</span>
                       <span
@@ -340,49 +318,78 @@
                         >?</span
                       >
                     </span>
-                    <select id="reduce-color-mode">
-                      <option value="none" data-i18n="option.none" selected>
-                        None
-                      </option>
-                      <option value="mono" data-i18n="option.mono">
-                        Monochrome
-                      </option>
-                      <option value="gb_legacy" data-i18n="option.gb_legacy">
-                        Game Boy (Original)
-                      </option>
-                      <option value="gb_pocket" data-i18n="option.gb_pocket">
-                        Game Boy (Pocket)
-                      </option>
-                      <option value="gb_light" data-i18n="option.gb_light">
-                        Game Boy (Light)
-                      </option>
-                      <option value="pico8" data-i18n="option.pico8">
-                        PICO-8
-                      </option>
-                      <option value="nes" data-i18n="option.nes">NES</option>
-                      <option value="pc98" data-i18n="option.pc98">
-                        PC-9801
-                      </option>
-                      <option value="msx" data-i18n="option.msx">MSX1</option>
-                      <option value="c64" data-i18n="option.c64">
-                        Commodore 64
-                      </option>
-                      <option value="arne16" data-i18n="option.arne16">
-                        Arne 16
-                      </option>
-                      <option value="sfc_sprite" data-i18n="option.sfc_sprite">
-                        SFC Style (16 colors/Sprite)
-                      </option>
-                      <option value="sfc_bg" data-i18n="option.sfc_bg">
-                        SFC Style (256 colors/BG)
-                      </option>
-                      <option value="auto" data-i18n="option.auto">
-                        Custom Count
-                      </option>
-                    </select>
+                    <div class="input-with-button">
+                      <select id="reduce-color-mode">
+                        <option value="none" data-i18n="option.none" selected>
+                          None
+                        </option>
+                        <option value="mono" data-i18n="option.mono">
+                          Monochrome
+                        </option>
+                        <option value="gb_legacy" data-i18n="option.gb_legacy">
+                          Game Boy (Original)
+                        </option>
+                        <option value="gb_pocket" data-i18n="option.gb_pocket">
+                          Game Boy (Pocket)
+                        </option>
+                        <option value="gb_light" data-i18n="option.gb_light">
+                          Game Boy (Light)
+                        </option>
+                        <option value="pico8" data-i18n="option.pico8">
+                          PICO-8
+                        </option>
+                        <option value="nes" data-i18n="option.nes">NES</option>
+                        <option value="pc98" data-i18n="option.pc98">
+                          PC-9801
+                        </option>
+                        <option value="msx" data-i18n="option.msx">MSX1</option>
+                        <option value="c64" data-i18n="option.c64">
+                          Commodore 64
+                        </option>
+                        <option value="arne16" data-i18n="option.arne16">
+                          Arne 16
+                        </option>
+                        <option
+                          value="sfc_sprite"
+                          data-i18n="option.sfc_sprite"
+                        >
+                          SFC Style (16 colors/Sprite)
+                        </option>
+                        <option value="sfc_bg" data-i18n="option.sfc_bg">
+                          SFC Style (256 colors/BG)
+                        </option>
+                        <option value="auto" data-i18n="option.auto">
+                          Custom Count
+                        </option>
+                        <option value="fixed" data-i18n="option.fixed">
+                          Fixed / Custom Palette
+                        </option>
+                      </select>
+                      <button
+                        id="fixed-palette-import-button"
+                        type="button"
+                        class="action-button small-button outline-button"
+                        style="display: none"
+                        data-i18n="ui.import_palette"
+                      >
+                        Import
+                      </button>
+                      <button
+                        id="show-palette-button"
+                        type="button"
+                        class="action-button small-button outline-button"
+                        style="display: none"
+                        data-i18n="ui.show_palette"
+                      >
+                        Palette
+                      </button>
+                    </div>
                   </label>
 
-                  <label id="color-count-setting" class="setting-item">
+                  <label
+                    id="color-count-setting"
+                    class="setting-item full-width"
+                  >
                     <span class="label-text">
                       <span data-i18n="setting.color_count">Color Count</span>
                       <span
@@ -1024,6 +1031,69 @@
           </div>
         </div>
       </footer>
+    </div>
+
+    <!-- Modals -->
+    <!-- Eyedropper Modal -->
+    <div id="eyedropper-modal" class="modal" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 data-i18n="modal.eyedropper.title">Select Background Color</h3>
+          <button id="close-eyedropper-modal" class="close-button">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-instruction" data-i18n="modal.eyedropper.instruction">
+            Click on the color in the image you want to set as background
+          </p>
+          <div class="modal-canvas-container">
+            <canvas id="eyedropper-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Palette Modal -->
+    <div id="palette-modal" class="modal-overlay" style="display: none">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 data-i18n="section.palette">Palette</h3>
+          <button id="close-palette-modal" class="close-button">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div id="palette-colors" class="palette-colors"></div>
+
+          <!-- Hidden file input for palette import -->
+          <input
+            id="palette-file-input"
+            type="file"
+            accept=".gpl"
+            style="display: none"
+          />
+        </div>
+        <div class="modal-footer">
+          <div class="palette-actions">
+            <button
+              id="export-gpl-button"
+              type="button"
+              class="action-button small-button"
+              data-i18n="ui.export_gpl"
+            >
+              Export .GPL
+            </button>
+            <button
+              id="export-png-button"
+              type="button"
+              class="action-button small-button"
+              data-i18n="ui.export_png"
+            >
+              Export .PNG
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/browser/main.ts"></script>
   </body>
