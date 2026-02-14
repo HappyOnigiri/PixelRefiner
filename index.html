@@ -407,6 +407,51 @@
                   </label>
 
                   <label
+                    id="dither-mode-setting"
+                    class="setting-item full-width"
+                  >
+                    <span class="label-text">
+                      <span data-i18n="setting.dither_mode">Dithering</span>
+                    </span>
+                    <select id="dither-mode">
+                      <option
+                        value="none"
+                        data-i18n="option.dither_none"
+                        selected
+                      >
+                        None
+                      </option>
+                      <option
+                        value="floyd-steinberg"
+                        data-i18n="option.dither_floyd"
+                      >
+                        Floyd-Steinberg
+                      </option>
+                      <option
+                        value="bayer-2x2"
+                        data-i18n="option.dither_bayer2"
+                      >
+                        Bayer 2x2
+                      </option>
+                      <option
+                        value="bayer-4x4"
+                        data-i18n="option.dither_bayer4"
+                      >
+                        Bayer 4x4
+                      </option>
+                      <option
+                        value="bayer-8x8"
+                        data-i18n="option.dither_bayer8"
+                      >
+                        Bayer 8x8
+                      </option>
+                      <option value="ordered" data-i18n="option.dither_ordered">
+                        Ordered
+                      </option>
+                    </select>
+                  </label>
+
+                  <label
                     id="dither-strength-setting"
                     class="setting-item full-width"
                   >

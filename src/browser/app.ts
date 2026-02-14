@@ -8,7 +8,7 @@ import {
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
-import type { OutlineStyle, RawImage, RGB } from "../shared/types";
+import type { DitherMode, OutlineStyle, RawImage, RGB } from "../shared/types";
 import {
 	extractColorsFromImage,
 	generateGPL,
@@ -53,6 +53,7 @@ type Elements = {
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	enableGridDetectionCheck: HTMLInputElement;
 	reduceColorModeSelect: HTMLSelectElement;
+	ditherModeSelect: HTMLSelectElement;
 	colorCountInput: HTMLInputElement;
 	colorCountSlider: HTMLInputElement;
 	colorCountSetting: HTMLElement;
@@ -143,6 +144,7 @@ const getElements = (): Elements => {
 		),
 		enableGridDetectionCheck: get<HTMLInputElement>("enable-grid-detection"),
 		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
+		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
 		colorCountInput: get<HTMLInputElement>("color-count"),
 		colorCountSlider: get<HTMLInputElement>("color-count-slider"),
 		colorCountSetting: get<HTMLElement>("color-count-setting"),
@@ -459,6 +461,7 @@ export const initApp = (): void => {
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.enableGridDetectionCheck.checked = PROCESS_DEFAULTS.enableGridDetection;
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
+		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
 		els.enableBgRemovalCheck.checked = true;
 
@@ -593,7 +596,16 @@ export const initApp = (): void => {
 
 		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
 
-		els.ditherStrengthSetting.style.display = isEnabled ? "flex" : "none";
+		const ditherMode = els.ditherModeSelect.value;
+		const isDitherNone = ditherMode === "none";
+		// ディザリングが有効なら強度を表示
+		els.ditherStrengthSetting.style.display = !isDitherNone ? "flex" : "none";
+
+		// 減色モードが None のときはディザリング設定を無効化
+		const ditherModeItem = els.ditherModeSelect.closest(".setting-item");
+		if (ditherModeItem) {
+			ditherModeItem.classList.toggle("disabled", !isEnabled);
+		}
 
 		const outlineEnabled = els.outlineStyleSelect.value !== "none";
 		const outlineColorItem = els.outlineColorInput.closest(".setting-item");
@@ -610,6 +622,11 @@ export const initApp = (): void => {
 		if (els.reduceColorModeSelect.value !== "fixed") {
 			currentFixedPalette = undefined;
 		}
+		triggerAutoProcess();
+	});
+
+	els.ditherModeSelect.addEventListener("change", () => {
+		updateReduceColorsDisabledStates();
 		triggerAutoProcess();
 	});
 
@@ -747,6 +764,7 @@ export const initApp = (): void => {
 		els.fastAutoGridFromTrimmedCheck,
 		els.enableGridDetectionCheck,
 		els.reduceColorModeSelect,
+		els.ditherModeSelect,
 
 		els.bgExtractionMethod,
 		els.bgRgbInput,
@@ -964,6 +982,7 @@ export const initApp = (): void => {
 
 			const reduceColorMode = els.reduceColorModeSelect.value;
 			const reduceColors = reduceColorMode !== "none";
+			const ditherMode = els.ditherModeSelect.value as DitherMode;
 
 			const ditherStrength = clampInt(
 				Number(els.ditherStrengthInput.value),
@@ -998,6 +1017,7 @@ export const initApp = (): void => {
 				enableGridDetection: els.enableGridDetectionCheck.checked,
 				reduceColors,
 				reduceColorMode,
+				ditherMode,
 				colorCount,
 				ditherStrength,
 				floatingMaxPixels,
