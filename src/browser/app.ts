@@ -69,6 +69,7 @@ type Elements = {
 	eyedropperModal: HTMLElement;
 	closeEyedropperModal: HTMLButtonElement;
 	eyedropperCanvas: HTMLCanvasElement;
+	autoProcessToggle: HTMLInputElement;
 };
 
 const getElements = (): Elements => {
@@ -135,6 +136,7 @@ const getElements = (): Elements => {
 		eyedropperModal: get<HTMLElement>("eyedropper-modal"),
 		closeEyedropperModal: get<HTMLButtonElement>("close-eyedropper-modal"),
 		eyedropperCanvas: get<HTMLCanvasElement>("eyedropper-canvas"),
+		autoProcessToggle: get<HTMLInputElement>("auto-process-toggle"),
 	};
 };
 
@@ -171,6 +173,7 @@ type SavedSettings = {
 	zoomOutput?: boolean;
 	gridOutput?: boolean;
 	bgType?: string;
+	autoProcess?: boolean;
 };
 
 export const initApp = (): void => {
@@ -192,6 +195,7 @@ export const initApp = (): void => {
 			zoomOutput: els.zoomOutputCheck.checked,
 			gridOutput: els.gridOutputCheck.checked,
 			bgType: activeBgBtn?.dataset.bg || "checkered",
+			autoProcess: els.autoProcessToggle.checked,
 		};
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 	};
@@ -205,6 +209,11 @@ export const initApp = (): void => {
 				els.zoomOutputCheck.checked = settings.zoomOutput;
 			if (settings.gridOutput !== undefined)
 				els.gridOutputCheck.checked = settings.gridOutput;
+			if (settings.autoProcess !== undefined)
+				els.autoProcessToggle.checked = settings.autoProcess;
+
+			// ボタン表示状態を更新
+			updateProcessButtonVisibility();
 
 			if (settings.bgType !== undefined) {
 				const btn = els.bgSelector.querySelector(
@@ -418,15 +427,38 @@ export const initApp = (): void => {
 		i18n.updatePage();
 	};
 
+	// Auto Process の状態に応じて Process ボタンの表示を切り替え
+	const updateProcessButtonVisibility = () => {
+		els.processButton.style.display = els.autoProcessToggle.checked
+			? "none"
+			: "flex";
+	};
+
+	let autoProcessTimeout: number | undefined;
+	const triggerAutoProcess = () => {
+		if (!els.autoProcessToggle.checked) return;
+
+		// 既に実行予約があればキャンセル（デバウンス）
+		if (autoProcessTimeout) {
+			window.clearTimeout(autoProcessTimeout);
+		}
+
+		autoProcessTimeout = window.setTimeout(() => {
+			runProcessing();
+		}, 300);
+	};
+
 	const syncSliderAndInput = (
 		slider: HTMLInputElement,
 		input: HTMLInputElement,
 	) => {
 		slider.addEventListener("input", () => {
 			input.value = slider.value;
+			triggerAutoProcess();
 		});
 		input.addEventListener("input", () => {
 			slider.value = input.value;
+			triggerAutoProcess();
 		});
 	};
 
@@ -609,10 +641,45 @@ export const initApp = (): void => {
 	updateBgDisabledStates();
 
 	loadSettings();
+	updateProcessButtonVisibility();
 
 	// 設定変更時に保存するための共通リスナー（表示条件のみ）
-	[els.zoomOutputCheck, els.gridOutputCheck].forEach((el) => {
-		el.addEventListener("change", () => saveSettings());
+	[els.zoomOutputCheck, els.gridOutputCheck, els.autoProcessToggle].forEach(
+		(el) => {
+			el.addEventListener("change", () => saveSettings());
+		},
+	);
+
+	// Auto Process トグル変更時にプロセスボタンの表示/非表示を切り替え
+	els.autoProcessToggle.addEventListener("change", () => {
+		updateProcessButtonVisibility();
+	});
+
+	// 設定変更時に自動処理をトリガーするイベントリスナーを追加
+	[
+		els.forcePixelsWInput,
+		els.forcePixelsHInput,
+		els.preRemoveCheck,
+		els.postRemoveCheck,
+		els.removeInnerBackgroundCheck,
+		els.trimToContentCheck,
+		els.fastAutoGridFromTrimmedCheck,
+		els.enableGridDetectionCheck,
+		els.reduceColorModeSelect,
+		els.ditherModeSelect,
+		els.ignoreFloatingCheck,
+		els.bgExtractionMethod,
+		els.bgRgbInput,
+		els.bgColorInput,
+	].forEach((el) => {
+		el.addEventListener("change", triggerAutoProcess);
+		// テキスト入力などは input イベントでも拾う
+		if (
+			el instanceof HTMLInputElement &&
+			(el.type === "text" || el.type === "number")
+		) {
+			el.addEventListener("input", triggerAutoProcess);
+		}
 	});
 
 	const clearGrid = () => {

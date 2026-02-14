@@ -579,30 +579,20 @@ select:focus {
   image-rendering: pixelated;
 }
 
-/* Actions */
-.actions {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 48px);
-  max-width: 1400px;
-  background: rgba(24, 27, 33, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 32px;
-  z-index: 100;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+/* Process Button in Settings */
+.process-action-button {
+  width: 100%;
+  margin-top: 24px;
+}
+
+/* Result Actions */
+.result-actions {
+  padding: 16px 0 0;
+  display: flex;
 }
 
 .app {
-  padding-bottom: 120px;
-  /* Space for the sticky bar */
+  padding-bottom: 40px;
 }
 
 .quick-settings {

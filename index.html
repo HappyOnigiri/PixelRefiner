@@ -308,6 +308,16 @@
                 accept="image/*"
                 style="display: none"
               />
+              <!-- 手動実行ボタン (Auto Process OFF時のみ表示) -->
+              <button
+                id="process-button"
+                type="button"
+                class="action-button process-action-button"
+                data-i18n="ui.process_btn"
+                style="display: none"
+              >
+                Process Image
+              </button>
             </section>
 
             <div class="quick-settings">
@@ -779,6 +789,27 @@
                   </label>
                 </div>
               </div>
+
+              <!-- 自動変換設定 -->
+              <div class="settings-group">
+                <h3 class="settings-group-title" data-i18n="setting.processing">
+                  Processing
+                </h3>
+                <div class="grid-settings">
+                  <label class="setting-item full-width">
+                    <span class="label-text">
+                      <span data-i18n="setting.auto_process">Auto Process</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.auto_process"
+                        data-tooltip="Automatically runs processing when settings are changed.&#10;&#10;Turn OFF if you prefer to manually click the Process button."
+                        >?</span
+                      >
+                    </span>
+                    <input id="auto-process-toggle" type="checkbox" checked />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -900,43 +931,36 @@
                 <canvas id="result-canvas"></canvas>
                 <canvas id="grid-canvas"></canvas>
               </div>
+              <!-- ダウンロードボタン -->
+              <div class="result-actions">
+                <div class="download-group">
+                  <button
+                    id="download-button"
+                    type="button"
+                    class="action-button download-button"
+                    data-i18n="ui.download_btn"
+                    disabled
+                  >
+                    Download
+                  </button>
+                  <button
+                    id="download-dropdown-button"
+                    type="button"
+                    class="action-button download-dropdown-button"
+                    disabled
+                  >
+                    ▼
+                  </button>
+                  <div id="download-menu" class="download-menu">
+                    <button type="button" data-scale="2">x2</button>
+                    <button type="button" data-scale="4">x4</button>
+                    <button type="button" data-scale="8">x8</button>
+                    <button type="button" data-scale="16">x16</button>
+                    <button type="button" data-scale="32">x32</button>
+                  </div>
+                </div>
+              </div>
             </section>
-          </div>
-        </div>
-        <div class="actions">
-          <button
-            id="process-button"
-            type="button"
-            class="action-button"
-            data-i18n="ui.process_btn"
-          >
-            Process Image
-          </button>
-          <div class="download-group">
-            <button
-              id="download-button"
-              type="button"
-              class="action-button download-button"
-              data-i18n="ui.download_btn"
-              disabled
-            >
-              Download
-            </button>
-            <button
-              id="download-dropdown-button"
-              type="button"
-              class="action-button download-dropdown-button"
-              disabled
-            >
-              ▼
-            </button>
-            <div id="download-menu" class="download-menu">
-              <button type="button" data-scale="2">x2</button>
-              <button type="button" data-scale="4">x4</button>
-              <button type="button" data-scale="8">x8</button>
-              <button type="button" data-scale="16">x16</button>
-              <button type="button" data-scale="32">x32</button>
-            </div>
           </div>
         </div>
       </main>

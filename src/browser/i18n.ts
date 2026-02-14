@@ -10,6 +10,7 @@ const resources = {
 		"section.input": "入力画像",
 		"section.result": "処理結果",
 		"ui.process_btn": "処理を実行",
+		"ui.auto_process": "自動",
 		"ui.download_btn": "ダウンロード",
 		"ui.size": "サイズ",
 		"ui.placeholder.input":
@@ -41,6 +42,10 @@ const resources = {
 		"setting.floating_max": "浮きノイズ上限(%)",
 		"setting.trimming": "トリミング",
 		"setting.auto_trim": "自動トリム",
+		"setting.processing": "処理",
+		"setting.auto_process": "自動変換",
+		"tooltip.help.auto_process":
+			"設定変更時に自動で処理を実行します。\n\nOFFにすると、手動で「処理を実行」ボタンをクリックする必要があります。",
 
 		// Tooltips
 		"tooltip.help.color_mode":
@@ -137,6 +142,7 @@ const resources = {
 		"section.input": "Input Image",
 		"section.result": "Result",
 		"ui.process_btn": "Process Image",
+		"ui.auto_process": "Auto",
 		"ui.download_btn": "Download",
 		"ui.size": "Size",
 		"ui.placeholder.input":
@@ -168,6 +174,10 @@ const resources = {
 		"setting.floating_max": "Max Noise Size (%)",
 		"setting.trimming": "Trimming",
 		"setting.auto_trim": "Auto Trim",
+		"setting.processing": "Processing",
+		"setting.auto_process": "Auto Process",
+		"tooltip.help.auto_process":
+			"Automatically runs processing when settings are changed.\n\nTurn OFF if you prefer to manually click the Process button.",
 
 		// Tooltips
 		"tooltip.help.color_mode":
