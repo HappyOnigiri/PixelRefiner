@@ -8,7 +8,7 @@ import {
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
-import type { RawImage, RGB } from "../shared/types";
+import type { OutlineStyle, RawImage, RGB } from "../shared/types";
 import {
 	extractColorsFromImage,
 	generateGPL,
@@ -58,6 +58,9 @@ type Elements = {
 	ditherStrengthInput: HTMLInputElement;
 	ditherStrengthSlider: HTMLInputElement;
 	ditherStrengthSetting: HTMLElement;
+
+	outlineStyleSelect: HTMLSelectElement;
+	outlineColorInput: HTMLInputElement;
 
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
@@ -135,6 +138,9 @@ const getElements = (): Elements => {
 		ditherStrengthInput: get<HTMLInputElement>("dither-strength"),
 		ditherStrengthSlider: get<HTMLInputElement>("dither-strength-slider"),
 		ditherStrengthSetting: get<HTMLElement>("dither-strength-setting"),
+
+		outlineStyleSelect: get<HTMLSelectElement>("outline-style"),
+		outlineColorInput: get<HTMLInputElement>("outline-color"),
 
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
@@ -560,6 +566,13 @@ export const initApp = (): void => {
 		els.ditherStrengthInput.disabled = !isEnabled;
 		els.ditherStrengthSlider.disabled = !isEnabled;
 
+		const outlineEnabled = els.outlineStyleSelect.value !== "none";
+		els.outlineColorInput.disabled = !outlineEnabled;
+		const outlineColorItem = els.outlineColorInput.closest(".setting-item");
+		if (outlineColorItem) {
+			outlineColorItem.classList.toggle("disabled", !outlineEnabled);
+		}
+
 		updatePaletteButtonVisibility();
 	};
 
@@ -571,6 +584,12 @@ export const initApp = (): void => {
 		}
 		triggerAutoProcess();
 	});
+
+	els.outlineStyleSelect.addEventListener("change", () => {
+		updateReduceColorsDisabledStates();
+		triggerAutoProcess();
+	});
+	els.outlineColorInput.addEventListener("input", triggerAutoProcess);
 
 	// ディザリング設定のUI制御（常に表示、ただし減色モードがNone以外のときのみ有効など検討可能）
 	// 現状はシンプルに維持
@@ -936,6 +955,15 @@ export const initApp = (): void => {
 				Number(els.ditherStrengthInput.value),
 				PROCESS_RANGES.ditherStrength,
 			);
+
+			const outlineStyle = els.outlineStyleSelect.value as OutlineStyle;
+			const outlineHex = els.outlineColorInput.value;
+			const outlineColor = {
+				r: parseInt(outlineHex.slice(1, 3), 16),
+				g: parseInt(outlineHex.slice(3, 5), 16),
+				b: parseInt(outlineHex.slice(5, 7), 16),
+			};
+
 			const { result, extractedPalette } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
@@ -954,6 +982,8 @@ export const initApp = (): void => {
 				colorCount,
 				ditherStrength,
 				floatingMaxPixels,
+				outlineStyle,
+				outlineColor,
 				bgExtractionMethod: method,
 				bgRgb: els.bgRgbInput.value,
 				fixedPalette: currentFixedPalette,
