@@ -919,9 +919,9 @@ export const initApp = (): void => {
 				? floatingMaxPercent <= 0
 					? 0
 					: Math.min(
-						totalPixels,
-						Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
-					)
+							totalPixels,
+							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
+						)
 				: 0;
 
 			const colorCount = clampInt(
@@ -1180,9 +1180,7 @@ export const initApp = (): void => {
 
 					// Show warning if there were more than 256 colors
 					if (totalColors > 256) {
-						showError(
-							`警告: 画像には${totalColors}色含まれています。パレットは256色に制限されます。`,
-						);
+						showError(i18n.t("error.palette_limit", { count: totalColors }));
 					}
 
 					if (colors.length > 0) {
