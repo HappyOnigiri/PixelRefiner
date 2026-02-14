@@ -5,13 +5,7 @@ import {
 	PROCESS_RANGES,
 	RETRO_PALETTES,
 } from "../shared/config";
-import type {
-	Pixel,
-	PixelData,
-	PixelGrid,
-	RawImage,
-	RGB,
-} from "../shared/types";
+import type { PixelData, PixelGrid, RawImage, RGB } from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
@@ -816,28 +810,6 @@ const extractUsedColors = (img: RawImage): RGB[] => {
 		}
 	}
 	return result;
-};
-
-const _getPixelAt = (
-	img: RawImage,
-	x: number,
-	y: number,
-	out?: Pixel,
-): Pixel => {
-	const idx = (y * img.width + x) * 4;
-	if (out) {
-		out[0] = img.data[idx];
-		out[1] = img.data[idx + 1];
-		out[2] = img.data[idx + 2];
-		out[3] = img.data[idx + 3];
-		return out;
-	}
-	return [
-		img.data[idx],
-		img.data[idx + 1],
-		img.data[idx + 2],
-		img.data[idx + 3],
-	];
 };
 
 type GridEstimateFromTrimmed = {

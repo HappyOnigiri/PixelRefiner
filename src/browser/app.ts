@@ -936,8 +936,6 @@ export const initApp = (): void => {
 				Number(els.ditherStrengthInput.value),
 				PROCESS_RANGES.ditherStrength,
 			);
-			const _ditherEnabled = ditherStrength > 0;
-
 			const { result, extractedPalette } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
