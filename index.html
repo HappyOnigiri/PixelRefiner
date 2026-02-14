@@ -909,6 +909,13 @@
                   <span id="output-size" class="js-output-size">-</span>
                 </div>
                 <div class="controls-right">
+                  <!-- NOTE:
+                    This view-controls markup is intentionally duplicated in TWO places:
+                    - Output panel (#output-panel)
+                    - Result modal (#result-modal)
+                    ResultViewer depends on these class hooks (e.g. .js-bg-selector/.js-zoom-output/.js-grid-output).
+                    When editing buttons/structure, update BOTH copies to keep behavior and i18n consistent.
+                  -->
                   <div class="bg-selector js-bg-selector" id="bg-selector">
                     <button
                       type="button"
@@ -1252,7 +1259,10 @@
           <button class="close-button js-close-result-modal">&times;</button>
         </div>
         <div class="modal-body result-modal-body">
-          <!-- Copied structure from output-panel for ResultViewer -->
+          <!-- NOTE:
+            This view-controls markup is intentionally duplicated from the output panel (#output-panel)
+            for ResultViewer. When editing buttons/structure, update BOTH copies.
+          -->
           <div class="status-bar">
             <div class="status-text">
               <span data-i18n="ui.size">Size</span>:
