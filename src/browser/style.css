@@ -6,9 +6,11 @@
   --bg-panel: #181b21;
   --bg-input: #0f1115;
   --border-color: #2a2e37;
-  --primary: #6366f1; /* Indigo */
+  --primary: #6366f1;
+  /* Indigo */
   --primary-hover: #4f46e5;
-  --accent: #06b6d4; /* Cyan */
+  --accent: #06b6d4;
+  /* Cyan */
   --text-main: #e2e8f0;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
@@ -109,7 +111,8 @@ h1 {
   display: flex;
   justify-content: center;
   margin-bottom: 12px;
-  position: relative; /* 必要に応じて追加 */
+  position: relative;
+  /* 必要に応じて追加 */
 }
 
 .hero-badge {
@@ -125,7 +128,8 @@ h1 {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-  white-space: nowrap; /* テキストの折り返し防止 */
+  white-space: nowrap;
+  /* テキストの折り返し防止 */
 }
 
 .text-highlight {
@@ -189,12 +193,14 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  list-style: none; /* Remove default arrow */
+  list-style: none;
+  /* Remove default arrow */
   user-select: none;
 }
 
 .settings-panel summary::-webkit-details-marker {
-  display: none; /* Remove default arrow for Safari */
+  display: none;
+  /* Remove default arrow for Safari */
 }
 
 .settings-panel summary::before {
@@ -226,6 +232,13 @@ main {
 
 .settings-group {
   margin-bottom: 24px;
+}
+
+.settings-panel .settings-group {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .settings-group:last-child {
@@ -334,9 +347,11 @@ canvas {
   max-height: 100%;
   width: auto;
   height: auto;
-  image-rendering: pixelated; /* Essential for pixel art */
+  image-rendering: pixelated;
+  /* Essential for pixel art */
   z-index: 2;
-  display: none; /* Hidden by default until image loaded */
+  display: none;
+  /* Hidden by default until image loaded */
 }
 
 #grid-canvas {
@@ -374,6 +389,7 @@ canvas {
 .panel.has-image .canvas-container.grid-enabled #grid-canvas {
   display: block;
 }
+
 .panel.has-image .placeholder,
 .panel.is-processing .placeholder {
   display: none;
@@ -736,7 +752,8 @@ select:focus {
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: #ef4444; /* Red-500 */
+  background: #ef4444;
+  /* Red-500 */
   color: white;
   padding: 12px 24px;
   border-radius: var(--radius-md);
@@ -810,9 +827,18 @@ select:focus {
   border-color: white;
 }
 
-.bg-btn.bg-white { background-color: #ffffff; }
-.bg-btn.bg-black { background-color: #000000; }
-.bg-btn.bg-green { background-color: #00ff00; }
+.bg-btn.bg-white {
+  background-color: #ffffff;
+}
+
+.bg-btn.bg-black {
+  background-color: #000000;
+}
+
+.bg-btn.bg-green {
+  background-color: #00ff00;
+}
+
 .bg-btn.bg-checkered {
   background-color: #fff;
   background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
@@ -824,9 +850,18 @@ select:focus {
 }
 
 /* Container background variants (only applied when image is loaded) */
-.has-image .canvas-container.bg-white { background: #ffffff; }
-.has-image .canvas-container.bg-black { background: #000000; }
-.has-image .canvas-container.bg-green { background: #00ff00; }
+.has-image .canvas-container.bg-white {
+  background: #ffffff;
+}
+
+.has-image .canvas-container.bg-black {
+  background: #000000;
+}
+
+.has-image .canvas-container.bg-green {
+  background: #00ff00;
+}
+
 .has-image .canvas-container.bg-checkered {
   background-color: #f0f0f0;
   background-image: linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
@@ -872,7 +907,9 @@ select:focus {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {
