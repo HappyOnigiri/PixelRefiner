@@ -42,6 +42,10 @@ body {
   line-height: 1.5;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 .app {
   max-width: 1400px;
   margin: 0 auto;

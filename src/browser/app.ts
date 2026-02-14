@@ -253,6 +253,127 @@ export const initApp = (): void => {
 		els.resultModal.querySelector(".result-modal-body") as HTMLElement,
 	);
 
+	// ---------------------------------------------------------
+	// Modal accessibility helpers
+	// ---------------------------------------------------------
+	const appRoot = document.querySelector(".app") as HTMLElement | null;
+	let openModalCount = 0;
+
+	const setModalOpenState = (isOpen: boolean) => {
+		openModalCount += isOpen ? 1 : -1;
+		openModalCount = Math.max(0, openModalCount);
+
+		document.body.classList.toggle("modal-open", openModalCount > 0);
+		if (appRoot) {
+			if (openModalCount > 0) {
+				appRoot.setAttribute("aria-hidden", "true");
+			} else {
+				appRoot.removeAttribute("aria-hidden");
+			}
+		}
+	};
+
+	const getFocusableElements = (root: HTMLElement): HTMLElement[] => {
+		const nodes = Array.from(
+			root.querySelectorAll<HTMLElement>(
+				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+			),
+		);
+		return nodes.filter((el) => {
+			if (el.hasAttribute("disabled")) return false;
+			if (el.getAttribute("aria-hidden") === "true") return false;
+			// Skip elements that are not visible
+			return el.offsetParent !== null || el === document.activeElement;
+		});
+	};
+
+	type ModalController = {
+		open: () => void;
+		close: () => void;
+		isOpen: () => boolean;
+	};
+
+	const createModalController = (
+		modalEl: HTMLElement,
+		closeBtn: HTMLElement | null,
+	): ModalController => {
+		let lastFocused: HTMLElement | null = null;
+		let abort: AbortController | null = null;
+
+		const focusInitial = () => {
+			(closeBtn ?? getFocusableElements(modalEl)[0] ?? modalEl).focus();
+		};
+
+		const open = () => {
+			if (modalEl.style.display !== "none") return;
+			lastFocused = document.activeElement as HTMLElement | null;
+			modalEl.style.display = "flex";
+			setModalOpenState(true);
+
+			abort?.abort();
+			abort = new AbortController();
+
+			modalEl.addEventListener(
+				"keydown",
+				(e) => {
+					if (e.key === "Escape") {
+						e.stopPropagation();
+						close();
+						return;
+					}
+					if (e.key !== "Tab") return;
+
+					const focusables = getFocusableElements(modalEl);
+					if (focusables.length === 0) {
+						e.preventDefault();
+						return;
+					}
+					const first = focusables[0];
+					const last = focusables[focusables.length - 1];
+					const active = document.activeElement as HTMLElement | null;
+
+					if (e.shiftKey) {
+						if (!active || active === first) {
+							e.preventDefault();
+							last.focus();
+						}
+					} else {
+						if (!active || active === last) {
+							e.preventDefault();
+							first.focus();
+						}
+					}
+				},
+				{ signal: abort.signal },
+			);
+
+			requestAnimationFrame(() => focusInitial());
+		};
+
+		const close = () => {
+			if (modalEl.style.display === "none") return;
+			modalEl.style.display = "none";
+			setModalOpenState(false);
+			abort?.abort();
+			abort = null;
+			lastFocused?.focus?.();
+			lastFocused = null;
+		};
+
+		const isOpen = () => modalEl.style.display !== "none";
+
+		return { open, close, isOpen };
+	};
+
+	const resultModalController = createModalController(
+		els.resultModal,
+		els.closeResultModal,
+	);
+	const compareModalController = createModalController(
+		els.compareModal,
+		els.closeCompareModal,
+	);
+
 	// Sync logic
 	const syncViewers = (
 		_source: ResultViewer,
@@ -303,7 +424,7 @@ export const initApp = (): void => {
 		onDownload: (scale) => handleDownload(scale),
 		onCompare: () => openCompareModal(),
 		onImageClick: () => {
-			els.resultModal.style.display = "flex";
+			resultModalController.open();
 			// モーダル表示時にグリッドなどの描画を更新（サイズが異なるため）
 			requestAnimationFrame(() => {
 				modalResultViewer.drawGrid();
@@ -349,12 +470,9 @@ export const initApp = (): void => {
 		const settings: SavedSettings = {
 			zoomOutput: els.zoomOutputCheck.checked,
 			gridOutput: els.gridOutputCheck.checked,
-			bgType: "checkered", // We'll need to read this from viewer state effectively, or just default.
+			bgType: mainResultViewer.getBackgroundType(),
 			autoProcess: els.autoProcessToggle.checked,
 		};
-		// Since we don't have direct access to BG state from here easily without asking viewer,
-		// we might rely on the last set state or ask viewer if we exposed getter.
-		// For now, let's skip bgType saving in this simplified block or fix it below.
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 	};
 
@@ -1222,7 +1340,7 @@ export const initApp = (): void => {
 	// ---------------------------------------------------------
 
 	const closeResultModal = () => {
-		els.resultModal.style.display = "none";
+		resultModalController.close();
 	};
 
 	// Open modal on result container click is now handled by ResultViewer onImageClick callback
@@ -1315,7 +1433,7 @@ export const initApp = (): void => {
 
 	// 表示切替ロジック
 	const openCompareModal = () => {
-		els.compareModal.style.display = "flex";
+		compareModalController.open();
 
 		// 背景色を同期 (mainResultViewerから取得するか、保存された設定から取得)
 		// 簡易的に localStorage から取得
@@ -1357,7 +1475,7 @@ export const initApp = (): void => {
 	};
 
 	const closeCompareModal = () => {
-		els.compareModal.style.display = "none";
+		compareModalController.close();
 	};
 
 	els.btnViewCompare.addEventListener("click", () => openCompareModal());
