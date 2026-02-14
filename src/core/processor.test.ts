@@ -265,18 +265,24 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test1", () => {
+	describe("resize_and_remove_bg", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test1");
+			cleanDebugDir("resize_and_remove_bg");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test1.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/resize_and_remove_bg.png",
+					import.meta.url,
+				),
 			);
 			img = await readPngAsRawImage(imgPath);
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test1-expect.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/resize_and_remove_bg-expect.png",
+					import.meta.url,
+				),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
@@ -297,7 +303,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: false,
 				debugHook: makeDebugHook(
-					"test1",
+					"resize_and_remove_bg",
 					"サイズ指定(forcePixelsW/H=22/22)_期待画像と完全一致",
 				),
 			});
@@ -324,7 +330,7 @@ describe("processImage", () => {
 				ignoreFloatingContent: false, // 浮きノイズOFF
 				floatingMaxPixels: 50000,
 				debugHook: makeDebugHook(
-					"test1",
+					"resize_and_remove_bg",
 					"高速モードOFF(fastAutoGridFromTrimmed=false)_浮きノイズOFF(ignoreFloatingContent=false)_期待画像と完全一致",
 				),
 			});
@@ -337,19 +343,25 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test2", () => {
+	describe("resize_with_trimming", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test2");
+			cleanDebugDir("resize_with_trimming");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test2.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/resize_with_trimming.png",
+					import.meta.url,
+				),
 			);
 			img = await readPngAsRawImage(imgPath);
 
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test2-expect.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/resize_with_trimming-expect.png",
+					import.meta.url,
+				),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
@@ -376,7 +388,7 @@ describe("processImage", () => {
 				forcePixelsW: 46,
 				forcePixelsH: 13,
 				debugHook: makeDebugHook(
-					"test2",
+					"resize_with_trimming",
 					"指定ピクセル(forcePixelsW/H)=46/13_で_46x13_に強制変換され、期待画像と完全一致する",
 				),
 			});
@@ -394,7 +406,7 @@ describe("processImage", () => {
 				...baseOpts,
 				trimToContent: true,
 				debugHook: makeDebugHook(
-					"test2",
+					"resize_with_trimming",
 					"trimToContent=true_でもサイズは変わらない",
 				),
 			});
@@ -405,19 +417,22 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test3", () => {
+	describe("auto_grid_detection", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test3");
+			cleanDebugDir("auto_grid_detection");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test3.png", import.meta.url),
+				new URL("../../test/fixtures/auto_grid_detection.png", import.meta.url),
 			);
 			img = await readPngAsRawImage(imgPath);
 
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test3-expect.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/auto_grid_detection-expect.png",
+					import.meta.url,
+				),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
@@ -436,7 +451,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
-					"test3",
+					"auto_grid_detection",
 					"期待画像と完全一致する（サイズ・ピクセル）",
 				),
 			});
@@ -456,19 +471,25 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test4", () => {
+	describe("inner_background_removal", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test4");
+			cleanDebugDir("inner_background_removal");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test4.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/inner_background_removal.png",
+					import.meta.url,
+				),
 			);
 			img = await readPngAsRawImage(imgPath);
 
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test4-expect.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/inner_background_removal-expect.png",
+					import.meta.url,
+				),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
@@ -487,7 +508,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
-					"test4",
+					"inner_background_removal",
 					"期待画像と完全一致する（サイズ・ピクセル）",
 				),
 			});
@@ -520,7 +541,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
-					"test4",
+					"inner_background_removal",
 					"内側に閉じ込められた背景色（ドーナツ穴）も透過できる",
 				),
 			});
@@ -541,19 +562,19 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test5", () => {
+	describe("no_trimming", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test5");
+			cleanDebugDir("no_trimming");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test5.png", import.meta.url),
+				new URL("../../test/fixtures/no_trimming.png", import.meta.url),
 			);
 			img = await readPngAsRawImage(imgPath);
 
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test5-expect.png", import.meta.url),
+				new URL("../../test/fixtures/no_trimming-expect.png", import.meta.url),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
@@ -572,7 +593,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
-					"test5",
+					"no_trimming",
 					"自動トリム(trimToContent)_OFFでも期待画像と一致する",
 				),
 			});
@@ -587,18 +608,24 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test6: Palette Conversion (Game Boy)", () => {
+	describe("palette_conversion_gb: Palette Conversion (Game Boy)", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test6");
+			cleanDebugDir("palette_conversion_gb");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test6.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/palette_conversion_gb.png",
+					import.meta.url,
+				),
 			);
 			img = await readPngAsRawImage(imgPath);
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test6-expect.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/palette_conversion_gb-expect.png",
+					import.meta.url,
+				),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
@@ -625,18 +652,24 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("test7: Dithering (Floyd-Steinberg)", () => {
+	describe("dithering_floyd_steinberg: Dithering (Floyd-Steinberg)", () => {
 		let img: RawImage;
 		let expected: RawImage;
 
 		beforeAll(async () => {
-			cleanDebugDir("test7");
+			cleanDebugDir("dithering_floyd_steinberg");
 			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/test7.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/dithering_floyd_steinberg.png",
+					import.meta.url,
+				),
 			);
 			img = await readPngAsRawImage(imgPath);
 			const expPath = fileURLToPath(
-				new URL("../../test/fixtures/test7-expect.png", import.meta.url),
+				new URL(
+					"../../test/fixtures/dithering_floyd_steinberg-expect.png",
+					import.meta.url,
+				),
 			);
 			expected = await readPngAsRawImage(expPath);
 		});
