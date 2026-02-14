@@ -64,6 +64,33 @@ describe("ops.ts", () => {
 				expect(result.data[i * 4 + 3]).toBe(255);
 			}
 		});
+
+		it("should return same image when step = 1", () => {
+			const data = new Uint8ClampedArray([10, 20, 30, 255]);
+			const img: RawImage = { width: 1, height: 1, data };
+			const result = posterize(img, 1);
+			expect(result.data[0]).toBe(10);
+			expect(result.data[1]).toBe(20);
+			expect(result.data[2]).toBe(30);
+		});
+
+		it("should binarize to 0 or 255 when step = 255", () => {
+			const data = new Uint8ClampedArray([
+				0, 0, 0, 255, 100, 100, 100, 255, 200, 200, 200, 255, 255, 255, 255,
+				255,
+			]);
+			const img: RawImage = { width: 4, height: 1, data };
+			const result = posterize(img, 255);
+
+			// 0 -> 0
+			expect(result.data[0]).toBe(0);
+			// 100 -> floor(100/255)*255 = 0
+			expect(result.data[4]).toBe(0);
+			// 200 -> floor(200/255)*255 = 0
+			expect(result.data[8]).toBe(0);
+			// 255 -> floor(255/255)*255 = 255
+			expect(result.data[12]).toBe(255);
+		});
 	});
 
 	describe("upscaleNearest", () => {
