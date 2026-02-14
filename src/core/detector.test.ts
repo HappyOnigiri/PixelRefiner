@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Pixel } from "../shared/types";
-import { getRunLengths } from "./detector";
+import type { Pixel, RawImage } from "../shared/types";
+import { detectGrid, getRunLengths } from "./detector";
 
 // quantize is not exported, but it's used internally by getRunLengths.
 // We can verify its effect through getRunLengths.
@@ -84,6 +84,29 @@ describe("detector.ts (helpers)", () => {
 			expect(runs[1].length).toBe(3);
 			expect(runs[0].color).toEqual([192, 192, 192]);
 			expect(runs[1].color).toEqual([192, 192, 192]);
+		});
+	});
+
+	describe("detectGrid (edge cases)", () => {
+		it("should handle 1x1 image without error", () => {
+			const img: RawImage = {
+				width: 1,
+				height: 1,
+				data: new Uint8ClampedArray([255, 255, 255, 255]),
+			};
+			const grid = detectGrid(img);
+			expect(grid.outW).toBe(1);
+			expect(grid.outH).toBe(1);
+		});
+
+		it("should handle solid color image without crashing", () => {
+			const width = 16;
+			const height = 16;
+			const data = new Uint8ClampedArray(width * height * 4).fill(255);
+			const img: RawImage = { width, height, data };
+
+			// Should not throw error
+			expect(() => detectGrid(img)).not.toThrow();
 		});
 	});
 });

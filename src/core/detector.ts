@@ -289,10 +289,10 @@ export const detectGrid = (
 		});
 	}
 
-	const expMinX = 8;
+	const expMinX = Math.min(w, 8);
 	const expMaxX = options.autoMaxCellsW ?? 128;
 	const twX = 2.0;
-	const expMinY = 8;
+	const expMinY = Math.min(h, 8);
 	const expMaxY = options.autoMaxCellsH ?? 128;
 	const twY = 2.0;
 
@@ -626,9 +626,32 @@ export const detectGrid = (
 	const finalY = estY2 ?? estY;
 
 	if (!finalX || !finalY) {
-		throw new Error(
-			"グリッド検出に失敗しました。入力画像やオプションを確認してください。",
-		);
+		// 検出失敗時のフォールバック
+		const fallbackX = finalX ?? { cellSize: w, offset: 0, score: 0 };
+		const fallbackY = finalY ?? { cellSize: h, offset: 0, score: 0 };
+
+		const fCellW = Math.max(1, Math.round(fallbackX.cellSize));
+		const fCellH = Math.max(1, Math.round(fallbackY.cellSize));
+		const fOffsetX = ((fallbackX.offset % fCellW) + fCellW) % fCellW;
+		const fOffsetY = ((fallbackY.offset % fCellH) + fCellH) % fCellH;
+		const fOutW = Math.max(1, Math.floor((w - fOffsetX) / fCellW));
+		const fOutH = Math.max(1, Math.floor((h - fOffsetY) / fCellH));
+
+		return {
+			cellW: fCellW,
+			cellH: fCellH,
+			offsetX: fOffsetX,
+			offsetY: fOffsetY,
+			score: (fallbackX.score + fallbackY.score) / 2,
+			cropX: fOffsetX,
+			cropY: fOffsetY,
+			cropW: fOutW * fCellW,
+			cropH: fOutH * fCellH,
+			outW: fOutW,
+			outH: fOutH,
+			scoreX: fallbackX.score,
+			scoreY: fallbackY.score,
+		};
 	}
 
 	const cellW = Math.max(1, Math.round(finalX.cellSize));
