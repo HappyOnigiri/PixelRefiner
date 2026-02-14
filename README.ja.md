@@ -4,7 +4,7 @@
 
 ![Pixel Refiner Demo](.github/assets/demo.png)
 
-### 🚀 今すぐツールを使う: [pixel-refiner.app](https://pixel-refiner.app/)
+### 🚀 今すぐツールを使う: <a href="https://pixel-refiner.app/" target="_blank">pixel-refiner.app</a>
 
 **Pixel Refiner** は、AI生成などで作られたドット絵（ピクセルアート）を、素材として実用的なクオリティに最適化するWebツールです。
 アンチエイリアスの除去、グリッドの自動検出、背景透過などの処理をブラウザ上で高速に行います。
