@@ -47,6 +47,10 @@ type Elements = {
 	colorCountInput: HTMLInputElement;
 	colorCountSlider: HTMLInputElement;
 	colorCountSetting: HTMLElement;
+	ditherModeSelect: HTMLSelectElement;
+	ditherStrengthInput: HTMLInputElement;
+	ditherStrengthSlider: HTMLInputElement;
+	ditherStrengthSetting: HTMLElement;
 	ignoreFloatingCheck: HTMLInputElement;
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
@@ -108,6 +112,10 @@ const getElements = (): Elements => {
 		colorCountInput: get<HTMLInputElement>("color-count"),
 		colorCountSlider: get<HTMLInputElement>("color-count-slider"),
 		colorCountSetting: get<HTMLElement>("color-count-setting"),
+		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
+		ditherStrengthInput: get<HTMLInputElement>("dither-strength"),
+		ditherStrengthSlider: get<HTMLInputElement>("dither-strength-slider"),
+		ditherStrengthSetting: get<HTMLElement>("dither-strength-setting"),
 		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
@@ -350,6 +358,11 @@ export const initApp = (): void => {
 			els.colorCountSlider,
 			PROCESS_RANGES.colorCount,
 		);
+		setNumberInput(
+			els.ditherStrengthInput,
+			els.ditherStrengthSlider,
+			PROCESS_RANGES.ditherStrength,
+		);
 
 		els.forcePixelsWInput.min = String(PROCESS_RANGES.forcePixelsW.min);
 		els.forcePixelsWInput.max = String(PROCESS_RANGES.forcePixelsW.max);
@@ -365,6 +378,7 @@ export const initApp = (): void => {
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.enableGridDetectionCheck.checked = PROCESS_DEFAULTS.enableGridDetection;
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
+		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
 
 		const applyTooltipRange = (
@@ -391,6 +405,7 @@ export const initApp = (): void => {
 			PROCESS_RANGES.floatingMaxPercent,
 		);
 		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
+		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
 	};
 
 	const syncSliderAndInput = (
@@ -411,6 +426,7 @@ export const initApp = (): void => {
 	syncSliderAndInput(els.toleranceSlider, els.toleranceInput);
 	syncSliderAndInput(els.floatingMaxPercentSlider, els.floatingMaxPercentInput);
 	syncSliderAndInput(els.colorCountSlider, els.colorCountInput);
+	syncSliderAndInput(els.ditherStrengthSlider, els.ditherStrengthInput);
 
 	// グリッド検出無効時のUI制御
 	const updateDisabledStates = () => {
@@ -454,6 +470,20 @@ export const initApp = (): void => {
 		"change",
 		updateReduceColorsDisabledStates,
 	);
+
+	// ディザリング設定のUI制御
+	const updateDitherDisabledStates = () => {
+		const mode = els.ditherModeSelect.value;
+		const isEnabled = mode !== "none";
+
+		els.ditherStrengthSetting.style.display = isEnabled ? "flex" : "none";
+		els.ditherStrengthInput.disabled = !isEnabled;
+		els.ditherStrengthSlider.disabled = !isEnabled;
+	};
+
+	els.ditherModeSelect.addEventListener("change", updateDitherDisabledStates);
+	updateDitherDisabledStates();
+
 	updateReduceColorsDisabledStates();
 
 	updateDisabledStates();
@@ -738,6 +768,12 @@ export const initApp = (): void => {
 			const reduceColorMode = els.reduceColorModeSelect.value;
 			const reduceColors = reduceColorMode !== "none";
 
+			const ditherMode = els.ditherModeSelect.value;
+			const ditherStrength = clampInt(
+				Number(els.ditherStrengthInput.value),
+				PROCESS_RANGES.ditherStrength,
+			);
+
 			const { result } = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
@@ -754,6 +790,8 @@ export const initApp = (): void => {
 				reduceColors,
 				reduceColorMode,
 				colorCount,
+				ditherMode,
+				ditherStrength,
 				ignoreFloatingContent: ignoreFloatingEnabled,
 				floatingMaxPixels,
 				bgExtractionMethod: method,

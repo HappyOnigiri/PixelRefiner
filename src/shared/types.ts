@@ -41,6 +41,8 @@ export interface PixelData extends RGB {
 	alpha: number; // 0-255 (Alpha)
 }
 
+export type DitherMode = "none" | "floyd-steinberg";
+
 export interface Palette {
 	id: string;
 	name: string;

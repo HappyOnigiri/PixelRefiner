@@ -124,6 +124,193 @@ export class OklabKMeans {
 		});
 	}
 
+	/**
+	 * Floyd-Steinberg dithering using K-means centroids as palette
+	 */
+	dither(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		strength = 1.0,
+	): PixelData[] {
+		// 1. Get palette via K-means (using existing quantize logic to find centroids)
+		const opaquePixels = pixels.filter((p) => p.alpha > 0);
+		if (opaquePixels.length === 0 || this.maxColors >= opaquePixels.length) {
+			return pixels;
+		}
+
+		const colorMap = new Map<number, { lab: Oklab; count: number }>();
+		for (const p of opaquePixels) {
+			const key = (p.r << 16) | (p.g << 8) | p.b;
+			const entry = colorMap.get(key);
+			if (entry) {
+				entry.count++;
+			} else {
+				colorMap.set(key, { lab: rgbToOklab(p), count: 1 });
+			}
+		}
+
+		const uniqueColors = Array.from(colorMap.values());
+		if (uniqueColors.length <= this.maxColors) {
+			return pixels;
+		}
+
+		let centroids: Oklab[] = this.initializeCentroids(uniqueColors);
+		// Run K-means (simplified version of quantize loop to get centroids)
+		for (let iter = 0; iter < this.maxIterations; iter++) {
+			const clusters = Array.from({ length: this.maxColors }, () => ({
+				sumL: 0,
+				suma: 0,
+				sumb: 0,
+				count: 0,
+			}));
+			for (const color of uniqueColors) {
+				let minDist = Number.MAX_VALUE;
+				let bestCluster = 0;
+				for (let i = 0; i < centroids.length; i++) {
+					const dist = this.colorDistanceSq(color.lab, centroids[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						bestCluster = i;
+					}
+				}
+				const cluster = clusters[bestCluster];
+				cluster.sumL += color.lab.L * color.count;
+				cluster.suma += color.lab.a * color.count;
+				cluster.sumb += color.lab.b * color.count;
+				cluster.count += color.count;
+			}
+			let maxMovement = 0;
+			const newCentroids: Oklab[] = [];
+			for (let i = 0; i < centroids.length; i++) {
+				const cluster = clusters[i];
+				if (cluster.count > 0) {
+					const nextCentroid = {
+						L: cluster.sumL / cluster.count,
+						a: cluster.suma / cluster.count,
+						b: cluster.sumb / cluster.count,
+					};
+					const movement = this.colorDistanceSq(centroids[i], nextCentroid);
+					maxMovement = Math.max(maxMovement, movement);
+					newCentroids.push(nextCentroid);
+				} else {
+					newCentroids.push(
+						uniqueColors[Math.floor(Math.random() * uniqueColors.length)].lab,
+					);
+				}
+			}
+			centroids = newCentroids;
+			if (maxMovement < this.tolerance * this.tolerance) break;
+		}
+
+		const palette = centroids.map((lab) => oklabToRgb(lab));
+		const paletteLabs = centroids;
+
+		// 2. Apply Floyd-Steinberg dithering
+		const out = pixels.map((p) => ({ ...p }));
+		// Use a temporary error buffer to avoid modifying original pixel values too much
+		// but for simplicity in JS, we'll just modify the 'out' array.
+		// Since we need to handle Oklab distance for better quality, we'll convert as we go.
+
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const idx = y * width + x;
+				const p = out[idx];
+				if (p.alpha === 0) continue;
+
+				const lab = rgbToOklab(p);
+				let minDist = Number.MAX_VALUE;
+				let bestIdx = 0;
+
+				for (let i = 0; i < paletteLabs.length; i++) {
+					const dist = this.colorDistanceSq(lab, paletteLabs[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						bestIdx = i;
+					}
+				}
+
+				const closest = palette[bestIdx];
+				const errR = (p.r - closest.r) * strength;
+				const errG = (p.g - closest.g) * strength;
+				const errB = (p.b - closest.b) * strength;
+
+				out[idx].r = closest.r;
+				out[idx].g = closest.g;
+				out[idx].b = closest.b;
+
+				// Distribute error
+				this.distributeError(
+					out,
+					x + 1,
+					y,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					7 / 16,
+				);
+				this.distributeError(
+					out,
+					x - 1,
+					y + 1,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					3 / 16,
+				);
+				this.distributeError(
+					out,
+					x,
+					y + 1,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					5 / 16,
+				);
+				this.distributeError(
+					out,
+					x + 1,
+					y + 1,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					1 / 16,
+				);
+			}
+		}
+
+		return out;
+	}
+
+	private distributeError(
+		pixels: PixelData[],
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		errR: number,
+		errG: number,
+		errB: number,
+		weight: number,
+	): void {
+		if (x < 0 || x >= width || y < 0 || y >= height) return;
+		const idx = y * width + x;
+		const p = pixels[idx];
+		if (p.alpha === 0) return;
+
+		p.r = Math.max(0, Math.min(255, p.r + errR * weight));
+		p.g = Math.max(0, Math.min(255, p.g + errG * weight));
+		p.b = Math.max(0, Math.min(255, p.b + errB * weight));
+	}
+
 	private initializeCentroids(
 		uniqueColors: { lab: Oklab; count: number }[],
 	): Oklab[] {
@@ -188,6 +375,116 @@ export class PaletteQuantizer {
 			const rgb = this.palette[paletteIdx];
 			return { ...rgb, alpha: p.alpha };
 		});
+	}
+
+	/**
+	 * Floyd-Steinberg dithering using fixed palette
+	 */
+	dither(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		strength = 1.0,
+	): PixelData[] {
+		const out = pixels.map((p) => ({ ...p }));
+
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const idx = y * width + x;
+				const p = out[idx];
+				if (p.alpha === 0) continue;
+
+				const lab = rgbToOklab(p);
+				let minDist = Number.MAX_VALUE;
+				let bestIdx = 0;
+
+				for (let i = 0; i < this.paletteLabs.length; i++) {
+					const dist = this.colorDistanceSq(lab, this.paletteLabs[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						bestIdx = i;
+					}
+				}
+
+				const closest = this.palette[bestIdx];
+				const errR = (p.r - closest.r) * strength;
+				const errG = (p.g - closest.g) * strength;
+				const errB = (p.b - closest.b) * strength;
+
+				out[idx].r = closest.r;
+				out[idx].g = closest.g;
+				out[idx].b = closest.b;
+
+				// Distribute error
+				this.distributeError(
+					out,
+					x + 1,
+					y,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					7 / 16,
+				);
+				this.distributeError(
+					out,
+					x - 1,
+					y + 1,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					3 / 16,
+				);
+				this.distributeError(
+					out,
+					x,
+					y + 1,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					5 / 16,
+				);
+				this.distributeError(
+					out,
+					x + 1,
+					y + 1,
+					width,
+					height,
+					errR,
+					errG,
+					errB,
+					1 / 16,
+				);
+			}
+		}
+
+		return out;
+	}
+
+	private distributeError(
+		pixels: PixelData[],
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		errR: number,
+		errG: number,
+		errB: number,
+		weight: number,
+	): void {
+		if (x < 0 || x >= width || y < 0 || y >= height) return;
+		const idx = y * width + x;
+		const p = pixels[idx];
+		if (p.alpha === 0) return;
+
+		p.r = Math.max(0, Math.min(255, p.r + errR * weight));
+		p.g = Math.max(0, Math.min(255, p.g + errG * weight));
+		p.b = Math.max(0, Math.min(255, p.b + errB * weight));
 	}
 
 	private colorDistanceSq(c1: Oklab, c2: Oklab): number {

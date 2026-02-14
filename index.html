@@ -469,6 +469,37 @@
                   <input id="color-count" type="number" />
                 </div>
               </label>
+
+              <label class="setting-item">
+                <span class="label-text">
+                  ディザリング
+                  <span
+                    class="help"
+                    data-tooltip="減色時にディザリング（誤差拡散）を適用します。&#10;&#10;少ない色数でも滑らかなグラデーションを表現できますが、ドット絵特有のザラつきが発生します。"
+                    >?</span
+                  >
+                </span>
+                <select id="dither-mode">
+                  <option value="none">無効</option>
+                  <option value="floyd-steinberg">Floyd-Steinberg</option>
+                </select>
+              </label>
+
+              <label id="dither-strength-setting" class="setting-item">
+                <span class="label-text">
+                  ディザリング強度
+                  <span
+                    id="help-dither-strength"
+                    class="help"
+                    data-tooltip="ディザリングの適用強度を設定します。&#10;&#10;100%: 完全な誤差拡散を行います。&#10;0%: ディザリングを行わず、最も近い色に丸めます。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    >?</span
+                  >
+                </span>
+                <div class="input-with-slider">
+                  <input id="dither-strength-slider" type="range" />
+                  <input id="dither-strength" type="number" />
+                </div>
+              </label>
             </div>
           </div>
         </div>

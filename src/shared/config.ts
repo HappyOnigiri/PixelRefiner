@@ -22,6 +22,8 @@ export const PROCESS_RANGES = {
 	forcePixelsH: { min: 1, max: 1024, default: 0 } as const,
 	// color reduction
 	colorCount: { min: 2, max: 256, default: 32 } as const,
+	// dithering
+	ditherStrength: { min: 0, max: 100, default: 100 } as const,
 } as const satisfies Record<string, IntRange>;
 
 export const RETRO_PALETTES: Record<
@@ -245,6 +247,8 @@ export const PROCESS_DEFAULTS = {
 	reduceColors: false,
 	reduceColorMode: "nes", // "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
 	colorCount: PROCESS_RANGES.colorCount.default,
+	ditherMode: "none", // "none" | "floyd-steinberg"
+	ditherStrength: PROCESS_RANGES.ditherStrength.default,
 	debug: import.meta.env.DEV,
 } as const;
 

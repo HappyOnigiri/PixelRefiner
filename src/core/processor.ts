@@ -193,6 +193,14 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	colorCount?: number;
 	/**
+	 * ディザリングモード
+	 */
+	ditherMode?: string;
+	/**
+	 * ディザリング強度 (0-100)
+	 */
+	ditherStrength?: number;
+	/**
 	 * 背景抽出方法
 	 */
 	bgExtractionMethod?:
@@ -236,6 +244,8 @@ const normalizeProcessOptions = (
 	reduceColors: boolean;
 	reduceColorMode: string;
 	colorCount: number;
+	ditherMode: string;
+	ditherStrength: number;
 	ignoreFloatingContent: boolean;
 	floatingMaxPixels: number;
 	bgExtractionMethod:
@@ -300,6 +310,11 @@ const normalizeProcessOptions = (
 		raw.colorCount ?? PROCESS_DEFAULTS.colorCount,
 		PROCESS_RANGES.colorCount,
 	);
+	const ditherMode = raw.ditherMode ?? PROCESS_DEFAULTS.ditherMode;
+	const ditherStrength = clampInt(
+		raw.ditherStrength ?? PROCESS_DEFAULTS.ditherStrength,
+		PROCESS_RANGES.ditherStrength,
+	);
 	const ignoreFloatingContent =
 		raw.ignoreFloatingContent ?? PROCESS_DEFAULTS.ignoreFloatingContent;
 	const floatingMaxPixels = clampInt(
@@ -326,6 +341,8 @@ const normalizeProcessOptions = (
 		reduceColors,
 		reduceColorMode,
 		colorCount,
+		ditherMode,
+		ditherStrength,
 		ignoreFloatingContent,
 		floatingMaxPixels,
 		bgExtractionMethod,
@@ -657,6 +674,8 @@ const applyColorReduction = (
 	img: RawImage,
 	mode: string,
 	colorCount: number,
+	ditherMode: string,
+	ditherStrength: number,
 	log: (...args: unknown[]) => void,
 ): RawImage => {
 	const quantStart = performance.now();
@@ -690,7 +709,16 @@ const applyColorReduction = (
 		else if (mode === "sfc_bg") count = 256;
 
 		const quantizer = new OklabKMeans(count);
-		reducedPixels = quantizer.quantize(workingPixelData);
+		if (ditherMode === "floyd-steinberg") {
+			reducedPixels = quantizer.dither(
+				workingPixelData,
+				img.width,
+				img.height,
+				ditherStrength / 100,
+			);
+		} else {
+			reducedPixels = quantizer.quantize(workingPixelData);
+		}
 	} else {
 		const paletteDef = RETRO_PALETTES[mode];
 		if (paletteDef) {
@@ -701,11 +729,29 @@ const applyColorReduction = (
 				return { r, g, b };
 			});
 			const quantizer = new PaletteQuantizer(colors);
-			reducedPixels = quantizer.quantize(workingPixelData);
+			if (ditherMode === "floyd-steinberg") {
+				reducedPixels = quantizer.dither(
+					workingPixelData,
+					img.width,
+					img.height,
+					ditherStrength / 100,
+				);
+			} else {
+				reducedPixels = quantizer.quantize(workingPixelData);
+			}
 		} else {
 			// Fallback to auto if palette not found
 			const quantizer = new OklabKMeans(colorCount);
-			reducedPixels = quantizer.quantize(workingPixelData);
+			if (ditherMode === "floyd-steinberg") {
+				reducedPixels = quantizer.dither(
+					workingPixelData,
+					img.width,
+					img.height,
+					ditherStrength / 100,
+				);
+			} else {
+				reducedPixels = quantizer.quantize(workingPixelData);
+			}
 		}
 	}
 
@@ -1183,6 +1229,8 @@ export const processImage = (
 				result2,
 				o.reduceColorMode,
 				o.colorCount,
+				o.ditherMode,
+				o.ditherStrength,
 				log,
 			);
 		}
@@ -1266,6 +1314,8 @@ export const processImage = (
 				result,
 				o.reduceColorMode,
 				o.colorCount,
+				o.ditherMode,
+				o.ditherStrength,
 				log,
 			);
 		}
@@ -1479,6 +1529,8 @@ export const processImage = (
 			result,
 			o.reduceColorMode,
 			o.colorCount,
+			o.ditherMode,
+			o.ditherStrength,
 			log,
 		);
 	}
