@@ -7,7 +7,12 @@ watch-dev:
 # repomixを実行してファイルをまとめ、tmp/repomix/ フォルダに出力
 repomix:
 	mkdir -p tmp/repomix
-	npx repomix --output tmp/repomix/repomix-output.txt
+	# フルバージョン
+	npx repomix --output tmp/repomix/repomix-full.txt
+	# ロックファイル、画像、ライセンス等を除外したバージョン
+	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
+	# さらにテストファイルを除外したバージョン
+	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
 # ローカル実行向け: 可能な範囲で自動整形 → チェック → テスト
 ci:
