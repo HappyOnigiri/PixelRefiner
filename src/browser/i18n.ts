@@ -22,7 +22,7 @@ const resources = {
 		"setting.color_mode": "減色モード",
 		"setting.color_count": "色数",
 		"setting.dither_mode": "ディザリング",
-		"setting.dither_strength": "ディザリング強度",
+		"setting.dither_strength": "ディザリング強度 (%)",
 		"setting.advanced": "詳細設定",
 		"setting.grid_detection": "グリッド検出",
 		"setting.enable_grid": "グリッド検出有効",
@@ -53,10 +53,8 @@ const resources = {
 			"出力結果の色数を制限します。\n\nドット絵らしい色使いに整えたい場合に有効です。\n無効: 減色を行いません。\nGame Boy / PICO-8 / NES: 各ゲーム機のパレットを使用します。\n色数指定 (Auto): 指定した色数に自動で減色します。",
 		"tooltip.help.color_count":
 			"出力する最大の色数を指定します。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
-		"tooltip.help.dither_mode":
-			"減色時にディザリング（誤差拡散）を適用します。\n\n少ない色数でも滑らかなグラデーションを表現できますが、ドット絵特有のザラつきが発生します。",
 		"tooltip.help.dither_strength":
-			"ディザリングの適用強度を設定します。\n\n100%: 完全な誤差拡散を行います。\n0%: ディザリングを行わず、最も近い色に丸めます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+			"減色時にディザリング（誤差拡散）を適用します。\n\n100%: 完全な誤差拡散を行います。\n0%: ディザリングを行わず、最も近い色に丸めます。\n\n少ない色数でも滑らかなグラデーションを表現できますが、ドット絵特有のザラつきが発生します。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.enable_grid":
 			"入力画像からグリッドを自動検出し、ドット単位に縮小・最適化します。\n\nOFFにすると、グリッド検出と縮小をスキップします（既に等倍のドット絵である場合に有効です）。背景トリミングや背景透過は、他の設定に従って引き続き実行されます。",
 		"tooltip.help.quant_step":
@@ -155,7 +153,7 @@ const resources = {
 		"setting.color_mode": "Reduction Mode",
 		"setting.color_count": "Color Count",
 		"setting.dither_mode": "Dithering",
-		"setting.dither_strength": "Dither Strength",
+		"setting.dither_strength": "Dither Strength (%)",
 		"setting.advanced": "Advanced Settings",
 		"setting.grid_detection": "Grid Detection",
 		"setting.enable_grid": "Enable Grid Detection",
@@ -186,10 +184,8 @@ const resources = {
 			"Limits the number of colors in the output.\n\nUseful for achieving a classic pixel art look.\nNone: No color reduction.\nGame Boy / PICO-8 / NES: Uses specific console palettes.\nAuto: Automatically reduces to the specified number of colors.",
 		"tooltip.help.color_count":
 			"Specifies the maximum number of colors in the output.\n\nRange: {min} to {max} (Default: {default})",
-		"tooltip.help.dither_mode":
-			"Applies dithering (error diffusion) during color reduction.\n\nAllows for smoother gradients with fewer colors, but introduces characteristic pixel noise.",
 		"tooltip.help.dither_strength":
-			"Sets the intensity of the dithering effect.\n\n100%: Full error diffusion.\n0%: No dithering, rounds to the nearest color.\n\nRange: {min} to {max} (Default: {default})",
+			"Applies dithering (error diffusion) during color reduction.\n\n100%: Full error diffusion.\n0%: No dithering (None).\n\nAllows for smoother gradients with fewer colors, but introduces characteristic pixel noise.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.enable_grid":
 			"Automatically detects the grid from the input image and reduces/optimizes it to pixel units.\n\nIf OFF, grid detection and reduction are skipped (useful if the image is already a 1:1 pixel art). Background trimming and transparency will still be performed based on other settings.",
 		"tooltip.help.quant_step":

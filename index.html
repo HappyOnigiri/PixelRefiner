@@ -399,23 +399,10 @@
                     </div>
                   </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.dither_mode">Dithering</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.dither_mode"
-                        data-tooltip="Applies dithering (error diffusion) during color reduction.&#10;&#10;Allows for smoother gradients with fewer colors, but introduces characteristic pixel noise."
-                        >?</span
-                      >
-                    </span>
-                    <select id="dither-mode">
-                      <option value="none" data-i18n="option.none">None</option>
-                      <option value="floyd-steinberg">Floyd-Steinberg</option>
-                    </select>
-                  </label>
-
-                  <label id="dither-strength-setting" class="setting-item">
+                  <label
+                    id="dither-strength-setting"
+                    class="setting-item full-width"
+                  >
                     <span class="label-text">
                       <span data-i18n="setting.dither_strength"
                         >Dither Strength</span
@@ -424,7 +411,7 @@
                         id="help-dither-strength"
                         class="help"
                         data-i18n-attr="data-tooltip:tooltip.help.dither_strength"
-                        data-tooltip="Sets the intensity of the dithering effect.&#10;&#10;100%: Full error diffusion.&#10;0%: No dithering, rounds to the nearest color.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                        data-tooltip="Applies dithering (error diffusion) during color reduction.&#10;&#10;100%: Full error diffusion.&#10;0%: No dithering (None).&#10;&#10;Allows for smoother gradients with fewer colors, but introduces characteristic pixel noise."
                         >?</span
                       >
                     </span>
