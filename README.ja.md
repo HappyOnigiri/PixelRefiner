@@ -1,8 +1,10 @@
 # Pixel Refiner
 
-[📖 English version (English)](./README.md)
+[English version (English)](./README.md)
 
 ![Pixel Refiner Demo](.github/assets/demo.png)
+
+### 🚀 今すぐツールを使う: [pixel-refiner.app](https://pixel-refiner.app/)
 
 **Pixel Refiner** は、AI生成などで作られたドット絵（ピクセルアート）を、素材として実用的なクオリティに最適化するWebツールです。
 アンチエイリアスの除去、グリッドの自動検出、背景透過などの処理をブラウザ上で高速に行います。
@@ -34,7 +36,7 @@ AIで生成したドット絵は、しばしば「ドットがぼやけている
 - **拡大エクスポート**: ゲームエンジン等での利用に合わせて、x2, x4, ... x32 倍に拡大してダウンロードできます。
 - **高速な処理**: Web Workerによる非同期処理で、UIをブロックせずに重い画像処理を実行します。
 
-## 🚀 使い方
+## 📖 使い方
 
 1. アプリケーションを開きます（ローカル起動またはデプロイ先）。
 2. ドロップエリアに画像をドラッグ＆ドロップ（またはクリックして選択）します。

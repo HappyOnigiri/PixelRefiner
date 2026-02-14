@@ -1,8 +1,10 @@
 # Pixel Refiner
 
-[📖 Japanese version](./README.ja.md)
+[Japanese version](./README.ja.md)
 
 ![Pixel Refiner Demo](.github/assets/demo.png)
+
+### 🚀 Try it now: [pixel-refiner.app](https://pixel-refiner.app/)
 
 **Pixel Refiner** is a web-based tool that cleans up pixel art — especially AI-generated pixel art — and turns it into production-ready sprites.
 It removes anti-aliasing, auto-detects pixel grids, makes backgrounds transparent, and more — all running fast in the browser.
@@ -34,7 +36,7 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 - **Scaled export** — Download at x2, x4, … up to x32 for use in game engines and other tools.
 - **Non-blocking processing** — Heavy image processing runs in a Web Worker so the UI stays responsive.
 
-## 🚀 Usage
+## 📖 Usage
 
 1. Open the app (locally or on a deployed instance).
 2. Drag & drop an image onto the drop zone (or click to browse).
