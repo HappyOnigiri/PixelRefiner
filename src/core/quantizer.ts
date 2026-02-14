@@ -1,5 +1,37 @@
-import type { Oklab, PixelData, RGB } from "../shared/types";
+import type { DitherMode, Oklab, PixelData, RGB } from "../shared/types";
 import { oklabToRgb, rgbToOklab } from "./colorUtils";
+
+const BAYER_2X2 = [0, 2, 3, 1].map((v) => (v + 0.5) / 4);
+
+const BAYER_4X4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(
+	(v) => (v + 0.5) / 16,
+);
+
+const BAYER_8X8 = [
+	0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26, 12, 44, 4, 36,
+	14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22, 3, 35, 11, 43, 1, 33, 9, 41,
+	51, 19, 59, 27, 49, 17, 57, 25, 15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23,
+	61, 29, 53, 21,
+].map((v) => (v + 0.5) / 64);
+
+const ORDERED_MATRIX = [
+	1, 9, 3, 11, 13, 5, 15, 7, 4, 12, 2, 10, 16, 8, 14, 6,
+].map((v) => (v - 1 + 0.5) / 16);
+
+function getDitherMatrix(mode: DitherMode): number[] {
+	switch (mode) {
+		case "bayer-2x2":
+			return BAYER_2X2;
+		case "bayer-4x4":
+			return BAYER_4X4;
+		case "bayer-8x8":
+			return BAYER_8X8;
+		case "ordered":
+			return ORDERED_MATRIX;
+		default:
+			return ORDERED_MATRIX;
+	}
+}
 
 export class OklabKMeans {
 	constructor(
@@ -133,6 +165,25 @@ export class OklabKMeans {
 		height: number,
 		strength = 1.0,
 	): PixelData[] {
+		return this.applyDithering(
+			pixels,
+			width,
+			height,
+			"floyd-steinberg",
+			strength,
+		);
+	}
+
+	/**
+	 * Apply dithering with various modes
+	 */
+	applyDithering(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		mode: DitherMode,
+		strength = 1.0,
+	): PixelData[] {
 		// 1. Get palette via K-means (using existing quantize logic to find centroids)
 		const opaquePixels = pixels.filter((p) => p.alpha > 0);
 		if (opaquePixels.length === 0 || this.maxColors >= opaquePixels.length) {
@@ -206,11 +257,69 @@ export class OklabKMeans {
 		const palette = centroids.map((lab) => oklabToRgb(lab));
 		const paletteLabs = centroids;
 
-		// 2. Apply Floyd-Steinberg dithering
+		if (mode === "none" || strength <= 0) {
+			return this.quantizeWithPalette(pixels, palette, paletteLabs);
+		}
+
+		if (mode === "floyd-steinberg") {
+			return this.applyFloydSteinberg(
+				pixels,
+				width,
+				height,
+				palette,
+				paletteLabs,
+				strength,
+			);
+		}
+
+		return this.applyOrderedDithering(
+			pixels,
+			width,
+			height,
+			palette,
+			paletteLabs,
+			mode,
+			strength,
+		);
+	}
+
+	private quantizeWithPalette(
+		pixels: PixelData[],
+		palette: RGB[],
+		paletteLabs: Oklab[],
+	): PixelData[] {
+		const memo = new Map<number, number>();
+		return pixels.map((p) => {
+			if (p.alpha === 0) return p;
+			const key = (p.r << 16) | (p.g << 8) | p.b;
+			let bestIdx = memo.get(key);
+			if (bestIdx === undefined) {
+				const lab = rgbToOklab(p);
+				let minDist = Number.MAX_VALUE;
+				bestIdx = 0;
+				for (let i = 0; i < paletteLabs.length; i++) {
+					const dist = this.colorDistanceSq(lab, paletteLabs[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						bestIdx = i;
+					}
+				}
+				memo.set(key, bestIdx);
+			}
+			const rgb = palette[bestIdx];
+			return { ...rgb, alpha: p.alpha };
+		});
+	}
+
+	private applyFloydSteinberg(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		palette: RGB[],
+		paletteLabs: Oklab[],
+		strength: number,
+	): PixelData[] {
 		const out = pixels.map((p) => ({ ...p }));
-		// Use a temporary error buffer to avoid modifying original pixel values too much
-		// but for simplicity in JS, we'll just modify the 'out' array.
-		// Since we need to handle Oklab distance for better quality, we'll convert as we go.
 
 		for (let y = 0; y < height; y++) {
 			for (let x = 0; x < width; x++) {
@@ -284,6 +393,60 @@ export class OklabKMeans {
 					errB,
 					1 / 16,
 				);
+			}
+		}
+
+		return out;
+	}
+
+	private applyOrderedDithering(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		palette: RGB[],
+		paletteLabs: Oklab[],
+		mode: DitherMode,
+		strength: number,
+	): PixelData[] {
+		const matrix = getDitherMatrix(mode);
+		const size = Math.sqrt(matrix.length);
+		const out = new Array<PixelData>(pixels.length);
+
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const idx = y * width + x;
+				const p = pixels[idx];
+				if (p.alpha === 0) {
+					out[idx] = p;
+					continue;
+				}
+
+				const threshold = matrix[(y % size) * size + (x % size)];
+				// 閾値を -0.5 ~ 0.5 に変換して強度を掛ける
+				const bias = (threshold - 0.5) * strength * 255;
+
+				const biasedR = Math.max(0, Math.min(255, p.r + bias));
+				const biasedG = Math.max(0, Math.min(255, p.g + bias));
+				const biasedB = Math.max(0, Math.min(255, p.b + bias));
+
+				const lab = rgbToOklab({
+					r: biasedR,
+					g: biasedG,
+					b: biasedB,
+				});
+				let minDist = Number.MAX_VALUE;
+				let bestIdx = 0;
+
+				for (let i = 0; i < paletteLabs.length; i++) {
+					const dist = this.colorDistanceSq(lab, paletteLabs[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						bestIdx = i;
+					}
+				}
+
+				const closest = palette[bestIdx];
+				out[idx] = { ...closest, alpha: p.alpha };
 			}
 		}
 
@@ -416,6 +579,42 @@ export class PaletteQuantizer {
 		height: number,
 		strength = 1.0,
 	): PixelData[] {
+		return this.applyDithering(
+			pixels,
+			width,
+			height,
+			"floyd-steinberg",
+			strength,
+		);
+	}
+
+	/**
+	 * Apply dithering with various modes
+	 */
+	applyDithering(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		mode: DitherMode,
+		strength = 1.0,
+	): PixelData[] {
+		if (mode === "none" || strength <= 0) {
+			return this.quantize(pixels);
+		}
+
+		if (mode === "floyd-steinberg") {
+			return this.applyFloydSteinberg(pixels, width, height, strength);
+		}
+
+		return this.applyOrderedDithering(pixels, width, height, mode, strength);
+	}
+
+	private applyFloydSteinberg(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		strength: number,
+	): PixelData[] {
 		const out = pixels.map((p) => ({ ...p }));
 
 		for (let y = 0; y < height; y++) {
@@ -512,6 +711,79 @@ export class PaletteQuantizer {
 					errB,
 					1 / 16,
 				);
+			}
+		}
+
+		return out;
+	}
+
+	private applyOrderedDithering(
+		pixels: PixelData[],
+		width: number,
+		height: number,
+		mode: DitherMode,
+		strength: number,
+	): PixelData[] {
+		const matrix = getDitherMatrix(mode);
+		const size = Math.sqrt(matrix.length);
+		const out = new Array<PixelData>(pixels.length);
+
+		for (let y = 0; y < height; y++) {
+			for (let x = 0; x < width; x++) {
+				const idx = y * width + x;
+				const p = pixels[idx];
+				if (p.alpha === 0) {
+					out[idx] = p;
+					continue;
+				}
+
+				const threshold = matrix[(y % size) * size + (x % size)];
+				const bias = (threshold - 0.5) * strength * 255;
+
+				const biasedR = Math.max(0, Math.min(255, p.r + bias));
+				const biasedG = Math.max(0, Math.min(255, p.g + bias));
+				const biasedB = Math.max(0, Math.min(255, p.b + bias));
+
+				const lab = rgbToOklab({
+					r: biasedR,
+					g: biasedG,
+					b: biasedB,
+				});
+				let minDist = Number.MAX_VALUE;
+				let bestIdx = 0;
+
+				for (let i = 0; i < this.paletteLabs.length; i++) {
+					const targetLab = this.paletteLabs[i];
+					const targetRgb = this.palette[i];
+
+					let dist = this.colorDistanceSq(lab, targetLab);
+
+					const isTargetBlack =
+						targetRgb.r === 0 && targetRgb.g === 0 && targetRgb.b === 0;
+					if (isTargetBlack) {
+						if (lab.L < 0.2) {
+							const lBias = (0.2 - lab.L) * 1.5;
+							dist -= lBias * lBias;
+						}
+					}
+
+					if (lab.L < 0.1) {
+						const dR = (biasedR - targetRgb.r) / 255;
+						const dG = (biasedG - targetRgb.g) / 255;
+						const dB = (biasedB - targetRgb.b) / 255;
+						const rgbDistSq = dR * dR + dG * dG + dB * dB;
+						const rgbWeight = 0.5 - lab.L;
+						dist += rgbDistSq * rgbWeight;
+					}
+
+					if (dist < minDist) {
+						minDist = dist;
+						bestIdx = i;
+					}
+				}
+
+				const closest = this.palette[bestIdx];
+				out[idx] = { ...closest, alpha: p.alpha };
 			}
 		}
 

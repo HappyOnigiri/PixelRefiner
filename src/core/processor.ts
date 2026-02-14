@@ -6,6 +6,7 @@ import {
 	RETRO_PALETTES,
 } from "../shared/config";
 import type {
+	DitherMode,
 	OutlineStyle,
 	PixelData,
 	PixelGrid,
@@ -322,6 +323,10 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	reduceColorMode?: string;
 	/**
+	 * ディザリングモード
+	 */
+	ditherMode?: DitherMode;
+	/**
 	 * 減色後の色数。
 	 */
 	colorCount?: number;
@@ -388,6 +393,7 @@ const normalizeProcessOptions = (
 	enableGridDetection: boolean;
 	reduceColors: boolean;
 	reduceColorMode: string;
+	ditherMode: DitherMode;
 	colorCount: number;
 	ditherStrength: number;
 	fixedPalette?: RGB[];
@@ -453,6 +459,7 @@ const normalizeProcessOptions = (
 	const reduceColors = raw.reduceColors ?? PROCESS_DEFAULTS.reduceColors;
 	const reduceColorMode =
 		raw.reduceColorMode ?? PROCESS_DEFAULTS.reduceColorMode;
+	const ditherMode = raw.ditherMode ?? PROCESS_DEFAULTS.ditherMode;
 	const colorCount = clampInt(
 		raw.colorCount ?? PROCESS_DEFAULTS.colorCount,
 		PROCESS_RANGES.colorCount,
@@ -488,6 +495,7 @@ const normalizeProcessOptions = (
 		enableGridDetection,
 		reduceColors,
 		reduceColorMode,
+		ditherMode,
 		colorCount,
 		ditherStrength,
 		fixedPalette: raw.fixedPalette,
@@ -855,6 +863,7 @@ const padRawImage = (
 const applyColorReduction = (
 	img: RawImage,
 	mode: string,
+	ditherMode: DitherMode,
 	colorCount: number,
 	ditherStrength: number,
 	log: (...args: unknown[]) => void,
@@ -887,32 +896,26 @@ const applyColorReduction = (
 	let reducedPixels: PixelData[];
 	if (customPalette) {
 		const quantizer = new PaletteQuantizer(customPalette);
-		if (ditherStrength > 0) {
-			reducedPixels = quantizer.dither(
-				workingPixelData,
-				img.width,
-				img.height,
-				ditherStrength / 100,
-			);
-		} else {
-			reducedPixels = quantizer.quantize(workingPixelData);
-		}
+		reducedPixels = quantizer.applyDithering(
+			workingPixelData,
+			img.width,
+			img.height,
+			ditherMode,
+			ditherStrength / 100,
+		);
 	} else if (mode === "auto" || isSfcMode) {
 		let count = colorCount;
 		if (mode === "sfc_sprite") count = 16;
 		else if (mode === "sfc_bg") count = 256;
 
 		const quantizer = new OklabKMeans(count);
-		if (ditherStrength > 0) {
-			reducedPixels = quantizer.dither(
-				workingPixelData,
-				img.width,
-				img.height,
-				ditherStrength / 100,
-			);
-		} else {
-			reducedPixels = quantizer.quantize(workingPixelData);
-		}
+		reducedPixels = quantizer.applyDithering(
+			workingPixelData,
+			img.width,
+			img.height,
+			ditherMode,
+			ditherStrength / 100,
+		);
 	} else {
 		const paletteDef = RETRO_PALETTES[mode];
 		if (paletteDef) {
@@ -923,29 +926,23 @@ const applyColorReduction = (
 				return { r, g, b };
 			});
 			const quantizer = new PaletteQuantizer(colors);
-			if (ditherStrength > 0) {
-				reducedPixels = quantizer.dither(
-					workingPixelData,
-					img.width,
-					img.height,
-					ditherStrength / 100,
-				);
-			} else {
-				reducedPixels = quantizer.quantize(workingPixelData);
-			}
+			reducedPixels = quantizer.applyDithering(
+				workingPixelData,
+				img.width,
+				img.height,
+				ditherMode,
+				ditherStrength / 100,
+			);
 		} else {
 			// Fallback to auto if palette not found
 			const quantizer = new OklabKMeans(colorCount);
-			if (ditherStrength > 0) {
-				reducedPixels = quantizer.dither(
-					workingPixelData,
-					img.width,
-					img.height,
-					ditherStrength / 100,
-				);
-			} else {
-				reducedPixels = quantizer.quantize(workingPixelData);
-			}
+			reducedPixels = quantizer.applyDithering(
+				workingPixelData,
+				img.width,
+				img.height,
+				ditherMode,
+				ditherStrength / 100,
+			);
 		}
 	}
 
@@ -1422,6 +1419,7 @@ export const processImage = (
 			finalResult = applyColorReduction(
 				result2,
 				o.reduceColorMode,
+				o.ditherMode,
 				o.colorCount,
 				o.ditherStrength,
 				log,
@@ -1495,6 +1493,7 @@ export const processImage = (
 			finalResult = applyColorReduction(
 				working,
 				o.reduceColorMode,
+				o.ditherMode,
 				o.colorCount,
 				o.ditherStrength,
 				log,
@@ -1763,6 +1762,7 @@ export const processImage = (
 		finalResult = applyColorReduction(
 			result,
 			o.reduceColorMode,
+			o.ditherMode,
 			o.colorCount,
 			o.ditherStrength,
 			log,

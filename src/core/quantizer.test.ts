@@ -84,4 +84,33 @@ describe("quantizer.ts", () => {
 			expect(isBlackOrWhite(result[0])).toBe(true);
 		});
 	});
+
+	describe("Dithering Modes", () => {
+		it("should support Bayer 2x2 dithering", () => {
+			const q = new OklabKMeans(2);
+			const input = [
+				px(100, 100, 100),
+				px(100, 100, 100),
+				px(150, 150, 150),
+				px(150, 150, 150),
+			];
+			const result = q.applyDithering(input, 2, 2, "bayer-2x2", 1.0);
+			// 閾値によって異なるパレット色に割り振られることを期待
+			const colors = new Set(result.map((p) => `${p.r},${p.g},${p.b}`));
+			expect(colors.size).toBeGreaterThan(1);
+		});
+
+		it("should support Ordered dithering", () => {
+			const q = new OklabKMeans(2);
+			const input = [
+				px(100, 100, 100),
+				px(100, 100, 100),
+				px(150, 150, 150),
+				px(150, 150, 150),
+			];
+			const result = q.applyDithering(input, 2, 2, "ordered", 1.0);
+			const colors = new Set(result.map((p) => `${p.r},${p.g},${p.b}`));
+			expect(colors.size).toBeGreaterThan(1);
+		});
+	});
 });

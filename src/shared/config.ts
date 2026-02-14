@@ -250,6 +250,7 @@ export const PROCESS_DEFAULTS = {
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
 	reduceColorMode: "none", // "none" | "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
+	ditherMode: "none",
 	colorCount: PROCESS_RANGES.colorCount.default,
 	ditherStrength: PROCESS_RANGES.ditherStrength.default,
 	outlineStyle: "none",

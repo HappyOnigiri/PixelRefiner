@@ -673,6 +673,7 @@ describe("processImage", () => {
 			const { result } = processImage(img, {
 				reduceColors: true,
 				reduceColorMode: "mono", // 白黒
+				ditherMode: "floyd-steinberg",
 				ditherStrength: 100,
 				enableGridDetection: false,
 				bgExtractionMethod: "none", // 背景抽出をOFF

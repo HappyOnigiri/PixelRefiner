@@ -43,7 +43,13 @@ export interface PixelData extends RGB {
 	alpha: number; // 0-255 (Alpha)
 }
 
-export type DitherMode = "none" | "floyd-steinberg";
+export type DitherMode =
+	| "none"
+	| "floyd-steinberg"
+	| "bayer-2x2"
+	| "bayer-4x4"
+	| "bayer-8x8"
+	| "ordered";
 
 export interface Palette {
 	id: string;
