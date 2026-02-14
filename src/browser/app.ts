@@ -29,6 +29,7 @@ const processor = wrap<ProcessorWorker>(workerInstance);
 
 type Elements = {
 	dropArea: HTMLElement;
+	inputCanvasContainer: HTMLElement;
 	fileInput: HTMLInputElement;
 	processButton: HTMLButtonElement;
 	downloadButton: HTMLButtonElement;
@@ -116,6 +117,7 @@ const getElements = (): Elements => {
 	};
 	return {
 		dropArea: get<HTMLElement>("drop-area"),
+		inputCanvasContainer: get<HTMLElement>("input-canvas-container"),
 		fileInput: get<HTMLInputElement>("file-input"),
 		processButton: get<HTMLButtonElement>("process-button"),
 		downloadButton: get<HTMLButtonElement>("download-button"),
@@ -1164,8 +1166,8 @@ export const initApp = (): void => {
 		});
 	});
 
-	// Click on input panel triggers file input
-	els.dropArea.addEventListener("click", () => {
+	// Click on input canvas container triggers file input
+	els.inputCanvasContainer.addEventListener("click", () => {
 		els.fileInput.click();
 	});
 

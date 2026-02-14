@@ -216,9 +216,7 @@ main {
   border-color: #3f4451;
 }
 
-.input-panel {
-  cursor: pointer;
-}
+.input-panel {}
 
 .input-panel.drag-over {
   border-color: var(--primary);
@@ -302,6 +300,10 @@ main {
   justify-content: center;
   position: relative;
   overflow: hidden;
+}
+
+#input-canvas-container {
+  cursor: pointer;
 }
 
 canvas {
