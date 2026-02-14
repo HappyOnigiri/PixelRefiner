@@ -40,7 +40,7 @@ Strictly adhere to the following format and rules:
 
 - **Structure:** **Must be one line**. Do not include newlines or multi-line details.
 - **Tone:** Use concise and clear expressions.
-- **Type:** Use one of the following prefixes:
+- **Type:** Use **strictly only** the following defined prefixes. Do not add scopes (e.g., `(ui)`) or alter/arrange the spelling (e.g., `fett`).
   - `feat`: New feature
   - `fix`: Bug fix
   - `docs`: Documentation only changes
