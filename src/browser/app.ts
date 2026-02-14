@@ -442,7 +442,7 @@ export const initApp = (): void => {
 		const mode = els.reduceColorModeSelect.value;
 		const isAuto = mode === "auto";
 
-		// 色数設定の表示・非表示
+		// 色数設定の表示・非表示（Autoモードの時のみ表示）
 		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
 
 		[els.colorCountInput, els.colorCountSlider].forEach((el) => {

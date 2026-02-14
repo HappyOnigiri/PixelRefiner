@@ -217,6 +217,14 @@ export const RETRO_PALETTES: Record<
 			"#B2DCEF",
 		],
 	},
+	sfc_sprite: {
+		name: "SFC風 (16色/スプライト)",
+		colors: [], // K-means 16色 + 15bit丸め
+	},
+	sfc_bg: {
+		name: "SFC風 (256色/背景)",
+		colors: [], // K-means 256色 + 15bit丸め
+	},
 };
 
 export const PROCESS_DEFAULTS = {

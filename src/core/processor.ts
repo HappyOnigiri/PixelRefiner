@@ -653,6 +653,78 @@ const cropRawImage = (
 	return { width: w, height: h, data: out };
 };
 
+const applyColorReduction = (
+	img: RawImage,
+	mode: string,
+	colorCount: number,
+	log: (...args: unknown[]) => void,
+): RawImage => {
+	const quantStart = performance.now();
+	const pixelData: PixelData[] = [];
+	for (let i = 0; i < img.data.length; i += 4) {
+		pixelData.push({
+			r: img.data[i],
+			g: img.data[i + 1],
+			b: img.data[i + 2],
+			alpha: img.data[i + 3],
+		});
+	}
+
+	// SFCモードの場合は、減色前に15bitカラーに丸めることで、
+	// K-meansがSFCの色空間内で最適なパレットを選べるようにする
+	let workingPixelData = pixelData;
+	const isSfcMode = mode === "sfc_sprite" || mode === "sfc_bg";
+	if (isSfcMode) {
+		workingPixelData = pixelData.map((p) => ({
+			r: Math.round(p.r / 8) * 8,
+			g: Math.round(p.g / 8) * 8,
+			b: Math.round(p.b / 8) * 8,
+			alpha: p.alpha,
+		}));
+	}
+
+	let reducedPixels: PixelData[];
+	if (mode === "auto" || isSfcMode) {
+		let count = colorCount;
+		if (mode === "sfc_sprite") count = 16;
+		else if (mode === "sfc_bg") count = 256;
+
+		const quantizer = new OklabKMeans(count);
+		reducedPixels = quantizer.quantize(workingPixelData);
+	} else {
+		const paletteDef = RETRO_PALETTES[mode];
+		if (paletteDef) {
+			const colors = paletteDef.colors.map((hex) => {
+				const r = parseInt(hex.slice(1, 3), 16);
+				const g = parseInt(hex.slice(3, 5), 16);
+				const b = parseInt(hex.slice(5, 7), 16);
+				return { r, g, b };
+			});
+			const quantizer = new PaletteQuantizer(colors);
+			reducedPixels = quantizer.quantize(workingPixelData);
+		} else {
+			// Fallback to auto if palette not found
+			const quantizer = new OklabKMeans(colorCount);
+			reducedPixels = quantizer.quantize(workingPixelData);
+		}
+	}
+
+	const newData = new Uint8ClampedArray(img.data.length);
+	for (let i = 0; i < reducedPixels.length; i++) {
+		const p = reducedPixels[i];
+		newData[i * 4] = p.r;
+		newData[i * 4 + 1] = p.g;
+		newData[i * 4 + 2] = p.b;
+		newData[i * 4 + 3] = p.alpha;
+	}
+
+	log(
+		`Color reduction (${mode}, ${colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+	);
+
+	return { ...img, data: newData };
+};
+
 const _getPixelAt = (
 	img: RawImage,
 	x: number,
@@ -1107,50 +1179,11 @@ export const processImage = (
 		// 減色処理
 		let finalResult = result2;
 		if (o.reduceColors) {
-			const quantStart = performance.now();
-			const pixelData: PixelData[] = [];
-			for (let i = 0; i < result2.data.length; i += 4) {
-				pixelData.push({
-					r: result2.data[i],
-					g: result2.data[i + 1],
-					b: result2.data[i + 2],
-					alpha: result2.data[i + 3],
-				});
-			}
-
-			let reducedPixels: PixelData[];
-			if (o.reduceColorMode === "auto") {
-				const quantizer = new OklabKMeans(o.colorCount);
-				reducedPixels = quantizer.quantize(pixelData);
-			} else {
-				const paletteDef = RETRO_PALETTES[o.reduceColorMode];
-				if (paletteDef) {
-					const colors = paletteDef.colors.map((hex) => {
-						const r = parseInt(hex.slice(1, 3), 16);
-						const g = parseInt(hex.slice(3, 5), 16);
-						const b = parseInt(hex.slice(5, 7), 16);
-						return { r, g, b };
-					});
-					const quantizer = new PaletteQuantizer(colors);
-					reducedPixels = quantizer.quantize(pixelData);
-				} else {
-					// Fallback to auto if palette not found
-					const quantizer = new OklabKMeans(o.colorCount);
-					reducedPixels = quantizer.quantize(pixelData);
-				}
-			}
-
-			const newData = new Uint8ClampedArray(result2.data.length);
-			for (let i = 0; i < reducedPixels.length; i++) {
-				const p = reducedPixels[i];
-				newData[i * 4] = p.r;
-				newData[i * 4 + 1] = p.g;
-				newData[i * 4 + 2] = p.b;
-				newData[i * 4 + 3] = p.alpha;
-			}
-			finalResult = { ...result2, data: newData };
-			log(
-				`Color reduction (${o.reduceColorMode}, ${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+			finalResult = applyColorReduction(
+				result2,
+				o.reduceColorMode,
+				o.colorCount,
+				log,
 			);
 		}
 
@@ -1229,50 +1262,11 @@ export const processImage = (
 		// 減色処理
 		let finalResult = result;
 		if (o.reduceColors) {
-			const quantStart = performance.now();
-			const pixelData: PixelData[] = [];
-			for (let i = 0; i < result.data.length; i += 4) {
-				pixelData.push({
-					r: result.data[i],
-					g: result.data[i + 1],
-					b: result.data[i + 2],
-					alpha: result.data[i + 3],
-				});
-			}
-
-			let reducedPixels: PixelData[];
-			if (o.reduceColorMode === "auto") {
-				const quantizer = new OklabKMeans(o.colorCount);
-				reducedPixels = quantizer.quantize(pixelData);
-			} else {
-				const paletteDef = RETRO_PALETTES[o.reduceColorMode];
-				if (paletteDef) {
-					const colors = paletteDef.colors.map((hex) => {
-						const r = parseInt(hex.slice(1, 3), 16);
-						const g = parseInt(hex.slice(3, 5), 16);
-						const b = parseInt(hex.slice(5, 7), 16);
-						return { r, g, b };
-					});
-					const quantizer = new PaletteQuantizer(colors);
-					reducedPixels = quantizer.quantize(pixelData);
-				} else {
-					// Fallback to auto if palette not found
-					const quantizer = new OklabKMeans(o.colorCount);
-					reducedPixels = quantizer.quantize(pixelData);
-				}
-			}
-
-			const newData = new Uint8ClampedArray(result.data.length);
-			for (let i = 0; i < reducedPixels.length; i++) {
-				const p = reducedPixels[i];
-				newData[i * 4] = p.r;
-				newData[i * 4 + 1] = p.g;
-				newData[i * 4 + 2] = p.b;
-				newData[i * 4 + 3] = p.alpha;
-			}
-			finalResult = { ...result, data: newData };
-			log(
-				`Color reduction (${o.reduceColorMode}, ${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+			finalResult = applyColorReduction(
+				result,
+				o.reduceColorMode,
+				o.colorCount,
+				log,
 			);
 		}
 
@@ -1481,50 +1475,11 @@ export const processImage = (
 	// 減色処理
 	let finalResult = result;
 	if (o.reduceColors) {
-		const quantStart = performance.now();
-		const pixelData: PixelData[] = [];
-		for (let i = 0; i < result.data.length; i += 4) {
-			pixelData.push({
-				r: result.data[i],
-				g: result.data[i + 1],
-				b: result.data[i + 2],
-				alpha: result.data[i + 3],
-			});
-		}
-
-		let reducedPixels: PixelData[];
-		if (o.reduceColorMode === "auto") {
-			const quantizer = new OklabKMeans(o.colorCount);
-			reducedPixels = quantizer.quantize(pixelData);
-		} else {
-			const paletteDef = RETRO_PALETTES[o.reduceColorMode];
-			if (paletteDef) {
-				const colors = paletteDef.colors.map((hex) => {
-					const r = parseInt(hex.slice(1, 3), 16);
-					const g = parseInt(hex.slice(3, 5), 16);
-					const b = parseInt(hex.slice(5, 7), 16);
-					return { r, g, b };
-				});
-				const quantizer = new PaletteQuantizer(colors);
-				reducedPixels = quantizer.quantize(pixelData);
-			} else {
-				// Fallback to auto if palette not found
-				const quantizer = new OklabKMeans(o.colorCount);
-				reducedPixels = quantizer.quantize(pixelData);
-			}
-		}
-
-		const newData = new Uint8ClampedArray(result.data.length);
-		for (let i = 0; i < reducedPixels.length; i++) {
-			const p = reducedPixels[i];
-			newData[i * 4] = p.r;
-			newData[i * 4 + 1] = p.g;
-			newData[i * 4 + 2] = p.b;
-			newData[i * 4 + 3] = p.alpha;
-		}
-		finalResult = { ...result, data: newData };
-		log(
-			`Color reduction (${o.reduceColorMode}, ${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+		finalResult = applyColorReduction(
+			result,
+			o.reduceColorMode,
+			o.colorCount,
+			log,
 		);
 	}
 
