@@ -187,11 +187,7 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	colorCount?: number;
 	/**
-	 * ディザリングモード
-	 */
-	ditherMode?: string;
-	/**
-	 * ディザリング強度 (0-100)
+	 * ディザリング強度 (0-100)。0 のときはディザリングなし。
 	 */
 	ditherStrength?: number;
 	/**
@@ -248,7 +244,6 @@ const normalizeProcessOptions = (
 	reduceColors: boolean;
 	reduceColorMode: string;
 	colorCount: number;
-	ditherMode: string;
 	ditherStrength: number;
 
 	floatingMaxPixels: number;
@@ -315,7 +310,6 @@ const normalizeProcessOptions = (
 		raw.colorCount ?? PROCESS_DEFAULTS.colorCount,
 		PROCESS_RANGES.colorCount,
 	);
-	const ditherMode = raw.ditherMode ?? PROCESS_DEFAULTS.ditherMode;
 	const ditherStrength = clampInt(
 		raw.ditherStrength ?? PROCESS_DEFAULTS.ditherStrength,
 		PROCESS_RANGES.ditherStrength,
@@ -345,7 +339,6 @@ const normalizeProcessOptions = (
 		reduceColors,
 		reduceColorMode,
 		colorCount,
-		ditherMode,
 		ditherStrength,
 
 		floatingMaxPixels,
@@ -681,7 +674,6 @@ const applyColorReduction = (
 	img: RawImage,
 	mode: string,
 	colorCount: number,
-	ditherMode: string,
 	ditherStrength: number,
 	log: (...args: unknown[]) => void,
 ): RawImage => {
@@ -716,7 +708,7 @@ const applyColorReduction = (
 		else if (mode === "sfc_bg") count = 256;
 
 		const quantizer = new OklabKMeans(count);
-		if (ditherMode === "floyd-steinberg") {
+		if (ditherStrength > 0) {
 			reducedPixels = quantizer.dither(
 				workingPixelData,
 				img.width,
@@ -736,7 +728,7 @@ const applyColorReduction = (
 				return { r, g, b };
 			});
 			const quantizer = new PaletteQuantizer(colors);
-			if (ditherMode === "floyd-steinberg") {
+			if (ditherStrength > 0) {
 				reducedPixels = quantizer.dither(
 					workingPixelData,
 					img.width,
@@ -749,7 +741,7 @@ const applyColorReduction = (
 		} else {
 			// Fallback to auto if palette not found
 			const quantizer = new OklabKMeans(colorCount);
-			if (ditherMode === "floyd-steinberg") {
+			if (ditherStrength > 0) {
 				reducedPixels = quantizer.dither(
 					workingPixelData,
 					img.width,
@@ -1240,7 +1232,6 @@ export const processImage = (
 				result2,
 				o.reduceColorMode,
 				o.colorCount,
-				o.ditherMode,
 				o.ditherStrength,
 				log,
 			);
@@ -1325,7 +1316,6 @@ export const processImage = (
 				result,
 				o.reduceColorMode,
 				o.colorCount,
-				o.ditherMode,
 				o.ditherStrength,
 				log,
 			);
@@ -1546,7 +1536,6 @@ export const processImage = (
 			result,
 			o.reduceColorMode,
 			o.colorCount,
-			o.ditherMode,
 			o.ditherStrength,
 			log,
 		);

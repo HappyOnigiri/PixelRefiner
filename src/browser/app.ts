@@ -48,7 +48,6 @@ type Elements = {
 	colorCountInput: HTMLInputElement;
 	colorCountSlider: HTMLInputElement;
 	colorCountSetting: HTMLElement;
-	ditherModeSelect: HTMLSelectElement;
 	ditherStrengthInput: HTMLInputElement;
 	ditherStrengthSlider: HTMLInputElement;
 	ditherStrengthSetting: HTMLElement;
@@ -114,7 +113,6 @@ const getElements = (): Elements => {
 		colorCountInput: get<HTMLInputElement>("color-count"),
 		colorCountSlider: get<HTMLInputElement>("color-count-slider"),
 		colorCountSetting: get<HTMLElement>("color-count-setting"),
-		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
 		ditherStrengthInput: get<HTMLInputElement>("dither-strength"),
 		ditherStrengthSlider: get<HTMLInputElement>("dither-strength-slider"),
 		ditherStrengthSetting: get<HTMLElement>("dither-strength-setting"),
@@ -387,7 +385,6 @@ export const initApp = (): void => {
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.enableGridDetectionCheck.checked = PROCESS_DEFAULTS.enableGridDetection;
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
-		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
 		els.enableBgRemovalCheck.checked = true;
 
@@ -503,6 +500,7 @@ export const initApp = (): void => {
 	const updateReduceColorsDisabledStates = () => {
 		const mode = els.reduceColorModeSelect.value;
 		const isAuto = mode === "auto";
+		const isEnabled = mode !== "none";
 
 		// 色数設定の表示・非表示（Autoモードの時のみ表示）
 		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
@@ -510,6 +508,11 @@ export const initApp = (): void => {
 		[els.colorCountInput, els.colorCountSlider].forEach((el) => {
 			el.disabled = !isAuto;
 		});
+
+		// ディザリング設定の表示・非表示（減色が有効な時のみ表示）
+		els.ditherStrengthSetting.style.display = isEnabled ? "flex" : "none";
+		els.ditherStrengthInput.disabled = !isEnabled;
+		els.ditherStrengthSlider.disabled = !isEnabled;
 	};
 
 	els.reduceColorModeSelect.addEventListener(
@@ -517,19 +520,8 @@ export const initApp = (): void => {
 		updateReduceColorsDisabledStates,
 	);
 
-	// ディザリング設定のUI制御
-	const updateDitherDisabledStates = () => {
-		const mode = els.ditherModeSelect.value;
-		const isEnabled = mode !== "none";
-
-		els.ditherStrengthSetting.style.display = isEnabled ? "flex" : "none";
-		els.ditherStrengthInput.disabled = !isEnabled;
-		els.ditherStrengthSlider.disabled = !isEnabled;
-	};
-
-	els.ditherModeSelect.addEventListener("change", updateDitherDisabledStates);
-	updateDitherDisabledStates();
-
+	// ディザリング設定のUI制御（常に表示、ただし減色モードがNone以外のときのみ有効など検討可能）
+	// 現状はシンプルに維持
 	updateReduceColorsDisabledStates();
 
 	updateDisabledStates();
@@ -670,7 +662,6 @@ export const initApp = (): void => {
 		els.fastAutoGridFromTrimmedCheck,
 		els.enableGridDetectionCheck,
 		els.reduceColorModeSelect,
-		els.ditherModeSelect,
 
 		els.bgExtractionMethod,
 		els.bgRgbInput,
@@ -847,11 +838,11 @@ export const initApp = (): void => {
 			const reduceColorMode = els.reduceColorModeSelect.value;
 			const reduceColors = reduceColorMode !== "none";
 
-			const ditherMode = els.ditherModeSelect.value;
 			const ditherStrength = clampInt(
 				Number(els.ditherStrengthInput.value),
 				PROCESS_RANGES.ditherStrength,
 			);
+			const ditherEnabled = ditherStrength > 0;
 
 			const { result } = await processor.process(img, {
 				detectionQuantStep,
@@ -869,7 +860,6 @@ export const initApp = (): void => {
 				reduceColors,
 				reduceColorMode,
 				colorCount,
-				ditherMode,
 				ditherStrength,
 				floatingMaxPixels,
 				bgExtractionMethod: method,

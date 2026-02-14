@@ -629,7 +629,7 @@ describe("processImage", () => {
 			const { result } = processImage(img, {
 				reduceColors: true,
 				reduceColorMode: "gb_pocket",
-				ditherMode: "none",
+				ditherStrength: 0,
 				// 他の処理はOFFにしておく
 				enableGridDetection: false,
 				bgExtractionMethod: "none", // 背景抽出をOFF
@@ -673,7 +673,6 @@ describe("processImage", () => {
 			const { result } = processImage(img, {
 				reduceColors: true,
 				reduceColorMode: "mono", // 白黒
-				ditherMode: "floyd-steinberg",
 				ditherStrength: 100,
 				enableGridDetection: false,
 				bgExtractionMethod: "none", // 背景抽出をOFF
