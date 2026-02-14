@@ -224,7 +224,7 @@ describe("processImage", () => {
 			return { width: w, height: h, data };
 		};
 
-		it("指定ピクセル時も ignoreFloatingContent=true ならBBoxが浮きノイズに引っ張られない", () => {
+		it("指定ピクセル時も floatingMaxPixels>0 ならBBoxが浮きノイズに引っ張られない", () => {
 			const img = mkImg();
 
 			const base = {
@@ -243,12 +243,8 @@ describe("processImage", () => {
 
 			const { grid: gridNoIgnore } = processImage(img, {
 				...base,
-				ignoreFloatingContent: false,
-				floatingMaxPixels: 4,
-				debugHook: makeDebugHook(
-					"forcePixelsW_H",
-					"ignoreFloatingContent=false",
-				),
+				floatingMaxPixels: 0,
+				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=0"),
 			});
 			// 浮きノイズ(8,8)まで含むBBox: x=1..8, y=1..8 => 8x8
 			expect(gridNoIgnore.cropW).toBe(8);
@@ -256,12 +252,8 @@ describe("processImage", () => {
 
 			const { grid: gridIgnore } = processImage(img, {
 				...base,
-				ignoreFloatingContent: true,
 				floatingMaxPixels: 4,
-				debugHook: makeDebugHook(
-					"forcePixelsW_H",
-					"ignoreFloatingContent=true",
-				),
+				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=4"),
 			});
 			// 浮きノイズ除去後のBBox: x=1..4, y=1..4 => 4x4
 			expect(gridIgnore.cropW).toBe(4);
@@ -303,8 +295,7 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: false,
 				trimAlphaThreshold: 16,
-				ignoreFloatingContent: false,
-				floatingMaxPixels: 50000,
+				floatingMaxPixels: 0,
 				autoGridFromTrimmed: false,
 				debugHook: makeDebugHook(
 					"resize_and_remove_bg",
@@ -331,11 +322,10 @@ describe("processImage", () => {
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: true,
 				fastAutoGridFromTrimmed: false, // 高速モードOFF
-				ignoreFloatingContent: false, // 浮きノイズOFF
-				floatingMaxPixels: 50000,
+				floatingMaxPixels: 0, // 浮きノイズOFF
 				debugHook: makeDebugHook(
 					"resize_and_remove_bg",
-					"高速モードOFF(fastAutoGridFromTrimmed=false)_浮きノイズOFF(ignoreFloatingContent=false)_期待画像と完全一致",
+					"高速モードOFF(fastAutoGridFromTrimmed=false)_浮きノイズOFF(floatingMaxPixels=0)_期待画像と完全一致",
 				),
 			});
 
@@ -382,7 +372,7 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 64,
-				ignoreFloatingContent: true,
+
 				floatingMaxPixels: 0,
 				autoGridFromTrimmed: true,
 			} as const;
@@ -451,8 +441,8 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
-				ignoreFloatingContent: false,
-				floatingMaxPixels: 50000,
+
+				floatingMaxPixels: 0,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
 					"auto_grid_detection",
@@ -508,7 +498,7 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
-				ignoreFloatingContent: true,
+
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
@@ -541,7 +531,7 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
-				ignoreFloatingContent: true,
+
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
@@ -593,7 +583,7 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: false, // 自動トリムをOFF
 				trimAlphaThreshold: 16,
-				ignoreFloatingContent: true,
+
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(

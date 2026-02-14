@@ -14,7 +14,7 @@ export const PROCESS_RANGES = {
 	// bbox threshold for trimming
 	trimAlphaThreshold: { min: 1, max: 255, default: 16 } as const,
 	// UI: remove small floating islands threshold (% of total pixels)
-	floatingMaxPercent: { min: 0, max: 100, default: 3 } as const,
+	floatingMaxPercent: { min: 0, max: 100, default: 0 } as const,
 	// remove small floating islands (connected components) as background
 	floatingMaxPixels: { min: 0, max: 1000000, default: 50000 } as const,
 	// force output pixel size (after BBox trim)
@@ -242,7 +242,7 @@ export const PROCESS_DEFAULTS = {
 	fastAutoGridFromTrimmed: true,
 	// グリッド検出と縮小を有効にする（デフォルトON）
 	enableGridDetection: true,
-	ignoreFloatingContent: true,
+
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
 	reduceColorMode: "nes", // "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"

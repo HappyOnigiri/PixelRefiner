@@ -153,14 +153,8 @@ export type ProcessOptions = DetectOptions & {
 	trimToContent?: boolean;
 	trimAlphaThreshold?: number;
 	/**
-	 * 背景に囲まれて浮いている「小さな島」（連結成分）を背景扱いにして除去する。
-	 * 微小ノイズで内容物BBox/グリッド推定が引っ張られるのを防ぐ。
-	 *
-	 * 注意: 画像内に「離れた別オブジェクト」がある場合、それも除去されうるため既定はOFF。
-	 */
-	ignoreFloatingContent?: boolean;
-	/**
-	 * ignoreFloatingContent=true のとき、除去対象とみなす最大ピクセル数（元画像ピクセル）。
+	 * 除去対象とみなす最大ピクセル数（元画像ピクセル）。
+	 * 0 のときは浮きノイズ除去をスキップする。
 	 */
 	floatingMaxPixels?: number;
 	/**
@@ -256,7 +250,7 @@ const normalizeProcessOptions = (
 	colorCount: number;
 	ditherMode: string;
 	ditherStrength: number;
-	ignoreFloatingContent: boolean;
+
 	floatingMaxPixels: number;
 	bgExtractionMethod:
 		| "none"
@@ -326,8 +320,7 @@ const normalizeProcessOptions = (
 		raw.ditherStrength ?? PROCESS_DEFAULTS.ditherStrength,
 		PROCESS_RANGES.ditherStrength,
 	);
-	const ignoreFloatingContent =
-		raw.ignoreFloatingContent ?? PROCESS_DEFAULTS.ignoreFloatingContent;
+
 	const floatingMaxPixels = clampInt(
 		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
 		PROCESS_RANGES.floatingMaxPixels,
@@ -354,7 +347,7 @@ const normalizeProcessOptions = (
 		colorCount,
 		ditherMode,
 		ditherStrength,
-		ignoreFloatingContent,
+
 		floatingMaxPixels,
 		bgExtractionMethod,
 		bgRgb,
@@ -1151,7 +1144,7 @@ export const processImage = (
 			o.bgExtractionMethod,
 			o.bgRgb,
 		);
-		if (o.ignoreFloatingContent) {
+		if (o.floatingMaxPixels > 0) {
 			const floatingStart = performance.now();
 			const { removedComponents, removedPixels } =
 				removeSmallFloatingComponentsInPlace(
@@ -1274,7 +1267,7 @@ export const processImage = (
 			o.bgExtractionMethod,
 			o.bgRgb,
 		);
-		if (o.ignoreFloatingContent) {
+		if (o.floatingMaxPixels > 0) {
 			removeSmallFloatingComponentsInPlace(
 				working,
 				masked,
@@ -1360,7 +1353,7 @@ export const processImage = (
 	const bgTol = o.backgroundTolerance;
 	const maskedStart = performance.now();
 	const maskedForDebugOrAuto =
-		o.debugHook || autoGridFromTrimmed || o.ignoreFloatingContent
+		o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0
 			? removeBackground(
 					working,
 					bgTol,
@@ -1376,7 +1369,7 @@ export const processImage = (
 		);
 	}
 
-	if (maskedForDebugOrAuto && o.ignoreFloatingContent) {
+	if (maskedForDebugOrAuto && o.floatingMaxPixels > 0) {
 		const floatingStart = performance.now();
 		const { removedComponents, removedPixels } =
 			removeSmallFloatingComponentsInPlace(
