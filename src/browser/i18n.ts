@@ -118,6 +118,9 @@ const resources = {
 		"error.no_image": "先に画像を選択してください。",
 		"error.process_failed": "処理失敗",
 		"error.load_failed": "読み込み失敗",
+
+		"error.palette_limit":
+			"警告: 画像には{count}色が含まれています。パレットは256色に制限されます。",
 		"status.processing": "処理中...",
 
 		// Attributes & Titles
@@ -255,6 +258,9 @@ const resources = {
 		"error.no_image": "Please select an image first.",
 		"error.process_failed": "Processing failed",
 		"error.load_failed": "Loading failed",
+
+		"error.palette_limit":
+			"Warning: The image contains {count} colors. Palette will be limited to 256 colors.",
 		"status.processing": "Processing...",
 
 		// Attributes & Titles
@@ -281,25 +287,58 @@ export class I18nManager {
 	currentLang: Language = "en";
 
 	constructor() {
-		// 1. LocalStorage 2. Browser Setting 3. Default (en)
-		const saved = localStorage.getItem("pixel-refiner-lang");
-		const browser = navigator.language.startsWith("ja") ? "ja" : "en";
+		// Handle environment where localStorage might be missing (e.g. Vitest/Node)
+		let saved: string | null = null;
+		try {
+			if (typeof localStorage !== "undefined") {
+				saved = localStorage.getItem("pixel-refiner-lang");
+			}
+		} catch (_e) {
+			// Ignore security errors or missing localStorage
+		}
+
+		const browser =
+			typeof navigator !== "undefined" && navigator.language?.startsWith("ja")
+				? "ja"
+				: "en";
 		this.currentLang = (saved as Language) || browser;
 	}
 
 	setLanguage(lang: Language) {
 		this.currentLang = lang;
-		localStorage.setItem("pixel-refiner-lang", lang);
+		try {
+			if (typeof localStorage !== "undefined") {
+				localStorage.setItem("pixel-refiner-lang", lang);
+			}
+		} catch (_e) {
+			// Ignore
+		}
 		this.updatePage();
 	}
 
 	// キーからテキストを取得
-	t(key: keyof (typeof resources)["ja"]): string {
-		return resources[this.currentLang][key] || key;
+	t(
+		key: keyof (typeof resources)["ja"],
+		params?: Record<string, string | number>,
+	): string {
+		const text = resources[this.currentLang][key] || key;
+		if (params) {
+			let interpolated = text;
+			for (const [k, v] of Object.entries(params)) {
+				interpolated = interpolated.replace(
+					new RegExp(`\\{${k}\\}`, "g"),
+					String(v),
+				);
+			}
+			return interpolated;
+		}
+		return text;
 	}
 
 	// ページ全体の更新
 	updatePage() {
+		if (typeof document === "undefined") return;
+
 		// 1. テキストコンテンツの更新 (innerHTML を使用してタグを維持)
 		document.querySelectorAll("[data-i18n]").forEach((el) => {
 			const key = el.getAttribute(
