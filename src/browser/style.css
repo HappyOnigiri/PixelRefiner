@@ -109,7 +109,7 @@ h1 {
   text-align: center;
   color: var(--text-muted);
   margin: 0 auto 32px;
-  max-width: 600px;
+  max-width: 700px;
   font-size: 1.15rem;
   line-height: 1.6;
 }
@@ -1069,11 +1069,9 @@ select:focus {
 .js-result-canvas-container.has-image.bg-checkered {
   /* Light checkerboard (transparent preview style) */
   background-color: #f0f0f0 !important;
-  background-image: linear-gradient(
-      45deg,
+  background-image: linear-gradient(45deg,
       var(--bg-checkered-color) 25%,
-      transparent 25%
-    ),
+      transparent 25%),
     linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
     linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
