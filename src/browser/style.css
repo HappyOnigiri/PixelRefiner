@@ -1064,6 +1064,17 @@ select:focus {
   box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
 }
 
+.accent-outline-button {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.accent-outline-button:hover:not(:disabled) {
+  background: rgba(6, 182, 212, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+}
+
+
 
 @keyframes fadeIn {
   from {
