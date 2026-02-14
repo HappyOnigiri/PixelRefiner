@@ -9,6 +9,7 @@ import {
 	PROCESS_RANGES,
 } from "../shared/config";
 import type { RawImage } from "../shared/types";
+import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 
 // Workerのインスタンス化
@@ -75,7 +76,7 @@ const getElements = (): Elements => {
 	const get = <T extends HTMLElement>(id: string) => {
 		const el = document.getElementById(id);
 		if (!el) {
-			throw new Error(`要素 #${id} が見つかりません。`);
+			throw new Error(`Element #${id} not found.`);
 		}
 		return el as T;
 	};
@@ -229,7 +230,7 @@ export const initApp = (): void => {
 				}
 			}
 		} catch (e) {
-			console.error("設定の復元に失敗しました:", e);
+			console.error("Failed to restore settings:", e);
 		}
 	};
 
@@ -277,7 +278,7 @@ export const initApp = (): void => {
 	els.eyedropperButton.addEventListener("click", (e) => {
 		e.stopPropagation();
 		if (!currentImage) {
-			showError("先に画像を選択してください。");
+			showError(i18n.t("error.no_image"));
 			return;
 		}
 		openEyedropperModal();
@@ -406,6 +407,17 @@ export const initApp = (): void => {
 		);
 		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
 		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
+
+		// 言語切り替えボタンのイベントリスナー
+		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
+			el.addEventListener("click", () => {
+				const lang = el.getAttribute("data-lang-btn") as "ja" | "en";
+				if (lang) i18n.setLanguage(lang);
+			});
+		});
+
+		// 初回翻訳適用
+		i18n.updatePage();
 	};
 
 	const syncSliderAndInput = (
@@ -701,7 +713,7 @@ export const initApp = (): void => {
 	const runProcessing = async () => {
 		const img = currentImage;
 		if (!img) {
-			showError("先に画像を選択してください。");
+			showError(i18n.t("error.no_image"));
 			return;
 		}
 
@@ -828,7 +840,7 @@ export const initApp = (): void => {
 			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
 			updateBgColorFromMethod();
 		} catch (err) {
-			showError(`処理失敗: ${(err as Error).message}`);
+			showError(`${i18n.t("error.process_failed")}: ${(err as Error).message}`);
 		} finally {
 			els.loadingOverlay.style.display = "none";
 			els.outputPanel.classList.remove("is-processing");
@@ -854,7 +866,7 @@ export const initApp = (): void => {
 			runProcessing();
 		} catch (err) {
 			currentImage = null;
-			showError(`読み込み失敗: ${(err as Error).message}`);
+			showError(`${i18n.t("error.load_failed")}: ${(err as Error).message}`);
 		}
 	};
 

@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary SEO -->
-    <title>Pixel Refiner | AIドット絵の最適化・背景透過ツール</title>
+    <title data-i18n="app.title">
+      Pixel Refiner | AI Pixel Art Optimizer & Background Remover
+    </title>
     <meta
       name="description"
-      content="AIで生成したドット絵を、ゲーム素材として使えるクオリティに。アンチエイリアス除去・減色・背景透過をブラウザ上で数秒で完了。無料・登録不要・画像アップロードなしで安全に処理できるオンラインピクセルアート最適化ツールです。"
+      content="Optimize AI-generated pixel art into production-ready sprites. Complete anti-aliasing removal and background transparency in seconds."
     />
     <meta
       name="keywords"
-      content="ドット絵, ピクセルアート, AI, アンチエイリアス除去, 背景透過, ゲーム素材, pixel art, sprite, Pixel Refiner, ドット絵変換, ドット絵ツール, ピクセルアート最適化, AI画像変換, ゲーム開発, インディーゲーム"
+      content="pixel art, AI, anti-aliasing removal, background transparency, game assets, sprite, Pixel Refiner, pixel art optimization, AI image conversion, game development, indie game"
     />
 
     <!-- Canonical / Indexing -->
@@ -233,13 +235,12 @@
     <div class="app">
       <header>
         <h1><span class="logo-p">P</span>ixel Refiner</h1>
-        <p class="app-description">
-          AIで生成したドット絵を、<span class="text-highlight">ゲーム素材</span
-          >として使えるクオリティに。<br />
-          <span class="text-highlight">アンチエイリアス除去</span>・<span
-            class="text-highlight"
-            >背景透過</span
-          >を数秒で完了します。
+        <p class="app-description" data-i18n="app.description" data-i18n-html>
+          Optimize AI-generated pixel art into
+          <span class="text-highlight">production-ready sprites</span>.<br />
+          Complete <span class="text-highlight">anti-aliasing removal</span> and
+          <span class="text-highlight">background transparency</span> in
+          seconds.
         </p>
       </header>
 
@@ -248,14 +249,19 @@
         <div id="eyedropper-modal" class="modal" style="display: none">
           <div class="modal-content">
             <div class="modal-header">
-              <h3>背景色を選択</h3>
+              <h3 data-i18n="modal.eyedropper.title">
+                Select Background Color
+              </h3>
               <button id="close-eyedropper-modal" class="close-button">
                 &times;
               </button>
             </div>
             <div class="modal-body">
-              <p class="modal-instruction">
-                画像内の背景にしたい色をクリックしてください
+              <p
+                class="modal-instruction"
+                data-i18n="modal.eyedropper.instruction"
+              >
+                Click on the color in the image you want to set as background
               </p>
               <div class="modal-canvas-container">
                 <canvas id="eyedropper-canvas"></canvas>
@@ -264,18 +270,25 @@
           </div>
         </div>
 
-        <section class="row" aria-label="画像処理エリア">
+        <section class="row" aria-label="Image processing area">
           <div class="panel input-panel" id="drop-area">
-            <h2>入力画像</h2>
-            <div class="status">サイズ: <span id="input-size">-</span></div>
+            <h2 data-i18n="section.input">Input Image</h2>
+            <div class="status">
+              <span data-i18n="ui.size">Size</span>:
+              <span id="input-size">-</span>
+            </div>
             <div class="canvas-container">
               <div class="placeholder">
                 <div class="drop-icon">
                   <img src="/folder.png" alt="Folder" />
                 </div>
-                <div class="drop-text">
-                  画像をここにドラッグ＆ドロップ<br />
-                  <span class="drop-subtext">または クリックして選択</span>
+                <div
+                  class="drop-text"
+                  data-i18n="ui.placeholder.input"
+                  data-i18n-html
+                >
+                  Drag & drop image here<br />
+                  <span class="drop-subtext">or Click to select</span>
                 </div>
               </div>
               <canvas id="original-canvas"></canvas>
@@ -289,10 +302,11 @@
           </div>
 
           <div class="panel output-panel" id="output-panel">
-            <h2>処理結果</h2>
+            <h2 data-i18n="section.result">Result</h2>
             <div class="status-bar">
               <div class="status-text">
-                サイズ: <span id="output-size">-</span>
+                <span data-i18n="ui.size">Size</span>:
+                <span id="output-size">-</span>
               </div>
               <div class="controls-right">
                 <div class="bg-selector" id="bg-selector">
@@ -300,30 +314,35 @@
                     type="button"
                     class="bg-btn bg-checkered active"
                     data-bg="checkered"
-                    title="背景: 格子模様"
+                    data-i18n-attr="title:attr.title.bg_checkered"
+                    title="Background: Checkered"
                   ></button>
                   <button
                     type="button"
                     class="bg-btn bg-white"
                     data-bg="white"
-                    title="背景: 白"
+                    data-i18n-attr="title:attr.title.bg_white"
+                    title="Background: White"
                   ></button>
                   <button
                     type="button"
                     class="bg-btn bg-black"
                     data-bg="black"
-                    title="背景: 黒"
+                    data-i18n-attr="title:attr.title.bg_black"
+                    title="Background: Black"
                   ></button>
                   <button
                     type="button"
                     class="bg-btn bg-green"
                     data-bg="green"
-                    title="背景: 緑"
+                    data-i18n-attr="title:attr.title.bg_green"
+                    title="Background: Green"
                   ></button>
                 </div>
                 <label
                   class="zoom-toggle"
-                  title="グリッドを表示する（拡大時のみ有効）"
+                  data-i18n-attr="title:attr.title.grid_toggle"
+                  title="Show Grid (Zoom only)"
                 >
                   <input type="checkbox" id="grid-output" checked />
                   <svg
@@ -351,7 +370,11 @@
                     <line x1="15" y1="3" x2="15" y2="21"></line>
                   </svg>
                 </label>
-                <label class="zoom-toggle" title="拡大表示する">
+                <label
+                  class="zoom-toggle"
+                  data-i18n-attr="title:attr.title.zoom_toggle"
+                  title="Zoom Output"
+                >
                   <input type="checkbox" id="zoom-output" checked />
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -374,7 +397,9 @@
             </div>
             <div class="canvas-container">
               <div class="placeholder">
-                <div class="drop-text">処理結果がここに表示されます</div>
+                <div class="drop-text" data-i18n="ui.placeholder.result">
+                  Processed result will appear here
+                </div>
               </div>
               <div
                 class="loading-overlay"
@@ -382,7 +407,9 @@
                 style="display: none"
               >
                 <div class="spinner"></div>
-                <div class="loading-text">処理中...</div>
+                <div class="loading-text" data-i18n="status.processing">
+                  Processing...
+                </div>
               </div>
               <canvas id="result-canvas"></canvas>
               <canvas id="grid-canvas"></canvas>
@@ -391,17 +418,23 @@
         </section>
 
         <div class="actions">
-          <button id="process-button" type="button" class="action-button">
-            処理を実行
+          <button
+            id="process-button"
+            type="button"
+            class="action-button"
+            data-i18n="ui.process_btn"
+          >
+            Process Image
           </button>
           <div class="download-group">
             <button
               id="download-button"
               type="button"
               class="action-button download-button"
+              data-i18n="ui.download_btn"
               disabled
             >
-              ダウンロード
+              Download
             </button>
             <button
               id="download-dropdown-button"
@@ -423,44 +456,73 @@
 
         <div class="quick-settings">
           <div class="settings-group">
-            <h3 class="settings-group-title">減色</h3>
+            <h3
+              class="settings-group-title"
+              data-i18n="setting.color_reduction"
+            >
+              Color Reduction
+            </h3>
             <div class="grid-settings">
               <label class="setting-item">
                 <span class="label-text">
-                  減色モード
+                  <span data-i18n="setting.color_mode">Reduction Mode</span>
                   <span
                     class="help"
-                    data-tooltip="出力結果の色数を制限します。&#10;&#10;ドット絵らしい色使いに整えたい場合に有効です。&#10;無効: 減色を行いません。&#10;Game Boy / PICO-8 / NES: 各ゲーム機のパレットを使用します。&#10;色数指定 (Auto): 指定した色数に自動で減色します。"
+                    data-i18n-attr="data-tooltip:tooltip.help.color_mode"
+                    data-tooltip="Limits the number of colors in the output.&#10;&#10;Useful for achieving a classic pixel art look.&#10;None: No color reduction.&#10;Game Boy / PICO-8 / NES: Uses specific console palettes.&#10;Auto: Automatically reduces to the specified number of colors."
                     >?</span
                   >
                 </span>
                 <select id="reduce-color-mode">
-                  <option value="none">無効</option>
-                  <option value="mono">モノクロ</option>
-                  <option value="gb_legacy">ゲームボーイ (初代)</option>
-                  <option value="gb_pocket">ゲームボーイ (ポケット)</option>
-                  <option value="gb_light">ゲームボーイ (ライト)</option>
-                  <option value="pico8">PICO-8</option>
-                  <option value="nes" selected>ファミコン (NES)</option>
-                  <option value="pc98">PC-9801</option>
-                  <option value="msx">MSX1</option>
-                  <option value="c64">Commodore 64</option>
-                  <option value="arne16">Arne 16</option>
-                  <option value="sfc_sprite" selected>
-                    SFC風 (16色/スプライト)
+                  <option value="none" data-i18n="option.none">None</option>
+                  <option value="mono" data-i18n="option.mono">
+                    Monochrome
                   </option>
-                  <option value="sfc_bg">SFC風 (256色/背景)</option>
-                  <option value="auto">色数指定</option>
+                  <option value="gb_legacy" data-i18n="option.gb_legacy">
+                    Game Boy (Original)
+                  </option>
+                  <option value="gb_pocket" data-i18n="option.gb_pocket">
+                    Game Boy (Pocket)
+                  </option>
+                  <option value="gb_light" data-i18n="option.gb_light">
+                    Game Boy (Light)
+                  </option>
+                  <option value="pico8" data-i18n="option.pico8">PICO-8</option>
+                  <option value="nes" data-i18n="option.nes" selected>
+                    NES
+                  </option>
+                  <option value="pc98" data-i18n="option.pc98">PC-9801</option>
+                  <option value="msx" data-i18n="option.msx">MSX1</option>
+                  <option value="c64" data-i18n="option.c64">
+                    Commodore 64
+                  </option>
+                  <option value="arne16" data-i18n="option.arne16">
+                    Arne 16
+                  </option>
+                  <option
+                    value="sfc_sprite"
+                    data-i18n="option.sfc_sprite"
+                    selected
+                  >
+                    SFC Style (16 colors/Sprite)
+                  </option>
+                  <option value="sfc_bg" data-i18n="option.sfc_bg">
+                    SFC Style (256 colors/BG)
+                  </option>
+                  <option value="auto" data-i18n="option.auto">
+                    Custom Count
+                  </option>
                 </select>
               </label>
 
               <label id="color-count-setting" class="setting-item">
                 <span class="label-text">
-                  色数
+                  <span data-i18n="setting.color_count">Color Count</span>
                   <span
                     id="help-color-count"
                     class="help"
-                    data-tooltip="出力する最大の色数を指定します。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    data-i18n-attr="data-tooltip:tooltip.help.color_count"
+                    data-tooltip="Specifies the maximum number of colors in the output.&#10;&#10;Range: {min} to {max} (Default: {default})"
                     >?</span
                   >
                 </span>
@@ -472,26 +534,30 @@
 
               <label class="setting-item">
                 <span class="label-text">
-                  ディザリング
+                  <span data-i18n="setting.dither_mode">Dithering</span>
                   <span
                     class="help"
-                    data-tooltip="減色時にディザリング（誤差拡散）を適用します。&#10;&#10;少ない色数でも滑らかなグラデーションを表現できますが、ドット絵特有のザラつきが発生します。"
+                    data-i18n-attr="data-tooltip:tooltip.help.dither_mode"
+                    data-tooltip="Applies dithering (error diffusion) during color reduction.&#10;&#10;Allows for smoother gradients with fewer colors, but introduces characteristic pixel noise."
                     >?</span
                   >
                 </span>
                 <select id="dither-mode">
-                  <option value="none">無効</option>
+                  <option value="none" data-i18n="option.none">None</option>
                   <option value="floyd-steinberg">Floyd-Steinberg</option>
                 </select>
               </label>
 
               <label id="dither-strength-setting" class="setting-item">
                 <span class="label-text">
-                  ディザリング強度
+                  <span data-i18n="setting.dither_strength"
+                    >Dither Strength</span
+                  >
                   <span
                     id="help-dither-strength"
                     class="help"
-                    data-tooltip="ディザリングの適用強度を設定します。&#10;&#10;100%: 完全な誤差拡散を行います。&#10;0%: ディザリングを行わず、最も近い色に丸めます。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                    data-i18n-attr="data-tooltip:tooltip.help.dither_strength"
+                    data-tooltip="Sets the intensity of the dithering effect.&#10;&#10;100%: Full error diffusion.&#10;0%: No dithering, rounds to the nearest color.&#10;&#10;Range: {min} to {max} (Default: {default})"
                     >?</span
                   >
                 </span>
@@ -505,17 +571,25 @@
         </div>
 
         <details id="settings-panel" class="panel settings-panel">
-          <summary>詳細設定</summary>
+          <summary data-i18n="setting.advanced">Advanced Settings</summary>
           <div class="settings-content">
             <div class="settings-group">
-              <h3 class="settings-group-title">グリッド検出</h3>
+              <h3
+                class="settings-group-title"
+                data-i18n="setting.grid_detection"
+              >
+                Grid Detection
+              </h3>
               <div class="grid-settings">
                 <label class="setting-item full-width">
                   <span class="label-text">
-                    グリッド検出有効
+                    <span data-i18n="setting.enable_grid"
+                      >Enable Grid Detection</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="入力画像からグリッドを自動検出し、ドット単位に縮小・最適化します。&#10;&#10;OFFにすると、グリッド検出と縮小をスキップします（既に等倍のドット絵である場合に有効です）。背景トリミングや背景透過は、他の設定に従って引き続き実行されます。"
+                      data-i18n-attr="data-tooltip:tooltip.help.enable_grid"
+                      data-tooltip="Automatically detects the grid from the input image and reduces/optimizes it to pixel units.&#10;&#10;If OFF, grid detection and reduction are skipped (useful if the image is already a 1:1 pixel art). Background trimming and transparency will still be performed based on other settings."
                       >?</span
                     >
                   </span>
@@ -524,11 +598,14 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    減色ステップ
+                    <span data-i18n="setting.quant_step"
+                      >Quantization Step</span
+                    >
                     <span
                       id="help-quant-step"
                       class="help"
-                      data-tooltip="グリッド検出用の減色レベルを設定します。&#10;&#10;【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。&#10;【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                      data-i18n-attr="data-tooltip:tooltip.help.quant_step"
+                      data-tooltip="Sets the color reduction level for grid detection.&#10;&#10;High: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.&#10;Low: Picks up fine color boundaries, but increases the risk of false noise detection.&#10;&#10;Range: {min} to {max} (Default: {default})"
                       >?</span
                     >
                   </span>
@@ -540,11 +617,12 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    サンプル範囲
+                    <span data-i18n="setting.sample_window">Sample Window</span>
                     <span
                       id="help-sample-window"
                       class="help"
-                      data-tooltip="各ドットの色を決める際の参照範囲（ピクセル数）です。&#10;&#10;【大】ノイズが除去され色が安定しますが、細部のディテールが失われやすくなります。&#10;【小】元画像を忠実に再現しますが、位置ズレやノイズの影響を強く受けます。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                      data-i18n-attr="data-tooltip:tooltip.help.sample_window"
+                      data-tooltip="The reference range (in pixels) used when determining the color of each dot.&#10;&#10;High: Noise is removed and colors become stable, but fine details may be lost.&#10;Low: Faithfully reproduces the original image, but is more affected by misalignment and noise.&#10;&#10;Range: {min} to {max} (Default: {default})"
                       >?</span
                     >
                   </span>
@@ -556,34 +634,51 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    指定ピクセル(横)
+                    <span data-i18n="setting.force_width"
+                      >Force Width (px)</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
+                      data-i18n-attr="data-tooltip:tooltip.help.force_width"
+                      data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
                       >?</span
                     >
                   </span>
-                  <input id="force-pixels-w" type="number" placeholder="自動" />
+                  <input
+                    id="force-pixels-w"
+                    type="number"
+                    placeholder="Auto"
+                    data-i18n-attr="placeholder:attr.placeholder.auto"
+                  />
                 </label>
 
                 <label class="setting-item">
                   <span class="label-text">
-                    指定ピクセル(縦)
+                    <span data-i18n="setting.force_height"
+                      >Force Height (px)</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="指定サイズに強制変換します。&#10;指定ピクセルが有効なときは自動検出は行いません。&#10;&#10;設定範囲: 1〜1024 (デフォルト: 自動)"
+                      data-i18n-attr="data-tooltip:tooltip.help.force_height"
+                      data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
                       >?</span
                     >
                   </span>
-                  <input id="force-pixels-h" type="number" placeholder="自動" />
+                  <input
+                    id="force-pixels-h"
+                    type="number"
+                    placeholder="Auto"
+                    data-i18n-attr="placeholder:attr.placeholder.auto"
+                  />
                 </label>
 
                 <label class="setting-item">
                   <span class="label-text">
-                    高速モード
+                    <span data-i18n="setting.fast_mode">Fast Mode</span>
                     <span
                       class="help"
-                      data-tooltip="ONにすると、効率的なアルゴリズムで探索を高速化します。&#10;OFFにすると、より広範囲を精密に探索します。&#10;&#10;自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。"
+                      data-i18n-attr="data-tooltip:tooltip.help.fast_mode"
+                      data-tooltip="When ON, uses an efficient algorithm to speed up the search.&#10;When OFF, performs a more comprehensive and precise search.&#10;&#10;If automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy."
                       >?</span
                     >
                   </span>
@@ -593,35 +688,61 @@
             </div>
 
             <div class="settings-group">
-              <h3 class="settings-group-title">背景透過</h3>
+              <h3 class="settings-group-title" data-i18n="setting.bg_removal">
+                Background Removal
+              </h3>
               <div class="grid-settings">
                 <label class="setting-item">
                   <span class="label-text">
-                    背景抽出方法
+                    <span data-i18n="setting.bg_method">Extraction Method</span>
                     <span
                       class="help"
-                      data-tooltip="背景色をどこから抽出するか選択します。&#10;&#10;透過しない: 背景透過を行いません。&#10;各四隅: 指定した角のピクセルを背景色とします。&#10;RGB指定: 指定した色を背景色とします。"
+                      data-i18n-attr="data-tooltip:tooltip.help.bg_method"
+                      data-tooltip="Select where to extract the background color from.&#10;&#10;None: No background transparency.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
                       >?</span
                     >
                   </span>
                   <select id="bg-extraction-method">
-                    <option value="none">透過しない</option>
-                    <option value="top-left" selected>
-                      左上（デフォルト）
+                    <option value="none" data-i18n="option.bg_none">
+                      None
                     </option>
-                    <option value="bottom-left">左下</option>
-                    <option value="top-right">右上</option>
-                    <option value="bottom-right">右下</option>
-                    <option value="rgb">RGB指定</option>
+                    <option
+                      value="top-left"
+                      data-i18n="option.bg_top_left"
+                      selected
+                    >
+                      Top-Left (Default)
+                    </option>
+                    <option
+                      value="bottom-left"
+                      data-i18n="option.bg_bottom_left"
+                    >
+                      Bottom-Left
+                    </option>
+                    <option value="top-right" data-i18n="option.bg_top_right">
+                      Top-Right
+                    </option>
+                    <option
+                      value="bottom-right"
+                      data-i18n="option.bg_bottom_right"
+                    >
+                      Bottom-Right
+                    </option>
+                    <option value="rgb" data-i18n="option.bg_rgb">
+                      RGB Specification
+                    </option>
                   </select>
                 </label>
 
                 <div id="rgb-picker-container" class="setting-item">
                   <span class="label-text">
-                    背景色(RGB)
+                    <span data-i18n="setting.bg_rgb"
+                      >Background Color (RGB)</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="背景色として扱う色を16進数(例: #ffffff)で指定します。&#10;四隅指定時は自動で色がセットされます。スポイトボタンで画像から色を選択することもできます。"
+                      data-i18n-attr="data-tooltip:tooltip.help.bg_rgb"
+                      data-tooltip="Specify the color to be treated as the background in hex format (e.g., #ffffff).&#10;When a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button."
                       >?</span
                     >
                   </span>
@@ -646,7 +767,8 @@
                       id="eyedropper-button"
                       type="button"
                       class="icon-button"
-                      title="スポイトで画像から色を選択"
+                      data-i18n-attr="title:attr.title.eyedropper"
+                      title="Pick color from image"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -671,11 +793,14 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    背景色の許容差
+                    <span data-i18n="setting.bg_tolerance"
+                      >Color Tolerance</span
+                    >
                     <span
                       id="help-tolerance"
                       class="help"
-                      data-tooltip="背景色と判定する色の類似度（誤差範囲）です。&#10;&#10;【大】圧縮ノイズなどで色が多少ブレていても背景として透過できますが、必要な色まで消える可能性があります。&#10;【小】厳密に背景色のみを透過しますが、ノイズが残りやすくなります。&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                      data-i18n-attr="data-tooltip:tooltip.help.bg_tolerance"
+                      data-tooltip="The similarity (error range) for determining the background color.&#10;&#10;High: Can remove background even if colors are slightly distorted by compression noise, but may also remove intended colors.&#10;Low: Strictly removes only the exact background color, but noise may remain.&#10;&#10;Range: {min} to {max} (Default: {default})"
                       >?</span
                     >
                   </span>
@@ -687,10 +812,13 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    事前の背景透過
+                    <span data-i18n="setting.pre_remove"
+                      >Pre-process Transparency</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="グリッド検出を行う【前】に、背景色を無視します。&#10;&#10;メリット: 余白が広い画像でも、本体部分のグリッドを正しく検出しやすくなります。&#10;注意: 背景と同じ色がキャラクター内にある場合、検出精度が下がる可能性があります。"
+                      data-i18n-attr="data-tooltip:tooltip.help.pre_remove"
+                      data-tooltip="Ignores the background color BEFORE performing grid detection.&#10;&#10;Benefit: Makes it easier to correctly detect the grid for the main subject even in images with large margins.&#10;Note: If the background color exists within the character, detection accuracy may decrease."
                       >?</span
                     >
                   </span>
@@ -699,10 +827,13 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    事後の背景透過
+                    <span data-i18n="setting.post_remove"
+                      >Post-process Transparency</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="処理完了【後】に、背景色を透明に置き換えて出力します。&#10;&#10;メリット: 背景透明のPNGとして保存できます。&#10;注意: グリッド検出処理自体には影響しません。"
+                      data-i18n-attr="data-tooltip:tooltip.help.post_remove"
+                      data-tooltip="Replaces the background color with transparency AFTER processing is complete.&#10;&#10;Benefit: Allows saving as a PNG with a transparent background.&#10;Note: Does not affect the grid detection process itself."
                       >?</span
                     >
                   </span>
@@ -711,10 +842,13 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    内側の背景も透過
+                    <span data-i18n="setting.remove_inner"
+                      >Remove Inner Background</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="背景透過時に、四隅と近い背景色を画像全体で透過にします。&#10;&#10;メリット: ドーナツ穴など「内側に閉じ込められた背景色」も透明にできます。&#10;注意: 背景と同じ色がキャラクター内にある場合、それも透明になる可能性があります。"
+                      data-i18n-attr="data-tooltip:tooltip.help.remove_inner"
+                      data-tooltip='When removing the background, also makes similar background colors transparent throughout the entire image.&#10;&#10;Benefit: Can transparentize "trapped" background colors like the hole in a donut.&#10;Note: If the background color exists within the character, it may also become transparent.'
                       >?</span
                     >
                   </span>
@@ -723,10 +857,13 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    浮きノイズを無視
+                    <span data-i18n="setting.ignore_floating"
+                      >Ignore Floating Noise</span
+                    >
                     <span
                       class="help"
-                      data-tooltip="背景に囲まれて浮いている小さな島（連結成分）を背景扱いにして除去します。&#10;&#10;微小ノイズが、内容物BBox/自動グリッド推定を引っ張るのを防ぎます。&#10;注意: 離れた別オブジェクトがある画像では、それも除去される可能性があります。"
+                      data-i18n-attr="data-tooltip:tooltip.help.ignore_floating"
+                      data-tooltip="Treats small isolated islands (connected components) surrounded by the background as part of the background and removes them.&#10;&#10;Prevents tiny noise from affecting the content BBox or automatic grid estimation.&#10;Note: In images with separate distant objects, they may also be removed."
                       >?</span
                     >
                   </span>
@@ -735,11 +872,14 @@
 
                 <label class="setting-item">
                   <span class="label-text">
-                    浮きノイズ上限(%)
+                    <span data-i18n="setting.floating_max"
+                      >Max Noise Size (%)</span
+                    >
                     <span
                       id="help-floating-max-percent"
                       class="help"
-                      data-tooltip="「浮きノイズを無視」をONにしたとき、除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。&#10;例: 1% → (幅×高さ×0.01) px&#10;&#10;設定範囲: {min}〜{max} (デフォルト: {default})"
+                      data-i18n-attr="data-tooltip:tooltip.help.floating_max"
+                      data-tooltip='The maximum area (as a percentage of the total pixels in the original image) to be considered for removal when "Ignore Floating Noise" is ON.&#10;Example: 1% → (Width × Height × 0.01) px&#10;&#10;Range: {min} to {max} (Default: {default})'
                       >?</span
                     >
                   </span>
@@ -756,14 +896,17 @@
             </div>
 
             <div class="settings-group">
-              <h3 class="settings-group-title">トリミング</h3>
+              <h3 class="settings-group-title" data-i18n="setting.trimming">
+                Trimming
+              </h3>
               <div class="grid-settings">
                 <label class="setting-item">
                   <span class="label-text">
-                    自動トリム
+                    <span data-i18n="setting.auto_trim">Auto Trim</span>
                     <span
                       class="help"
-                      data-tooltip="出力結果を「内容物のある範囲」に合わせて自動でトリミングします。&#10;&#10;余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。"
+                      data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
+                      data-tooltip="Automatically trims the output to fit the range containing the content.&#10;&#10;Useful for correctly detecting the number of vertical and horizontal cells in images with large margins (background)."
                       >?</span
                     >
                   </span>
@@ -825,7 +968,13 @@
               <img src="/logo_github.svg" alt="GitHub" width="20" height="20" />
             </a>
             <span class="separator">|</span>
-            <span class="privacy-note">
+            <div class="lang-selector">
+              <button class="lang-btn" data-lang-btn="en">EN</button>
+              <span class="separator">/</span>
+              <button class="lang-btn" data-lang-btn="ja">JA</button>
+            </div>
+            <span class="separator">|</span>
+            <span class="privacy-note" data-i18n="footer.privacy">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="14"
@@ -841,7 +990,7 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
-              画像はブラウザ内で安全に処理されます
+              Images are processed safely within your browser
             </span>
           </div>
         </div>

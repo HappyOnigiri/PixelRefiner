@@ -68,6 +68,34 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
+.lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lang-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lang-btn.active {
+  color: var(--accent);
+  background: rgba(6, 182, 212, 0.1);
+}
+
 .app-description {
   text-align: center;
   color: var(--text-muted);
