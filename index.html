@@ -971,6 +971,15 @@
               </div>
               <!-- ダウンロードボタン -->
               <div class="result-actions">
+                <div class="view-controls">
+                  <button
+                    id="btn-view-compare"
+                    class="view-btn"
+                    data-i18n="ui.view_compare"
+                  >
+                    Compare
+                  </button>
+                </div>
                 <div class="download-group">
                   <button
                     id="download-button"
@@ -1147,5 +1156,64 @@
       </div>
     </div>
     <script type="module" src="/src/browser/main.ts"></script>
+
+    <!-- Comparison Modal -->
+    <div id="compare-modal" class="modal" style="display: none">
+      <div class="modal-content compare-modal-content">
+        <div class="modal-header">
+          <h3 data-i18n="ui.view_compare">Compare</h3>
+          <div class="view-controls compare-mode-controls">
+            <button
+              id="btn-compare-before-original"
+              class="view-btn active"
+              data-i18n="ui.compare_before_original"
+              type="button"
+            >
+              Original
+            </button>
+            <button
+              id="btn-compare-before-sanitized"
+              class="view-btn"
+              data-i18n="ui.compare_before_sanitized"
+              type="button"
+            >
+              Sanitized
+            </button>
+          </div>
+          <button id="close-compare-modal" class="close-button">&times;</button>
+        </div>
+        <div class="modal-body compare-modal-body">
+          <div id="compare-container" class="compare-container">
+            <div class="img-comp-container">
+              <div class="img-comp-img">
+                <img id="comp-after" src="" draggable="false" />
+              </div>
+              <div class="img-comp-img img-comp-overlay">
+                <img id="comp-before" src="" draggable="false" />
+              </div>
+              <div id="comp-slider-handle">
+                <div class="handle-line"></div>
+                <div class="handle-circle">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m18 8 4 4-4 4"></path>
+                    <path d="m6 8-4 4 4 4"></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

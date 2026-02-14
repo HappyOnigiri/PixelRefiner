@@ -16,6 +16,7 @@ import {
 	parseGPL,
 	sortPalette,
 } from "../utils/palette";
+import { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 
@@ -92,6 +93,16 @@ type Elements = {
 	paletteModal: HTMLElement;
 	closePaletteModal: HTMLButtonElement;
 	paletteFileInput: HTMLInputElement;
+
+	// Compare View
+	compareModal: HTMLElement;
+	closeCompareModal: HTMLButtonElement;
+	compareContainer: HTMLElement;
+	compBeforeImg: HTMLImageElement;
+	compAfterImg: HTMLImageElement;
+	btnViewCompare: HTMLButtonElement;
+	btnCompareBeforeOriginal: HTMLButtonElement;
+	btnCompareBeforeSanitized: HTMLButtonElement;
 };
 
 const getElements = (): Elements => {
@@ -172,6 +183,19 @@ const getElements = (): Elements => {
 		paletteModal: get<HTMLElement>("palette-modal"),
 		closePaletteModal: get<HTMLButtonElement>("close-palette-modal"),
 		paletteFileInput: get<HTMLInputElement>("palette-file-input"),
+
+		compareModal: get<HTMLElement>("compare-modal"),
+		closeCompareModal: get<HTMLButtonElement>("close-compare-modal"),
+		compareContainer: get<HTMLElement>("compare-container"),
+		compBeforeImg: get<HTMLImageElement>("comp-before"),
+		compAfterImg: get<HTMLImageElement>("comp-after"),
+		btnViewCompare: get<HTMLButtonElement>("btn-view-compare"),
+		btnCompareBeforeOriginal: get<HTMLButtonElement>(
+			"btn-compare-before-original",
+		),
+		btnCompareBeforeSanitized: get<HTMLButtonElement>(
+			"btn-compare-before-sanitized",
+		),
 	};
 };
 
@@ -213,8 +237,18 @@ type SavedSettings = {
 
 export const initApp = (): void => {
 	const els = getElements();
+	const comparer = new ImageComparer("compare-container");
+
 	let currentImage: RawImage | null = null;
 	let currentResult: RawImage | null = null;
+	const compareBeforeCanvas = document.createElement("canvas");
+	const compareAfterCanvas = document.createElement("canvas");
+	const compareBeforeSanitizedCanvas = document.createElement("canvas");
+
+	let compareBeforeOriginalUrl = "";
+	let compareBeforeSanitizedUrl = "";
+	let compareAfterUrl = "";
+	let compareBeforeMode: "original" | "sanitized" = "original";
 
 	let currentExtractedPalette: RGB[] = [];
 	let currentFixedPalette: RGB[] | undefined;
@@ -688,7 +722,6 @@ export const initApp = (): void => {
 
 	updateBgDisabledStates();
 
-	loadSettings();
 	updateProcessButtonVisibility();
 
 	// 設定変更時に保存するための共通リスナー（表示条件のみ）
@@ -945,7 +978,12 @@ export const initApp = (): void => {
 				b: parseInt(outlineHex.slice(5, 7), 16),
 			};
 
-			const { result, extractedPalette } = await processor.process(img, {
+			const {
+				result,
+				extractedPalette,
+				compareBefore,
+				compareBeforeSanitized,
+			} = await processor.process(img, {
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
@@ -1009,6 +1047,32 @@ export const initApp = (): void => {
 			});
 
 			drawRawImageToCanvas(result, els.resultCanvas);
+
+			// 比較スライダーの更新（元画像リサイズ / サニタイズ の両方を生成）
+			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
+			drawRawImageToCanvas(
+				compareBeforeSanitized,
+				compareBeforeSanitizedCanvas,
+			);
+			drawRawImageToCanvas(result, compareAfterCanvas);
+			compareBeforeOriginalUrl = compareBeforeCanvas.toDataURL("image/png");
+			compareBeforeSanitizedUrl =
+				compareBeforeSanitizedCanvas.toDataURL("image/png");
+			compareAfterUrl = compareAfterCanvas.toDataURL("image/png");
+
+			const before =
+				compareBeforeMode === "sanitized"
+					? compareBeforeSanitizedUrl
+					: compareBeforeOriginalUrl;
+			comparer.updateImages(before, compareAfterUrl);
+
+			// モーダルが開いている場合は、直ちに反映（サイズ同期も）
+			if (els.compareModal.style.display !== "none") {
+				requestAnimationFrame(() => {
+					comparer.syncImageSize();
+				});
+			}
+
 			// 処理結果が更新されたらグリッドも再描画
 			// DOMの更新（canvasの表示サイズ確定）を待つために少し遅らせる
 			requestAnimationFrame(() => {
@@ -1308,13 +1372,87 @@ export const initApp = (): void => {
 	// Resize/レイアウト変化でズレないように追従
 	window.addEventListener("resize", () => updateGrid());
 
+	// 表示切替ロジック
+	const openCompareModal = () => {
+		els.compareModal.style.display = "flex";
+
+		// 背景色を同期
+		const activeBgBtn = els.bgSelector.querySelector(
+			".bg-btn.active",
+		) as HTMLElement;
+		const bgType = activeBgBtn?.dataset.bg || "checkered";
+		const compareContainer = els.compareContainer.querySelector(
+			".img-comp-container",
+		);
+		if (compareContainer) {
+			["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach((cls) => {
+				compareContainer.classList.remove(cls);
+			});
+			compareContainer.classList.add(`bg-${bgType}`);
+		}
+
+		// モーダルが開いた直後にサイズ同期を行う必要がある
+		requestAnimationFrame(() => {
+			// Always keep grid OFF in compare modal (nothing to draw, but keep state consistent)
+			// (No-op for now, since compare modal does not use grid-canvas.)
+			const before =
+				compareBeforeMode === "sanitized"
+					? compareBeforeSanitizedUrl
+					: compareBeforeOriginalUrl;
+			if (before && compareAfterUrl) {
+				comparer.updateImages(before, compareAfterUrl);
+			}
+			comparer.syncImageSize();
+		});
+	};
+
+	const closeCompareModal = () => {
+		els.compareModal.style.display = "none";
+	};
+
+	els.btnViewCompare.addEventListener("click", () => openCompareModal());
+	els.closeCompareModal.addEventListener("click", () => closeCompareModal());
+	els.compareModal.addEventListener("click", (e) => {
+		if (e.target === els.compareModal) {
+			closeCompareModal();
+		}
+	});
+
+	const setCompareBeforeMode = (mode: "original" | "sanitized") => {
+		compareBeforeMode = mode;
+		els.btnCompareBeforeOriginal.classList.toggle(
+			"active",
+			mode === "original",
+		);
+		els.btnCompareBeforeSanitized.classList.toggle(
+			"active",
+			mode === "sanitized",
+		);
+		const before =
+			mode === "sanitized"
+				? compareBeforeSanitizedUrl
+				: compareBeforeOriginalUrl;
+		if (before && compareAfterUrl) {
+			comparer.updateImages(before, compareAfterUrl);
+		}
+	};
+
+	els.btnCompareBeforeOriginal.addEventListener("click", (e) => {
+		e.stopPropagation();
+		setCompareBeforeMode("original");
+	});
+	els.btnCompareBeforeSanitized.addEventListener("click", (e) => {
+		e.stopPropagation();
+		setCompareBeforeMode("sanitized");
+	});
+
 	// アプリの準備が整ったら表示
 	document.body.classList.add("loaded");
 
 	// Background selector logic
 	const resultContainer = els.resultCanvas.parentElement;
 	if (resultContainer) {
-		// Set initial background
+		// Set initial default background (will be overridden by loadSettings if saved)
 		resultContainer.classList.add("bg-checkered");
 
 		els.bgSelector.addEventListener("click", (e) => {
@@ -1338,4 +1476,6 @@ export const initApp = (): void => {
 			saveSettings();
 		});
 	}
+
+	loadSettings();
 };

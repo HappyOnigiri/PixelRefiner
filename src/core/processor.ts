@@ -137,10 +137,136 @@ export const downsample = (
 	return { width: outW, height: outH, data: out };
 };
 
+/**
+ * Simple point sampling (Nearest Neighbor) to resize image for comparison.
+ * Unlike `downsample`, this does not perform median filtering,
+ * preserving original anti-aliasing and noise for visual comparison.
+ */
+export const sampleRawImage = (img: RawImage, grid: PixelGrid): RawImage => {
+	const cellW = grid.cellW;
+	const cellH = grid.cellH;
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const outW =
+		grid.outW ?? Math.max(1, Math.floor((img.width - cropX) / cellW));
+	const outH =
+		grid.outH ?? Math.max(1, Math.floor((img.height - cropY) / cellH));
+	const out = new Uint8ClampedArray(outW * outH * 4);
+
+	const imgData = img.data;
+	const imgW = img.width;
+	const imgH = img.height;
+
+	for (let j = 0; j < outH; j += 1) {
+		const cy = Math.floor(cropY + (j + 0.5) * cellH);
+		if (cy < 0 || cy >= imgH) continue;
+		const rowOffset = cy * imgW;
+		const outRowOffset = j * outW;
+
+		for (let i = 0; i < outW; i += 1) {
+			const cx = Math.floor(cropX + (i + 0.5) * cellW);
+			if (cx < 0 || cx >= imgW) continue;
+
+			const srcIdx = (rowOffset + cx) * 4;
+			const dstIdx = (outRowOffset + i) * 4;
+
+			out[dstIdx] = imgData[srcIdx];
+			out[dstIdx + 1] = imgData[srcIdx + 1];
+			out[dstIdx + 2] = imgData[srcIdx + 2];
+			out[dstIdx + 3] = imgData[srcIdx + 3];
+		}
+	}
+
+	return { width: outW, height: outH, data: out };
+};
+
+/**
+ * Nearest-neighbor resize of a cropped region for comparison view.
+ * This avoids smoothing and avoids any median/color aggregation
+ * (i.e. no "dot sanitize").
+ */
+export const resizeRawImageNearest = (
+	img: RawImage,
+	cropX: number,
+	cropY: number,
+	cropW: number,
+	cropH: number,
+	outW: number,
+	outH: number,
+): RawImage => {
+	const dstW = Math.max(1, outW | 0);
+	const dstH = Math.max(1, outH | 0);
+	const out = new Uint8ClampedArray(dstW * dstH * 4);
+
+	const srcW = img.width;
+	const srcH = img.height;
+	const src = img.data;
+
+	// Avoid division by zero
+	const cw = Math.max(1e-6, cropW);
+	const ch = Math.max(1e-6, cropH);
+	const scaleX = cw / dstW;
+	const scaleY = ch / dstH;
+
+	const clampInt0 = (v: number, max: number): number => {
+		if (v < 0) return 0;
+		if (v > max) return max;
+		return v | 0;
+	};
+
+	for (let j = 0; j < dstH; j += 1) {
+		// Center-of-pixel mapping then nearest neighbor
+		const sy = cropY + (j + 0.5) * scaleY - 0.5;
+		const yy = clampInt0(Math.round(sy), srcH - 1);
+		const rowOffset = yy * srcW;
+
+		for (let i = 0; i < dstW; i += 1) {
+			const sx = cropX + (i + 0.5) * scaleX - 0.5;
+			const xx = clampInt0(Math.round(sx), srcW - 1);
+			const srcIdx = (rowOffset + xx) * 4;
+			const dstIdx = (j * dstW + i) * 4;
+			out[dstIdx] = src[srcIdx];
+			out[dstIdx + 1] = src[srcIdx + 1];
+			out[dstIdx + 2] = src[srcIdx + 2];
+			out[dstIdx + 3] = src[srcIdx + 3];
+		}
+	}
+
+	return { width: dstW, height: dstH, data: out };
+};
+
+const cropRawImageNearestFromGrid = (
+	img: RawImage,
+	grid: PixelGrid,
+): RawImage => {
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const outW =
+		grid.outW ?? Math.max(1, Math.floor((img.width - cropX) / grid.cellW));
+	const outH =
+		grid.outH ?? Math.max(1, Math.floor((img.height - cropY) / grid.cellH));
+	const cropW = grid.cropW ?? outW * grid.cellW;
+	const cropH = grid.cropH ?? outH * grid.cellH;
+
+	// Use cropW/cropH as output size to preserve original resolution
+	return resizeRawImageNearest(img, cropX, cropY, cropW, cropH, cropW, cropH);
+};
+
 export type ProcessResult = {
 	result: RawImage;
 	grid: PixelGrid;
 	extractedPalette: RGB[];
+	/**
+	 * Comparison view "before" image.
+	 * This is the original image normalized to the same output geometry (downsample + trimming + padding)
+	 * as `result`, so it aligns pixel-perfect in the comparison slider.
+	 */
+	compareBefore: RawImage;
+	/**
+	 * Comparison view "before" image, but sanitized using the same downsample/median sampling
+	 * settings (grid detection + color sampling) as the processing pipeline.
+	 */
+	compareBeforeSanitized: RawImage;
 };
 
 export type ProcessOptions = DetectOptions & {
@@ -695,6 +821,35 @@ const cropRawImage = (
 		}
 	}
 	return { width: w, height: h, data: out };
+};
+
+const padRawImage = (
+	img: RawImage,
+	padLeft: number,
+	padTop: number,
+	padRight: number,
+	padBottom: number,
+): RawImage => {
+	const l = Math.max(0, padLeft | 0);
+	const t = Math.max(0, padTop | 0);
+	const r = Math.max(0, padRight | 0);
+	const b = Math.max(0, padBottom | 0);
+	if (l === 0 && t === 0 && r === 0 && b === 0) return img;
+
+	const outW = img.width + l + r;
+	const outH = img.height + t + b;
+	const out = new Uint8ClampedArray(outW * outH * 4);
+	const out32 = new Uint32Array(out.buffer);
+	const src32 = new Uint32Array(img.data.buffer);
+
+	for (let y = 0; y < img.height; y += 1) {
+		const srcRow = y * img.width;
+		const dstRow = (y + t) * outW + l;
+		for (let x = 0; x < img.width; x += 1) {
+			out32[dstRow + x] = src32[srcRow + x];
+		}
+	}
+	return { width: outW, height: outH, data: out };
 };
 
 const applyColorReduction = (
@@ -1274,6 +1429,24 @@ export const processImage = (
 			);
 		}
 
+		// compareBefore needs to be resized from the original image 'img'
+		// using the bounds 'b' and the forced grid.
+		const forcedTrimmedGridForOriginal: PixelGrid = {
+			...g,
+			cropX: b.x,
+			cropY: b.y,
+			cropW: b.w,
+			cropH: b.h,
+		};
+		const compareBefore = cropRawImageNearestFromGrid(
+			img,
+			forcedTrimmedGridForOriginal,
+		);
+
+		// Sanitized comparison: use the same downsample as the pipeline (median sampling).
+		const croppedOriginal = cropRawImage(img, b.x, b.y, b.w, b.h);
+		const compareBeforeSanitized = downsample(croppedOriginal, g, sw);
+
 		o.debugHook?.("99-result", finalResult, {
 			postRemoveBackground: o.postRemoveBackground,
 			forced: true,
@@ -1282,7 +1455,13 @@ export const processImage = (
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
 		const extracted = extractUsedColors(finalResult);
-		return { result: finalResult, grid: g, extractedPalette: extracted };
+		return {
+			result: finalResult,
+			grid: g,
+			extractedPalette: extracted,
+			compareBefore,
+			compareBeforeSanitized,
+		};
 	}
 
 	// enableGridDetection: グリッド検出と縮小をスキップ
@@ -1306,6 +1485,7 @@ export const processImage = (
 		}
 
 		let finalResult = working;
+		let compareBefore = img;
 		let outW = working.width;
 		let outH = working.height;
 		let cropX = 0;
@@ -1326,6 +1506,7 @@ export const processImage = (
 			const b = findOpaqueBounds(masked, trimAlphaThreshold);
 			if (b) {
 				finalResult = cropRawImage(finalResult, b.x, b.y, b.w, b.h);
+				compareBefore = cropRawImage(compareBefore, b.x, b.y, b.w, b.h);
 				outW = b.w;
 				outH = b.h;
 				cropX = b.x;
@@ -1359,6 +1540,8 @@ export const processImage = (
 				score: 0,
 			},
 			extractedPalette: extracted,
+			compareBefore,
+			compareBeforeSanitized: compareBefore,
 		};
 	}
 
@@ -1497,6 +1680,11 @@ export const processImage = (
 		sampleWindow: o.sampleWindow,
 	});
 
+	// Compare "before": original image resized only (no sanitize).
+	let compareBefore = cropRawImageNearestFromGrid(img, grid);
+	// Compare "before (sanitized)": original image downsampled (median sampling) using the same grid.
+	let compareBeforeSanitized = downsample(img, grid, o.sampleWindow);
+
 	let trimmed = down;
 	let trimmedGrid = grid;
 	if (trimToContent) {
@@ -1519,7 +1707,7 @@ export const processImage = (
 			(b.x !== 0 || b.y !== 0 || b.w !== down.width || b.h !== down.height)
 		) {
 			trimmed = cropRawImage(down, b.x, b.y, b.w, b.h);
-			o.debugHook?.("07-trimmed", trimmed, { bounds: b });
+
 			const baseCropX = grid.cropX ?? grid.offsetX;
 			const baseCropY = grid.cropY ?? grid.offsetY;
 			trimmedGrid = {
@@ -1531,6 +1719,18 @@ export const processImage = (
 				cropW: b.w * grid.cellW,
 				cropH: b.h * grid.cellH,
 			};
+
+			// Recompute comparison befores using the updated trimmed grid
+			compareBefore = cropRawImageNearestFromGrid(img, trimmedGrid);
+			compareBeforeSanitized = cropRawImage(
+				compareBeforeSanitized,
+				b.x,
+				b.y,
+				b.w,
+				b.h,
+			);
+
+			o.debugHook?.("07-trimmed", trimmed, { bounds: b });
 			log(
 				`Trimmed to content in ${(performance.now() - trimStart).toFixed(2)}ms`,
 				b,
@@ -1578,8 +1778,32 @@ export const processImage = (
 
 		// 画像サイズが拡張された場合、グリッド情報も更新する
 		if (finalResult.width !== prevW || finalResult.height !== prevH) {
-			const dw = (finalResult.width - prevW) / 2;
-			const dh = (finalResult.height - prevH) / 2;
+			const dw = finalResult.width - prevW;
+			const dh = finalResult.height - prevH;
+			const padLeft = Math.floor(dw / 2);
+			const padTop = Math.floor(dh / 2);
+			const padRight = dw - padLeft;
+			const padBottom = dh - padTop;
+
+			// Keep compareBefore aligned with the expanded result (transparent padding).
+			// Scale padding by cell size because compareBefore is high resolution.
+			compareBefore = padRawImage(
+				compareBefore,
+				padLeft * trimmedGrid.cellW,
+				padTop * trimmedGrid.cellH,
+				padRight * trimmedGrid.cellW,
+				padBottom * trimmedGrid.cellH,
+			);
+			compareBeforeSanitized = padRawImage(
+				compareBeforeSanitized,
+				padLeft,
+				padTop,
+				padRight,
+				padBottom,
+			);
+
+			const cellDw = (finalResult.width - prevW) / 2;
+			const cellDh = (finalResult.height - prevH) / 2;
 			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
 			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
 
@@ -1587,8 +1811,8 @@ export const processImage = (
 				...trimmedGrid,
 				outW: finalResult.width,
 				outH: finalResult.height,
-				cropX: baseCropX - dw * trimmedGrid.cellW,
-				cropY: baseCropY - dh * trimmedGrid.cellH,
+				cropX: baseCropX - cellDw * trimmedGrid.cellW,
+				cropY: baseCropY - cellDh * trimmedGrid.cellH,
 				cropW: finalResult.width * trimmedGrid.cellW,
 				cropH: finalResult.height * trimmedGrid.cellH,
 			};
@@ -1607,5 +1831,7 @@ export const processImage = (
 		result: finalResult,
 		grid: trimmedGrid,
 		extractedPalette: extracted,
+		compareBefore,
+		compareBeforeSanitized,
 	};
 };

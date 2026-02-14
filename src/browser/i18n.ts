@@ -18,6 +18,10 @@ const resources = {
 		"ui.import_palette": "パレットを読み込み",
 		"ui.show_palette": "パレットを表示",
 		"ui.size": "サイズ",
+		"ui.view_single": "単体",
+		"ui.view_compare": "比較",
+		"ui.compare_before_original": "元画像",
+		"ui.compare_before_sanitized": "サニタイズ",
 		"ui.placeholder.input":
 			'画像をここにドラッグ＆ドロップ<br /><span class="drop-subtext">または クリックして選択</span>',
 		"ui.placeholder.result": "処理結果がここに表示されます",
@@ -164,6 +168,10 @@ const resources = {
 		"ui.import_palette": "Import Palette",
 		"ui.show_palette": "Show Palette",
 		"ui.size": "Size",
+		"ui.view_single": "Single",
+		"ui.view_compare": "Compare",
+		"ui.compare_before_original": "Original",
+		"ui.compare_before_sanitized": "Sanitized",
 		"ui.placeholder.input":
 			'Drag & drop image here<br /><span class="drop-subtext">or Click to select</span>',
 		"ui.placeholder.result": "Processed result will appear here",

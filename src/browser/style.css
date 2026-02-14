@@ -24,6 +24,9 @@
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 16px;
+
+  /* Checkered Background */
+  --bg-checkered-color: #d0d0d0;
 }
 
 * {
@@ -311,6 +314,155 @@ canvas {
   z-index: 2;
   display: none;
   /* Hidden by default until image loaded */
+}
+
+/* Comparison Modal */
+.compare-modal-content {
+  max-width: 95vw !important;
+  width: 95vw !important;
+  height: 90vh;
+}
+
+.compare-modal-body {
+  padding: 0 !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-input);
+  position: relative;
+  overflow: hidden;
+}
+
+.compare-mode-controls {
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.compare-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.img-comp-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.img-comp-container.bg-checkered {
+  background-color: #f0f0f0;
+  background-image: linear-gradient(45deg, var(--bg-checkered-color) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.img-comp-container.bg-white {
+  background-color: #ffffff;
+}
+
+.img-comp-container.bg-black {
+  background-color: #000000;
+}
+
+.img-comp-container.bg-green {
+  background-color: #00ff00;
+}
+
+.img-comp-img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+.img-comp-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.img-comp-overlay {
+  z-index: 1;
+  width: 50%;
+  /* Initial width */
+}
+
+#comp-slider-handle {
+  position: absolute;
+  z-index: 9;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 40px;
+  margin-left: -20px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.handle-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.handle-circle {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.view-controls {
+  display: flex;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  margin-right: 12px;
+}
+
+.view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.view-btn:hover {
+  color: var(--text-muted);
+}
+
+.view-btn.active {
+  background: var(--primary);
+  color: white;
 }
 
 #grid-canvas {
@@ -772,6 +924,10 @@ select:focus {
 
 .output-panel:not(.has-image) .bg-selector,
 .output-panel:not(.has-image) .zoom-toggle {
+  display: none;
+}
+
+.output-panel:not(.has-image) .view-controls {
   display: none;
 }
 
