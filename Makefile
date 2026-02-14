@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules
 
 # コードの変更を検知して再ビルドを実行
 watch-dev:
@@ -16,6 +16,7 @@ ci:
 	$(MAKE) ts-check-diff
 	$(MAKE) html-check-diff
 	$(MAKE) type-check
+	$(MAKE) check-ts-rules
 	$(MAKE) test
 
 # CI（サーバ）向け: 自動修正せず、差分があれば失敗
@@ -23,6 +24,7 @@ ci-check:
 	$(MAKE) ts-check-diff
 	$(MAKE) html-check-diff
 	$(MAKE) type-check
+	$(MAKE) check-ts-rules
 	$(MAKE) test
 
 test:
@@ -34,6 +36,9 @@ test-debug:
 
 type-check:
 	npx tsc --noEmit
+
+check-ts-rules:
+	python3 scripts/check_ts_rules.py
 
 ts-check-diff:
 	@files="$$( ( \
