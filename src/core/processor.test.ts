@@ -576,5 +576,28 @@ describe("processImage", () => {
 			expect(grid.cellW).toBe(1);
 			expect(grid.cellH).toBe(1);
 		});
+
+		it("enableGridDetection=false のときも減色が動作する", () => {
+			const img = mkImg();
+			const { result } = processImage(img, {
+				enableGridDetection: false,
+				reduceColors: true,
+				reduceColorMode: "auto",
+				colorCount: 2,
+				debugHook: makeDebugHook(
+					"enableGridDetection",
+					"enableGridDetection=false_かつ_reduceColors=true",
+				),
+			});
+
+			// 色数をカウント
+			const colors = new Set<number>();
+			const data32 = new Uint32Array(result.data.buffer);
+			for (let i = 0; i < data32.length; i++) {
+				colors.add(data32[i]);
+			}
+			// 背景(白)とオブジェクト(黒)の2色になるはず
+			expect(colors.size).toBeLessThanOrEqual(2);
+		});
 	});
 });

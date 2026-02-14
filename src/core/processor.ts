@@ -1103,14 +1103,65 @@ export const processImage = (
 		log(
 			`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 		);
-		o.debugHook?.("99-result", result2, {
+
+		// 減色処理
+		let finalResult = result2;
+		if (o.reduceColors) {
+			const quantStart = performance.now();
+			const pixelData: PixelData[] = [];
+			for (let i = 0; i < result2.data.length; i += 4) {
+				pixelData.push({
+					r: result2.data[i],
+					g: result2.data[i + 1],
+					b: result2.data[i + 2],
+					alpha: result2.data[i + 3],
+				});
+			}
+
+			let reducedPixels: PixelData[];
+			if (o.reduceColorMode === "auto") {
+				const quantizer = new OklabKMeans(o.colorCount);
+				reducedPixels = quantizer.quantize(pixelData);
+			} else {
+				const paletteDef = RETRO_PALETTES[o.reduceColorMode];
+				if (paletteDef) {
+					const colors = paletteDef.colors.map((hex) => {
+						const r = parseInt(hex.slice(1, 3), 16);
+						const g = parseInt(hex.slice(3, 5), 16);
+						const b = parseInt(hex.slice(5, 7), 16);
+						return { r, g, b };
+					});
+					const quantizer = new PaletteQuantizer(colors);
+					reducedPixels = quantizer.quantize(pixelData);
+				} else {
+					// Fallback to auto if palette not found
+					const quantizer = new OklabKMeans(o.colorCount);
+					reducedPixels = quantizer.quantize(pixelData);
+				}
+			}
+
+			const newData = new Uint8ClampedArray(result2.data.length);
+			for (let i = 0; i < reducedPixels.length; i++) {
+				const p = reducedPixels[i];
+				newData[i * 4] = p.r;
+				newData[i * 4 + 1] = p.g;
+				newData[i * 4 + 2] = p.b;
+				newData[i * 4 + 3] = p.alpha;
+			}
+			finalResult = { ...result2, data: newData };
+			log(
+				`Color reduction (${o.reduceColorMode}, ${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+			);
+		}
+
+		o.debugHook?.("99-result", finalResult, {
 			postRemoveBackground: o.postRemoveBackground,
 			forced: true,
 		});
 		log(
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
-		return { result: result2, grid: g };
+		return { result: finalResult, grid: g };
 	}
 
 	// enableGridDetection: グリッド検出と縮小をスキップ
@@ -1175,11 +1226,61 @@ export const processImage = (
 				)
 			: resultImg;
 
+		// 減色処理
+		let finalResult = result;
+		if (o.reduceColors) {
+			const quantStart = performance.now();
+			const pixelData: PixelData[] = [];
+			for (let i = 0; i < result.data.length; i += 4) {
+				pixelData.push({
+					r: result.data[i],
+					g: result.data[i + 1],
+					b: result.data[i + 2],
+					alpha: result.data[i + 3],
+				});
+			}
+
+			let reducedPixels: PixelData[];
+			if (o.reduceColorMode === "auto") {
+				const quantizer = new OklabKMeans(o.colorCount);
+				reducedPixels = quantizer.quantize(pixelData);
+			} else {
+				const paletteDef = RETRO_PALETTES[o.reduceColorMode];
+				if (paletteDef) {
+					const colors = paletteDef.colors.map((hex) => {
+						const r = parseInt(hex.slice(1, 3), 16);
+						const g = parseInt(hex.slice(3, 5), 16);
+						const b = parseInt(hex.slice(5, 7), 16);
+						return { r, g, b };
+					});
+					const quantizer = new PaletteQuantizer(colors);
+					reducedPixels = quantizer.quantize(pixelData);
+				} else {
+					// Fallback to auto if palette not found
+					const quantizer = new OklabKMeans(o.colorCount);
+					reducedPixels = quantizer.quantize(pixelData);
+				}
+			}
+
+			const newData = new Uint8ClampedArray(result.data.length);
+			for (let i = 0; i < reducedPixels.length; i++) {
+				const p = reducedPixels[i];
+				newData[i * 4] = p.r;
+				newData[i * 4 + 1] = p.g;
+				newData[i * 4 + 2] = p.b;
+				newData[i * 4 + 3] = p.alpha;
+			}
+			finalResult = { ...result, data: newData };
+			log(
+				`Color reduction (${o.reduceColorMode}, ${o.colorCount} colors) done in ${(performance.now() - quantStart).toFixed(2)}ms`,
+			);
+		}
+
 		log(
 			`Grid detection disabled mode: ${outW}x${outH}`,
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
-		return { result, grid: g };
+		return { result: finalResult, grid: g };
 	}
 
 	// auto: まず背景トリム（縮小前）した領域から outW/outH を推定して、そのまま縮小する
