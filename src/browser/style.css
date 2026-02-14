@@ -493,6 +493,38 @@ canvas {
   display: block;
 }
 
+/* Make result canvas pointer to indicate clickability */
+.panel.has-image .js-result-canvas-container,
+.modal.has-image .js-result-canvas-container {
+  cursor: pointer;
+}
+
+/* Override styles for modal context */
+.result-modal-body .js-result-canvas-container {
+  width: 100%;
+  /* Use available height in modal */
+  flex: 1;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+}
+
+/* Zoom state behavior */
+.js-result-canvas-container.zoom-enabled .js-result-canvas,
+.js-result-canvas-container.zoom-enabled .js-grid-canvas {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+
+.js-result-canvas-container.zoom-enabled {
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Grid canvas is hidden by default even if panel has image */
 .panel.has-image #grid-canvas {
   display: none;
@@ -538,6 +570,7 @@ canvas {
 .drop-text {
   font-size: 1rem;
   font-weight: 500;
+  text-align: center;
 }
 
 .drop-subtext {
@@ -998,6 +1031,86 @@ select:focus {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
+/* Result Viewer Container Base Styles */
+.js-result-canvas-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  /* Default (no image): dark background like before */
+  background-color: var(--bg-input);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+/* Background variants (Centralized) */
+/* Only apply when an image exists, so empty RESULT stays dark. */
+.js-result-canvas-container.has-image.bg-white {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+.js-result-canvas-container.has-image.bg-black {
+  background-color: #000000 !important;
+  background-image: none !important;
+}
+
+.js-result-canvas-container.has-image.bg-green {
+  background-color: #00ff00 !important;
+  background-image: none !important;
+}
+
+.js-result-canvas-container.has-image.bg-checkered {
+  /* Light checkerboard (transparent preview style) */
+  background-color: #f0f0f0 !important;
+  background-image: linear-gradient(
+      45deg,
+      var(--bg-checkered-color) 25%,
+      transparent 25%
+    ),
+    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Placeholder styling in Result Viewer */
+.js-result-canvas-container .placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+/* Canvas styling */
+.js-result-canvas,
+.js-grid-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.js-result-canvas-container:not(.has-image) .js-result-canvas,
+.js-result-canvas-container:not(.has-image) .js-grid-canvas {
+  display: none;
+}
+
+.js-grid-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
 .status {
   margin-bottom: 12px;
 }
@@ -1132,6 +1245,13 @@ select:focus {
   color: var(--text-dim);
   font-size: 0.8rem;
   opacity: 0.7;
+}
+
+/* Output Panel Size Label */
+.js-output-size {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .app-version {
@@ -1327,4 +1447,34 @@ select:focus {
 
 .custom-tooltip.show {
   opacity: 1;
+}
+
+/* Result Modal */
+.result-modal-content {
+  max-width: 95vw !important;
+  width: 95vw !important;
+  height: 90vh;
+}
+
+.result-modal-body {
+  padding: 0 !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-input);
+  position: relative;
+  overflow: hidden;
+}
+
+#result-modal-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  display: block;
+}
+
+/* Make result canvas pointer to indicate clickability */
+.panel.has-image #result-canvas-container {
+  cursor: pointer;
 }
