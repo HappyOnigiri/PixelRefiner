@@ -30,6 +30,8 @@ export interface RGB {
 	b: number; // 0-255
 }
 
+export type OutlineStyle = "none" | "rounded" | "sharp";
+
 export interface Oklab {
 	L: number; // Lightness
 	a: number; // Green-Red component

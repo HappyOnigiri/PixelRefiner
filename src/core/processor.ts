@@ -5,9 +5,16 @@ import {
 	PROCESS_RANGES,
 	RETRO_PALETTES,
 } from "../shared/config";
-import type { PixelData, PixelGrid, RawImage, RGB } from "../shared/types";
+import type {
+	OutlineStyle,
+	PixelData,
+	PixelGrid,
+	RawImage,
+	RGB,
+} from "../shared/types";
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
+import { applyOutline } from "./outline";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
 
 const cloneImage = (img: RawImage): RawImage => ({
@@ -214,6 +221,8 @@ export type ProcessOptions = DetectOptions & {
 	 * RGB指定時の背景色 (#rrggbb)
 	 */
 	bgRgb?: string;
+	outlineStyle?: OutlineStyle;
+	outlineColor?: RGB;
 	/**
 	 * デバッグ用に中間画像を取り出すためのフック。
 	 * ブラウザ環境でも動くよう、PNG書き出し等は呼び出し側で行う。
@@ -256,6 +265,8 @@ const normalizeProcessOptions = (
 	colorCount: number;
 	ditherStrength: number;
 	fixedPalette?: RGB[];
+	outlineStyle: OutlineStyle;
+	outlineColor: RGB;
 	floatingMaxPixels: number;
 	bgExtractionMethod:
 		| "none"
@@ -325,6 +336,9 @@ const normalizeProcessOptions = (
 		PROCESS_RANGES.ditherStrength,
 	);
 
+	const outlineStyle = raw.outlineStyle ?? PROCESS_DEFAULTS.outlineStyle;
+	const outlineColor = raw.outlineColor ?? PROCESS_DEFAULTS.outlineColor;
+
 	const floatingMaxPixels = clampInt(
 		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
 		PROCESS_RANGES.floatingMaxPixels,
@@ -351,6 +365,8 @@ const normalizeProcessOptions = (
 		colorCount,
 		ditherStrength,
 		fixedPalette: raw.fixedPalette,
+		outlineStyle,
+		outlineColor,
 
 		floatingMaxPixels,
 		bgExtractionMethod,
@@ -1552,6 +1568,31 @@ export const processImage = (
 			log,
 			o.fixedPalette,
 		);
+	}
+
+	// アウトライン処理
+	if (o.outlineStyle !== "none") {
+		const prevW = finalResult.width;
+		const prevH = finalResult.height;
+		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
+
+		// 画像サイズが拡張された場合、グリッド情報も更新する
+		if (finalResult.width !== prevW || finalResult.height !== prevH) {
+			const dw = (finalResult.width - prevW) / 2;
+			const dh = (finalResult.height - prevH) / 2;
+			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
+			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
+
+			trimmedGrid = {
+				...trimmedGrid,
+				outW: finalResult.width,
+				outH: finalResult.height,
+				cropX: baseCropX - dw * trimmedGrid.cellW,
+				cropY: baseCropY - dh * trimmedGrid.cellH,
+				cropW: finalResult.width * trimmedGrid.cellW,
+				cropH: finalResult.height * trimmedGrid.cellH,
+			};
+		}
 	}
 
 	o.debugHook?.("99-result", finalResult, {

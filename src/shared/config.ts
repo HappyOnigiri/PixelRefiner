@@ -1,3 +1,5 @@
+import type { RGB } from "./types";
+
 export type IntRange = {
 	min: number;
 	max: number;
@@ -24,7 +26,9 @@ export const PROCESS_RANGES = {
 	colorCount: { min: 2, max: 256, default: 32 } as const,
 	// dithering
 	ditherStrength: { min: 0, max: 100, default: 0 } as const,
-} as const satisfies Record<string, IntRange>;
+	// outline
+	outlineColor: { r: 255, g: 255, b: 255 }, // Default white
+} as const satisfies Record<string, IntRange | RGB>;
 
 export const RETRO_PALETTES: Record<
 	string,
@@ -248,6 +252,8 @@ export const PROCESS_DEFAULTS = {
 	reduceColorMode: "none", // "none" | "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
 	colorCount: PROCESS_RANGES.colorCount.default,
 	ditherStrength: PROCESS_RANGES.ditherStrength.default,
+	outlineStyle: "none",
+	outlineColor: PROCESS_RANGES.outlineColor,
 	debug: import.meta.env.DEV,
 } as const;
 
