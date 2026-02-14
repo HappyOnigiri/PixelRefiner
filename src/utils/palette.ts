@@ -141,3 +141,48 @@ export const sortPalette = (palette: RGB[]): RGB[] => {
 		return getLum(b) - getLum(a); // Descending (High L -> Low L)
 	});
 };
+
+/**
+ * Extracts unique colors from ImageData.
+ * @param imageData - The ImageData to extract colors from
+ * @param maxColors - Maximum number of colors to return (default: no limit)
+ * @returns Object containing extracted colors array and total unique color count
+ */
+export const extractColorsFromImage = (
+	imageData: ImageData,
+	maxColors?: number,
+): { colors: RGB[]; totalColors: number } => {
+	const colors: RGB[] = [];
+	const seen = new Set<string>();
+	const data = imageData.data;
+
+	// Extract all unique colors
+	for (let i = 0; i < data.length; i += 4) {
+		// Skip transparent pixels (alpha < 128)
+		if (data[i + 3] < 128) continue;
+
+		const r = data[i];
+		const g = data[i + 1];
+		const b = data[i + 2];
+		const key = `${r},${g},${b}`;
+
+		if (!seen.has(key)) {
+			seen.add(key);
+			colors.push({ r, g, b });
+		}
+	}
+
+	const totalColors = colors.length;
+
+	// If maxColors is specified and we have more colors than the limit,
+	// sort by luminance and return the top N colors
+	if (maxColors !== undefined && colors.length > maxColors) {
+		const sorted = sortPalette(colors);
+		return {
+			colors: sorted.slice(0, maxColors),
+			totalColors,
+		};
+	}
+
+	return { colors, totalColors };
+};

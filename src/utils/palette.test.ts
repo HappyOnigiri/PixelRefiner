@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RGB } from "../shared/types";
 import {
+	extractColorsFromImage,
 	findNearestColor,
 	generateGPL,
 	parseGPL,
@@ -120,5 +121,126 @@ Invalid Line Here
 			expect(sorted[0]).toEqual({ r: 200, g: 200, b: 200 });
 			expect(sorted[1]).toEqual({ r: 50, g: 50, b: 50 });
 		});
+	});
+});
+
+describe("extractColorsFromImage", () => {
+	/**
+	 * Helper function to create ImageData for testing
+	 * @param width - Width of the image
+	 * @param height - Height of the image
+	 * @param pixels - Array of [r, g, b] or [r, g, b, a] tuples
+	 */
+	const createImageData = (
+		width: number,
+		height: number,
+		pixels: Array<[number, number, number] | [number, number, number, number]>,
+	): ImageData => {
+		const data = new Uint8ClampedArray(width * height * 4);
+
+		for (let i = 0; i < pixels.length; i++) {
+			const [r, g, b, a = 255] = pixels[i];
+			data[i * 4] = r;
+			data[i * 4 + 1] = g;
+			data[i * 4 + 2] = b;
+			data[i * 4 + 3] = a;
+		}
+
+		return {
+			data,
+			width,
+			height,
+			colorSpace: "srgb",
+		} as ImageData;
+	};
+
+	it("should extract unique colors from image", () => {
+		const imageData = createImageData(3, 1, [
+			[255, 0, 0], // Red
+			[0, 255, 0], // Green
+			[255, 0, 0], // Red (duplicate)
+		]);
+
+		const { colors, totalColors } = extractColorsFromImage(imageData);
+		expect(totalColors).toBe(2);
+		expect(colors).toHaveLength(2);
+		expect(colors).toContainEqual({ r: 255, g: 0, b: 0 });
+		expect(colors).toContainEqual({ r: 0, g: 255, b: 0 });
+	});
+
+	it("should skip transparent pixels", () => {
+		const imageData = createImageData(3, 1, [
+			[255, 0, 0, 255], // Red (opaque)
+			[0, 255, 0, 100], // Green (semi-transparent, < 128)
+			[0, 0, 255, 128], // Blue (at threshold, should be included)
+		]);
+
+		const { colors, totalColors } = extractColorsFromImage(imageData);
+		expect(totalColors).toBe(2);
+		expect(colors).toContainEqual({ r: 255, g: 0, b: 0 });
+		expect(colors).toContainEqual({ r: 0, g: 0, b: 255 });
+		expect(colors).not.toContainEqual({ r: 0, g: 255, b: 0 });
+	});
+
+	it("should limit colors to maxColors", () => {
+		const imageData = createImageData(5, 1, [
+			[255, 255, 255], // White (brightest)
+			[0, 0, 0], // Black (darkest)
+			[255, 0, 0], // Red
+			[0, 255, 0], // Green
+			[0, 0, 255], // Blue
+		]);
+
+		const { colors, totalColors } = extractColorsFromImage(imageData, 3);
+		expect(totalColors).toBe(5);
+		expect(colors).toHaveLength(3);
+		// Should return the 3 brightest colors (sorted by luminance)
+		expect(colors[0]).toEqual({ r: 255, g: 255, b: 255 }); // White
+		expect(colors[1]).toEqual({ r: 0, g: 255, b: 0 }); // Green
+		expect(colors[2]).toEqual({ r: 255, g: 0, b: 0 }); // Red
+	});
+
+	it("should sort colors by luminance when limiting", () => {
+		const imageData = createImageData(4, 1, [
+			[50, 50, 50], // Dark gray
+			[200, 200, 200], // Light gray
+			[100, 100, 100], // Medium gray
+			[150, 150, 150], // Medium-Light gray
+		]);
+
+		const { colors, totalColors } = extractColorsFromImage(imageData, 2);
+		expect(totalColors).toBe(4);
+		expect(colors).toHaveLength(2);
+		// Should return the 2 brightest colors
+		expect(colors[0]).toEqual({ r: 200, g: 200, b: 200 });
+		expect(colors[1]).toEqual({ r: 150, g: 150, b: 150 });
+	});
+
+	it("should handle empty image", () => {
+		const imageData = createImageData(0, 0, []);
+		const { colors, totalColors } = extractColorsFromImage(imageData);
+		expect(totalColors).toBe(0);
+		expect(colors).toHaveLength(0);
+	});
+
+	it("should handle fully transparent image", () => {
+		const imageData = createImageData(2, 1, [
+			[255, 0, 0, 0], // Transparent red
+			[0, 255, 0, 50], // Transparent green
+		]);
+		const { colors, totalColors } = extractColorsFromImage(imageData);
+		expect(totalColors).toBe(0);
+		expect(colors).toHaveLength(0);
+	});
+
+	it("should not limit when maxColors is undefined", () => {
+		const imageData = createImageData(3, 1, [
+			[255, 0, 0],
+			[0, 255, 0],
+			[0, 0, 255],
+		]);
+		const { colors, totalColors } = extractColorsFromImage(imageData);
+		expect(totalColors).toBe(3);
+		expect(colors).toHaveLength(3);
 	});
 });

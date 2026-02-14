@@ -10,6 +10,7 @@ import {
 } from "../shared/config";
 import type { RawImage, RGB } from "../shared/types";
 import {
+	extractColorsFromImage,
 	generateGPL,
 	generatePaletteImage,
 	parseGPL,
@@ -1150,6 +1151,7 @@ export const initApp = (): void => {
 
 		try {
 			if (file.name.toLowerCase().endsWith(".gpl")) {
+				// Handle GIMP Palette files
 				const text = await file.text();
 				const palette = parseGPL(text);
 				if (palette.length > 0) {
@@ -1158,7 +1160,8 @@ export const initApp = (): void => {
 					updateReduceColorsDisabledStates();
 					runProcessing();
 				}
-			} else if (file.name.toLowerCase().endsWith(".png")) {
+			} else if (file.type.startsWith("image/")) {
+				// Handle all image formats (PNG, JPEG, GIF, WebP, etc.)
 				const img = new Image();
 				img.onload = () => {
 					const canvas = document.createElement("canvas");
@@ -1167,20 +1170,19 @@ export const initApp = (): void => {
 					const ctx = canvas.getContext("2d");
 					if (!ctx) return;
 					ctx.drawImage(img, 0, 0);
-					const data = ctx.getImageData(0, 0, img.width, img.height).data;
-					const colors: RGB[] = [];
-					const seen = new Set<string>();
+					const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
-					for (let i = 0; i < data.length; i += 4) {
-						if (data[i + 3] < 128) continue; // Skip transparent
-						const r = data[i];
-						const g = data[i + 1];
-						const b = data[i + 2];
-						const key = `${r},${g},${b}`;
-						if (!seen.has(key)) {
-							seen.add(key);
-							colors.push({ r, g, b });
-						}
+					// Extract colors with 256 color limit
+					const { colors, totalColors } = extractColorsFromImage(
+						imageData,
+						256,
+					);
+
+					// Show warning if there were more than 256 colors
+					if (totalColors > 256) {
+						showError(
+							`警告: 画像には${totalColors}色含まれています。パレットは256色に制限されます。`,
+						);
 					}
 
 					if (colors.length > 0) {
@@ -1189,6 +1191,7 @@ export const initApp = (): void => {
 						updateReduceColorsDisabledStates();
 						runProcessing();
 					}
+					URL.revokeObjectURL(img.src);
 				};
 				img.src = URL.createObjectURL(file);
 			}
