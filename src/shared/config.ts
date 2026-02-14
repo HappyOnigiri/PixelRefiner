@@ -14,9 +14,9 @@ export const PROCESS_RANGES = {
 	// bbox threshold for trimming
 	trimAlphaThreshold: { min: 1, max: 255, default: 16 } as const,
 	// UI: remove small floating islands threshold (% of total pixels)
-	floatingMaxPercent: { min: 0, max: 100, default: 0 } as const,
+	floatingMaxPercent: { min: 0, max: 100, default: 3 } as const,
 	// remove small floating islands (connected components) as background
-	floatingMaxPixels: { min: 0, max: 1000000, default: 50000 } as const,
+	floatingMaxPixels: { min: 0, max: 1000000, default: 0 } as const,
 	// force output pixel size (after BBox trim)
 	forcePixelsW: { min: 1, max: 1024, default: 0 } as const,
 	forcePixelsH: { min: 1, max: 1024, default: 0 } as const,
@@ -245,7 +245,7 @@ export const PROCESS_DEFAULTS = {
 
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
-	reduceColorMode: "nes", // "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
+	reduceColorMode: "none", // "none" | "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
 	colorCount: PROCESS_RANGES.colorCount.default,
 	ditherMode: "none", // "none" | "floyd-steinberg"
 	ditherStrength: PROCESS_RANGES.ditherStrength.default,
