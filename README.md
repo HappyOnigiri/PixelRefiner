@@ -30,7 +30,10 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 - **Color reduction & palette mapping**:
   - **Retro console palettes** — NES, Game Boy, SNES, PC-9801, MSX1, PICO-8, and more.
   - **Custom quantization** — High-quality color reduction using Oklab color space and K-means clustering.
-  - **Dithering** — Floyd-Steinberg dithering to preserve gradients with limited colors.
+  - **Dithering** — Supports Floyd-Steinberg, Bayer (2x2, 4x4, 8x8), and Ordered dithering.
+- **Outline generation** — Automatically adds an outline (stroke) to the sprite.
+  - **Styles** — Rounded (8-way) or Sharp (4-way).
+  - **Custom color** — Choose any color for the outline.
 - **Auto trim** — Strips transparent margins and crops to content bounds.
 - **Forced resize** — Resizes to an exact pixel dimension you specify.
 - **Scaled export** — Download at x2, x4, … up to x32 for use in game engines and other tools.
@@ -45,7 +48,9 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
     - **General** — Grid detection on/off, fast mode toggle
     - **Colors & Palette** — Preset selection, color count, dithering
     - **Background** — Transparency mode (auto/manual), tolerance, cleanup options
-5. When you're happy with the result, click **"Download"** (use the ▼ dropdown to choose a scale factor).
+    - **Outline** — Add an outline to the sprite
+5. Use the **"Compare"** view to check the difference between the original and processed image with a slider.
+6. When you're happy with the result, click **"Download"** (use the ▼ dropdown to choose a scale factor).
 
 ## 🛠️ Development
 
