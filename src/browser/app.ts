@@ -534,7 +534,6 @@ export const initApp = (): void => {
 	const updateBgDisabledStates = () => {
 		const method = els.bgExtractionMethod.value;
 		const isBgDisabled = method === "none";
-		const isFloatingDisabled = !els.ignoreFloatingCheck.checked;
 
 		// 「透過しない」の場合は背景透過関連の処理が走らないように状態自体もOFFにする
 		// （disabled だけだと checked=true のまま worker に渡ってしまい、浮きノイズ除去が有効になる）
@@ -559,6 +558,9 @@ export const initApp = (): void => {
 			els.ignoreFloatingCheck.checked = lastBgChecks.ignoreFloating;
 			lastBgChecks = null;
 		}
+
+		// 復元後の状態を基に浮きノイズ上限の無効化判定を行う
+		const isFloatingDisabled = !els.ignoreFloatingCheck.checked;
 
 		// 背景透過に関連する項目の制御
 		[
