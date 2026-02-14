@@ -437,6 +437,8 @@ export const initApp = (): void => {
 	let autoProcessTimeout: number | undefined;
 	const triggerAutoProcess = () => {
 		if (!els.autoProcessToggle.checked) return;
+		// 画像未設定時は変換を実行しない
+		if (!currentImage) return;
 
 		// 既に実行予約があればキャンセル（デバウンス）
 		if (autoProcessTimeout) {
