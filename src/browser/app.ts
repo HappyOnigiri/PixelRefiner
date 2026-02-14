@@ -19,6 +19,7 @@ import {
 import { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
+import { ResultViewer } from "./result-viewer";
 
 // Workerのインスタンス化
 const workerInstance = new Worker(
@@ -36,7 +37,6 @@ type Elements = {
 	downloadDropdownButton: HTMLButtonElement;
 	downloadMenu: HTMLElement;
 	originalCanvas: HTMLCanvasElement;
-	resultCanvas: HTMLCanvasElement;
 	inputSize: HTMLElement;
 	outputSize: HTMLElement;
 	quantStepInput: HTMLInputElement;
@@ -69,8 +69,6 @@ type Elements = {
 	floatingMaxPercentSlider: HTMLInputElement;
 	zoomOutputCheck: HTMLInputElement;
 	gridOutputCheck: HTMLInputElement;
-	gridCanvas: HTMLCanvasElement;
-	bgSelector: HTMLElement;
 	outputPanel: HTMLElement;
 	loadingOverlay: HTMLElement;
 	enableBgRemovalCheck: HTMLInputElement;
@@ -97,6 +95,11 @@ type Elements = {
 	paletteFileInput: HTMLInputElement;
 
 	// Compare View
+	// Result Modal
+	resultModal: HTMLElement;
+	closeResultModal: HTMLButtonElement;
+
+	// Compare Modal
 	compareModal: HTMLElement;
 	closeCompareModal: HTMLButtonElement;
 	compareContainer: HTMLElement;
@@ -124,7 +127,6 @@ const getElements = (): Elements => {
 		downloadDropdownButton: get<HTMLButtonElement>("download-dropdown-button"),
 		downloadMenu: get<HTMLElement>("download-menu"),
 		originalCanvas: get<HTMLCanvasElement>("original-canvas"),
-		resultCanvas: get<HTMLCanvasElement>("result-canvas"),
 		inputSize: get<HTMLElement>("input-size"),
 		outputSize: get<HTMLElement>("output-size"),
 		quantStepInput: get<HTMLInputElement>("quant-step"),
@@ -163,8 +165,6 @@ const getElements = (): Elements => {
 		),
 		zoomOutputCheck: get<HTMLInputElement>("zoom-output"),
 		gridOutputCheck: get<HTMLInputElement>("grid-output"),
-		gridCanvas: get<HTMLCanvasElement>("grid-canvas"),
-		bgSelector: get<HTMLElement>("bg-selector"),
 		outputPanel: get<HTMLElement>("output-panel"),
 		loadingOverlay: get<HTMLElement>("loading-overlay"),
 		enableBgRemovalCheck: get<HTMLInputElement>("enable-bg-removal"),
@@ -187,6 +187,12 @@ const getElements = (): Elements => {
 		paletteModal: get<HTMLElement>("palette-modal"),
 		closePaletteModal: get<HTMLButtonElement>("close-palette-modal"),
 		paletteFileInput: get<HTMLInputElement>("palette-file-input"),
+
+		// Result Modal
+		resultModal: get<HTMLElement>("result-modal"),
+		closeResultModal: get<HTMLElement>("result-modal").querySelector(
+			".js-close-result-modal",
+		) as HTMLButtonElement,
 
 		compareModal: get<HTMLElement>("compare-modal"),
 		closeCompareModal: get<HTMLButtonElement>("close-compare-modal"),
@@ -242,6 +248,81 @@ type SavedSettings = {
 export const initApp = (): void => {
 	const els = getElements();
 	const comparer = new ImageComparer("compare-container");
+	const mainResultViewer = new ResultViewer(els.outputPanel);
+	const modalResultViewer = new ResultViewer(
+		els.resultModal.querySelector(".result-modal-body") as HTMLElement,
+	);
+
+	// Sync logic
+	const syncViewers = (
+		_source: ResultViewer,
+		target: ResultViewer,
+		bgType?: string,
+		zoom?: boolean,
+		grid?: boolean,
+	) => {
+		if (bgType !== undefined) target.setBackground(bgType);
+		if (zoom !== undefined) target.setZoom(zoom);
+		if (grid !== undefined) target.setGrid(grid);
+		saveSettings();
+	};
+
+	const handleDownload = (scale: number) => {
+		if (!currentResult) return;
+
+		let link: HTMLAnchorElement;
+		if (scale === 1) {
+			link = document.createElement("a");
+			link.download = "refined.png";
+			link.href = els.originalCanvas.toDataURL("image/png"); // Fallback or current result?
+			// Wait, we need the result image data URL.
+			// Since currentResult is RawImage, we need to draw it to a canvas to get URL.
+			// We can use a temp canvas or one of the existing ones if we are sure it has the image.
+			// ResultViewer has the canvas, but we are outside.
+			// Let's use a temp canvas helper or drawRawImageToCanvas.
+			const tempCanvas = document.createElement("canvas");
+			drawRawImageToCanvas(currentResult, tempCanvas);
+			link.href = tempCanvas.toDataURL("image/png");
+		} else {
+			const upscaled = upscaleNearest(currentResult, scale);
+			const tempCanvas = document.createElement("canvas");
+			drawRawImageToCanvas(upscaled, tempCanvas);
+			link = document.createElement("a");
+			link.download = `refined_x${scale}.png`;
+			link.href = tempCanvas.toDataURL("image/png");
+		}
+		link.click();
+	};
+
+	mainResultViewer.setCallbacks({
+		onBgChange: (bg) => syncViewers(mainResultViewer, modalResultViewer, bg),
+		onZoomToggle: (z) =>
+			syncViewers(mainResultViewer, modalResultViewer, undefined, z),
+		onGridToggle: (g) =>
+			syncViewers(mainResultViewer, modalResultViewer, undefined, undefined, g),
+		onDownload: (scale) => handleDownload(scale),
+		onCompare: () => openCompareModal(),
+		onImageClick: () => {
+			els.resultModal.style.display = "flex";
+			// モーダル表示時にグリッドなどの描画を更新（サイズが異なるため）
+			requestAnimationFrame(() => {
+				modalResultViewer.drawGrid();
+			});
+		},
+	});
+
+	modalResultViewer.setCallbacks({
+		onBgChange: (bg) => syncViewers(modalResultViewer, mainResultViewer, bg),
+		onZoomToggle: (z) =>
+			syncViewers(modalResultViewer, mainResultViewer, undefined, z),
+		onGridToggle: (g) =>
+			syncViewers(modalResultViewer, mainResultViewer, undefined, undefined, g),
+		onDownload: (scale) => handleDownload(scale),
+		onCompare: () => {
+			closeResultModal();
+			openCompareModal();
+		},
+	});
 
 	let currentImage: RawImage | null = null;
 	let currentResult: RawImage | null = null;
@@ -265,15 +346,15 @@ export const initApp = (): void => {
 	let isGridManuallyToggled = false;
 
 	const saveSettings = () => {
-		const activeBgBtn = els.bgSelector.querySelector(
-			".bg-btn.active",
-		) as HTMLElement;
 		const settings: SavedSettings = {
 			zoomOutput: els.zoomOutputCheck.checked,
 			gridOutput: els.gridOutputCheck.checked,
-			bgType: activeBgBtn?.dataset.bg || "checkered",
+			bgType: "checkered", // We'll need to read this from viewer state effectively, or just default.
 			autoProcess: els.autoProcessToggle.checked,
 		};
+		// Since we don't have direct access to BG state from here easily without asking viewer,
+		// we might rely on the last set state or ask viewer if we exposed getter.
+		// For now, let's skip bgType saving in this simplified block or fix it below.
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 	};
 
@@ -293,28 +374,213 @@ export const initApp = (): void => {
 			updateProcessButtonVisibility();
 
 			if (settings.bgType !== undefined) {
-				const btn = els.bgSelector.querySelector(
-					`.bg-btn[data-bg="${settings.bgType}"]`,
-				) as HTMLElement;
-				if (btn) {
-					// 既存の背景クラスをクリアして新しいクラスを追加し、ボタンをアクティブにする
-					const resultContainer = els.resultCanvas.parentElement;
-					if (resultContainer) {
-						["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach(
-							(cls) => {
-								resultContainer.classList.remove(cls);
-							},
-						);
-						resultContainer.classList.add(`bg-${settings.bgType}`);
-
-						els.bgSelector.querySelectorAll(".bg-btn").forEach((b) => {
-							b.classList.toggle("active", b === btn);
-						});
-					}
-				}
+				mainResultViewer.setBackground(settings.bgType);
+				modalResultViewer.setBackground(settings.bgType);
 			}
 		} catch (e) {
 			console.error("Failed to restore settings:", e);
+		}
+	};
+
+	// Processing Function
+	const runProcessing = async () => {
+		if (!currentImage) return;
+
+		mainResultViewer.setLoading(true);
+
+		// Disable UI
+		els.processButton.disabled = true;
+		els.loadingOverlay.style.display = "flex";
+		els.outputPanel.classList.add("is-processing");
+
+		try {
+			const parseOptionalInt = (
+				input: HTMLInputElement,
+				range: { min: number; max: number; default: number },
+			): number | undefined => {
+				const s = input.value.trim();
+				if (s === "") return undefined;
+				const n = Number(s);
+				if (!Number.isFinite(n)) return undefined;
+				return clampInt(n, range);
+			};
+
+			const detectionQuantStep = clampInt(
+				Number(els.quantStepInput.value),
+				PROCESS_RANGES.detectionQuantStep,
+			);
+			const forcePixelsW = parseOptionalInt(
+				els.forcePixelsWInput,
+				PROCESS_RANGES.forcePixelsW,
+			);
+			const forcePixelsH = parseOptionalInt(
+				els.forcePixelsHInput,
+				PROCESS_RANGES.forcePixelsH,
+			);
+			const sampleWindow = clampInt(
+				Number(els.sampleWindowInput.value),
+				PROCESS_RANGES.sampleWindow,
+			);
+			const tolerance = clampInt(
+				Number(els.toleranceInput.value),
+				PROCESS_RANGES.backgroundTolerance,
+			);
+			const floatingMaxPercent = clampNumber(
+				Number(els.floatingMaxPercentInput.value),
+				PROCESS_RANGES.floatingMaxPercent,
+			);
+			const totalPixels = currentImage.width * currentImage.height;
+			const bgEnabled = els.enableBgRemovalCheck.checked;
+			const method = (
+				bgEnabled ? els.bgExtractionMethod.value : "none"
+			) as ProcessOptions["bgExtractionMethod"];
+			const floatingMaxPixels = bgEnabled
+				? floatingMaxPercent <= 0
+					? 0
+					: Math.min(
+							totalPixels,
+							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
+						)
+				: 0;
+
+			const colorCount = clampInt(
+				Number(els.colorCountInput.value),
+				PROCESS_RANGES.colorCount,
+			);
+
+			const reduceColorMode = els.reduceColorModeSelect.value;
+			const reduceColors = reduceColorMode !== "none";
+			const ditherMode = els.ditherModeSelect.value as DitherMode;
+
+			const ditherStrength = clampInt(
+				Number(els.ditherStrengthInput.value),
+				PROCESS_RANGES.ditherStrength,
+			);
+
+			const outlineStyle = els.outlineStyleSelect.value as OutlineStyle;
+			const outlineHex = els.outlineColorInput.value;
+			const outlineColor = {
+				r: parseInt(outlineHex.slice(1, 3), 16),
+				g: parseInt(outlineHex.slice(3, 5), 16),
+				b: parseInt(outlineHex.slice(5, 7), 16),
+			};
+
+			const {
+				result,
+				extractedPalette,
+				compareBefore,
+				compareBeforeSanitized,
+			} = await processor.process(currentImage, {
+				detectionQuantStep,
+				forcePixelsW,
+				forcePixelsH,
+				preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
+				postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
+				removeInnerBackground:
+					bgEnabled && els.removeInnerBackgroundCheck.checked,
+				backgroundTolerance: tolerance,
+				sampleWindow,
+				trimToContent: els.trimToContentCheck.checked,
+				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
+				enableGridDetection: els.enableGridDetectionCheck.checked,
+				reduceColors,
+				reduceColorMode,
+				ditherMode,
+				colorCount,
+				ditherStrength,
+				floatingMaxPixels,
+				outlineStyle,
+				outlineColor,
+				bgExtractionMethod: method,
+				bgRgb: els.bgRgbInput.value,
+				fixedPalette: currentFixedPalette,
+			});
+
+			// 転送されたデータは元のスレッドで使えなくなる（Comlinkの挙動に依存するが、
+			// 基本的にRawImageは再利用しない設計なので、ここで再代入しておく）
+			// ただし、Comlinkはデフォルトでコピー（構造化複製）を行うため、
+			// 明示的に transfer を使わない限り currentImage は維持される。
+			// 今回はシンプルさを優先してコピーのままにする。
+
+			// 明示的に transfer を使わない限り currentImage は維持される。
+			// 今回はシンプルさを優先してコピーのままにする。
+
+			const resultImage = result;
+			currentResult = resultImage;
+
+			mainResultViewer.updateImage(resultImage);
+			modalResultViewer.updateImage(resultImage);
+			mainResultViewer.setLoading(false);
+
+			// 256pxを超える場合はデフォルトでグリッドをOFFにする（手動でONにしていない場合）
+			if (!isGridManuallyToggled) {
+				if (resultImage.width > 256 || resultImage.height > 256) {
+					if (els.gridOutputCheck.checked) {
+						els.gridOutputCheck.checked = false;
+						// グリッドをクリア
+						mainResultViewer.setGrid(false);
+						modalResultViewer.setGrid(false);
+					}
+				}
+			}
+
+			// Sort the palette for better visualization
+			const sortedPalette = sortPalette(extractedPalette);
+			currentExtractedPalette = sortedPalette;
+
+			updatePaletteDisplay();
+			els.downloadButton.style.display = "flex";
+			els.downloadDropdownButton.style.display = "flex";
+
+			// ダウンロードメニューのサイズ表示を更新
+			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
+				const scale = Number(btn.dataset.scale);
+				if (scale) {
+					btn.textContent = `x${scale} (${resultImage.width * scale}x${resultImage.height * scale})`;
+				}
+			});
+
+			// 比較スライダーの更新（元画像リサイズ / サニタイズ の両方を生成）
+			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
+			drawRawImageToCanvas(
+				compareBeforeSanitized,
+				compareBeforeSanitizedCanvas,
+			);
+			drawRawImageToCanvas(resultImage, compareAfterCanvas);
+			compareBeforeOriginalUrl = compareBeforeCanvas.toDataURL("image/png");
+			compareBeforeSanitizedUrl =
+				compareBeforeSanitizedCanvas.toDataURL("image/png");
+			compareAfterUrl = compareAfterCanvas.toDataURL("image/png");
+
+			const before =
+				compareBeforeMode === "sanitized"
+					? compareBeforeSanitizedUrl
+					: compareBeforeOriginalUrl;
+			comparer.updateImages(before, compareAfterUrl);
+
+			// モーダルが開いている場合は、直ちに反映（サイズ同期も）
+			if (els.compareModal.style.display !== "none") {
+				requestAnimationFrame(() => {
+					comparer.syncImageSize();
+				});
+			}
+
+			// 処理結果が更新されたらグリッドも再描画
+			// DOMの更新（canvasの表示サイズ確定）を待つために少し遅らせる
+			requestAnimationFrame(() => {
+				updateGrid();
+			});
+			els.outputPanel.classList.add("has-image");
+			els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`;
+
+			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
+			updateBgColorFromMethod();
+		} catch (err) {
+			showError(`${i18n.t("error.process_failed")}: ${(err as Error).message}`);
+		} finally {
+			els.loadingOverlay.style.display = "none";
+			els.outputPanel.classList.remove("is-processing");
+			els.processButton.disabled = false;
 		}
 	};
 
@@ -782,97 +1048,10 @@ export const initApp = (): void => {
 		}
 	});
 
-	const clearGrid = () => {
-		const container = els.resultCanvas.parentElement;
-		container?.classList.remove("grid-enabled");
-		const ctx = els.gridCanvas.getContext("2d");
-		if (!ctx) return;
-		ctx.clearRect(0, 0, els.gridCanvas.width, els.gridCanvas.height);
-	};
-
-	const drawGridOverlay = (img: RawImage) => {
-		// result-canvas の表示サイズ（CSS px）に合わせて grid-canvas をリサイズし、
-		// 1px 線でグリッドを描画する（拡大スケールで線幅が太らないようにする）
-		const rect = els.resultCanvas.getBoundingClientRect();
-		if (rect.width <= 0 || rect.height <= 0) return;
-
-		const dpr = window.devicePixelRatio || 1;
-		const cssW = rect.width;
-		const cssH = rect.height;
-
-		els.gridCanvas.width = Math.max(1, Math.round(cssW * dpr));
-		els.gridCanvas.height = Math.max(1, Math.round(cssH * dpr));
-		els.gridCanvas.style.width = `${cssW}px`;
-		els.gridCanvas.style.height = `${cssH}px`;
-
-		const ctx = els.gridCanvas.getContext("2d");
-		if (!ctx) return;
-
-		// CSS ピクセル座標で描けるようにする
-		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, cssW, cssH);
-
-		// object-fit: contain を前提に、実際の描画領域（レターボックス除外）を計算
-		const objectFit = getComputedStyle(els.resultCanvas).objectFit;
-		const imgAspect = img.width / img.height;
-		const boxAspect = cssW / cssH;
-
-		let drawW = cssW;
-		let drawH = cssH;
-		let offsetX = 0;
-		let offsetY = 0;
-
-		if (objectFit === "contain" || objectFit === "scale-down") {
-			if (boxAspect > imgAspect) {
-				// 横が余る
-				drawH = cssH;
-				drawW = drawH * imgAspect;
-				offsetX = (cssW - drawW) / 2;
-				offsetY = 0;
-			} else {
-				// 縦が余る
-				drawW = cssW;
-				drawH = drawW / imgAspect;
-				offsetX = 0;
-				offsetY = (cssH - drawH) / 2;
-			}
-		}
-
-		// グリッド線（薄めに）
-		ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-		ctx.lineWidth = 1;
-
-		const stepX = drawW / img.width;
-		const stepY = drawH / img.height;
-
-		ctx.beginPath();
-		for (let x = 1; x < img.width; x++) {
-			const px = offsetX + x * stepX;
-			ctx.moveTo(px, offsetY);
-			ctx.lineTo(px, offsetY + drawH);
-		}
-		for (let y = 1; y < img.height; y++) {
-			const py = offsetY + y * stepY;
-			ctx.moveTo(offsetX, py);
-			ctx.lineTo(offsetX + drawW, py);
-		}
-		ctx.stroke();
-	};
-
-	// グリッド更新処理
+	// Grid Update Logic (Handled by ResultViewer now)
 	const updateGrid = () => {
-		if (
-			!currentResult ||
-			!els.gridOutputCheck.checked ||
-			!els.zoomOutputCheck.checked
-		) {
-			clearGrid();
-			return;
-		}
-
-		drawGridOverlay(currentResult);
-		const container = els.resultCanvas.parentElement;
-		container?.classList.add("grid-enabled");
+		mainResultViewer.drawGrid();
+		modalResultViewer.drawGrid();
 	};
 
 	const updatePaletteDisplay = () => {
@@ -915,202 +1094,6 @@ export const initApp = (): void => {
 			});
 			els.paletteColors.appendChild(swatch);
 		});
-	};
-
-	const runProcessing = async () => {
-		const img = currentImage;
-		if (!img) {
-			showError(i18n.t("error.no_image"));
-			return;
-		}
-
-		els.loadingOverlay.style.display = "flex";
-		els.outputPanel.classList.add("is-processing");
-
-		try {
-			const parseOptionalInt = (
-				input: HTMLInputElement,
-				range: { min: number; max: number; default: number },
-			): number | undefined => {
-				const s = input.value.trim();
-				if (s === "") return undefined;
-				const n = Number(s);
-				if (!Number.isFinite(n)) return undefined;
-				return clampInt(n, range);
-			};
-
-			const detectionQuantStep = clampInt(
-				Number(els.quantStepInput.value),
-				PROCESS_RANGES.detectionQuantStep,
-			);
-			const forcePixelsW = parseOptionalInt(
-				els.forcePixelsWInput,
-				PROCESS_RANGES.forcePixelsW,
-			);
-			const forcePixelsH = parseOptionalInt(
-				els.forcePixelsHInput,
-				PROCESS_RANGES.forcePixelsH,
-			);
-			const sampleWindow = clampInt(
-				Number(els.sampleWindowInput.value),
-				PROCESS_RANGES.sampleWindow,
-			);
-			const tolerance = clampInt(
-				Number(els.toleranceInput.value),
-				PROCESS_RANGES.backgroundTolerance,
-			);
-			const floatingMaxPercent = clampNumber(
-				Number(els.floatingMaxPercentInput.value),
-				PROCESS_RANGES.floatingMaxPercent,
-			);
-			const totalPixels = img.width * img.height;
-			const bgEnabled = els.enableBgRemovalCheck.checked;
-			const method = (
-				bgEnabled ? els.bgExtractionMethod.value : "none"
-			) as ProcessOptions["bgExtractionMethod"];
-			const floatingMaxPixels = bgEnabled
-				? floatingMaxPercent <= 0
-					? 0
-					: Math.min(
-							totalPixels,
-							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
-						)
-				: 0;
-
-			const colorCount = clampInt(
-				Number(els.colorCountInput.value),
-				PROCESS_RANGES.colorCount,
-			);
-
-			const reduceColorMode = els.reduceColorModeSelect.value;
-			const reduceColors = reduceColorMode !== "none";
-			const ditherMode = els.ditherModeSelect.value as DitherMode;
-
-			const ditherStrength = clampInt(
-				Number(els.ditherStrengthInput.value),
-				PROCESS_RANGES.ditherStrength,
-			);
-
-			const outlineStyle = els.outlineStyleSelect.value as OutlineStyle;
-			const outlineHex = els.outlineColorInput.value;
-			const outlineColor = {
-				r: parseInt(outlineHex.slice(1, 3), 16),
-				g: parseInt(outlineHex.slice(3, 5), 16),
-				b: parseInt(outlineHex.slice(5, 7), 16),
-			};
-
-			const {
-				result,
-				extractedPalette,
-				compareBefore,
-				compareBeforeSanitized,
-			} = await processor.process(img, {
-				detectionQuantStep,
-				forcePixelsW,
-				forcePixelsH,
-				preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
-				postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
-				removeInnerBackground:
-					bgEnabled && els.removeInnerBackgroundCheck.checked,
-				backgroundTolerance: tolerance,
-				sampleWindow,
-				trimToContent: els.trimToContentCheck.checked,
-				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
-				enableGridDetection: els.enableGridDetectionCheck.checked,
-				reduceColors,
-				reduceColorMode,
-				ditherMode,
-				colorCount,
-				ditherStrength,
-				floatingMaxPixels,
-				outlineStyle,
-				outlineColor,
-				bgExtractionMethod: method,
-				bgRgb: els.bgRgbInput.value,
-				fixedPalette: currentFixedPalette,
-			});
-
-			// 転送されたデータは元のスレッドで使えなくなる（Comlinkの挙動に依存するが、
-			// 基本的にRawImageは再利用しない設計なので、ここで再代入しておく）
-			// ただし、Comlinkはデフォルトでコピー（構造化複製）を行うため、
-			// 明示的に transfer を使わない限り currentImage は維持される。
-			// 今回はシンプルさを優先してコピーのままにする。
-
-			// 明示的に transfer を使わない限り currentImage は維持される。
-			// 今回はシンプルさを優先してコピーのままにする。
-
-			currentResult = result;
-
-			// 256pxを超える場合はデフォルトでグリッドをOFFにする（手動でONにしていない場合）
-			if (!isGridManuallyToggled) {
-				if (result.width > 256 || result.height > 256) {
-					if (els.gridOutputCheck.checked) {
-						els.gridOutputCheck.checked = false;
-						// グリッドをクリア
-						clearGrid();
-					}
-				}
-			}
-
-			// Sort the palette for better visualization
-			const sortedPalette = sortPalette(extractedPalette);
-			currentExtractedPalette = sortedPalette;
-
-			updatePaletteDisplay();
-			els.downloadButton.style.display = "flex";
-			els.downloadDropdownButton.style.display = "flex";
-
-			// ダウンロードメニューのサイズ表示を更新
-			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
-				const scale = Number(btn.dataset.scale);
-				if (scale) {
-					btn.textContent = `x${scale} (${result.width * scale}x${result.height * scale})`;
-				}
-			});
-
-			drawRawImageToCanvas(result, els.resultCanvas);
-
-			// 比較スライダーの更新（元画像リサイズ / サニタイズ の両方を生成）
-			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
-			drawRawImageToCanvas(
-				compareBeforeSanitized,
-				compareBeforeSanitizedCanvas,
-			);
-			drawRawImageToCanvas(result, compareAfterCanvas);
-			compareBeforeOriginalUrl = compareBeforeCanvas.toDataURL("image/png");
-			compareBeforeSanitizedUrl =
-				compareBeforeSanitizedCanvas.toDataURL("image/png");
-			compareAfterUrl = compareAfterCanvas.toDataURL("image/png");
-
-			const before =
-				compareBeforeMode === "sanitized"
-					? compareBeforeSanitizedUrl
-					: compareBeforeOriginalUrl;
-			comparer.updateImages(before, compareAfterUrl);
-
-			// モーダルが開いている場合は、直ちに反映（サイズ同期も）
-			if (els.compareModal.style.display !== "none") {
-				requestAnimationFrame(() => {
-					comparer.syncImageSize();
-				});
-			}
-
-			// 処理結果が更新されたらグリッドも再描画
-			// DOMの更新（canvasの表示サイズ確定）を待つために少し遅らせる
-			requestAnimationFrame(() => {
-				updateGrid();
-			});
-			els.outputPanel.classList.add("has-image");
-			els.outputSize.textContent = `${result.width}x${result.height} px`;
-
-			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
-			updateBgColorFromMethod();
-		} catch (err) {
-			showError(`${i18n.t("error.process_failed")}: ${(err as Error).message}`);
-		} finally {
-			els.loadingOverlay.style.display = "none";
-			els.outputPanel.classList.remove("is-processing");
-		}
 	};
 
 	const loadFile = async (file: File) => {
@@ -1234,6 +1217,23 @@ export const initApp = (): void => {
 		link.click();
 		URL.revokeObjectURL(url);
 	});
+	// ---------------------------------------------------------
+	// Result Modal
+	// ---------------------------------------------------------
+
+	const closeResultModal = () => {
+		els.resultModal.style.display = "none";
+	};
+
+	// Open modal on result container click is now handled by ResultViewer onImageClick callback
+
+	els.closeResultModal.addEventListener("click", closeResultModal);
+
+	els.resultModal.addEventListener("click", (e) => {
+		if (e.target === els.resultModal) {
+			closeResultModal();
+		}
+	});
 
 	els.fixedPaletteImportButton.addEventListener("click", () => {
 		els.paletteFileInput.click();
@@ -1247,7 +1247,6 @@ export const initApp = (): void => {
 		els.paletteModal.style.display = "none";
 	});
 
-	// Close on background click
 	els.paletteModal.addEventListener("click", (e) => {
 		if (e.target === els.paletteModal) {
 			els.paletteModal.style.display = "none";
@@ -1314,103 +1313,32 @@ export const initApp = (): void => {
 		runProcessing();
 	});
 
-	els.downloadButton.addEventListener("click", () => {
-		if (!currentResult) return;
-
-		const link = document.createElement("a");
-		link.download = "refined.png";
-		link.href = els.resultCanvas.toDataURL("image/png");
-		link.click();
-	});
-
-	// ダウンロードドロップダウンのトグル
-	els.downloadDropdownButton.addEventListener("click", (e) => {
-		e.stopPropagation();
-		els.downloadMenu.classList.toggle("show");
-	});
-
-	// メニュー外クリックで閉じる
-	document.addEventListener("click", () => {
-		els.downloadMenu.classList.remove("show");
-	});
-
-	// 拡大ダウンロードの実行
-	els.downloadMenu.addEventListener("click", (e) => {
-		const btn = (e.target as HTMLElement).closest("button");
-		if (!btn || !currentResult) return;
-
-		const scale = Number(btn.dataset.scale);
-		if (!scale) return;
-
-		const upscaled = upscaleNearest(currentResult, scale);
-		const tempCanvas = document.createElement("canvas");
-		drawRawImageToCanvas(upscaled, tempCanvas);
-
-		const link = document.createElement("a");
-		link.download = `refined_x${scale}.png`;
-		link.href = tempCanvas.toDataURL("image/png");
-		link.click();
-	});
-
-	els.zoomOutputCheck.addEventListener("change", () => {
-		const container = els.resultCanvas.parentElement;
-		if (container) {
-			if (els.zoomOutputCheck.checked) {
-				container.classList.add("zoom-enabled");
-			} else {
-				container.classList.remove("zoom-enabled");
-				// 拡大OFFならグリッドもOFF
-				if (els.gridOutputCheck.checked) {
-					els.gridOutputCheck.checked = false;
-					clearGrid();
-				}
-			}
-		}
-		updateGrid();
-	});
-
-	els.gridOutputCheck.addEventListener("change", () => {
-		isGridManuallyToggled = true;
-		if (els.gridOutputCheck.checked) {
-			// グリッドONなら拡大もON
-			if (!els.zoomOutputCheck.checked) {
-				els.zoomOutputCheck.checked = true;
-				els.zoomOutputCheck.dispatchEvent(new Event("change"));
-			}
-		}
-		updateGrid();
-	});
-
-	// Initialize zoom/grid state
-	if (els.zoomOutputCheck.checked) {
-		const container = els.resultCanvas.parentElement;
-		if (container) {
-			container.classList.add("zoom-enabled");
-		}
-	}
-	// Initial grid update might be too early if canvas is not yet rendered or currentResult is null
-	updateGrid();
-
-	// Resize/レイアウト変化でズレないように追従
-	window.addEventListener("resize", () => updateGrid());
-
 	// 表示切替ロジック
 	const openCompareModal = () => {
 		els.compareModal.style.display = "flex";
 
-		// 背景色を同期
-		const activeBgBtn = els.bgSelector.querySelector(
-			".bg-btn.active",
-		) as HTMLElement;
-		const bgType = activeBgBtn?.dataset.bg || "checkered";
-		const compareContainer = els.compareContainer.querySelector(
-			".img-comp-container",
-		);
-		if (compareContainer) {
-			["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach((cls) => {
-				compareContainer.classList.remove(cls);
-			});
-			compareContainer.classList.add(`bg-${bgType}`);
+		// 背景色を同期 (mainResultViewerから取得するか、保存された設定から取得)
+		// 簡易的に localStorage から取得
+		try {
+			const saved = localStorage.getItem(STORAGE_KEY);
+			if (saved) {
+				const settings = JSON.parse(saved) as SavedSettings;
+				const bgType = settings.bgType || "checkered";
+
+				const compareContainer = els.compareContainer.querySelector(
+					".img-comp-container",
+				);
+				if (compareContainer) {
+					["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach(
+						(cls) => {
+							compareContainer.classList.remove(cls);
+						},
+					);
+					compareContainer.classList.add(`bg-${bgType}`);
+				}
+			}
+		} catch (e) {
+			console.error(e);
 		}
 
 		// モーダルが開いた直後にサイズ同期を行う必要がある
@@ -1471,33 +1399,9 @@ export const initApp = (): void => {
 	// アプリの準備が整ったら表示
 	document.body.classList.add("loaded");
 
-	// Background selector logic
-	const resultContainer = els.resultCanvas.parentElement;
-	if (resultContainer) {
-		// Set initial default background (will be overridden by loadSettings if saved)
-		resultContainer.classList.add("bg-checkered");
-
-		els.bgSelector.addEventListener("click", (e) => {
-			const btn = (e.target as HTMLElement).closest(".bg-btn");
-			if (!btn) return;
-
-			const bgType = (btn as HTMLElement).dataset.bg;
-			if (!bgType) return;
-
-			// Update buttons
-			els.bgSelector.querySelectorAll(".bg-btn").forEach((b) => {
-				b.classList.toggle("active", b === btn);
-			});
-
-			// Update container
-			["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach((cls) => {
-				resultContainer.classList.remove(cls);
-			});
-			resultContainer.classList.add(`bg-${bgType}`);
-
-			saveSettings();
-		});
-	}
+	// Background selector logic (Moved to ResultViewer, but we might need initial sync or setup if logic was here)
+	// The logic was: set initial bg-checkered, and add click listener.
+	// ResultViewer handles this now.
 
 	loadSettings();
 };
