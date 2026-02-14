@@ -225,6 +225,16 @@ export type ProcessOptions = DetectOptions & {
 	) => void;
 };
 
+const getGlobalDebugHook = (): ProcessOptions["debugHook"] | undefined => {
+	const g = globalThis as unknown as {
+		__PIXEL_REFINER_DEBUG_HOOK__?: unknown;
+	};
+	const hook = g.__PIXEL_REFINER_DEBUG_HOOK__;
+	return typeof hook === "function"
+		? (hook as ProcessOptions["debugHook"])
+		: undefined;
+};
+
 const normalizeProcessOptions = (
 	options: ProcessOptions | undefined,
 ): {
@@ -261,6 +271,7 @@ const normalizeProcessOptions = (
 } => {
 	const raw = options ?? {};
 	const debug = raw.debug ?? PROCESS_DEFAULTS.debug;
+	const debugHook = raw.debugHook ?? (debug ? getGlobalDebugHook() : undefined);
 
 	const detect: DetectOptions = {
 		...raw,
@@ -348,7 +359,7 @@ const normalizeProcessOptions = (
 		bgExtractionMethod,
 		bgRgb,
 		debug,
-		debugHook: raw.debugHook,
+		debugHook,
 	};
 };
 
@@ -1320,6 +1331,12 @@ export const processImage = (
 			);
 		}
 
+		o.debugHook?.("99-result", finalResult, {
+			postRemoveBackground: o.postRemoveBackground,
+			reduceColors: o.reduceColors,
+			colorCount: o.colorCount,
+			gridDetectionDisabled: true,
+		});
 		log(
 			`Grid detection disabled mode: ${outW}x${outH}`,
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,

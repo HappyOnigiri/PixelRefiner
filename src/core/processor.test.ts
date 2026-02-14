@@ -1,4 +1,4 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -45,6 +45,43 @@ const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
 	return out;
 };
 
+/**
+ * 画像の完全一致を確認する（不一致時も重いdiffを出さず、原因が追える短いメッセージにする）。
+ *
+ * Vitest の `toEqual(Buffer)` は不一致時に巨大な差分生成で極端に遅くなることがあるため、
+ * ここでは `Buffer.equals()` による真偽判定＋先頭差分の座標だけを報告する。
+ */
+const expectSameImage = (actual: RawImage, expected: RawImage): void => {
+	expect(actual.width).toBe(expected.width);
+	expect(actual.height).toBe(expected.height);
+
+	const a = Buffer.from(normalizeTransparentRgb(actual));
+	const b = Buffer.from(normalizeTransparentRgb(expected));
+
+	if (a.equals(b)) return;
+
+	let first = -1;
+	for (let i = 0; i < a.length && i < b.length; i += 1) {
+		if (a[i] !== b[i]) {
+			first = i;
+			break;
+		}
+	}
+	if (first < 0) {
+		throw new Error(
+			`画像が一致しません（length違い） actual=${a.length} expected=${b.length}`,
+		);
+	}
+
+	const pixel = (first / 4) | 0;
+	const ch = first % 4;
+	const x = pixel % actual.width;
+	const y = (pixel / actual.width) | 0;
+	throw new Error(
+		`画像が一致しません: firstDiff=idx${first} (x=${x}, y=${y}, ch=${ch}) actual=${a[first]} expected=${b[first]}`,
+	);
+};
+
 const sanitizeForPath = (s: string): string => {
 	const out = s
 		.trim()
@@ -56,8 +93,23 @@ const sanitizeForPath = (s: string): string => {
 
 const cleanDebugDir = (testcaseName: string): void => {
 	if (!DEBUG_IMAGES) return;
+	// `make test-debug` は先に `rm -rf tmp/debug` するので、ルート自体を作り直す
+	mkdirSync(DEBUG_ROOT, { recursive: true });
 	const dir = path.join(DEBUG_ROOT, sanitizeForPath(testcaseName));
 	rmSync(dir, { recursive: true, force: true });
+
+	// 旧形式（currentTestName を丸ごとディレクトリ名にしていた頃）の掃除。
+	// 例: processImage___test6__... のような長いディレクトリが残り続けるのを防ぐ。
+	const legacyPrefix = `processImage___${sanitizeForPath(testcaseName)}__`;
+	try {
+		for (const e of readdirSync(DEBUG_ROOT, { withFileTypes: true })) {
+			if (!e.isDirectory()) continue;
+			if (!e.name.startsWith(legacyPrefix)) continue;
+			rmSync(path.join(DEBUG_ROOT, e.name), { recursive: true, force: true });
+		}
+	} catch {
+		// 念のため: DEBUG_ROOT が消えていても掃除はスキップする
+	}
 };
 
 const makeDebugHook = (testcaseName: string, testName: string) => {
@@ -75,6 +127,57 @@ const makeDebugHook = (testcaseName: string, testName: string) => {
 		writeRawImageAsPngSync(path.join(dir, filename), raw);
 	};
 };
+
+declare global {
+	var __PIXEL_REFINER_DEBUG_HOOK__:
+		| ((name: string, img: RawImage, meta?: Record<string, unknown>) => void)
+		| undefined;
+}
+
+const fnv1a32Base36 = (s: string): string => {
+	let h = 0x811c9dc5;
+	for (let i = 0; i < s.length; i += 1) {
+		h ^= s.charCodeAt(i);
+		h = Math.imul(h, 0x01000193);
+	}
+	return (h >>> 0).toString(36);
+};
+
+const currentTestDebugDir = (): string => {
+	const current = expect.getState().currentTestName ?? "unknown-test";
+	const parts = current
+		.split(">")
+		.map((p) => p.trim())
+		.filter((p) => p.length > 0);
+
+	const groupCandidate =
+		parts.find((p) => /^test\d+\b/.test(p)) ??
+		parts[1] ??
+		parts[0] ??
+		"unknown";
+	const m = /^test(\d+)\b/.exec(groupCandidate);
+	const group = sanitizeForPath(m ? `test${m[1]}` : groupCandidate);
+
+	const caseCandidate = parts[parts.length - 1] ?? current;
+	const label = sanitizeForPath(caseCandidate).slice(0, 32);
+	const hash = fnv1a32Base36(current).slice(0, 6);
+	const caseDir = label.length > 0 ? `${label}__${hash}` : hash;
+
+	return path.join(DEBUG_ROOT, group, caseDir);
+};
+
+// `processImage({ debug: true })` 時に、テスト側で `debugHook` を渡さなくても
+// 中間画像/最終結果(99-result)が出力されるようにする。
+if (DEBUG_IMAGES) {
+	globalThis.__PIXEL_REFINER_DEBUG_HOOK__ = (name, raw) => {
+		const dir = currentTestDebugDir();
+		mkdirSync(dir, { recursive: true });
+		const filename = `${sanitizeForPath(name)}.png`;
+		writeRawImageAsPngSync(path.join(dir, filename), raw);
+	};
+} else {
+	globalThis.__PIXEL_REFINER_DEBUG_HOOK__ = undefined;
+}
 
 describe("processImage", () => {
 	describe("forcePixelsW/H", () => {
@@ -179,7 +282,6 @@ describe("processImage", () => {
 		});
 
 		it("サイズを指定する（forcePixelsW/H=22/22）: 期待画像と完全一致する", () => {
-			const expNorm = normalizeTransparentRgb(expected);
 			const { result, grid } = processImage(img, {
 				forcePixelsW: 22,
 				forcePixelsH: 22,
@@ -204,13 +306,10 @@ describe("processImage", () => {
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(22);
 			expect(grid.outH).toBe(22);
-			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
-				Buffer.from(expNorm),
-			);
+			expectSameImage(result, expected);
 		});
 
 		it("高速モードOFF、浮きノイズOFF: 期待画像と完全一致する", () => {
-			const expNorm = normalizeTransparentRgb(expected);
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -234,9 +333,7 @@ describe("processImage", () => {
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(22);
 			expect(grid.outH).toBe(22);
-			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
-				Buffer.from(expNorm),
-			);
+			expectSameImage(result, expected);
 		});
 	});
 
@@ -258,8 +355,6 @@ describe("processImage", () => {
 		});
 
 		it("指定ピクセル(forcePixelsW/H)=46/13 で 46x13 に強制変換され、期待画像と完全一致する", () => {
-			const expNorm = normalizeTransparentRgb(expected);
-
 			const baseOpts = {
 				forcePixelsW: 46,
 				forcePixelsH: 13,
@@ -294,9 +389,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(46);
 			expect(grid.outH).toBe(13);
 
-			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
-				Buffer.from(expNorm),
-			);
+			expectSameImage(result, expected);
 			const { result: resultTrim, grid: gridTrim } = processImage(img, {
 				...baseOpts,
 				trimToContent: true,
@@ -359,9 +452,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(88);
 			expect(grid.outH).toBe(61);
 
-			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
-				Buffer.from(normalizeTransparentRgb(expected)),
-			);
+			expectSameImage(result, expected);
 		});
 	});
 
@@ -412,9 +503,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(22);
 			expect(grid.outH).toBe(21);
 
-			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
-				Buffer.from(normalizeTransparentRgb(expected)),
-			);
+			expectSameImage(result, expected);
 		});
 
 		it("内側に閉じ込められた背景色（ドーナツ穴）も透過できる", () => {
@@ -494,9 +583,83 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(expected.width);
 			expect(grid.outH).toBe(expected.height);
 
-			expect(Buffer.from(normalizeTransparentRgb(result))).toEqual(
-				Buffer.from(normalizeTransparentRgb(expected)),
+			expectSameImage(result, expected);
+		});
+	});
+
+	describe("test6: Palette Conversion (Game Boy)", () => {
+		let img: RawImage;
+		let expected: RawImage;
+
+		beforeAll(async () => {
+			cleanDebugDir("test6");
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/test6.png", import.meta.url),
 			);
+			img = await readPngAsRawImage(imgPath);
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test6-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
+		});
+
+		it("GBパレット(4色)に正しく変換され、期待画像と一致すること", () => {
+			// ゲームボーイ(Legacy)モードで実行
+			const { result } = processImage(img, {
+				reduceColors: true,
+				reduceColorMode: "gb_pocket",
+				ditherMode: "none",
+				// 他の処理はOFFにしておく
+				enableGridDetection: false,
+				bgExtractionMethod: "none", // 背景抽出をOFF
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				removeInnerBackground: false,
+				trimToContent: false,
+				debug: true,
+			});
+
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expectSameImage(result, expected);
+		});
+	});
+
+	describe("test7: Dithering (Floyd-Steinberg)", () => {
+		let img: RawImage;
+		let expected: RawImage;
+
+		beforeAll(async () => {
+			cleanDebugDir("test7");
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/test7.png", import.meta.url),
+			);
+			img = await readPngAsRawImage(imgPath);
+			const expPath = fileURLToPath(
+				new URL("../../test/fixtures/test7-expect.png", import.meta.url),
+			);
+			expected = await readPngAsRawImage(expPath);
+		});
+
+		it("ディザリングありで処理され、期待画像と一致すること", () => {
+			// 2色（白黒）＋ディザリング
+			const { result } = processImage(img, {
+				reduceColors: true,
+				reduceColorMode: "mono", // 白黒
+				ditherMode: "floyd-steinberg",
+				ditherStrength: 100,
+				enableGridDetection: false,
+				bgExtractionMethod: "none", // 背景抽出をOFF
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				removeInnerBackground: false,
+				trimToContent: false,
+				debug: true,
+			});
+
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expectSameImage(result, expected);
 		});
 	});
 
