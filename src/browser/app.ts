@@ -522,12 +522,9 @@ export const initApp = (): void => {
 			els.sampleWindowSlider,
 			els.fastAutoGridFromTrimmedCheck,
 		].forEach((el) => {
-			if (el instanceof HTMLInputElement) {
-				el.disabled = disabled;
-				const item = el.closest(".setting-item");
-				if (item) {
-					item.classList.toggle("disabled", disabled);
-				}
+			const item = el.closest(".setting-item");
+			if (item) {
+				item.classList.toggle("disabled", disabled);
 			}
 		});
 	};
@@ -559,15 +556,10 @@ export const initApp = (): void => {
 		const isEnabled = !isNone;
 
 		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
-		els.colorCountInput.disabled = !isAuto;
-		els.colorCountSlider.disabled = !isAuto;
 
 		els.ditherStrengthSetting.style.display = isEnabled ? "flex" : "none";
-		els.ditherStrengthInput.disabled = !isEnabled;
-		els.ditherStrengthSlider.disabled = !isEnabled;
 
 		const outlineEnabled = els.outlineStyleSelect.value !== "none";
-		els.outlineColorInput.disabled = !outlineEnabled;
 		const outlineColorItem = els.outlineColorInput.closest(".setting-item");
 		if (outlineColorItem) {
 			outlineColorItem.classList.toggle("disabled", !outlineEnabled);
@@ -623,7 +615,6 @@ export const initApp = (): void => {
 		}
 
 		// Extraction Method セレクトボックスの制御
-		els.bgExtractionMethod.disabled = isBgDisabled;
 		const methodItem = els.bgExtractionMethod.closest(".setting-item");
 		if (methodItem) {
 			methodItem.classList.toggle("disabled", isBgDisabled);
@@ -637,24 +628,18 @@ export const initApp = (): void => {
 			els.postRemoveCheck,
 			els.removeInnerBackgroundCheck,
 		].forEach((el) => {
-			if (el instanceof HTMLInputElement) {
-				el.disabled = isBgDisabled;
-				const item = el.closest(".setting-item");
-				if (item) {
-					item.classList.toggle("disabled", isBgDisabled);
-				}
+			const item = el.closest(".setting-item");
+			if (item) {
+				item.classList.toggle("disabled", isBgDisabled);
 			}
 		});
 
 		// 浮きノイズ上限の制御（背景透過が無効の時に無効化）
 		[els.floatingMaxPercentInput, els.floatingMaxPercentSlider].forEach(
 			(el) => {
-				if (el instanceof HTMLInputElement) {
-					el.disabled = isBgDisabled;
-					const item = el.closest(".setting-item");
-					if (item) {
-						item.classList.toggle("disabled", isBgDisabled);
-					}
+				const item = el.closest(".setting-item");
+				if (item) {
+					item.classList.toggle("disabled", isBgDisabled);
 				}
 			},
 		);
@@ -667,12 +652,6 @@ export const initApp = (): void => {
 		} else {
 			rgbContainer.classList.remove("disabled");
 		}
-
-		[els.bgRgbInput, els.bgColorInput, els.eyedropperButton].forEach((el) => {
-			if (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) {
-				el.disabled = isBgDisabled;
-			}
-		});
 	};
 
 	const updateBgColorFromMethod = () => {
@@ -1004,8 +983,8 @@ export const initApp = (): void => {
 			currentExtractedPalette = sortedPalette;
 
 			updatePaletteDisplay();
-			els.downloadButton.disabled = false;
-			els.downloadDropdownButton.disabled = false;
+			els.downloadButton.style.display = "flex";
+			els.downloadDropdownButton.style.display = "flex";
 
 			// ダウンロードメニューのサイズ表示を更新
 			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
@@ -1045,8 +1024,8 @@ export const initApp = (): void => {
 			// However, if they drop a GPL file, we handle that separately.
 			// For now, let's NOT reset fixed palette so users can batch process with the same palette.
 
-			els.downloadButton.disabled = true;
-			els.downloadDropdownButton.disabled = true;
+			els.downloadButton.style.display = "none";
+			els.downloadDropdownButton.style.display = "none";
 			els.downloadMenu.classList.remove("show");
 			updateGrid(); // グリッドもクリア
 			drawRawImageToCanvas(raw, els.originalCanvas);

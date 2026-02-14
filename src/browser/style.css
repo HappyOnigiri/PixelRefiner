@@ -260,9 +260,7 @@ main {
 }
 
 .setting-item.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-  filter: grayscale(1);
+  display: none;
 }
 
 .setting-item.full-width {
