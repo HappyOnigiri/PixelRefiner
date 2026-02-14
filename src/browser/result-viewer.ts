@@ -11,6 +11,10 @@ type ResultViewerCallbacks = {
 };
 
 export class ResultViewer {
+	private static instances = new Set<ResultViewer>();
+	private static globalListenersInitialized = false;
+	private static nextId = 1;
+
 	private container: HTMLElement;
 	private canvas: HTMLCanvasElement;
 	private gridCanvas: HTMLCanvasElement;
@@ -25,7 +29,10 @@ export class ResultViewer {
 	private loadingOverlay: HTMLElement;
 
 	private currentImage: RawImage | null = null;
+	private currentBgType = "checkered";
 	private callbacks: ResultViewerCallbacks = {};
+	private resizeObserver: ResizeObserver | null = null;
+	private scheduledGridRaf: number | null = null;
 
 	constructor(container: HTMLElement) {
 		this.container = container;
@@ -43,7 +50,30 @@ export class ResultViewer {
 		this.compareBtn = this.get<HTMLButtonElement>(".js-btn-view-compare");
 		this.loadingOverlay = this.get<HTMLElement>(".js-loading-overlay");
 
+		// Init state from markup
+		const activeBgBtn = this.bgSelector.querySelector(
+			".bg-btn.active",
+		) as HTMLElement | null;
+		const initialBg = activeBgBtn?.dataset.bg ?? "checkered";
+		this.currentBgType = initialBg;
+		this.setBackground(initialBg);
+
+		// Ensure download menu is addressable for aria-controls
+		if (!this.downloadMenu.id) {
+			this.downloadMenu.id = `download-menu-${ResultViewer.nextId++}`;
+		}
+		this.downloadMenu.setAttribute("role", "menu");
+		this.downloadDropdownBtn.setAttribute("aria-haspopup", "menu");
+		this.downloadDropdownBtn.setAttribute(
+			"aria-controls",
+			this.downloadMenu.id,
+		);
+		this.downloadDropdownBtn.setAttribute("aria-expanded", "false");
+
 		this.initEventListeners();
+		this.initResizeObserver();
+		this.initGlobalListeners();
+		ResultViewer.instances.add(this);
 	}
 
 	private get<T extends HTMLElement>(selector: string): T {
@@ -93,7 +123,7 @@ export class ResultViewer {
 		// Download Buttons
 		const handleDownload = (scale: number) => {
 			this.callbacks.onDownload?.(scale);
-			this.downloadMenu.style.display = "none";
+			this.closeDownloadMenu();
 		};
 
 		this.downloadBtn.addEventListener("click", (e) => {
@@ -103,12 +133,11 @@ export class ResultViewer {
 
 		this.downloadDropdownBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
-			const isVisible = this.downloadMenu.style.display === "block";
-			this.closeAllMenus(); // Close others first
-			this.downloadMenu.style.display = isVisible ? "none" : "block";
+			this.toggleDownloadMenu();
 		});
 
 		this.downloadMenu.querySelectorAll("button").forEach((btn) => {
+			btn.setAttribute("role", "menuitem");
 			btn.addEventListener("click", (e) => {
 				e.stopPropagation();
 				const scale = Number.parseInt(
@@ -117,10 +146,6 @@ export class ResultViewer {
 				);
 				handleDownload(scale);
 			});
-		});
-
-		document.addEventListener("click", () => {
-			this.downloadMenu.style.display = "none";
 		});
 
 		// Compare Button
@@ -147,9 +172,67 @@ export class ResultViewer {
 		}
 	}
 
-	private closeAllMenus() {
-		// Close menus in this viewer (and potentially others if needed, but usually document click handles it)
-		this.downloadMenu.style.display = "none";
+	private isDownloadMenuOpen(): boolean {
+		return this.downloadMenu.classList.contains("show");
+	}
+
+	private openDownloadMenu() {
+		this.downloadMenu.classList.add("show");
+		this.downloadDropdownBtn.setAttribute("aria-expanded", "true");
+	}
+
+	private closeDownloadMenu() {
+		this.downloadMenu.classList.remove("show");
+		this.downloadDropdownBtn.setAttribute("aria-expanded", "false");
+	}
+
+	private toggleDownloadMenu() {
+		if (this.isDownloadMenuOpen()) {
+			this.closeDownloadMenu();
+			return;
+		}
+		ResultViewer.closeAllDownloadMenus();
+		this.openDownloadMenu();
+	}
+
+	private static closeAllDownloadMenus() {
+		for (const viewer of ResultViewer.instances) {
+			viewer.closeDownloadMenu();
+		}
+	}
+
+	private initGlobalListeners() {
+		if (ResultViewer.globalListenersInitialized) return;
+		ResultViewer.globalListenersInitialized = true;
+
+		document.addEventListener("click", () => {
+			ResultViewer.closeAllDownloadMenus();
+		});
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") {
+				ResultViewer.closeAllDownloadMenus();
+			}
+		});
+	}
+
+	private initResizeObserver() {
+		const canvasContainer = this.canvas.parentElement;
+		if (!canvasContainer) return;
+
+		const schedule = () => {
+			if (this.scheduledGridRaf !== null) return;
+			this.scheduledGridRaf = window.requestAnimationFrame(() => {
+				this.scheduledGridRaf = null;
+				this.drawGrid();
+			});
+		};
+
+		if (typeof ResizeObserver !== "undefined") {
+			this.resizeObserver = new ResizeObserver(() => schedule());
+			this.resizeObserver.observe(canvasContainer);
+		} else {
+			window.addEventListener("resize", schedule);
+		}
 	}
 
 	public setCallbacks(callbacks: ResultViewerCallbacks) {
@@ -186,6 +269,7 @@ export class ResultViewer {
 	}
 
 	public setBackground(bgType: string) {
+		this.currentBgType = bgType;
 		// Update buttons
 		this.bgSelector.querySelectorAll(".bg-btn").forEach((b) => {
 			const btn = b as HTMLElement;
@@ -200,6 +284,10 @@ export class ResultViewer {
 			});
 			container.classList.add(`bg-${bgType}`);
 		}
+	}
+
+	public getBackgroundType(): string {
+		return this.currentBgType;
 	}
 
 	public setZoom(enabled: boolean) {
@@ -333,6 +421,7 @@ export class ResultViewer {
 
 	public clear() {
 		this.currentImage = null;
+		this.closeDownloadMenu();
 		const ctx = this.canvas.getContext("2d");
 		ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		const gridCtx = this.gridCanvas.getContext("2d");
