@@ -32,13 +32,14 @@ const resources = {
 		"setting.force_height": "指定ピクセル(縦)",
 		"setting.fast_mode": "高速モード",
 		"setting.bg_removal": "背景透過",
+		"setting.enable_bg_removal": "背景透過有効",
 		"setting.bg_method": "背景抽出方法",
 		"setting.bg_rgb": "背景色(RGB)",
 		"setting.bg_tolerance": "背景色の許容差",
 		"setting.pre_remove": "事前の背景透過",
 		"setting.post_remove": "事後の背景透過",
 		"setting.remove_inner": "内側の背景も透過",
-		"setting.ignore_floating": "浮きノイズを無視",
+
 		"setting.floating_max": "浮きノイズ上限(%)",
 		"setting.trimming": "トリミング",
 		"setting.auto_trim": "自動トリム",
@@ -68,8 +69,10 @@ const resources = {
 			"指定サイズに強制変換します。\n指定ピクセルが有効なときは自動検出は行いません。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.fast_mode":
 			"ONにすると、効率的なアルゴリズムで探索を高速化します。\nOFFにすると、より広範囲を精密に探索します。\n\n自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。",
+		"tooltip.help.enable_bg_removal":
+			"背景透過処理を有効にします。\n\nOFFにすると、背景透過に関する全ての設定が無効になり、背景はそのまま維持されます。",
 		"tooltip.help.bg_method":
-			"背景色をどこから抽出するか選択します。\n\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
+			"背景色をどこから抽出するか選択します。\n\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
 		"tooltip.help.bg_rgb":
 			"背景色として扱う色を16進数(例: #ffffff)で指定します。\n四隅指定時は自動で色がセットされます。スポイトボタンで画像から色を選択することもできます。",
 		"tooltip.help.bg_tolerance":
@@ -80,10 +83,8 @@ const resources = {
 			"処理完了【後】に、背景色を透明に置き換えて出力します。\n\nメリット: 背景透明のPNGとして保存できます。\n注意: グリッド検出処理自体には影響しません。",
 		"tooltip.help.remove_inner":
 			"背景透過時に、四隅と近い背景色を画像全体で透過にします。\n\nメリット: ドーナツ穴など「内側に閉じ込められた背景色」も透明にできます。\n注意: 背景と同じ色がキャラクター内にある場合、それも透明になる可能性があります。",
-		"tooltip.help.ignore_floating":
-			"背景に囲まれて浮いている小さな島（連結成分）を背景扱いにして除去します。\n\n微小ノイズが、内容物BBox/自動グリッド推定を引っ張るのを防ぎます。\n注意: 離れた別オブジェクトがある画像では、それも除去される可能性があります。",
 		"tooltip.help.floating_max":
-			"「浮きノイズを無視」をONにしたとき、除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。\n例: 1% → (幅×高さ×0.01) px\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+			"背景に囲まれて浮いている小さな島（連結成分）を除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。\n0%のときは浮きノイズ除去を行いません。\n例: 1% → (幅×高さ×0.01) px\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.auto_trim":
 			"出力結果を「内容物のある範囲」に合わせて自動でトリミングします。\n\n余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。",
 
@@ -164,13 +165,14 @@ const resources = {
 		"setting.force_height": "Force Height (px)",
 		"setting.fast_mode": "Fast Mode",
 		"setting.bg_removal": "Background Removal",
+		"setting.enable_bg_removal": "Enable Background Removal",
 		"setting.bg_method": "Extraction Method",
 		"setting.bg_rgb": "Background Color (RGB)",
 		"setting.bg_tolerance": "Color Tolerance",
 		"setting.pre_remove": "Pre-process Transparency",
 		"setting.post_remove": "Post-process Transparency",
 		"setting.remove_inner": "Remove Inner Background",
-		"setting.ignore_floating": "Ignore Floating Noise",
+
 		"setting.floating_max": "Max Noise Size (%)",
 		"setting.trimming": "Trimming",
 		"setting.auto_trim": "Auto Trim",
@@ -200,8 +202,10 @@ const resources = {
 			"Forces conversion to the specified size.\nAutomatic detection is not performed when a specific size is set.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.fast_mode":
 			"When ON, uses an efficient algorithm to speed up the search.\nWhen OFF, performs a more comprehensive and precise search.\n\nIf automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy.",
+		"tooltip.help.enable_bg_removal":
+			"Enables background removal processing.\n\nWhen OFF, all background removal settings are disabled and the background is kept as-is.",
 		"tooltip.help.bg_method":
-			"Select where to extract the background color from.\n\nNone: No background transparency.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
+			"Select where to extract the background color from.\n\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
 		"tooltip.help.bg_rgb":
 			"Specify the color to be treated as the background in hex format (e.g., #ffffff).\nWhen a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button.",
 		"tooltip.help.bg_tolerance":
@@ -212,10 +216,8 @@ const resources = {
 			"Replaces the background color with transparency AFTER processing is complete.\n\nBenefit: Allows saving as a PNG with a transparent background.\nNote: Does not affect the grid detection process itself.",
 		"tooltip.help.remove_inner":
 			'When removing the background, also makes similar background colors transparent throughout the entire image.\n\nBenefit: Can transparentize "trapped" background colors like the hole in a donut.\nNote: If the background color exists within the character, it may also become transparent.',
-		"tooltip.help.ignore_floating":
-			"Treats small isolated islands (connected components) surrounded by the background as part of the background and removes them.\n\nPrevents tiny noise from affecting the content BBox or automatic grid estimation.\nNote: In images with separate distant objects, they may also be removed.",
 		"tooltip.help.floating_max":
-			'The maximum area (as a percentage of the total pixels in the original image) to be considered for removal when "Ignore Floating Noise" is ON.\nExample: 1% → (Width × Height × 0.01) px\n\nRange: {min} to {max} (Default: {default})',
+			"The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.\nWhen set to 0%, floating noise removal is skipped.\nExample: 1% → (Width × Height × 0.01) px\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.auto_trim":
 			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
 

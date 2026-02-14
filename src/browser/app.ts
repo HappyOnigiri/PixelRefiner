@@ -52,7 +52,7 @@ type Elements = {
 	ditherStrengthInput: HTMLInputElement;
 	ditherStrengthSlider: HTMLInputElement;
 	ditherStrengthSetting: HTMLElement;
-	ignoreFloatingCheck: HTMLInputElement;
+
 	floatingMaxPercentInput: HTMLInputElement;
 	floatingMaxPercentSlider: HTMLInputElement;
 	zoomOutputCheck: HTMLInputElement;
@@ -61,6 +61,7 @@ type Elements = {
 	bgSelector: HTMLElement;
 	outputPanel: HTMLElement;
 	loadingOverlay: HTMLElement;
+	enableBgRemovalCheck: HTMLInputElement;
 	bgExtractionMethod: HTMLSelectElement;
 	rgbPickerContainer: HTMLElement;
 	bgRgbInput: HTMLInputElement;
@@ -117,7 +118,7 @@ const getElements = (): Elements => {
 		ditherStrengthInput: get<HTMLInputElement>("dither-strength"),
 		ditherStrengthSlider: get<HTMLInputElement>("dither-strength-slider"),
 		ditherStrengthSetting: get<HTMLElement>("dither-strength-setting"),
-		ignoreFloatingCheck: get<HTMLInputElement>("ignore-floating"),
+
 		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
 		floatingMaxPercentSlider: get<HTMLInputElement>(
 			"floating-max-percent-slider",
@@ -128,6 +129,7 @@ const getElements = (): Elements => {
 		bgSelector: get<HTMLElement>("bg-selector"),
 		outputPanel: get<HTMLElement>("output-panel"),
 		loadingOverlay: get<HTMLElement>("loading-overlay"),
+		enableBgRemovalCheck: get<HTMLInputElement>("enable-bg-removal"),
 		bgExtractionMethod: get<HTMLSelectElement>("bg-extraction-method"),
 		rgbPickerContainer: get<HTMLElement>("rgb-picker-container"),
 		bgRgbInput: get<HTMLInputElement>("bg-rgb-input"),
@@ -184,7 +186,6 @@ export const initApp = (): void => {
 		preRemove: boolean;
 		postRemove: boolean;
 		removeInner: boolean;
-		ignoreFloating: boolean;
 	} | null = null;
 
 	const saveSettings = () => {
@@ -387,7 +388,8 @@ export const initApp = (): void => {
 		els.enableGridDetectionCheck.checked = PROCESS_DEFAULTS.enableGridDetection;
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
-		els.ignoreFloatingCheck.checked = PROCESS_DEFAULTS.ignoreFloatingContent;
+
+		els.enableBgRemovalCheck.checked = true;
 
 		const applyTooltipRange = (
 			id: string,
@@ -532,12 +534,11 @@ export const initApp = (): void => {
 
 	updateDisabledStates();
 
-	// 背景抽出方法変更時のUI制御
+	// 背景除去チェックボックスによるUI制御
 	const updateBgDisabledStates = () => {
-		const method = els.bgExtractionMethod.value;
-		const isBgDisabled = method === "none";
+		const isBgDisabled = !els.enableBgRemovalCheck.checked;
 
-		// 「透過しない」の場合は背景透過関連の処理が走らないように状態自体もOFFにする
+		// チェックボックスOFF時は背景透過関連の処理が走らないように状態自体もOFFにする
 		// （disabled だけだと checked=true のまま worker に渡ってしまい、浮きノイズ除去が有効になる）
 		if (isBgDisabled) {
 			if (!lastBgChecks) {
@@ -545,24 +546,25 @@ export const initApp = (): void => {
 					preRemove: els.preRemoveCheck.checked,
 					postRemove: els.postRemoveCheck.checked,
 					removeInner: els.removeInnerBackgroundCheck.checked,
-					ignoreFloating: els.ignoreFloatingCheck.checked,
 				};
 			}
 			els.preRemoveCheck.checked = false;
 			els.postRemoveCheck.checked = false;
 			els.removeInnerBackgroundCheck.checked = false;
-			els.ignoreFloatingCheck.checked = false;
 		} else if (lastBgChecks) {
-			// 「透過しない」から戻したときに、直前の状態を復元する
+			// 無効から戻したときに、直前の状態を復元する
 			els.preRemoveCheck.checked = lastBgChecks.preRemove;
 			els.postRemoveCheck.checked = lastBgChecks.postRemove;
 			els.removeInnerBackgroundCheck.checked = lastBgChecks.removeInner;
-			els.ignoreFloatingCheck.checked = lastBgChecks.ignoreFloating;
 			lastBgChecks = null;
 		}
 
-		// 復元後の状態を基に浮きノイズ上限の無効化判定を行う
-		const isFloatingDisabled = !els.ignoreFloatingCheck.checked;
+		// Extraction Method セレクトボックスの制御
+		els.bgExtractionMethod.disabled = isBgDisabled;
+		const methodItem = els.bgExtractionMethod.closest(".setting-item");
+		if (methodItem) {
+			methodItem.classList.toggle("disabled", isBgDisabled);
+		}
 
 		// 背景透過に関連する項目の制御
 		[
@@ -571,7 +573,6 @@ export const initApp = (): void => {
 			els.preRemoveCheck,
 			els.postRemoveCheck,
 			els.removeInnerBackgroundCheck,
-			els.ignoreFloatingCheck,
 		].forEach((el) => {
 			if (el instanceof HTMLInputElement) {
 				el.disabled = isBgDisabled;
@@ -582,22 +583,18 @@ export const initApp = (): void => {
 			}
 		});
 
-		// 浮きノイズ上限の制御（背景透過が無効、または浮きノイズ無視がOFFの時に無効化）
-		const disableFloatingMax = isBgDisabled || isFloatingDisabled;
+		// 浮きノイズ上限の制御（背景透過が無効の時に無効化）
 		[els.floatingMaxPercentInput, els.floatingMaxPercentSlider].forEach(
 			(el) => {
 				if (el instanceof HTMLInputElement) {
-					el.disabled = disableFloatingMax;
+					el.disabled = isBgDisabled;
 					const item = el.closest(".setting-item");
 					if (item) {
-						item.classList.toggle("disabled", disableFloatingMax);
+						item.classList.toggle("disabled", isBgDisabled);
 					}
 				}
 			},
 		);
-
-		// RGB指定時のコンテナ表示制御（常に表示するように変更）
-		// els.rgbPickerContainer.style.display = method === "rgb" ? "flex" : "none";
 
 		// RGB入力とスポイトボタンの有効/無効制御
 		const rgbContainer = els.rgbPickerContainer;
@@ -638,10 +635,13 @@ export const initApp = (): void => {
 	};
 
 	els.bgExtractionMethod.addEventListener("change", () => {
-		updateBgDisabledStates();
 		updateBgColorFromMethod();
 	});
-	els.ignoreFloatingCheck.addEventListener("change", updateBgDisabledStates);
+	els.enableBgRemovalCheck.addEventListener("change", () => {
+		updateBgDisabledStates();
+		triggerAutoProcess();
+	});
+
 	updateBgDisabledStates();
 
 	loadSettings();
@@ -671,7 +671,7 @@ export const initApp = (): void => {
 		els.enableGridDetectionCheck,
 		els.reduceColorModeSelect,
 		els.ditherModeSelect,
-		els.ignoreFloatingCheck,
+
 		els.bgExtractionMethod,
 		els.bgRgbInput,
 		els.bgColorInput,
@@ -826,13 +826,11 @@ export const initApp = (): void => {
 				PROCESS_RANGES.floatingMaxPercent,
 			);
 			const totalPixels = img.width * img.height;
-			const method = els.bgExtractionMethod
-				.value as ProcessOptions["bgExtractionMethod"];
-			const bgEnabled = method !== "none";
-			const ignoreFloatingEnabled =
-				bgEnabled && els.ignoreFloatingCheck.checked;
-
-			const floatingMaxPixels = ignoreFloatingEnabled
+			const bgEnabled = els.enableBgRemovalCheck.checked;
+			const method = (
+				bgEnabled ? els.bgExtractionMethod.value : "none"
+			) as ProcessOptions["bgExtractionMethod"];
+			const floatingMaxPixels = bgEnabled
 				? floatingMaxPercent <= 0
 					? 0
 					: Math.min(
@@ -873,7 +871,6 @@ export const initApp = (): void => {
 				colorCount,
 				ditherMode,
 				ditherStrength,
-				ignoreFloatingContent: ignoreFloatingEnabled,
 				floatingMaxPixels,
 				bgExtractionMethod: method,
 				bgRgb: els.bgRgbInput.value,

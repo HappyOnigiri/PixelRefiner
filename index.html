@@ -561,6 +561,21 @@
                   Background Removal
                 </h3>
                 <div class="grid-settings">
+                  <label class="setting-item full-width">
+                    <span class="label-text">
+                      <span data-i18n="setting.enable_bg_removal"
+                        >Enable Background Removal</span
+                      >
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.enable_bg_removal"
+                        data-tooltip="Enables background removal processing.&#10;&#10;When OFF, all background removal settings are disabled and the background is kept as-is."
+                        >?</span
+                      >
+                    </span>
+                    <input id="enable-bg-removal" type="checkbox" checked />
+                  </label>
+
                   <label class="setting-item">
                     <span class="label-text">
                       <span data-i18n="setting.bg_method"
@@ -569,14 +584,11 @@
                       <span
                         class="help"
                         data-i18n-attr="data-tooltip:tooltip.help.bg_method"
-                        data-tooltip="Select where to extract the background color from.&#10;&#10;None: No background transparency.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
+                        data-tooltip="Select where to extract the background color from.&#10;&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
                         >?</span
                       >
                     </span>
                     <select id="bg-extraction-method">
-                      <option value="none" data-i18n="option.bg_none">
-                        None
-                      </option>
                       <option
                         value="top-left"
                         data-i18n="option.bg_top_left"
@@ -728,21 +740,6 @@
 
                   <label class="setting-item">
                     <span class="label-text">
-                      <span data-i18n="setting.ignore_floating"
-                        >Ignore Floating Noise</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.ignore_floating"
-                        data-tooltip="Treats small isolated islands (connected components) surrounded by the background as part of the background and removes them.&#10;&#10;Prevents tiny noise from affecting the content BBox or automatic grid estimation.&#10;Note: In images with separate distant objects, they may also be removed."
-                        >?</span
-                      >
-                    </span>
-                    <input id="ignore-floating" type="checkbox" />
-                  </label>
-
-                  <label class="setting-item">
-                    <span class="label-text">
                       <span data-i18n="setting.floating_max"
                         >Max Noise Size (%)</span
                       >
@@ -750,7 +747,7 @@
                         id="help-floating-max-percent"
                         class="help"
                         data-i18n-attr="data-tooltip:tooltip.help.floating_max"
-                        data-tooltip='The maximum area (as a percentage of the total pixels in the original image) to be considered for removal when "Ignore Floating Noise" is ON.&#10;Example: 1% → (Width × Height × 0.01) px&#10;&#10;Range: {min} to {max} (Default: {default})'
+                        data-tooltip="The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.&#10;When set to 0%, floating noise removal is skipped.&#10;Example: 1% → (Width × Height × 0.01) px&#10;&#10;Range: {min} to {max} (Default: {default})"
                         >?</span
                       >
                     </span>
