@@ -175,7 +175,7 @@ const getElements = (): Elements => {
 const showError = (message: string) => {
 	const toast = document.createElement("div");
 	toast.className = "error-toast";
-	toast.innerHTML = `< svg xmlns = "http://www.w3.org/2000/svg" width = "20" height = "20" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="2" stroke - linecap="round" stroke - linejoin="round" > <circle cx="12" cy = "12" r = "10" > </circle><line x1="12" y1="8" x2="12" y2="12"></line > <line x1="12" y1 = "16" x2 = "12.01" y2 = "16" > </line></svg > <span>${message} </span>`;
+	toast.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>${message}</span>`;
 	document.body.appendChild(toast);
 
 	// 次のフレームで表示開始
@@ -919,9 +919,9 @@ export const initApp = (): void => {
 				? floatingMaxPercent <= 0
 					? 0
 					: Math.min(
-							totalPixels,
-							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
-						)
+						totalPixels,
+						Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
+					)
 				: 0;
 
 			const colorCount = clampInt(
