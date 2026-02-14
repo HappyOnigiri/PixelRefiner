@@ -34,17 +34,20 @@ Execute the following steps in order:
     - Retrieve the changes since the last tag.
       - Example: `git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --oneline`
     - Analyze the commit logs and summarize the changes in **English**.
-    - **Categorization**:
-      - **New Features**: List the main feature additions first.
-      - **Minor Fixes / Refactorings**: List minor changes separately.
+    - **Categorization & Format**:
+      - Use the following sections:
+        - `### 🚀 New Features`: Main feature additions.
+        - `### 🛠 Improvements & Bug Fixes`: Minor changes, refactorings, and bug fixes.
+      - Each item should be a concise bullet point.
     - **Rules**:
       - Focus on **New Features**.
+      - Use appropriate emojis for each section as shown above.
       - If there are too many minor fixes, do not list them all; provide a high-level summary instead.
-      - Limit the list to a maximum of 10-15 items.
-      - Keep each item concise.
+      - Limit the total list to a maximum of 10-15 items.
 7.  **Create GitHub Release**:
     - Use the GitHub CLI (`gh`) to create a release.
-    - Example: `gh release create v<version> --title "v<version>" --notes "<Summarized bullet points in English>"`
+    - The `--notes` should contain the categorized markdown summary.
+    - Example: `gh release create v<version> --title "v<version>" --notes-file release_notes.md` (or pass the string via `--notes`)
 
 ## 2. Precautions
 
