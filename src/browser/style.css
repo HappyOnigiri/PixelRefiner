@@ -939,6 +939,32 @@ select:focus {
   opacity: 1;
 }
 
+/* Info Toast */
+.info-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--accent);
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.info-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
 .status,
 .status-text {
   font-size: 0.85rem;
