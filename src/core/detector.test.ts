@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { PNG } from "pngjs";
 import { describe, expect, it } from "vitest";
 import type { Pixel, RawImage } from "../shared/types";
 import { detectGrid, getRunLengths } from "./detector";
@@ -174,5 +177,41 @@ describe("detector.ts (helpers)", () => {
 			expect(grid.offsetX).toBe(offX);
 			expect(grid.offsetY).toBe(offY);
 		});
+	});
+});
+
+describe("detectGrid (reproduction)", () => {
+	it("should detect small grid cells in high resolution image", async () => {
+		const imagePath = path.resolve(
+			__dirname,
+			"../../test/fixtures/high_resolution.png",
+		);
+		if (!fs.existsSync(imagePath)) {
+			console.warn("Skipping high_resolution test: file not found");
+			return;
+		}
+		const buffer = fs.readFileSync(imagePath);
+		const png = PNG.sync.read(buffer);
+
+		const img: RawImage = {
+			width: png.width,
+			height: png.height,
+			data: new Uint8ClampedArray(png.data),
+		};
+
+		const grid = detectGrid(img);
+
+		// User says: currently detects ~74x110 cells (large cells).
+		// Expected: 2-3x more cells (smaller cells).
+		// 1024 / 74 = ~13.8px
+		// 1024 / 220 = ~4.6px
+
+		// Assert that cell size is small (high resolution grid)
+		// If current behavior is maintained, this should FAIL.
+		expect(grid.cellW).toBeLessThan(10);
+		expect(grid.cellH).toBeLessThan(10);
+
+		expect(grid.outW).toBeGreaterThan(150);
+		expect(grid.outH).toBeGreaterThan(150);
 	});
 });

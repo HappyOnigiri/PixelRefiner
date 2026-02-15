@@ -1037,7 +1037,7 @@ export class FastGridSearchFromTrimmed
 
 		for (let outH = outHMin; outH <= outHMax; outH += outHStep) {
 			const outW = Math.max(2, Math.round(outH * ratio));
-			if (outW > 256 || outH > 256) continue;
+			if (outW > 600 || outH > 600) continue;
 
 			const cellW = croppedW / outW;
 			const cellH = croppedH / outH;
@@ -1089,7 +1089,9 @@ export class FastGridSearchFromTrimmed
 
 			const reconErr = err / n;
 			// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
-			const complexityPenalty = 0.0025 * (outW * outH);
+			// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
+			// 低解像度（セル数少）と高解像度（セル数多）のバランスを取るため、平方根オーダーにする
+			const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
 
 			if (!best || score < best.score) {
@@ -1120,7 +1122,7 @@ export class FastGridSearchFromTrimmed
 		const outHMin = Math.max(2, Math.floor(cropped.height / 32));
 		// 1セルが小さすぎる（=過分割）と常に誤差が下がってしまうため、最低でも 4px/セル程度を要求する
 		const outHMax = Math.min(
-			128,
+			512,
 			Math.max(outHMin, Math.floor(cropped.height / 4)),
 		);
 
@@ -1178,7 +1180,7 @@ const legacySearchGridFromTrimmed = (
 	const outHMin = Math.max(2, Math.floor(cropped.height / 32));
 	// 1セルが小さすぎる（=過分割）と常に誤差が下がってしまうため、最低でも 4px/セル程度を要求する
 	const outHMax = Math.min(
-		128,
+		512,
 		Math.max(outHMin, Math.floor(cropped.height / 4)),
 	);
 
@@ -1192,7 +1194,7 @@ const legacySearchGridFromTrimmed = (
 
 	for (let outH = outHMin; outH <= outHMax; outH += 1) {
 		const outW = Math.max(2, Math.round(outH * ratio));
-		if (outW > 256 || outH > 256) continue;
+		if (outW > 600 || outH > 600) continue;
 
 		const cellW = cropped.width / outW;
 		const cellH = cropped.height / outH;
@@ -1247,7 +1249,9 @@ const legacySearchGridFromTrimmed = (
 
 		const reconErr = err / n;
 		// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
-		const complexityPenalty = 0.0025 * (outW * outH);
+		// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
+		// 低解像度（セル数少）と高解像度（セル数多）のバランスを取るため、平方根オーダーにする
+		const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 		const score = reconErr + complexityPenalty;
 
 		if (!best || score < best.score) {

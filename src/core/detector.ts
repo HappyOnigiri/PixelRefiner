@@ -289,11 +289,13 @@ export const detectGrid = (
 		});
 	}
 
+	// High resolution support: 128 is too small for 4-5px dots in 1000px+ images.
+	// We increase the default to 512 to support finer grids.
 	const expMinX = Math.min(w, 8);
-	const expMaxX = options.autoMaxCellsW ?? 128;
+	const expMaxX = options.autoMaxCellsW ?? 512;
 	const twX = 2.0;
 	const expMinY = Math.min(h, 8);
-	const expMaxY = options.autoMaxCellsH ?? 128;
+	const expMaxY = options.autoMaxCellsH ?? 512;
 	const twY = 2.0;
 
 	type BoundaryData = { runLengths: number[]; boundaries: number[] };
@@ -430,18 +432,7 @@ export const detectGrid = (
 			const countBonus = -0.25 * Math.log1p(counts[s] ?? 0);
 			const total = p50 + 0.35 * p90 + penalty + targetPenalty + countBonus;
 
-			if (!best) {
-				best = { cellSize: s, offset: bestOff, score: total };
-				continue;
-			}
-			const eps = 0.35;
-			if (total < best.score - eps) {
-				best = { cellSize: s, offset: bestOff, score: total };
-			} else if (
-				targetCells === undefined &&
-				Math.abs(total - best.score) <= eps &&
-				s > best.cellSize
-			) {
+			if (!best || total < best.score) {
 				best = { cellSize: s, offset: bestOff, score: total };
 			}
 		}
@@ -548,31 +539,12 @@ export const detectGrid = (
 				twX,
 			) ?? estimateFromSegments(xSegLists, w, expMinX, expMaxX, undefined, twX))
 		: estimateFromSegments(xSegLists, w, expMinX, expMaxX, undefined, twX);
-	const estX2 = estX
-		? (() => {
-				const cells = Math.floor((w - estX.offset) / estX.cellSize);
-				if (cells <= 96) return null;
-				const relaxedMax = 64;
-				const retry = estimateFromSegments(
-					xSegLists,
-					w,
-					expMinX,
-					relaxedMax,
-					undefined,
-					twX,
-				);
-				if (options.debug) {
-					// eslint-disable-next-line no-console
-					console.log("[detectGrid:x:retry]", options.debugLabel ?? "", {
-						cells,
-						relaxedMax,
-						estX,
-						retry,
-					});
-				}
-				return retry;
-			})()
-		: null;
+
+	// Previous logic had a retry mechanism here (estX2) that forced a lower cell count (max 64)
+	// if the first pass detected > 96 cells.
+	// This was causing high-resolution images (where dot size is small, e.g. 4px) to be
+	// incorrectly detected as having larger cells (e.g. 16px).
+	// We remove this retry restriction to support fine grids.
 
 	const ySegLists = xs.map((x) => {
 		const strip = extractStrip(detForDetect, "x", x);
@@ -596,34 +568,9 @@ export const detectGrid = (
 				twY,
 			) ?? estimateFromSegments(ySegLists, h, expMinY, expMaxY, undefined, twY))
 		: estimateFromSegments(ySegLists, h, expMinY, expMaxY, undefined, twY);
-	const estY2 = estY
-		? (() => {
-				const cells = Math.floor((h - estY.offset) / estY.cellSize);
-				if (cells <= 96) return null;
-				const relaxedMax = 64;
-				const retry = estimateFromSegments(
-					ySegLists,
-					h,
-					expMinY,
-					relaxedMax,
-					undefined,
-					twY,
-				);
-				if (options.debug) {
-					// eslint-disable-next-line no-console
-					console.log("[detectGrid:y:retry]", options.debugLabel ?? "", {
-						cells,
-						relaxedMax,
-						estY,
-						retry,
-					});
-				}
-				return retry;
-			})()
-		: null;
 
-	const finalX = estX2 ?? estX;
-	const finalY = estY2 ?? estY;
+	const finalX = estX;
+	const finalY = estY;
 
 	if (!finalX || !finalY) {
 		// 検出失敗時のフォールバック

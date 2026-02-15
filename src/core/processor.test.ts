@@ -790,6 +790,47 @@ describe("processImage", () => {
 			expect(colors.size).toBeLessThanOrEqual(2);
 		});
 	});
+	describe("high_resolution", () => {
+		let img: RawImage;
+
+		beforeAll(async () => {
+			cleanDebugDir("high_resolution");
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/high_resolution.png", import.meta.url),
+			);
+			img = await readPngAsRawImage(imgPath);
+		});
+
+		it("高解像度画像（1ドットが小さい画像）が適切に検出・処理されること", () => {
+			const { result, grid } = processImage(img, {
+				detectionQuantStep: 64,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
+				removeInnerBackground: true,
+				backgroundTolerance: 64,
+				sampleWindow: 3,
+				trimToContent: true,
+				trimAlphaThreshold: 16,
+				// ユーザーからのフィードバックに基づき、autoGridFromTrimmed: true でも
+				// 探索範囲の緩和とペナルティ調整により、高解像度グリッドが検出されることを確認する。
+				autoGridFromTrimmed: true,
+				debug: true,
+				debugHook: makeDebugHook("high_resolution", "結果確認用"),
+			});
+
+			// 検出結果の検証
+			// 1024px の画像で 4-5px のドットの場合、200〜250 セル程度になるはず。
+			// 修正前は 128制限やペナルティにより 74x110 (14px/cell) 程度になっていた。
+			expect(grid.outW).toBeGreaterThan(150);
+			expect(grid.outH).toBeGreaterThan(150);
+			// ドットサイズは 4-5px 程度
+			expect(grid.cellW).toBeLessThan(10);
+			expect(grid.cellH).toBeLessThan(10);
+
+			expect(result.width).toBe(grid.outW);
+			expect(result.height).toBe(grid.outH);
+		});
+	});
 
 	describe("Grid Search Strategies Consistency", () => {
 		it("FastモードとLegacyモードが同じ結果を導き出すか (シンプルな画像)", () => {
