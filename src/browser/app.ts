@@ -55,7 +55,7 @@ type Elements = {
 	removeInnerBackgroundCheck: HTMLInputElement;
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
-	enableGridDetectionCheck: HTMLInputElement;
+	gridDetectionModeSelect: HTMLSelectElement;
 	reduceColorModeSelect: HTMLSelectElement;
 	ditherModeSelect: HTMLSelectElement;
 	colorCountInput: HTMLInputElement;
@@ -165,7 +165,7 @@ const getElements = (): Elements => {
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
 			"fast-auto-grid-from-trimmed",
 		),
-		enableGridDetectionCheck: get<HTMLInputElement>("enable-grid-detection"),
+		gridDetectionModeSelect: get<HTMLSelectElement>("grid-detection-mode"),
 		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
 		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
 		colorCountInput: get<HTMLInputElement>("color-count"),
@@ -646,6 +646,18 @@ export const initApp = (): void => {
 				modalResultViewer.drawGrid();
 			});
 		},
+		onGridSelect: (grid) => {
+			if (grid.outW === undefined || grid.outH === undefined) return;
+			els.gridDetectionModeSelect.value = "hint";
+			els.gridDetectionModeSelect.dispatchEvent(new Event("change"));
+			els.forcePixelsWInput.value = grid.outW.toString();
+			els.forcePixelsHInput.value = grid.outH.toString();
+			showInfo(
+				i18n.t("info.grid_updated", { w: grid.outW, h: grid.outH }) ||
+					`Grid updated to ${grid.outW}x${grid.outH}`,
+			);
+			runProcessing();
+		},
 	});
 
 	modalResultViewer.setCallbacks({
@@ -658,6 +670,18 @@ export const initApp = (): void => {
 		onCompare: () => {
 			closeResultModal();
 			openCompareModal();
+		},
+		onGridSelect: (grid) => {
+			if (grid.outW === undefined || grid.outH === undefined) return;
+			els.gridDetectionModeSelect.value = "hint";
+			els.gridDetectionModeSelect.dispatchEvent(new Event("change"));
+			els.forcePixelsWInput.value = grid.outW.toString();
+			els.forcePixelsHInput.value = grid.outH.toString();
+			showInfo(
+				i18n.t("info.grid_updated", { w: grid.outW, h: grid.outH }) ||
+					`Grid updated to ${grid.outW}x${grid.outH}`,
+			);
+			runProcessing();
 		},
 	});
 
@@ -684,10 +708,10 @@ export const initApp = (): void => {
 
 				// If result exists, show it. If not, clear output?
 				if (item.result) {
-					mainResultViewer.updateImage(item.result);
-					modalResultViewer.updateImage(item.result);
+					mainResultViewer.updateImage(item.result, item.grid);
+					modalResultViewer.updateImage(item.result, item.grid);
 					els.outputPanel.classList.add("has-image");
-					els.outputSize.textContent = `${item.result.width}x${item.result.height} px`;
+					// els.outputSize.textContent = `${item.result.width}x${item.result.height} px`; // Handled by ResultViewer
 					els.downloadButton.style.display = "flex";
 					els.downloadDropdownButton.style.display = "flex";
 
@@ -712,7 +736,7 @@ export const initApp = (): void => {
 					// Let's leave it for now, assuming auto-process is ON or user clicks process.
 
 					els.outputPanel.classList.remove("has-image");
-					els.outputSize.textContent = "-";
+					// els.outputSize.textContent = "-"; // Handled by ResultViewer
 					els.downloadButton.style.display = "none";
 					els.downloadDropdownButton.style.display = "none";
 					els.downloadMenu.classList.remove("show");
@@ -735,7 +759,7 @@ export const initApp = (): void => {
 				els.dropArea.classList.remove("has-image");
 				els.outputPanel.classList.remove("has-image");
 				els.inputSize.textContent = "-";
-				els.outputSize.textContent = "-";
+				// els.outputSize.textContent = "-"; // Handled by ResultViewer
 				const ctx = els.originalCanvas.getContext("2d");
 				ctx?.clearRect(
 					0,
@@ -893,11 +917,11 @@ export const initApp = (): void => {
 				Number(els.quantStepInput.value),
 				PROCESS_RANGES.detectionQuantStep,
 			);
-			const forcePixelsW = parseOptionalInt(
+			const pixelsW = parseOptionalInt(
 				els.forcePixelsWInput,
 				PROCESS_RANGES.forcePixelsW,
 			);
-			const forcePixelsH = parseOptionalInt(
+			const pixelsH = parseOptionalInt(
 				els.forcePixelsHInput,
 				PROCESS_RANGES.forcePixelsH,
 			);
@@ -949,8 +973,22 @@ export const initApp = (): void => {
 				b: parseInt(outlineHex.slice(5, 7), 16),
 			};
 
+			type GridDetectionMode = "auto" | "hint" | "force" | "off";
+			const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
+			const usePixels = pixelsW !== undefined && pixelsH !== undefined;
+			const forcePixelsW =
+				gridMode === "force" && usePixels ? pixelsW : undefined;
+			const forcePixelsH =
+				gridMode === "force" && usePixels ? pixelsH : undefined;
+			const hintPixelsW =
+				gridMode === "hint" && usePixels ? pixelsW : undefined;
+			const hintPixelsH =
+				gridMode === "hint" && usePixels ? pixelsH : undefined;
+			const enableGridDetection = gridMode !== "off";
+
 			const {
 				result,
+				grid,
 				extractedPalette,
 				compareBefore,
 				compareBeforeSanitized,
@@ -958,6 +996,8 @@ export const initApp = (): void => {
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
+				hintPixelsW,
+				hintPixelsH,
 				preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
 				postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
 				removeInnerBackground:
@@ -966,7 +1006,7 @@ export const initApp = (): void => {
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
-				enableGridDetection: els.enableGridDetectionCheck.checked,
+				enableGridDetection,
 				reduceColors,
 				reduceColorMode,
 				ditherMode,
@@ -988,10 +1028,14 @@ export const initApp = (): void => {
 
 			const resultImage = result;
 			// currentResult = resultImage; // No longer used directly
-			imageSession.updateImageResult(currentItem.id, resultImage);
+			const effectiveGrid = imageSession.updateImageResult(
+				currentItem.id,
+				resultImage,
+				grid,
+			);
 
-			mainResultViewer.updateImage(resultImage);
-			modalResultViewer.updateImage(resultImage);
+			mainResultViewer.updateImage(resultImage, effectiveGrid);
+			modalResultViewer.updateImage(resultImage, effectiveGrid);
 			mainResultViewer.setLoading(false);
 
 			// 256pxを超える場合はデフォルトでグリッドをOFFにする（手動でONにしていない場合）
@@ -1053,7 +1097,7 @@ export const initApp = (): void => {
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
-			els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`;
+			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // Handled by ResultViewer
 
 			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
 			updateBgColorFromMethod();
@@ -1214,7 +1258,8 @@ export const initApp = (): void => {
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
-		els.enableGridDetectionCheck.checked = PROCESS_DEFAULTS.enableGridDetection;
+		els.gridDetectionModeSelect.value =
+			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
@@ -1305,25 +1350,37 @@ export const initApp = (): void => {
 
 	// グリッド検出無効時のUI制御
 	const updateDisabledStates = () => {
-		const enabled = els.enableGridDetectionCheck.checked;
-		const disabled = !enabled;
+		const mode = els.gridDetectionModeSelect.value;
+		const isOff = mode === "off";
+		const isAutoOrHint = mode === "auto" || mode === "hint";
+		const isHintOrForce = mode === "hint" || mode === "force";
+
+		const setDisabledClass = (el: HTMLElement, disabled: boolean) => {
+			const item = el.closest(".setting-item");
+			if (item) item.classList.toggle("disabled", disabled);
+		};
+
+		// detectGrid / autoGridFromTrimmed related
 		[
 			els.quantStepInput,
 			els.quantStepSlider,
-			els.forcePixelsWInput,
-			els.forcePixelsHInput,
-			els.sampleWindowInput,
-			els.sampleWindowSlider,
 			els.fastAutoGridFromTrimmedCheck,
 		].forEach((el) => {
-			const item = el.closest(".setting-item");
-			if (item) {
-				item.classList.toggle("disabled", disabled);
-			}
+			setDisabledClass(el, !isAutoOrHint);
+		});
+
+		// pixel inputs (hint/force only)
+		[els.forcePixelsWInput, els.forcePixelsHInput].forEach((el) => {
+			setDisabledClass(el, !isHintOrForce);
+		});
+
+		// downsample-related (disabled only when off)
+		[els.sampleWindowInput, els.sampleWindowSlider].forEach((el) => {
+			setDisabledClass(el, isOff);
 		});
 	};
 
-	els.enableGridDetectionCheck.addEventListener("change", updateDisabledStates);
+	els.gridDetectionModeSelect.addEventListener("change", updateDisabledStates);
 
 	// 減色設定のUI制御
 	const updatePaletteButtonVisibility = () => {
@@ -1518,7 +1575,7 @@ export const initApp = (): void => {
 		els.removeInnerBackgroundCheck,
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
-		els.enableGridDetectionCheck,
+		els.gridDetectionModeSelect,
 		els.reduceColorModeSelect,
 		els.ditherModeSelect,
 
@@ -1919,7 +1976,7 @@ export const initApp = (): void => {
 			els.removeInnerBackgroundCheck,
 			els.trimToContentCheck,
 			els.fastAutoGridFromTrimmedCheck,
-			els.enableGridDetectionCheck,
+			els.gridDetectionModeSelect,
 			els.reduceColorModeSelect,
 			els.ditherModeSelect,
 			els.colorCountInput,
@@ -1954,6 +2011,16 @@ export const initApp = (): void => {
 	};
 
 	const applyUiState = (state: Record<string, string | number | boolean>) => {
+		// Backward compatibility: migrate old boolean "enable-grid-detection" to new mode select
+		if (
+			state["grid-detection-mode"] === undefined &&
+			typeof state["enable-grid-detection"] === "boolean"
+		) {
+			state["grid-detection-mode"] = state["enable-grid-detection"]
+				? "auto"
+				: "off";
+		}
+
 		for (const [id, value] of Object.entries(state)) {
 			const el = document.getElementById(id);
 			if (!el) continue;

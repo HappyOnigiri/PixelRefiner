@@ -1,4 +1,4 @@
-import type { RawImage } from "../shared/types";
+import type { PixelGrid, RawImage } from "../shared/types";
 import { drawRawImageToCanvas } from "./io";
 
 export interface ImageItem {
@@ -6,6 +6,7 @@ export interface ImageItem {
 	file: File;
 	original: RawImage;
 	result?: RawImage;
+	grid?: PixelGrid;
 	thumbnail: string;
 	status: "pending" | "processing" | "done" | "error";
 	error?: string;
@@ -89,13 +90,33 @@ export class ImageSession {
 		return [...this.images];
 	}
 
-	public updateImageResult(id: string, result: RawImage): void {
+	public updateImageResult(
+		id: string,
+		result: RawImage,
+		grid?: PixelGrid,
+	): PixelGrid | undefined {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.result = result;
+			// サイズ指定(force)などで candidates が落ちても、直前の自動検出候補は保持して再選択できるようにする
+			if (grid) {
+				const prevCandidates = img.grid?.candidates;
+				if (
+					(prevCandidates?.length ?? 0) > 0 &&
+					(grid.candidates?.length ?? 0) === 0
+				) {
+					img.grid = { ...grid, candidates: prevCandidates };
+				} else {
+					img.grid = grid;
+				}
+			} else {
+				img.grid = grid;
+			}
 			img.status = "done";
 			this.onUpdate();
+			return img.grid;
 		}
+		return grid;
 	}
 
 	public setImageStatus(

@@ -631,17 +631,39 @@
                 <div class="grid-settings">
                   <label class="setting-item full-width">
                     <span class="label-text">
-                      <span data-i18n="setting.enable_grid"
-                        >Enable Grid Detection</span
+                      <span data-i18n="setting.grid_mode"
+                        >Grid Detection Mode</span
                       >
                       <span
                         class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.enable_grid"
-                        data-tooltip="Automatically detects the grid from the input image and reduces/optimizes it to pixel units.&#10;&#10;If OFF, grid detection and reduction are skipped (useful if the image is already a 1:1 pixel art). Background trimming and transparency will still be performed based on other settings."
+                        data-i18n-attr="data-tooltip:tooltip.help.grid_mode"
+                        data-tooltip="Select how grid detection behaves.&#10;&#10;Auto: Automatically detects the pixel grid (default).&#10;Pixel + Auto: Uses the specified pixel size as a hint and starts fine search near it.&#10;Pixel Only: Forces conversion to the specified size (no auto detection).&#10;Off: Skips grid detection and reduction (useful for 1:1 pixel art)."
                         >?</span
                       >
                     </span>
-                    <input id="enable-grid-detection" type="checkbox" checked />
+                    <div class="input-with-button">
+                      <select id="grid-detection-mode">
+                        <option
+                          value="auto"
+                          data-i18n="option.grid_mode_auto"
+                          selected
+                        >
+                          Auto (Default)
+                        </option>
+                        <option value="hint" data-i18n="option.grid_mode_hint">
+                          Pixel + Auto
+                        </option>
+                        <option
+                          value="force"
+                          data-i18n="option.grid_mode_force"
+                        >
+                          Pixel Only
+                        </option>
+                        <option value="off" data-i18n="option.grid_mode_off">
+                          Off
+                        </option>
+                      </select>
+                    </div>
                   </label>
 
                   <label class="setting-item">
@@ -678,7 +700,10 @@
                     </span>
                     <div class="input-with-slider">
                       <input id="sample-window-slider" type="range" />
-                      <input id="sample-window" type="number" />
+                      <div class="input-unit-wrapper">
+                        <input id="sample-window" type="number" />
+                        <span class="unit-text">px</span>
+                      </div>
                     </div>
                   </label>
 
