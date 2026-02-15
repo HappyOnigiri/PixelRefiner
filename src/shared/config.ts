@@ -238,7 +238,7 @@ export const PROCESS_DEFAULTS = {
 	postRemoveBackground: true,
 	// 「四隅から連結」だけでなく、背景色（四隅の色）に近いピクセルを画像全体で透過にする
 	// ※背景と同じ色がキャラクター内にある場合、それも透過されうるためUIで切替可能にする
-	removeInnerBackground: true,
+	removeInnerBackground: false,
 	// 出力後に内容物BBoxでトリムする（既定はON）
 	trimToContent: true,
 	autoGridFromTrimmed: true,
