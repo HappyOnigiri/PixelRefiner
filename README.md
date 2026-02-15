@@ -100,6 +100,10 @@ npm test
 - `src/shared/` — Type definitions and configuration constants
 - `test/` — Test code and fixture images
 
-## 📄 License
+## Note
+
+Please note that this tool is designed primarily for automatic image conversion and optimization. Therefore, we do not plan to implement manual pixel-by-pixel editing features similar to paint software.
+
+## License
 
 This project is licensed under the [MIT License](./LICENSE).
