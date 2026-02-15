@@ -284,6 +284,16 @@ export type ProcessOptions = DetectOptions & {
 	forcePixelsW?: number;
 	forcePixelsH?: number;
 	/**
+	 * 指定ピクセルサイズ(W×H)を「ヒント」として使い、自動グリッド推定をその近傍から精密探索で開始する。
+	 * 完全ピクセル指定（forcePixelsW/H）とは異なり、自動検出を行う。
+	 *
+	 * 注意:
+	 * - 有効条件は hintPixelsW/H の両方が指定されていること
+	 * - 主に autoGridFromTrimmed の探索開始点として利用する
+	 */
+	hintPixelsW?: number;
+	hintPixelsH?: number;
+	/**
 	 * 背景除去（pre/post/トリム用マスク）で、四隅と近い背景色を画像全体で透過にする。
 	 * 四隅から連結していない「内側の背景色」（例: ドーナツ穴）も透過できる。
 	 */
@@ -383,6 +393,8 @@ const normalizeProcessOptions = (
 	postRemoveBackground: boolean;
 	forcePixelsW?: number;
 	forcePixelsH?: number;
+	hintPixelsW?: number;
+	hintPixelsH?: number;
 	removeInnerBackground: boolean;
 	backgroundTolerance: number;
 	sampleWindow: number;
@@ -435,6 +447,14 @@ const normalizeProcessOptions = (
 		raw.forcePixelsH,
 		PROCESS_RANGES.forcePixelsH,
 	);
+	const hintPixelsW = clampOptionalInt(
+		raw.hintPixelsW,
+		PROCESS_RANGES.forcePixelsW,
+	);
+	const hintPixelsH = clampOptionalInt(
+		raw.hintPixelsH,
+		PROCESS_RANGES.forcePixelsH,
+	);
 	const removeInnerBackground =
 		raw.removeInnerBackground ?? PROCESS_DEFAULTS.removeInnerBackground;
 	const backgroundTolerance = clampInt(
@@ -485,6 +505,8 @@ const normalizeProcessOptions = (
 		postRemoveBackground,
 		forcePixelsW,
 		forcePixelsH,
+		hintPixelsW,
+		hintPixelsH,
 		removeInnerBackground,
 		backgroundTolerance,
 		sampleWindow,
@@ -987,6 +1009,7 @@ type GridEstimateFromTrimmed = {
 	cellH: number;
 	offsetX: number;
 	offsetY: number;
+	score?: number;
 	candidates?: GridEstimateFromTrimmed[];
 };
 
@@ -995,8 +1018,87 @@ interface GridSearchFromTrimmedStrategy {
 		cropped: RawImage,
 		mask: RawImage,
 		sampleWindow: number,
+		hint?: { outW: number; outH: number },
 	) => GridEstimateFromTrimmed | null;
 }
+
+const GRID_SIZE_CANDIDATE_COUNT = 10;
+
+type GridSizeCandidate = {
+	outW: number;
+	outH: number;
+	score: number;
+};
+
+/**
+ * 候補サイズを「ある程度分散」させるため、outH 範囲をバケット分割して各バケットの最良を拾う。
+ * - 大幅にサイズが外れている場合でも、近傍に寄りすぎない候補が得られる
+ * - ベスト候補は必ず含め、不足分はスコア順で補完する
+ */
+const pickDistributedGridSizeCandidates = (
+	results: GridSizeCandidate[],
+	count: number,
+): GridSizeCandidate[] => {
+	if (results.length === 0) return [];
+
+	const byScore = [...results].sort((a, b) => a.score - b.score);
+	if (byScore.length <= count) return byScore;
+
+	let minOutH = byScore[0].outH;
+	let maxOutH = byScore[0].outH;
+	for (const r of byScore) {
+		if (r.outH < minOutH) minOutH = r.outH;
+		if (r.outH > maxOutH) maxOutH = r.outH;
+	}
+	if (minOutH === maxOutH) return byScore.slice(0, count);
+
+	const range = maxOutH - minOutH + 1;
+	const bucketCount = Math.min(count, range);
+	const bucketBest: (GridSizeCandidate | null)[] = Array.from(
+		{ length: bucketCount },
+		() => null,
+	);
+
+	for (const r of byScore) {
+		const t = (r.outH - minOutH) / Math.max(1, range - 1);
+		const b = Math.min(
+			bucketCount - 1,
+			Math.max(0, Math.floor(t * bucketCount)),
+		);
+		const cur = bucketBest[b];
+		if (!cur || r.score < cur.score) bucketBest[b] = r;
+	}
+
+	const selected: GridSizeCandidate[] = [];
+	const seen = new Set<string>();
+
+	// ベスト候補は必ず含める
+	const best = byScore[0];
+	selected.push(best);
+	seen.add(`${best.outW}x${best.outH}`);
+
+	for (const r of bucketBest) {
+		if (!r) continue;
+		const key = `${r.outW}x${r.outH}`;
+		if (seen.has(key)) continue;
+		selected.push(r);
+		seen.add(key);
+		if (selected.length >= count) break;
+	}
+
+	// 空きがあれば、スコア順で補完
+	for (const r of byScore) {
+		if (selected.length >= count) break;
+		const key = `${r.outW}x${r.outH}`;
+		if (seen.has(key)) continue;
+		selected.push(r);
+		seen.add(key);
+	}
+
+	// UIで見やすいよう、サイズ順に並べる
+	selected.sort((a, b) => a.outH - b.outH || a.outW - b.outW);
+	return selected.slice(0, count);
+};
 
 export class LegacyGridSearchFromTrimmed
 	implements GridSearchFromTrimmedStrategy
@@ -1005,8 +1107,9 @@ export class LegacyGridSearchFromTrimmed
 		cropped: RawImage,
 		mask: RawImage,
 		sampleWindow: number,
+		hint?: { outW: number; outH: number },
 	): GridEstimateFromTrimmed | null {
-		return legacySearchGridFromTrimmed(cropped, mask, sampleWindow);
+		return legacySearchGridFromTrimmed(cropped, mask, sampleWindow, hint);
 	}
 }
 
@@ -1021,8 +1124,9 @@ export class FastGridSearchFromTrimmed
 		outHMax: number,
 		outHStep: number,
 		pixelStride: number,
+		ratioOverride?: number,
 	): { bestOutH: number; est: GridEstimateFromTrimmed } | null {
-		const ratio = cropped.width / Math.max(1, cropped.height);
+		const ratio = ratioOverride ?? cropped.width / Math.max(1, cropped.height);
 		let best: {
 			outW: number;
 			outH: number;
@@ -1030,18 +1134,13 @@ export class FastGridSearchFromTrimmed
 			cellH: number;
 			score: number;
 		} | null = null;
-		const candidates: {
-			outW: number;
-			outH: number;
-			cellW: number;
-			cellH: number;
-			score: number;
-		}[] = [];
 
 		const croppedData = cropped.data;
 		const croppedW = cropped.width;
 		const croppedH = cropped.height;
 		const maskData = mask.data;
+
+		const allResults: GridSizeCandidate[] = [];
 
 		for (let outH = outHMin; outH <= outHMax; outH += outHStep) {
 			const outW = Math.max(2, Math.round(outH * ratio));
@@ -1101,18 +1200,18 @@ export class FastGridSearchFromTrimmed
 			// 低解像度（セル数少）と高解像度（セル数多）のバランスを取るため、平方根オーダーにする
 			const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
+			allResults.push({ outH, outW, score });
 
 			if (!best || score < best.score) {
 				best = { outW, outH, cellW, cellH, score };
 			}
-
-			// 候補リストに追加（単純な挿入ソート的アプローチでTop3を維持）
-			candidates.push({ outW, outH, cellW, cellH, score });
-			candidates.sort((a, b) => a.score - b.score);
-			if (candidates.length > 3) candidates.pop();
 		}
 
 		if (!best) return null;
+		const picked = pickDistributedGridSizeCandidates(
+			allResults,
+			GRID_SIZE_CANDIDATE_COUNT,
+		);
 		return {
 			bestOutH: best.outH,
 			est: {
@@ -1122,13 +1221,15 @@ export class FastGridSearchFromTrimmed
 				cellH: best.cellH,
 				offsetX: 0,
 				offsetY: 0,
-				candidates: candidates.map((c) => ({
+				score: best.score,
+				candidates: picked.map((c) => ({
 					outW: c.outW,
 					outH: c.outH,
-					cellW: c.cellW,
-					cellH: c.cellH,
+					cellW: croppedW / c.outW,
+					cellH: croppedH / c.outH,
 					offsetX: 0,
 					offsetY: 0,
+					score: c.score,
 				})),
 			},
 		};
@@ -1138,6 +1239,7 @@ export class FastGridSearchFromTrimmed
 		cropped: RawImage,
 		mask: RawImage,
 		sampleWindow: number,
+		hint?: { outW: number; outH: number },
 	): GridEstimateFromTrimmed | null {
 		// 比率に基づき outH を振って outW を決める（探索空間を抑える）
 		const outHMin = Math.max(2, Math.floor(cropped.height / 32));
@@ -1154,6 +1256,30 @@ export class FastGridSearchFromTrimmed
 		// 再構成誤差の評価点を間引く（大きい画像ほど効果が大きい）
 		const maxDim = Math.max(cropped.width, cropped.height);
 		const pixelStride = Math.min(4, Math.max(1, Math.floor(maxDim / 512)));
+
+		// ヒント指定時は、その近傍から精密探索（outHStep=1）で開始する
+		if (hint) {
+			const hintOutH = clampInt(hint.outH, {
+				min: outHMin,
+				max: outHMax,
+				default: hint.outH,
+			});
+			const radius = Math.max(6, outHStep * 2);
+			const r0 = Math.max(outHMin, hintOutH - radius);
+			const r1 = Math.min(outHMax, hintOutH + radius);
+			const ratioHint = hint.outW / Math.max(1, hint.outH);
+			const refinedFromHint = this.scan(
+				cropped,
+				mask,
+				sampleWindow,
+				r0,
+				r1,
+				1,
+				Math.max(1, Math.floor(pixelStride / 2)),
+				ratioHint,
+			);
+			return refinedFromHint?.est ?? null;
+		}
 
 		const coarse = this.scan(
 			cropped,
@@ -1179,7 +1305,11 @@ export class FastGridSearchFromTrimmed
 			1,
 			Math.max(1, Math.floor(pixelStride / 2)),
 		);
-		return refined?.est ?? coarse.est;
+		// NOTE:
+		// 候補一覧（UIでのサイズ調整用途）は「広域探索(coarse)のTop3」を採用する。
+		// 最終採用グリッド自体は精密探索(refine)のベストを維持する。
+		const best = refined?.est ?? coarse.est;
+		return { ...best, candidates: coarse.est.candidates };
 	}
 }
 
@@ -1195,6 +1325,7 @@ const legacySearchGridFromTrimmed = (
 	cropped: RawImage,
 	mask: RawImage,
 	sampleWindow: number,
+	hint?: { outW: number; outH: number },
 ): GridEstimateFromTrimmed | null => {
 	// 比率に基づき outH を振って outW を決める（探索空間を抑える）
 	const ratio = cropped.width / Math.max(1, cropped.height);
@@ -1212,15 +1343,12 @@ const legacySearchGridFromTrimmed = (
 		cellH: number;
 		score: number;
 	} | null = null;
-	const candidates: {
-		outW: number;
-		outH: number;
-		cellW: number;
-		cellH: number;
-		score: number;
-	}[] = [];
+	const allResults: GridSizeCandidate[] = [];
 
-	for (let outH = outHMin; outH <= outHMax; outH += 1) {
+	const h0 = hint ? Math.max(outHMin, hint.outH - 12) : outHMin;
+	const h1 = hint ? Math.min(outHMax, hint.outH + 12) : outHMax;
+
+	for (let outH = h0; outH <= h1; outH += 1) {
 		const outW = Math.max(2, Math.round(outH * ratio));
 		if (outW > 600 || outH > 600) continue;
 
@@ -1281,16 +1409,18 @@ const legacySearchGridFromTrimmed = (
 		// 低解像度（セル数少）と高解像度（セル数多）のバランスを取るため、平方根オーダーにする
 		const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 		const score = reconErr + complexityPenalty;
+		allResults.push({ outH, outW, score });
 
 		if (!best || score < best.score) {
 			best = { outW, outH, cellW, cellH, score };
 		}
-		candidates.push({ outW, outH, cellW, cellH, score });
-		candidates.sort((a, b) => a.score - b.score);
-		if (candidates.length > 3) candidates.pop();
 	}
 
 	if (!best) return null;
+	const picked = pickDistributedGridSizeCandidates(
+		allResults,
+		GRID_SIZE_CANDIDATE_COUNT,
+	);
 	return {
 		outW: best.outW,
 		outH: best.outH,
@@ -1298,13 +1428,15 @@ const legacySearchGridFromTrimmed = (
 		cellH: best.cellH,
 		offsetX: 0,
 		offsetY: 0,
-		candidates: candidates.map((c) => ({
+		score: best.score,
+		candidates: picked.map((c) => ({
 			outW: c.outW,
 			outH: c.outH,
-			cellW: c.cellW,
-			cellH: c.cellH,
+			cellW: cropped.width / c.outW,
+			cellH: cropped.height / c.outH,
 			offsetX: 0,
 			offsetY: 0,
+			score: c.score,
 		})),
 	};
 };
@@ -1667,7 +1799,11 @@ export const processImage = (
 			const gridSearcher = getGridSearchFromTrimmedStrategy(
 				o.fastAutoGridFromTrimmed,
 			);
-			const est = gridSearcher.search(cropped, croppedMask, sw);
+			const hint =
+				o.hintPixelsW !== undefined && o.hintPixelsH !== undefined
+					? { outW: o.hintPixelsW, outH: o.hintPixelsH }
+					: undefined;
+			const est = gridSearcher.search(cropped, croppedMask, sw, hint);
 			log(
 				`Grid search from trimmed done in ${(performance.now() - searchStart).toFixed(2)}ms`,
 				est,
@@ -1679,6 +1815,7 @@ export const processImage = (
 				//   これにより、中心オブジェクトのセル数（見かけサイズ）は一定になりやすい。
 				const outW = Math.max(1, Math.floor(working.width / est.cellW));
 				const outH = Math.max(1, Math.floor(working.height / est.cellH));
+				const includeCandidates = hint === undefined;
 				grid = {
 					cellW: est.cellW,
 					cellH: est.cellH,
@@ -1690,16 +1827,18 @@ export const processImage = (
 					cropY: 0,
 					cropW: outW * est.cellW,
 					cropH: outH * est.cellH,
-					score: 0,
-					candidates: est.candidates?.map((c) => ({
-						cellW: c.cellW,
-						cellH: c.cellH,
-						offsetX: 0,
-						offsetY: 0,
-						outW: c.outW,
-						outH: c.outH,
-						score: 0,
-					})),
+					score: est.score ?? 0,
+					candidates: includeCandidates
+						? est.candidates?.map((c) => ({
+								cellW: c.cellW,
+								cellH: c.cellH,
+								offsetX: 0,
+								offsetY: 0,
+								outW: c.outW,
+								outH: c.outH,
+								score: c.score ?? 0,
+							}))
+						: undefined,
 				};
 				o.debugHook?.("04-grid-crop", working, {
 					grid,

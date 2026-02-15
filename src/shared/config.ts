@@ -246,6 +246,8 @@ export const PROCESS_DEFAULTS = {
 	fastAutoGridFromTrimmed: true,
 	// グリッド検出と縮小を有効にする（デフォルトON）
 	enableGridDetection: true,
+	// グリッド検出モード（UI用）
+	gridDetectionMode: "auto",
 
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
