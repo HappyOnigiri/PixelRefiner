@@ -7,7 +7,7 @@
 ### 🚀 Try it now: <a href="https://pixel-refiner.app/" target="_blank">pixel-refiner.app</a>
 
 **Pixel Refiner** is a web-based tool that cleans up pixel art — especially AI-generated pixel art — and turns it into production-ready sprites.
-It removes anti-aliasing, auto-detects pixel grids, makes backgrounds transparent, and more — all running fast in the browser.
+It removes anti-aliasing, auto-detects pixel grids, makes backgrounds transparent, and supports batch processing of multiple images — all running fast in the browser.
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
@@ -37,20 +37,26 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 - **Auto trim** — Strips transparent margins and crops to content bounds.
 - **Forced resize** — Resizes to an exact pixel dimension you specify.
 - **Scaled export** — Download at x2, x4, … up to x32 for use in game engines and other tools.
+- **Multi-image processing**:
+  - **Batch upload** — Drag and drop multiple files at once.
+  - **Session management** — Manage multiple images, remove unwanted ones, or clear all.
+  - **Batch download** — Process all images and download them as a single ZIP file.
 - **Non-blocking processing** — Heavy image processing runs in a Web Worker so the UI stays responsive.
 
 ## 📖 Usage
 
 1. Open the app (locally or on a deployed instance).
-2. Drag & drop an image onto the drop zone (or click to browse).
-3. Hit **"Process"** to generate an optimized pixel art sprite.
-4. Fine-tune settings as needed:
+2. Drag & drop images onto the drop zone (or click to browse). Multiple images are supported.
+3. Use the **"Images"** list to switch between uploaded images.
+4. Hit **"Process"** (or enable **"Auto"**) to generate optimized pixel art sprites.
+5. Fine-tune settings as needed:
     - **General** — Grid detection on/off, fast mode toggle
     - **Colors & Palette** — Preset selection, color count, dithering
     - **Background** — Transparency mode (auto/manual), tolerance, cleanup options
     - **Outline** — Add an outline to the sprite
 5. Use the **"Compare"** view to check the difference between the original and processed image with a slider.
 6. When you're happy with the result, click **"Download"** (use the ▼ dropdown to choose a scale factor).
+7. For multiple images, use **"Download All (ZIP)"** to export all processed sprites at once.
 
 ## 🛠️ Development
 
