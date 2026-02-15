@@ -34,6 +34,7 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 - **Outline generation** — Automatically adds an outline (stroke) to the sprite.
   - **Styles** — Rounded (8-way) or Sharp (4-way).
   - **Custom color** — Choose any color for the outline.
+- **Preset management** — Save and load your favorite processing configurations to reuse them across different images.
 - **Auto trim** — Strips transparent margins and crops to content bounds.
 - **Forced resize** — Resizes to an exact pixel dimension you specify.
 - **Scaled export** — Download at x2, x4, … up to x32 for use in game engines and other tools.
@@ -41,7 +42,9 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
   - **Batch upload** — Drag and drop multiple files at once.
   - **Session management** — Manage multiple images, remove unwanted ones, or clear all.
   - **Batch download** — Process all images and download them as a single ZIP file.
+  - **Batch scaling** — Apply a specific scale factor to all images in the ZIP export.
 - **Non-blocking processing** — Heavy image processing runs in a Web Worker so the UI stays responsive.
+- **Toast notifications** — Real-time feedback for actions like saving presets or completing downloads.
 
 ## 📖 Usage
 
