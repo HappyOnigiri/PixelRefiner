@@ -860,7 +860,7 @@ select:focus {
   border-bottom-left-radius: 0;
   border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
-  padding: 0;
+  padding: 0 !important;
   min-width: 50px;
 }
 
@@ -878,6 +878,13 @@ select:focus {
   margin-bottom: 8px;
   z-index: 100;
   overflow: hidden;
+}
+
+.image-list-panel .download-menu {
+  bottom: auto;
+  top: 100%;
+  margin-bottom: 0;
+  margin-top: 8px;
 }
 
 .download-menu.show {

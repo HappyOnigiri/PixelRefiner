@@ -116,6 +116,8 @@ type Elements = {
 	imageListContainer: HTMLElement;
 	clearAllButton: HTMLButtonElement;
 	downloadAllButton: HTMLButtonElement;
+	downloadAllDropdownButton: HTMLButtonElement;
+	downloadAllMenu: HTMLElement;
 };
 
 const getElements = (): Elements => {
@@ -220,6 +222,10 @@ const getElements = (): Elements => {
 		imageListContainer: get<HTMLElement>("image-list-container"),
 		clearAllButton: get<HTMLButtonElement>("clear-all-button"),
 		downloadAllButton: get<HTMLButtonElement>("download-all-button"),
+		downloadAllDropdownButton: get<HTMLButtonElement>(
+			"download-all-dropdown-button",
+		),
+		downloadAllMenu: get<HTMLElement>("download-all-menu"),
 	};
 };
 
@@ -403,14 +409,26 @@ export const initApp = (): void => {
 		saveSettings();
 	};
 
+	const getTimestampString = (): string => {
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, "0");
+		const day = String(now.getDate()).padStart(2, "0");
+		const hours = String(now.getHours()).padStart(2, "0");
+		const minutes = String(now.getMinutes()).padStart(2, "0");
+		const seconds = String(now.getSeconds()).padStart(2, "0");
+		return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
+	};
+
 	const handleDownload = (scale: number) => {
 		const currentResult = imageSession.getActiveImage()?.result;
 		if (!currentResult) return;
 
+		const timestamp = getTimestampString();
 		let link: HTMLAnchorElement;
 		if (scale === 1) {
 			link = document.createElement("a");
-			link.download = "refined.png";
+			link.download = `refined_${timestamp}.png`;
 			link.href = els.originalCanvas.toDataURL("image/png"); // Fallback or current result?
 			// Wait, we need the result image data URL.
 			// Since currentResult is RawImage, we need to draw it to a canvas to get URL.
@@ -425,13 +443,13 @@ export const initApp = (): void => {
 			const tempCanvas = document.createElement("canvas");
 			drawRawImageToCanvas(upscaled, tempCanvas);
 			link = document.createElement("a");
-			link.download = `refined_x${scale}.png`;
+			link.download = `refined_x${scale}_${timestamp}.png`;
 			link.href = tempCanvas.toDataURL("image/png");
 		}
 		link.click();
 	};
 
-	const handleDownloadAll = async () => {
+	const handleDownloadAll = async (scale = 1) => {
 		const allImages = imageSession.getImages();
 		if (allImages.length === 0) {
 			showError(
@@ -495,18 +513,27 @@ export const initApp = (): void => {
 				if (!img.result) continue;
 
 				const name = img.file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-				let filename = `${name}_refined.png`;
+				let filename =
+					scale === 1 ? `${name}_refined.png` : `${name}_refined_x${scale}.png`;
 
 				// Avoid duplicates
 				let counter = 1;
 				while (filenames.has(filename)) {
-					filename = `${name}_refined_${counter}.png`;
+					filename =
+						scale === 1
+							? `${name}_refined_${counter}.png`
+							: `${name}_refined_x${scale}_${counter}.png`;
 					counter++;
 				}
 				filenames.add(filename);
 
 				const canvas = document.createElement("canvas");
-				drawRawImageToCanvas(img.result, canvas);
+				if (scale === 1) {
+					drawRawImageToCanvas(img.result, canvas);
+				} else {
+					const upscaled = upscaleNearest(img.result, scale);
+					drawRawImageToCanvas(upscaled, canvas);
+				}
 
 				const blob = await new Promise<Blob | null>((resolve) =>
 					canvas.toBlob(resolve, "image/png"),
@@ -520,7 +547,9 @@ export const initApp = (): void => {
 			const url = URL.createObjectURL(content);
 			const link = document.createElement("a");
 			link.href = url;
-			link.download = "pixel_refiner_batch.zip";
+			const timestamp = getTimestampString();
+			const suffix = scale === 1 ? "" : `_x${scale}`;
+			link.download = `refined_batch${suffix}_${timestamp}.zip`;
 			link.click();
 			setTimeout(() => URL.revokeObjectURL(url), 1000);
 		} catch (e) {
@@ -531,7 +560,29 @@ export const initApp = (): void => {
 		}
 	};
 
-	els.downloadAllButton.addEventListener("click", handleDownloadAll);
+	els.downloadAllButton.addEventListener("click", () => handleDownloadAll(1));
+
+	els.downloadAllDropdownButton.addEventListener("click", (e) => {
+		e.stopPropagation();
+		els.downloadAllMenu.classList.toggle("show");
+	});
+
+	els.downloadAllMenu.addEventListener("click", (e) => {
+		const btn = (e.target as HTMLElement).closest("button");
+		if (btn) {
+			const scale = Number(btn.dataset.scale);
+			if (scale) {
+				handleDownloadAll(scale);
+			}
+			els.downloadAllMenu.classList.remove("show");
+		}
+	});
+
+	// Close menus on outside click
+	document.addEventListener("click", () => {
+		els.downloadMenu.classList.remove("show");
+		els.downloadAllMenu.classList.remove("show");
+	});
 
 	mainResultViewer.setCallbacks({
 		onBgChange: (bg) => syncViewers(mainResultViewer, modalResultViewer, bg),
@@ -919,7 +970,7 @@ export const initApp = (): void => {
 			// ダウンロードメニューのサイズ表示を更新
 			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
 				const scale = Number(btn.dataset.scale);
-				if (scale) {
+				if (scale && scale > 1) {
 					btn.textContent = `x${scale} (${resultImage.width * scale}x${resultImage.height * scale})`;
 				}
 			});

@@ -314,14 +314,38 @@
                   >
                     Clear All
                   </button>
-                  <button
-                    id="download-all-button"
-                    type="button"
-                    class="action-button small-button"
-                    data-i18n="ui.download_all"
-                  >
-                    Download All (ZIP)
-                  </button>
+                  <div class="download-group">
+                    <button
+                      id="download-all-button"
+                      type="button"
+                      class="action-button small-button download-button"
+                      data-i18n="ui.download_all"
+                    >
+                      Download All
+                    </button>
+                    <button
+                      id="download-all-dropdown-button"
+                      type="button"
+                      class="action-button small-button download-dropdown-button"
+                      data-i18n-attr="aria-label:ui.download_options"
+                    >
+                      ▼
+                    </button>
+                    <div id="download-all-menu" class="download-menu">
+                      <button
+                        type="button"
+                        data-scale="1"
+                        data-i18n="ui.download_all_zip"
+                      >
+                        Download All (ZIP)
+                      </button>
+                      <button type="button" data-scale="2">x2</button>
+                      <button type="button" data-scale="4">x4</button>
+                      <button type="button" data-scale="8">x8</button>
+                      <button type="button" data-scale="16">x16</button>
+                      <button type="button" data-scale="32">x32</button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="image-list-container" id="image-list-container">
