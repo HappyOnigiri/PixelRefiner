@@ -6,7 +6,7 @@
 
 ### 🚀 Try it now: <a href="https://pixel-refiner.app/" target="_blank">pixel-refiner.app</a>
 
-**Pixel Refiner** is a web-based tool that cleans up pixel art — especially AI-generated pixel art — and turns it into production-ready sprites.
+**Pixel Refiner** is a web-based tool that cleans up pixel art — especially AI-generated pixel art — and turns it into high-quality assets and icons.
 It removes anti-aliasing, auto-detects pixel grids, makes backgrounds transparent, and supports batch processing of multiple images — all running fast in the browser.
 
 ![License](https://img.shields.io/badge/license-MIT-blue)

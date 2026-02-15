@@ -5,7 +5,7 @@ const resources = {
 		// UI Headings & Labels
 		"app.title": "Pixel Refiner | AIドット絵の最適化・背景透過ツール",
 		"app.description":
-			'AIで生成したドット絵を、<span class="text-highlight">ゲーム素材</span>として使えるクオリティに。<br />' +
+			'AIで生成したドット絵を、<span class="text-highlight">素材</span>や<span class="text-highlight">アイコン</span>として使えるクオリティに。<br />' +
 			'<span class="text-highlight">アンチエイリアス除去</span>・<span class="text-highlight">背景透過</span>を数秒で完了します。',
 		"section.input": "入力画像",
 		"section.result": "処理結果",
@@ -182,7 +182,7 @@ const resources = {
 		// UI Headings & Labels
 		"app.title": "Pixel Refiner | AI Pixel Art Optimizer & Background Remover",
 		"app.description":
-			'Optimize AI-generated pixel art into <span class="text-highlight">production-ready sprites</span>.<br />' +
+			'Optimize AI-generated pixel art into <span class="text-highlight">high-quality assets</span> and <span class="text-highlight">icons</span>.<br />' +
 			'Complete <span class="text-highlight">anti-aliasing removal</span> and <span class="text-highlight">background transparency</span> in seconds.',
 		"section.input": "Input Image",
 		"section.result": "Result",

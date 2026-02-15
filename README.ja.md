@@ -6,7 +6,7 @@
 
 ### 🚀 今すぐツールを使う: <a href="https://pixel-refiner.app/" target="_blank">pixel-refiner.app</a>
 
-**Pixel Refiner** は、AI生成などで作られたドット絵（ピクセルアート）を、素材として実用的なクオリティに最適化するWebツールです。
+**Pixel Refiner** は、AI生成などで作られたドット絵（ピクセルアート）を、素材やアイコンとして実用的なクオリティに最適化するWebツールです。
 アンチエイリアスの除去、グリッドの自動検出、背景透過処理に加え、複数画像の一括処理もブラウザ上で高速に行います。
 
 ![License](https://img.shields.io/badge/license-MIT-blue)
