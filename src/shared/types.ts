@@ -20,6 +20,7 @@ export type PixelGrid = {
 	outH?: number;
 	scoreX?: number;
 	scoreY?: number;
+	candidates?: PixelGrid[];
 };
 
 export type Axis = "x" | "y";

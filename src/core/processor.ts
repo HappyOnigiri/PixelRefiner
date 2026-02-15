@@ -987,6 +987,7 @@ type GridEstimateFromTrimmed = {
 	cellH: number;
 	offsetX: number;
 	offsetY: number;
+	candidates?: GridEstimateFromTrimmed[];
 };
 
 interface GridSearchFromTrimmedStrategy {
@@ -1029,6 +1030,13 @@ export class FastGridSearchFromTrimmed
 			cellH: number;
 			score: number;
 		} | null = null;
+		const candidates: {
+			outW: number;
+			outH: number;
+			cellW: number;
+			cellH: number;
+			score: number;
+		}[] = [];
 
 		const croppedData = cropped.data;
 		const croppedW = cropped.width;
@@ -1097,6 +1105,11 @@ export class FastGridSearchFromTrimmed
 			if (!best || score < best.score) {
 				best = { outW, outH, cellW, cellH, score };
 			}
+
+			// 候補リストに追加（単純な挿入ソート的アプローチでTop3を維持）
+			candidates.push({ outW, outH, cellW, cellH, score });
+			candidates.sort((a, b) => a.score - b.score);
+			if (candidates.length > 3) candidates.pop();
 		}
 
 		if (!best) return null;
@@ -1109,6 +1122,14 @@ export class FastGridSearchFromTrimmed
 				cellH: best.cellH,
 				offsetX: 0,
 				offsetY: 0,
+				candidates: candidates.map((c) => ({
+					outW: c.outW,
+					outH: c.outH,
+					cellW: c.cellW,
+					cellH: c.cellH,
+					offsetX: 0,
+					offsetY: 0,
+				})),
 			},
 		};
 	}
@@ -1191,6 +1212,13 @@ const legacySearchGridFromTrimmed = (
 		cellH: number;
 		score: number;
 	} | null = null;
+	const candidates: {
+		outW: number;
+		outH: number;
+		cellW: number;
+		cellH: number;
+		score: number;
+	}[] = [];
 
 	for (let outH = outHMin; outH <= outHMax; outH += 1) {
 		const outW = Math.max(2, Math.round(outH * ratio));
@@ -1257,6 +1285,9 @@ const legacySearchGridFromTrimmed = (
 		if (!best || score < best.score) {
 			best = { outW, outH, cellW, cellH, score };
 		}
+		candidates.push({ outW, outH, cellW, cellH, score });
+		candidates.sort((a, b) => a.score - b.score);
+		if (candidates.length > 3) candidates.pop();
 	}
 
 	if (!best) return null;
@@ -1267,6 +1298,14 @@ const legacySearchGridFromTrimmed = (
 		cellH: best.cellH,
 		offsetX: 0,
 		offsetY: 0,
+		candidates: candidates.map((c) => ({
+			outW: c.outW,
+			outH: c.outH,
+			cellW: c.cellW,
+			cellH: c.cellH,
+			offsetX: 0,
+			offsetY: 0,
+		})),
 	};
 };
 
@@ -1652,6 +1691,15 @@ export const processImage = (
 					cropW: outW * est.cellW,
 					cropH: outH * est.cellH,
 					score: 0,
+					candidates: est.candidates?.map((c) => ({
+						cellW: c.cellW,
+						cellH: c.cellH,
+						offsetX: 0,
+						offsetY: 0,
+						outW: c.outW,
+						outH: c.outH,
+						score: 0,
+					})),
 				};
 				o.debugHook?.("04-grid-crop", working, {
 					grid,

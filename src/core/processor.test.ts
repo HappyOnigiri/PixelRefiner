@@ -792,6 +792,7 @@ describe("processImage", () => {
 	});
 	describe("high_resolution", () => {
 		let img: RawImage;
+		let expected: RawImage;
 
 		beforeAll(async () => {
 			cleanDebugDir("high_resolution");
@@ -799,6 +800,14 @@ describe("processImage", () => {
 				new URL("../../test/fixtures/high_resolution.png", import.meta.url),
 			);
 			img = await readPngAsRawImage(imgPath);
+
+			const expPath = fileURLToPath(
+				new URL(
+					"../../test/fixtures/high_resolution-expect.png",
+					import.meta.url,
+				),
+			);
+			expected = await readPngAsRawImage(expPath);
 		});
 
 		it("高解像度画像（1ドットが小さい画像）が適切に検出・処理されること", () => {
@@ -819,16 +828,13 @@ describe("processImage", () => {
 			});
 
 			// 検出結果の検証
-			// 1024px の画像で 4-5px のドットの場合、200〜250 セル程度になるはず。
-			// 修正前は 128制限やペナルティにより 74x110 (14px/cell) 程度になっていた。
-			expect(grid.outW).toBeGreaterThan(150);
-			expect(grid.outH).toBeGreaterThan(150);
-			// ドットサイズは 4-5px 程度
-			expect(grid.cellW).toBeLessThan(10);
-			expect(grid.cellH).toBeLessThan(10);
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expect(grid.outW).toBe(expected.width);
+			expect(grid.outH).toBe(expected.height);
 
-			expect(result.width).toBe(grid.outW);
-			expect(result.height).toBe(grid.outH);
+			// 画像比較
+			expectSameImage(result, expected);
 		});
 	});
 
