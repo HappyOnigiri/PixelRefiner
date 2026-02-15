@@ -16,13 +16,7 @@ repomix:
 
 # ローカル実行向け: 可能な範囲で自動整形 → チェック → テスト
 ci:
-	$(MAKE) ts-fix-diff
-	$(MAKE) html-fix-diff
-	$(MAKE) ts-check-diff
-	$(MAKE) html-check-diff
-	$(MAKE) type-check
-	$(MAKE) check-ts-rules
-	$(MAKE) test
+	python3 scripts/run_ci.py
 
 # CI（サーバ）向け: 自動修正せず、差分があれば失敗
 ci-check:
