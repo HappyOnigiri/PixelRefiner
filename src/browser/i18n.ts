@@ -21,6 +21,11 @@ const resources = {
 		"ui.clear_all": "すべてクリア",
 		"ui.download_all": "一括ダウンロード",
 		"ui.download_all_zip": "一括ダウンロード (ZIP)",
+		"ui.pixel_size": "ピクセルサイズ",
+		"ui.select_size_title": "変更するサイズを選択",
+		"ui.select_size_note":
+			"※推定値です。選択したサイズを参考に最適なグリッドを再判定します。",
+		"ui.change_to_this_size": "このサイズに変更",
 		"ui.remove_image": "画像を削除",
 		"ui.confirm_clear_all": "すべての画像を削除してもよろしいですか？",
 		"ui.size": "サイズ",
@@ -42,7 +47,7 @@ const resources = {
 		"setting.dither_strength": "ディザリング強度 (%)",
 		"setting.advanced": "詳細設定",
 		"setting.grid_detection": "グリッド検出",
-		"setting.enable_grid": "グリッド検出有効",
+		"setting.grid_mode": "グリッド検出モード",
 		"setting.quant_step": "減色ステップ",
 		"setting.sample_window": "サンプル範囲",
 		"setting.force_width": "指定ピクセル(横)",
@@ -85,16 +90,16 @@ const resources = {
 			"出力する最大の色数を指定します。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.dither_strength":
 			"減色時にディザリング（誤差拡散）を適用します。\n\n100%: 完全な誤差拡散を行います。\n0%: ディザリングを行わず、最も近い色に丸めます。\n\n少ない色数でも滑らかなグラデーションを表現できますが、ドット絵特有のザラつきが発生します。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
-		"tooltip.help.enable_grid":
-			"入力画像からグリッドを自動検出し、ドット単位に縮小・最適化します。\n\nOFFにすると、グリッド検出と縮小をスキップします（既に等倍のドット絵である場合に有効です）。背景トリミングや背景透過は、他の設定に従って引き続き実行されます。",
+		"tooltip.help.grid_mode":
+			"グリッド検出の動作モードを切り替えます。\n\n自動検出: グリッドを自動検出します（デフォルト）。\nピクセル指定 + 自動検出: 指定ピクセルをヒントにして、その近傍から精密探索を開始します。\n完全ピクセル指定: 指定サイズに強制変換します（自動検出なし）。\n無効: グリッド検出と縮小をスキップします（等倍ドット絵向け）。",
 		"tooltip.help.quant_step":
 			"グリッド検出用の減色レベルを設定します。\n\n【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。\n【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.sample_window":
 			"各ドットの色を決める際の参照範囲（ピクセル数）です。\n\n【大】ノイズが除去され色が安定しますが、細部のディテールが失われやすくなります。\n【小】元画像を忠実に再現しますが、位置ズレやノイズの影響を強く受けます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.force_width":
-			"指定サイズに強制変換します。\n指定ピクセルが有効なときは自動検出は行いません。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
+			"指定ピクセル（横）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.force_height":
-			"指定サイズに強制変換します。\n指定ピクセルが有効なときは自動検出は行いません。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
+			"指定ピクセル（縦）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.fast_mode":
 			"ONにすると、効率的なアルゴリズムで探索を高速化します。\nOFFにすると、より広範囲を精密に探索します。\n\n自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。",
 		"tooltip.help.enable_bg_removal":
@@ -141,6 +146,10 @@ const resources = {
 		"option.outline_none": "なし",
 		"option.outline_rounded": "Rounded (8近傍)",
 		"option.outline_sharp": "Sharp (4近傍)",
+		"option.grid_mode_auto": "自動検出（デフォルト）",
+		"option.grid_mode_hint": "ピクセル指定 + 自動検出",
+		"option.grid_mode_force": "完全ピクセル指定",
+		"option.grid_mode_off": "無効",
 		"option.bg_none": "透過しない",
 		"option.bg_top_left": "左上（デフォルト）",
 		"option.bg_bottom_left": "左下",
@@ -152,6 +161,7 @@ const resources = {
 		"error.no_image": "先に画像を選択してください。",
 		"error.process_failed": "処理失敗",
 		"error.load_failed": "読み込み失敗",
+		"info.grid_updated": "グリッドサイズを {w}x{h} に更新しました",
 
 		"error.palette_limit":
 			"警告: 画像には{count}色が含まれています。パレットは256色に制限されます。",
@@ -198,6 +208,11 @@ const resources = {
 		"ui.clear_all": "Clear All",
 		"ui.download_all": "Download All",
 		"ui.download_all_zip": "Download All (ZIP)",
+		"ui.pixel_size": "Pixel Size",
+		"ui.select_size_title": "Select size to change",
+		"ui.select_size_note":
+			"*Estimated values. The grid will be re-evaluated based on your selection.",
+		"ui.change_to_this_size": "Change to this size",
 		"ui.remove_image": "Remove Image",
 		"ui.confirm_clear_all": "Are you sure you want to clear all images?",
 		"ui.size": "Size",
@@ -219,7 +234,7 @@ const resources = {
 		"setting.dither_strength": "Dither Strength (%)",
 		"setting.advanced": "Advanced Settings",
 		"setting.grid_detection": "Grid Detection",
-		"setting.enable_grid": "Enable Grid Detection",
+		"setting.grid_mode": "Grid Detection Mode",
 		"setting.quant_step": "Quantization Step",
 		"setting.sample_window": "Sample Window",
 		"setting.force_width": "Force Width (px)",
@@ -262,16 +277,16 @@ const resources = {
 			"Specifies the maximum number of colors in the output.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.dither_strength":
 			"Applies dithering (error diffusion) during color reduction.\n\n100%: Full error diffusion.\n0%: No dithering (None).\n\nAllows for smoother gradients with fewer colors, but introduces characteristic pixel noise.\n\nRange: {min} to {max} (Default: {default})",
-		"tooltip.help.enable_grid":
-			"Automatically detects the grid from the input image and reduces/optimizes it to pixel units.\n\nIf OFF, grid detection and reduction are skipped (useful if the image is already a 1:1 pixel art). Background trimming and transparency will still be performed based on other settings.",
+		"tooltip.help.grid_mode":
+			"Switches the grid detection behavior.\n\nAuto: Automatically detects the grid (default).\nPixel + Auto: Uses the specified pixel size as a hint and starts fine search near it.\nPixel Only: Forces conversion to the specified size (no auto detection).\nOff: Skips grid detection and reduction (useful for 1:1 pixel art).",
 		"tooltip.help.quant_step":
 			"Sets the color reduction level for grid detection.\n\nHigh: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.\nLow: Picks up fine color boundaries, but increases the risk of false noise detection.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.sample_window":
 			"The reference range (in pixels) used when determining the color of each dot.\n\nHigh: Noise is removed and colors become stable, but fine details may be lost.\nLow: Faithfully reproduces the original image, but is more affected by misalignment and noise.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.force_width":
-			"Forces conversion to the specified size.\nAutomatic detection is not performed when a specific size is set.\n\nRange: 1 to 1024 (Default: Auto)",
+			"Specified pixel width.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.force_height":
-			"Forces conversion to the specified size.\nAutomatic detection is not performed when a specific size is set.\n\nRange: 1 to 1024 (Default: Auto)",
+			"Specified pixel height.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.fast_mode":
 			"When ON, uses an efficient algorithm to speed up the search.\nWhen OFF, performs a more comprehensive and precise search.\n\nIf automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy.",
 		"tooltip.help.enable_bg_removal":
@@ -318,6 +333,10 @@ const resources = {
 		"option.outline_none": "None",
 		"option.outline_rounded": "Rounded (8-way)",
 		"option.outline_sharp": "Sharp (4-way)",
+		"option.grid_mode_auto": "Auto (Default)",
+		"option.grid_mode_hint": "Pixel + Auto",
+		"option.grid_mode_force": "Pixel Only",
+		"option.grid_mode_off": "Off",
 		"option.bg_none": "None",
 		"option.bg_top_left": "Top-Left (Default)",
 		"option.bg_bottom_left": "Bottom-Left",
@@ -329,6 +348,7 @@ const resources = {
 		"error.no_image": "Please select an image first.",
 		"error.process_failed": "Processing failed",
 		"error.load_failed": "Loading failed",
+		"info.grid_updated": "Grid updated to {w}x{h}",
 
 		"error.palette_limit":
 			"Warning: The image contains {count} colors. Palette will be limited to 256 colors.",

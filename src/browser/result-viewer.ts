@@ -1,4 +1,5 @@
-import type { RawImage } from "../shared/types";
+import type { PixelGrid, RawImage } from "../shared/types";
+import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 
 type ResultViewerCallbacks = {
@@ -8,6 +9,7 @@ type ResultViewerCallbacks = {
 	onGridToggle?: (enabled: boolean) => void;
 	onBgChange?: (bgType: string) => void;
 	onImageClick?: () => void;
+	onGridSelect?: (grid: PixelGrid) => void;
 };
 
 export class ResultViewer {
@@ -27,8 +29,10 @@ export class ResultViewer {
 	private downloadMenu: HTMLElement;
 	private compareBtn: HTMLButtonElement;
 	private loadingOverlay: HTMLElement;
+	private candidatesMenu: HTMLElement | null = null;
 
 	private currentImage: RawImage | null = null;
+	private currentGrid: PixelGrid | null = null;
 	private currentBgType = "checkered";
 	private callbacks: ResultViewerCallbacks = {};
 	private resizeObserver: ResizeObserver | null = null;
@@ -201,16 +205,24 @@ export class ResultViewer {
 		}
 	}
 
+	private static closeAllCandidatesMenus() {
+		for (const viewer of ResultViewer.instances) {
+			viewer.closeCandidatesMenu();
+		}
+	}
+
 	private initGlobalListeners() {
 		if (ResultViewer.globalListenersInitialized) return;
 		ResultViewer.globalListenersInitialized = true;
 
 		document.addEventListener("click", () => {
 			ResultViewer.closeAllDownloadMenus();
+			ResultViewer.closeAllCandidatesMenus();
 		});
 		document.addEventListener("keydown", (e) => {
 			if (e.key === "Escape") {
 				ResultViewer.closeAllDownloadMenus();
+				ResultViewer.closeAllCandidatesMenus();
 			}
 		});
 	}
@@ -239,10 +251,12 @@ export class ResultViewer {
 		this.callbacks = callbacks;
 	}
 
-	public updateImage(image: RawImage) {
+	public updateImage(image: RawImage, grid?: PixelGrid) {
 		this.currentImage = image;
+		this.currentGrid = grid ?? null;
 		drawRawImageToCanvas(image, this.canvas);
-		this.sizeLabel.textContent = `${image.width} x ${image.height}`;
+
+		this.updateSizeLabel();
 
 		// Update UI visibility
 		this.downloadBtn.style.display = "inline-flex";
@@ -421,7 +435,9 @@ export class ResultViewer {
 
 	public clear() {
 		this.currentImage = null;
+		this.currentGrid = null;
 		this.closeDownloadMenu();
+		this.closeCandidatesMenu();
 		const ctx = this.canvas.getContext("2d");
 		ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		const gridCtx = this.gridCanvas.getContext("2d");
@@ -437,7 +453,204 @@ export class ResultViewer {
 			this.gridCanvas.style.display = "none";
 		}
 		this.sizeLabel.textContent = "-";
+		this.sizeLabel.style.cursor = "default";
+		this.sizeLabel.style.textDecoration = "none";
+		this.sizeLabel.onclick = null;
 		this.downloadBtn.style.display = "none";
 		this.downloadDropdownBtn.style.display = "none";
+	}
+
+	private updateSizeLabel() {
+		if (!this.currentImage) {
+			this.sizeLabel.textContent = "-";
+			return;
+		}
+
+		if ((this.currentGrid?.candidates?.length ?? 0) > 0) {
+			this.sizeLabel.innerHTML = `${this.currentImage.width} x ${this.currentImage.height} <span style="font-size: 0.8em; opacity: 0.7;">▼</span>`;
+			this.sizeLabel.style.cursor = "pointer";
+			this.sizeLabel.style.textDecoration = "underline";
+			this.sizeLabel.style.textDecorationStyle = "dotted";
+			this.sizeLabel.onclick = (e) => {
+				e.stopPropagation();
+				this.toggleCandidatesMenu();
+			};
+		} else {
+			this.sizeLabel.textContent = `${this.currentImage.width} x ${this.currentImage.height}`;
+			this.sizeLabel.style.cursor = "default";
+			this.sizeLabel.style.textDecoration = "none";
+			this.sizeLabel.onclick = null;
+		}
+	}
+
+	private toggleCandidatesMenu() {
+		if (this.candidatesMenu?.parentElement) {
+			this.closeCandidatesMenu();
+			return;
+		}
+		ResultViewer.closeAllDownloadMenus();
+		ResultViewer.closeAllCandidatesMenus();
+		this.showCandidatesMenu();
+	}
+
+	private closeCandidatesMenu() {
+		if (this.candidatesMenu) {
+			this.candidatesMenu.remove();
+			this.candidatesMenu = null;
+		}
+	}
+
+	private showCandidatesMenu() {
+		if (!this.currentGrid?.candidates) return;
+
+		this.closeCandidatesMenu();
+
+		const menu = document.createElement("div");
+		menu.className = "candidates-menu";
+		menu.setAttribute("role", "menu");
+		menu.style.position = "absolute";
+		// Above modal overlay (3000)
+		menu.style.zIndex = "3001";
+
+		const title = document.createElement("div");
+		title.className = "candidates-menu-title";
+		title.textContent = i18n.t("ui.select_size_title");
+		title.style.padding = "8px 12px";
+		title.style.fontSize = "0.85em";
+		title.style.fontWeight = "bold";
+		title.style.opacity = "0.8";
+		title.style.borderBottom = "1px solid var(--border-color)";
+		menu.appendChild(title);
+
+		const note = document.createElement("div");
+		note.className = "candidates-menu-note";
+		note.textContent = i18n.t("ui.select_size_note");
+		note.style.padding = "4px 12px 8px";
+		note.style.fontSize = "0.75em";
+		note.style.opacity = "0.6";
+		note.style.lineHeight = "1.4";
+		menu.style.borderBottom = "1px solid var(--border-color)";
+		menu.appendChild(note);
+
+		// 候補と現在のサイズを統合してソート
+		const current = this.currentGrid;
+		const rawCandidates = [...(this.currentGrid.candidates || [])];
+
+		// 1. 現在のサイズと「近すぎる」候補を排除する
+		// 2. 候補同士で「近すぎる」ものを排除する
+		// 判定基準: 面積差が小さい、かつセルサイズ(px)の差が小さい
+		const isSimilar = (a: PixelGrid, b: PixelGrid) => {
+			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
+			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
+			const areaDiff = Math.abs(areaA - areaB);
+			const cellDiff = Math.abs(a.cellW - b.cellW);
+
+			// 面積差が 2% 以内かつ、ピクセルサイズ差が 0.2px 以内なら同一視
+			const areaThreshold = Math.max(areaA, areaB) * 0.02;
+			return areaDiff <= Math.max(2, areaThreshold) && cellDiff < 0.2;
+		};
+
+		// まず現在のサイズを基準にフィルタリング
+		const filtered = rawCandidates.filter((c) => !isSimilar(c, current));
+
+		// 候補同士でも重複を排除（サイズ順に並べて隣接要素と比較）
+		filtered.sort(
+			(a, b) => (a.outW ?? 0) * (a.outH ?? 0) - (b.outW ?? 0) * (b.outH ?? 0),
+		);
+		const uniqueCandidates: PixelGrid[] = [];
+		for (const c of filtered) {
+			if (
+				uniqueCandidates.length === 0 ||
+				!isSimilar(c, uniqueCandidates[uniqueCandidates.length - 1])
+			) {
+				uniqueCandidates.push(c);
+			}
+		}
+
+		// 現在のサイズを統合
+		const candidates = [current, ...uniqueCandidates];
+
+		// 最終的なサイズ順（面積順）にソート
+		candidates.sort((a, b) => {
+			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
+			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
+			return areaA - areaB;
+		});
+
+		// 最大件数を制限
+		const displayCandidates = candidates.slice(0, 12);
+
+		displayCandidates.forEach((c) => {
+			const isCurrent = c.outW === current.outW && c.outH === current.outH;
+
+			if (isCurrent) {
+				const currentItem = document.createElement("div");
+				currentItem.className = "candidates-menu-current";
+				const pixelSizeLabel = i18n.t("ui.pixel_size");
+				currentItem.textContent = `${c.outW ?? "?"} x ${c.outH ?? "?"} (${pixelSizeLabel}: ${c.cellW.toFixed(1)}px)`;
+				currentItem.style.padding = "8px 12px";
+				currentItem.style.fontSize = "0.9em";
+				currentItem.style.backgroundColor = "var(--bg-secondary)";
+				currentItem.style.color = "var(--text-secondary)";
+				currentItem.style.borderBottom = "1px solid var(--border-color)";
+				currentItem.style.display = "flex";
+				currentItem.style.alignItems = "center";
+
+				const check = document.createElement("span");
+				check.innerHTML = "✓";
+				check.style.marginRight = "8px";
+				check.style.color = "var(--accent-color)";
+				currentItem.prepend(check);
+
+				menu.appendChild(currentItem);
+			} else {
+				const btn = document.createElement("button");
+				const pixelSizeLabel = i18n.t("ui.pixel_size");
+				const label = `${c.outW ?? "?"} x ${c.outH ?? "?"} (${pixelSizeLabel}: ${c.cellW.toFixed(1)}px)`;
+				btn.textContent = label;
+				btn.type = "button";
+				btn.setAttribute("role", "menuitem");
+				btn.onclick = (e) => {
+					e.stopPropagation();
+					this.callbacks.onGridSelect?.(c);
+					this.closeCandidatesMenu();
+				};
+				menu.appendChild(btn);
+			}
+		});
+
+		document.body.appendChild(menu);
+		this.candidatesMenu = menu;
+
+		// Position near sizeLabel
+		const rect = this.sizeLabel.getBoundingClientRect();
+		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+		const scrollLeft =
+			window.pageXOffset || document.documentElement.scrollLeft;
+
+		// Reset any inherited positioning (safety)
+		menu.style.right = "auto";
+		menu.style.bottom = "auto";
+
+		// Default: position below the label
+		menu.style.left = `${rect.left + scrollLeft}px`;
+		menu.style.top = `${rect.bottom + scrollTop + 6}px`;
+
+		// Reposition if it overflows viewport (after it's in DOM)
+		const menuRect = menu.getBoundingClientRect();
+		const padding = 10;
+
+		// Horizontal overflow
+		if (menuRect.right > window.innerWidth - padding) {
+			const nextLeft = rect.right + scrollLeft - Math.max(menuRect.width, 200);
+			menu.style.left = `${Math.max(padding + scrollLeft, nextLeft)}px`;
+		}
+
+		// Vertical overflow (open upward)
+		const nextMenuRect = menu.getBoundingClientRect();
+		if (nextMenuRect.bottom > window.innerHeight - padding) {
+			const topUp = rect.top + scrollTop - nextMenuRect.height - 6;
+			menu.style.top = `${Math.max(padding + scrollTop, topUp)}px`;
+		}
 	}
 }
