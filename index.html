@@ -254,9 +254,11 @@
             <section
               class="panel input-panel"
               id="drop-area"
-              aria-label="Input Image"
+              aria-labelledby="section-input-heading"
             >
-              <h2 data-i18n="section.input">Input Image</h2>
+              <h2 id="section-input-heading" data-i18n="section.input">
+                Input Image
+              </h2>
               <div class="status">
                 <span data-i18n="ui.size">Size</span>:
                 <span id="input-size">-</span>
@@ -736,7 +738,7 @@
                         id="eyedropper-button"
                         type="button"
                         class="icon-button"
-                        data-i18n-attr="title:attr.title.eyedropper"
+                        data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
                         title="Pick color from image"
                       >
                         <svg
@@ -900,9 +902,11 @@
             <section
               class="panel output-panel"
               id="output-panel"
-              aria-label="Result Image"
+              aria-labelledby="section-result-heading"
             >
-              <h2 data-i18n="section.result">Result</h2>
+              <h2 id="section-result-heading" data-i18n="section.result">
+                Result
+              </h2>
               <div class="status-bar">
                 <div class="status-text">
                   <span data-i18n="ui.size">Size</span>:
@@ -921,28 +925,28 @@
                       type="button"
                       class="bg-btn bg-checkered active"
                       data-bg="checkered"
-                      data-i18n-attr="title:attr.title.bg_checkered"
+                      data-i18n-attr="title:attr.title.bg_checkered,aria-label:attr.title.bg_checkered"
                       title="Background: Checkered"
                     ></button>
                     <button
                       type="button"
                       class="bg-btn bg-white"
                       data-bg="white"
-                      data-i18n-attr="title:attr.title.bg_white"
+                      data-i18n-attr="title:attr.title.bg_white,aria-label:attr.title.bg_white"
                       title="Background: White"
                     ></button>
                     <button
                       type="button"
                       class="bg-btn bg-black"
                       data-bg="black"
-                      data-i18n-attr="title:attr.title.bg_black"
+                      data-i18n-attr="title:attr.title.bg_black,aria-label:attr.title.bg_black"
                       title="Background: Black"
                     ></button>
                     <button
                       type="button"
                       class="bg-btn bg-green"
                       data-bg="green"
-                      data-i18n-attr="title:attr.title.bg_green"
+                      data-i18n-attr="title:attr.title.bg_green,aria-label:attr.title.bg_green"
                       title="Background: Green"
                     ></button>
                   </div>
@@ -1060,6 +1064,7 @@
                     type="button"
                     class="action-button download-dropdown-button js-download-dropdown-button"
                     style="display: none"
+                    data-i18n-attr="aria-label:ui.download_options"
                   >
                     ▼
                   </button>
@@ -1177,7 +1182,11 @@
           <h3 id="eyedropper-modal-title" data-i18n="modal.eyedropper.title">
             Select Background Color
           </h3>
-          <button id="close-eyedropper-modal" class="close-button">
+          <button
+            id="close-eyedropper-modal"
+            class="close-button"
+            data-i18n-attr="aria-label:ui.close"
+          >
             &times;
           </button>
         </div>
@@ -1205,7 +1214,13 @@
       <div class="modal-content">
         <div class="modal-header">
           <h3 id="palette-modal-title" data-i18n="section.palette">Palette</h3>
-          <button id="close-palette-modal" class="close-button">×</button>
+          <button
+            id="close-palette-modal"
+            class="close-button"
+            data-i18n-attr="aria-label:ui.close"
+          >
+            ×
+          </button>
         </div>
 
         <div class="modal-body">
@@ -1256,7 +1271,12 @@
       <div class="modal-content result-modal-content">
         <div class="modal-header">
           <h3 id="result-modal-title" data-i18n="section.result">Result</h3>
-          <button class="close-button js-close-result-modal">&times;</button>
+          <button
+            class="close-button js-close-result-modal"
+            data-i18n-attr="aria-label:ui.close"
+          >
+            &times;
+          </button>
         </div>
         <div class="modal-body result-modal-body">
           <!-- NOTE:
@@ -1274,28 +1294,28 @@
                   type="button"
                   class="bg-btn bg-checkered active"
                   data-bg="checkered"
-                  data-i18n-attr="title:attr.title.bg_checkered"
+                  data-i18n-attr="title:attr.title.bg_checkered,aria-label:attr.title.bg_checkered"
                   title="Background: Checkered"
                 ></button>
                 <button
                   type="button"
                   class="bg-btn bg-white"
                   data-bg="white"
-                  data-i18n-attr="title:attr.title.bg_white"
+                  data-i18n-attr="title:attr.title.bg_white,aria-label:attr.title.bg_white"
                   title="Background: White"
                 ></button>
                 <button
                   type="button"
                   class="bg-btn bg-black"
                   data-bg="black"
-                  data-i18n-attr="title:attr.title.bg_black"
+                  data-i18n-attr="title:attr.title.bg_black,aria-label:attr.title.bg_black"
                   title="Background: Black"
                 ></button>
                 <button
                   type="button"
                   class="bg-btn bg-green"
                   data-bg="green"
-                  data-i18n-attr="title:attr.title.bg_green"
+                  data-i18n-attr="title:attr.title.bg_green,aria-label:attr.title.bg_green"
                   title="Background: Green"
                 ></button>
               </div>
@@ -1389,6 +1409,7 @@
                 type="button"
                 class="action-button download-dropdown-button js-download-dropdown-button"
                 style="display: none"
+                data-i18n-attr="aria-label:ui.download_options"
               >
                 ▼
               </button>
@@ -1436,7 +1457,13 @@
               Sanitized
             </button>
           </div>
-          <button id="close-compare-modal" class="close-button">&times;</button>
+          <button
+            id="close-compare-modal"
+            class="close-button"
+            data-i18n-attr="aria-label:ui.close"
+          >
+            &times;
+          </button>
         </div>
         <div class="modal-body compare-modal-body">
           <div id="compare-container" class="compare-container">

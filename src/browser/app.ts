@@ -215,6 +215,7 @@ const getElements = (): Elements => {
 const showError = (message: string) => {
 	const toast = document.createElement("div");
 	toast.className = "error-toast";
+	toast.setAttribute("role", "alert");
 	toast.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>${message}</span>`;
 	document.body.appendChild(toast);
 
@@ -510,6 +511,7 @@ export const initApp = (): void => {
 		els.processButton.disabled = true;
 		els.loadingOverlay.style.display = "flex";
 		els.outputPanel.classList.add("is-processing");
+		els.outputPanel.setAttribute("aria-busy", "true");
 
 		try {
 			const parseOptionalInt = (
@@ -620,9 +622,6 @@ export const initApp = (): void => {
 			// 明示的に transfer を使わない限り currentImage は維持される。
 			// 今回はシンプルさを優先してコピーのままにする。
 
-			// 明示的に transfer を使わない限り currentImage は維持される。
-			// 今回はシンプルさを優先してコピーのままにする。
-
 			const resultImage = result;
 			currentResult = resultImage;
 
@@ -698,6 +697,7 @@ export const initApp = (): void => {
 		} finally {
 			els.loadingOverlay.style.display = "none";
 			els.outputPanel.classList.remove("is-processing");
+			els.outputPanel.removeAttribute("aria-busy");
 			els.processButton.disabled = false;
 		}
 	};

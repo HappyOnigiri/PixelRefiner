@@ -25,6 +25,8 @@ const resources = {
 		"ui.placeholder.input":
 			'画像をここにドラッグ＆ドロップ<br /><span class="drop-subtext">または クリックして選択</span>',
 		"ui.placeholder.result": "処理結果がここに表示されます",
+		"ui.close": "閉じる",
+		"ui.download_options": "ダウンロード種別を選択",
 
 		// Settings
 		"setting.color_reduction": "減色",
@@ -181,6 +183,8 @@ const resources = {
 		"ui.placeholder.input":
 			'Drag & drop image here<br /><span class="drop-subtext">or Click to select</span>',
 		"ui.placeholder.result": "Processed result will appear here",
+		"ui.close": "Close",
+		"ui.download_options": "Select download options",
 
 		// Settings
 		"setting.color_reduction": "Color Reduction",
