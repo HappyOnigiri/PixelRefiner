@@ -20,6 +20,7 @@ import {
 import { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
+import { PresetManager } from "./presets";
 import { ResultViewer } from "./result-viewer";
 import { ImageSession } from "./session";
 
@@ -118,6 +119,14 @@ type Elements = {
 	downloadAllButton: HTMLButtonElement;
 	downloadAllDropdownButton: HTMLButtonElement;
 	downloadAllMenu: HTMLElement;
+
+	// Presets
+	presetNameInput: HTMLInputElement;
+	savePresetButton: HTMLButtonElement;
+	loadPresetModalButton: HTMLButtonElement;
+	presetModal: HTMLElement;
+	closePresetModal: HTMLButtonElement;
+	presetModalList: HTMLElement;
 };
 
 const getElements = (): Elements => {
@@ -226,6 +235,13 @@ const getElements = (): Elements => {
 			"download-all-dropdown-button",
 		),
 		downloadAllMenu: get<HTMLElement>("download-all-menu"),
+
+		presetNameInput: get<HTMLInputElement>("preset-name-input"),
+		savePresetButton: get<HTMLButtonElement>("save-preset-button"),
+		loadPresetModalButton: get<HTMLButtonElement>("load-preset-modal-button"),
+		presetModal: get<HTMLElement>("preset-modal"),
+		closePresetModal: get<HTMLButtonElement>("close-preset-modal"),
+		presetModalList: get<HTMLElement>("preset-modal-list"),
 	};
 };
 
@@ -255,6 +271,32 @@ const showError = (message: string) => {
 			{ once: true },
 		);
 	}, 5000);
+};
+
+/**
+ * 情報（成功など）をトーストで表示する
+ */
+const showInfo = (message: string) => {
+	const toast = document.createElement("div");
+	toast.className = "info-toast";
+	toast.setAttribute("role", "status");
+	toast.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg><span>${message}</span>`;
+	document.body.appendChild(toast);
+
+	requestAnimationFrame(() => {
+		toast.classList.add("show");
+	});
+
+	setTimeout(() => {
+		toast.classList.remove("show");
+		toast.addEventListener(
+			"transitionend",
+			() => {
+				toast.remove();
+			},
+			{ once: true },
+		);
+	}, 3000);
 };
 
 const STORAGE_KEY = "pixel-refiner-display-settings";
@@ -393,6 +435,11 @@ export const initApp = (): void => {
 	const compareModalController = createModalController(
 		els.compareModal,
 		els.closeCompareModal,
+	);
+
+	const presetModalController = createModalController(
+		els.presetModal,
+		els.closePresetModal,
 	);
 
 	// Sync logic
@@ -1852,4 +1899,170 @@ export const initApp = (): void => {
 	// ResultViewer handles this now.
 
 	loadSettings();
+
+	// ---------------------------------------------------------
+	// Presets Logic
+	// ---------------------------------------------------------
+	const getUiState = (): Record<string, string | number | boolean> => {
+		const state: Record<string, string | number | boolean> = {};
+		const inputs = [
+			els.quantStepInput,
+			els.quantStepSlider,
+			els.forcePixelsWInput,
+			els.forcePixelsHInput,
+			els.sampleWindowInput,
+			els.sampleWindowSlider,
+			els.toleranceInput,
+			els.toleranceSlider,
+			els.preRemoveCheck,
+			els.postRemoveCheck,
+			els.removeInnerBackgroundCheck,
+			els.trimToContentCheck,
+			els.fastAutoGridFromTrimmedCheck,
+			els.enableGridDetectionCheck,
+			els.reduceColorModeSelect,
+			els.ditherModeSelect,
+			els.colorCountInput,
+			els.colorCountSlider,
+			els.ditherStrengthInput,
+			els.ditherStrengthSlider,
+			els.outlineStyleSelect,
+			els.outlineColorInput,
+			els.floatingMaxPercentInput,
+			els.floatingMaxPercentSlider,
+			els.enableBgRemovalCheck,
+			els.bgExtractionMethod,
+			els.bgRgbInput,
+			els.bgColorInput,
+			els.autoProcessToggle,
+		];
+
+		for (const input of inputs) {
+			if (input instanceof HTMLInputElement) {
+				if (input.type === "checkbox") {
+					state[input.id] = input.checked;
+				} else if (input.type === "number" || input.type === "range") {
+					state[input.id] = Number(input.value);
+				} else {
+					state[input.id] = input.value;
+				}
+			} else if (input instanceof HTMLSelectElement) {
+				state[input.id] = input.value;
+			}
+		}
+		return state;
+	};
+
+	const applyUiState = (state: Record<string, string | number | boolean>) => {
+		for (const [id, value] of Object.entries(state)) {
+			const el = document.getElementById(id);
+			if (!el) continue;
+
+			if (el instanceof HTMLInputElement) {
+				if (el.type === "checkbox") {
+					el.checked = value as boolean;
+				} else {
+					el.value = String(value);
+				}
+			} else if (el instanceof HTMLSelectElement) {
+				el.value = String(value);
+			}
+			// Trigger change event to update UI dependencies
+			el.dispatchEvent(new Event("change"));
+		}
+		updateDisabledStates();
+		updateReduceColorsDisabledStates();
+		updateBgDisabledStates();
+		updateProcessButtonVisibility();
+		triggerAutoProcess();
+	};
+
+	const updatePresetList = () => {
+		const presets = PresetManager.loadPresets();
+		els.presetModalList.innerHTML = "";
+
+		if (presets.length === 0) {
+			els.presetModalList.innerHTML = `<div class="status-text" style="text-align: center; padding: 20px; opacity: 0.5;">${i18n.t("option.none")}</div>`;
+			return;
+		}
+
+		presets.forEach((preset) => {
+			const item = document.createElement("div");
+			item.className = "preset-item";
+
+			const nameSpan = document.createElement("span");
+			nameSpan.className = "preset-item-name";
+			nameSpan.textContent = preset.name;
+			item.appendChild(nameSpan);
+
+			const actions = document.createElement("div");
+			actions.className = "preset-item-actions";
+
+			const loadBtn = document.createElement("button");
+			loadBtn.type = "button";
+			loadBtn.className = "action-button small-button outline-button";
+			loadBtn.textContent = i18n.t("ui.load_preset");
+			loadBtn.onclick = () => {
+				applyUiState(preset.data);
+				els.presetNameInput.value = preset.name;
+				showInfo(i18n.t("ui.preset_loaded", { name: preset.name }));
+				presetModalController.close();
+			};
+			actions.appendChild(loadBtn);
+
+			const deleteBtn = document.createElement("button");
+			deleteBtn.type = "button";
+			deleteBtn.className = "text-button danger-text";
+			deleteBtn.textContent = i18n.t("ui.delete_preset");
+			deleteBtn.onclick = () => {
+				if (confirm(i18n.t("ui.confirm_delete_preset"))) {
+					PresetManager.deletePreset(preset.id);
+					updatePresetList();
+				}
+			};
+			actions.appendChild(deleteBtn);
+
+			item.appendChild(actions);
+			els.presetModalList.appendChild(item);
+		});
+	};
+
+	els.savePresetButton.addEventListener("click", () => {
+		let name = els.presetNameInput.value.trim();
+		if (!name) {
+			name = new Date().toLocaleString();
+		}
+
+		const state = getUiState();
+		const presets = PresetManager.loadPresets();
+		const existing = presets.find((p) => p.name === name);
+
+		if (existing) {
+			if (confirm(i18n.t("ui.confirm_overwrite_preset"))) {
+				PresetManager.updatePreset(existing.id, state);
+				showInfo(i18n.t("ui.preset_saved", { name: name }));
+			}
+		} else {
+			PresetManager.savePreset(name, state);
+			showInfo(i18n.t("ui.preset_saved", { name: name }));
+		}
+		updatePresetList();
+	});
+
+	els.loadPresetModalButton.addEventListener("click", () => {
+		updatePresetList();
+		presetModalController.open();
+	});
+
+	els.closePresetModal.addEventListener("click", () => {
+		presetModalController.close();
+	});
+
+	els.presetModal.addEventListener("click", (e) => {
+		if (e.target === els.presetModal) {
+			presetModalController.close();
+		}
+	});
+
+	updatePresetList();
 };

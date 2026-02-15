@@ -65,6 +65,16 @@ const resources = {
 		"setting.outline_color": "色",
 		"setting.processing": "処理",
 		"setting.auto_process": "自動変換",
+		"section.presets": "プリセット",
+		"ui.preset_name": "プリセット名",
+		"ui.save_preset": "保存",
+		"ui.load_preset": "ロード",
+		"ui.delete_preset": "削除",
+		"ui.confirm_delete_preset": "プリセットを削除してもよろしいですか？",
+		"ui.confirm_overwrite_preset":
+			"同じ名前のプリセットが既に存在します。上書きしますか？",
+		"ui.preset_loaded": "プリセット「{name}」を読み込みました",
+		"ui.preset_saved": "プリセット「{name}」を保存しました",
 		"tooltip.help.auto_process":
 			"設定変更時に自動で処理を実行します。\n\nOFFにすると、手動で「処理を実行」ボタンをクリックする必要があります。",
 
@@ -232,6 +242,16 @@ const resources = {
 		"setting.outline_color": "Color",
 		"setting.processing": "Processing",
 		"setting.auto_process": "Auto Process",
+		"section.presets": "Presets",
+		"ui.preset_name": "Preset Name",
+		"ui.save_preset": "Save",
+		"ui.load_preset": "Load",
+		"ui.delete_preset": "Delete",
+		"ui.confirm_delete_preset": "Are you sure you want to delete this preset?",
+		"ui.confirm_overwrite_preset":
+			"A preset with this name already exists. Do you want to overwrite it?",
+		"ui.preset_loaded": 'Preset "{name}" loaded',
+		"ui.preset_saved": 'Preset "{name}" saved',
 		"tooltip.help.auto_process":
 			"Automatically runs processing when settings are changed.\n\nTurn OFF if you prefer to manually click the Process button.",
 

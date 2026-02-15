@@ -232,6 +232,43 @@
         white-space: nowrap;
         border: 0;
       }
+
+      .preset-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .preset-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+      }
+
+      .preset-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .preset-item-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-right: 12px;
+        font-weight: 500;
+      }
+
+      .preset-item-actions {
+        display: flex;
+        gap: 8px;
+      }
     </style>
   </head>
 
@@ -951,6 +988,42 @@
                   </label>
                 </div>
               </div>
+
+              <!-- プリセット管理 -->
+              <div class="settings-group">
+                <h3 class="settings-group-title" data-i18n="section.presets">
+                  Presets
+                </h3>
+                <div class="grid-settings">
+                  <div class="setting-item full-width">
+                    <div class="input-with-button">
+                      <input
+                        id="preset-name-input"
+                        type="text"
+                        placeholder="Preset Name"
+                        data-i18n-attr="placeholder:ui.preset_name"
+                        style="flex: 1"
+                      />
+                      <button
+                        id="save-preset-button"
+                        type="button"
+                        class="action-button small-button"
+                        data-i18n="ui.save_preset"
+                      >
+                        Save
+                      </button>
+                      <button
+                        id="load-preset-modal-button"
+                        type="button"
+                        class="action-button small-button outline-button"
+                        data-i18n="ui.load_preset"
+                      >
+                        Load
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1550,6 +1623,35 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preset Modal -->
+    <div
+      id="preset-modal"
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="preset-modal-title"
+      tabindex="-1"
+      style="display: none"
+    >
+      <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header">
+          <h3 id="preset-modal-title" data-i18n="section.presets">Presets</h3>
+          <button
+            id="close-preset-modal"
+            class="close-button"
+            data-i18n-attr="aria-label:ui.close"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="preset-modal-list" class="preset-list">
+            <!-- Javascript will populate this -->
           </div>
         </div>
       </div>
