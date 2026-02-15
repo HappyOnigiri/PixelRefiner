@@ -33,12 +33,18 @@ Execute the following steps in order:
 6.  **Analyze Diffs and Summarize**:
     - Retrieve the changes since the last tag.
       - Example: `git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --oneline`
-    - Analyze the commit logs and summarize the changes in **English**.
+    - Analyze the commit logs and summarize the changes.
     - **Categorization & Format**:
       - Use the following sections:
         - `### 🚀 New Features`: Main feature additions.
         - `### 🛠 Improvements & Bug Fixes`: Minor changes, refactorings, and bug fixes.
       - Each item should be a concise bullet point.
+    - **Multi-language Support**:
+      - Generate the release notes in **both English and Japanese**.
+      - The English version serves as the primary content.
+      - The Japanese version must be enclosed in a `<details>` tag for folding.
+      - **Label for folding**: `Japanese version is available here` (must be in English).
+      - **Content Consistency**: The list items and categories must match exactly between the English and Japanese versions.
     - **Rules**:
       - Focus on **New Features**.
       - Use appropriate emojis for each section as shown above.
@@ -46,7 +52,7 @@ Execute the following steps in order:
       - Limit the total list to a maximum of 10-15 items.
 7.  **Create GitHub Release**:
     - Use the GitHub CLI (`gh`) to create a release.
-    - The `--notes` should contain the categorized markdown summary.
+    - The `--notes` should contain the categorized markdown summary (including the folded Japanese version).
     - Example: `gh release create v<version> --title "v<version>" --notes-file release_notes.md` (or pass the string via `--notes`)
 
 ## 2. Precautions
