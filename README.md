@@ -18,8 +18,10 @@ It removes anti-aliasing, auto-detects pixel grids, makes backgrounds transparen
 AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), misaligned grids, and opaque backgrounds. Pixel Refiner fixes all of that.
 
 - **Anti-aliasing removal** — Sharpens blurry edges back into clean, crisp pixels.
-- **Auto grid detection** — Automatically detects the pixel grid size and resamples to the optimal resolution.
-  - **1:1 mode** — Bypasses grid detection and works directly with the source pixels.
+- **Intelligent Grid Detection** — Automatically detects the pixel grid size and resamples to the optimal resolution.
+  - **Grid Candidate Selection** — Displays multiple candidates for the best grid size; manually select the one that fits perfectly.
+  - **Flexible Modes** — Choose from **Auto**, **Hint (Pixel + Auto)**, **Force (Pixel only)**, or **Off (1:1)**.
+  - **High-Resolution Support** — Enhanced accuracy for large images and complex pixel patterns.
   - **Fast estimation** — A turbo mode for quick previews, even on large images.
 - **Smart background removal**:
   - Auto-transparency based on corner colors
@@ -53,7 +55,7 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 3. Use the **"Images"** list to switch between uploaded images.
 4. Hit **"Process"** (or enable **"Auto"**) to generate optimized pixel art sprites.
 5. Fine-tune settings as needed:
-    - **General** — Grid detection on/off, fast mode toggle
+    - **Grid Detection** — Mode selection (Auto/Hint/Force/Off), candidate selection, and fast mode toggle
     - **Colors & Palette** — Preset selection, color count, dithering
     - **Background** — Transparency mode (auto/manual), tolerance, cleanup options
     - **Outline** — Add an outline to the sprite
