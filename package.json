@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@types/jszip": "^3.4.0",
     "@types/node": "latest",
     "@types/pngjs": "^6.0.5",
     "pngjs": "latest",
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",
-    "comlink": "^4.4.2"
+    "comlink": "^4.4.2",
+    "jszip": "^3.10.1"
   }
 }

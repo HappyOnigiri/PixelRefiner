@@ -11,19 +11,24 @@ const resources = {
 		"section.result": "処理結果",
 		"section.palette": "パレット",
 		"ui.process_btn": "処理を実行",
+		"ui.images": "画像一覧",
 		"ui.auto_process": "自動",
 		"ui.download_btn": "ダウンロード",
 		"ui.export_gpl": ".GPLを書き出し",
 		"ui.export_png": ".PNGを書き出し",
 		"ui.import_palette": "パレットを読み込み",
 		"ui.show_palette": "パレットを表示",
+		"ui.clear_all": "すべてクリア",
+		"ui.download_all": "一括ダウンロード (ZIP)",
+		"ui.remove_image": "画像を削除",
+		"ui.confirm_clear_all": "すべての画像を削除してもよろしいですか？",
 		"ui.size": "サイズ",
 		"ui.view_single": "単体",
 		"ui.view_compare": "比較",
 		"ui.compare_before_original": "元画像",
 		"ui.compare_before_sanitized": "サニタイズ",
 		"ui.placeholder.input":
-			'画像をここにドラッグ＆ドロップ<br /><span class="drop-subtext">または クリックして選択</span>',
+			'画像をここにドラッグ＆ドロップ<br /><span class="drop-subtext">または クリックして選択<br />(複数可)</span>',
 		"ui.placeholder.result": "処理結果がここに表示されます",
 		"ui.close": "閉じる",
 		"ui.download_options": "ダウンロード種別を選択",
@@ -139,7 +144,10 @@ const resources = {
 
 		"error.palette_limit":
 			"警告: 画像には{count}色が含まれています。パレットは256色に制限されます。",
+		"error.no_processed_images": "ダウンロード可能な処理済み画像がありません。",
+		"error.download_failed": "ダウンロードに失敗しました",
 		"status.processing": "処理中...",
+		"status.processing_batch": "一括処理中... ({current}/{total})",
 
 		// Attributes & Titles
 		"attr.title.bg_checkered": "背景: 格子模様",
@@ -169,19 +177,24 @@ const resources = {
 		"section.result": "Result",
 		"section.palette": "Palette",
 		"ui.process_btn": "Process Image",
+		"ui.images": "Images",
 		"ui.auto_process": "Auto",
 		"ui.download_btn": "Download",
 		"ui.export_gpl": "Export .GPL",
 		"ui.export_png": "Export .PNG",
 		"ui.import_palette": "Import Palette",
 		"ui.show_palette": "Show Palette",
+		"ui.clear_all": "Clear All",
+		"ui.download_all": "Download All (ZIP)",
+		"ui.remove_image": "Remove Image",
+		"ui.confirm_clear_all": "Are you sure you want to clear all images?",
 		"ui.size": "Size",
 		"ui.view_single": "Single",
 		"ui.view_compare": "Compare",
 		"ui.compare_before_original": "Original",
 		"ui.compare_before_sanitized": "Sanitized",
 		"ui.placeholder.input":
-			'Drag & drop image here<br /><span class="drop-subtext">or Click to select</span>',
+			'Drag & drop images here<br /><span class="drop-subtext">or Click to select<br />(Multiple allowed)</span>',
 		"ui.placeholder.result": "Processed result will appear here",
 		"ui.close": "Close",
 		"ui.download_options": "Select download options",
@@ -297,7 +310,10 @@ const resources = {
 
 		"error.palette_limit":
 			"Warning: The image contains {count} colors. Palette will be limited to 256 colors.",
+		"error.no_processed_images": "No processed images available to download.",
+		"error.download_failed": "Download failed",
 		"status.processing": "Processing...",
+		"status.processing_batch": "Batch Processing... ({current}/{total})",
 
 		// Attributes & Titles
 		"attr.title.bg_checkered": "Background: Checkered",

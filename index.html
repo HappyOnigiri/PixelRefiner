@@ -297,6 +297,38 @@
               </button>
             </section>
 
+            <!-- Image List (Filmstrip) -->
+            <section
+              class="panel image-list-panel"
+              id="image-list-panel"
+              style="display: none"
+            >
+              <div class="image-list-header">
+                <h2 data-i18n="ui.images">Images</h2>
+                <div class="batch-controls">
+                  <button
+                    id="clear-all-button"
+                    type="button"
+                    class="text-button danger-text"
+                    data-i18n="ui.clear_all"
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    id="download-all-button"
+                    type="button"
+                    class="action-button small-button"
+                    data-i18n="ui.download_all"
+                  >
+                    Download All (ZIP)
+                  </button>
+                </div>
+              </div>
+              <div class="image-list-container" id="image-list-container">
+                <!-- Javascript will populate this -->
+              </div>
+            </section>
+
             <div class="quick-settings">
               <div class="settings-group">
                 <h3

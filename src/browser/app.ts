@@ -1,4 +1,5 @@
 import { wrap } from "comlink";
+import JSZip from "jszip";
 import { upscaleNearest } from "../core/ops";
 import type { ProcessOptions } from "../core/processor";
 import type { ProcessorWorker } from "../core/worker";
@@ -8,7 +9,7 @@ import {
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
-import type { DitherMode, OutlineStyle, RawImage, RGB } from "../shared/types";
+import type { DitherMode, OutlineStyle, RGB } from "../shared/types";
 import {
 	extractColorsFromImage,
 	generateGPL,
@@ -20,6 +21,7 @@ import { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { ResultViewer } from "./result-viewer";
+import { ImageSession } from "./session";
 
 // Workerのインスタンス化
 const workerInstance = new Worker(
@@ -108,6 +110,12 @@ type Elements = {
 	btnViewCompare: HTMLButtonElement;
 	btnCompareBeforeOriginal: HTMLButtonElement;
 	btnCompareBeforeSanitized: HTMLButtonElement;
+
+	// Image List
+	imageListPanel: HTMLElement;
+	imageListContainer: HTMLElement;
+	clearAllButton: HTMLButtonElement;
+	downloadAllButton: HTMLButtonElement;
 };
 
 const getElements = (): Elements => {
@@ -206,6 +214,12 @@ const getElements = (): Elements => {
 		btnCompareBeforeSanitized: get<HTMLButtonElement>(
 			"btn-compare-before-sanitized",
 		),
+
+		// Image List
+		imageListPanel: get<HTMLElement>("image-list-panel"),
+		imageListContainer: get<HTMLElement>("image-list-container"),
+		clearAllButton: get<HTMLButtonElement>("clear-all-button"),
+		downloadAllButton: get<HTMLButtonElement>("download-all-button"),
 	};
 };
 
@@ -390,6 +404,7 @@ export const initApp = (): void => {
 	};
 
 	const handleDownload = (scale: number) => {
+		const currentResult = imageSession.getActiveImage()?.result;
 		if (!currentResult) return;
 
 		let link: HTMLAnchorElement;
@@ -415,6 +430,108 @@ export const initApp = (): void => {
 		}
 		link.click();
 	};
+
+	const handleDownloadAll = async () => {
+		const allImages = imageSession.getImages();
+		if (allImages.length === 0) {
+			showError(
+				i18n.t("error.no_processed_images") ||
+					"No processed images to download.",
+			);
+			return;
+		}
+
+		els.loadingOverlay.style.display = "flex";
+		try {
+			// 1. Process ALL images (User Request: Force re-process to apply current settings)
+			const imagesToProcess = [...allImages];
+
+			if (imagesToProcess.length > 0) {
+				const originalActiveId = imageSession.getActiveImage()?.id;
+
+				for (let i = 0; i < imagesToProcess.length; i++) {
+					const img = imagesToProcess[i];
+					const index = i + 1;
+					const total = imagesToProcess.length;
+
+					// Update loading text
+					const statusText = i18n.t("status.processing_batch", {
+						current: index,
+						total: total,
+					});
+					const loadingTextEl =
+						els.loadingOverlay.querySelector(".loading-text");
+					if (loadingTextEl) {
+						loadingTextEl.textContent = statusText;
+					}
+
+					imageSession.setActiveImage(img.id);
+					// Wait a tick for UI to update (inputs to reflect, though they shouldn't change for same session if global)
+					await new Promise((r) => setTimeout(r, 10));
+
+					await runProcessing();
+				}
+
+				// Restore original active image
+				if (originalActiveId) {
+					imageSession.setActiveImage(originalActiveId);
+				}
+			}
+
+			// 2. Create ZIP
+			// Re-fetch images to get updated results
+			const imagesToZip = imageSession
+				.getImages()
+				.filter((img) => img.status === "done" && img.result);
+
+			if (imagesToZip.length === 0) {
+				throw new Error("No successfully processed images.");
+			}
+
+			const zip = new JSZip();
+			const filenames = new Set<string>();
+
+			for (const img of imagesToZip) {
+				if (!img.result) continue;
+
+				const name = img.file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+				let filename = `${name}_refined.png`;
+
+				// Avoid duplicates
+				let counter = 1;
+				while (filenames.has(filename)) {
+					filename = `${name}_refined_${counter}.png`;
+					counter++;
+				}
+				filenames.add(filename);
+
+				const canvas = document.createElement("canvas");
+				drawRawImageToCanvas(img.result, canvas);
+
+				const blob = await new Promise<Blob | null>((resolve) =>
+					canvas.toBlob(resolve, "image/png"),
+				);
+				if (blob) {
+					zip.file(filename, blob);
+				}
+			}
+
+			const content = await zip.generateAsync({ type: "blob" });
+			const url = URL.createObjectURL(content);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = "pixel_refiner_batch.zip";
+			link.click();
+			setTimeout(() => URL.revokeObjectURL(url), 1000);
+		} catch (e) {
+			console.error(e);
+			showError(`${i18n.t("error.download_failed")}: ${(e as Error).message}`);
+		} finally {
+			els.loadingOverlay.style.display = "none";
+		}
+	};
+
+	els.downloadAllButton.addEventListener("click", handleDownloadAll);
 
 	mainResultViewer.setCallbacks({
 		onBgChange: (bg) => syncViewers(mainResultViewer, modalResultViewer, bg),
@@ -446,18 +563,139 @@ export const initApp = (): void => {
 		},
 	});
 
-	let currentImage: RawImage | null = null;
-	let currentResult: RawImage | null = null;
-	const compareBeforeCanvas = document.createElement("canvas");
-	const compareAfterCanvas = document.createElement("canvas");
-	const compareBeforeSanitizedCanvas = document.createElement("canvas");
+	const imageSession = new ImageSession({
+		onUpdate: () => {
+			updateImageList();
+			updateProcessButtonVisibility();
+		},
+		onActiveChange: (item) => {
+			if (item) {
+				// Restore result if available, or original
+				// const displayImage = item.result || item.original; // Unused
 
-	let compareBeforeOriginalUrl = "";
-	let compareBeforeSanitizedUrl = "";
-	let compareAfterUrl = "";
-	let compareBeforeMode: "original" | "sanitized" = "original";
+				// Reset viewers
+				// Note: We might want to persist grid/zoom state or reset it?
+				// Current logic: isGridManuallyToggled controls grid auto-off.
+				// Let's reset isGridManuallyToggled when switching images?
+				// Maybe not, if user wants to keep grid on.
+				// But original logic reset it on loadFile.
+				// For now, let's keep grid state as is, but maybe re-evaluate auto-grid if new image.
 
-	let currentExtractedPalette: RGB[] = [];
+				// Update Viewers
+				drawRawImageToCanvas(item.original, els.originalCanvas);
+
+				// If result exists, show it. If not, clear output?
+				if (item.result) {
+					mainResultViewer.updateImage(item.result);
+					modalResultViewer.updateImage(item.result);
+					els.outputPanel.classList.add("has-image");
+					els.outputSize.textContent = `${item.result.width}x${item.result.height} px`;
+					els.downloadButton.style.display = "flex";
+					els.downloadDropdownButton.style.display = "flex";
+
+					// Re-apply grid if needed
+					setTimeout(() => {
+						mainResultViewer.drawGrid();
+						modalResultViewer.drawGrid();
+					}, 0);
+				} else {
+					// Pending state: Clear output or show placeholder?
+					// Currently app doesn't have "clear output" method easily exposed without clearing canvas.
+					// Let's just hide functionality or show original in output?
+					// Typically we run processing immediately.
+					// If pending, runProcessing will be triggered by auto-process or manual.
+					// For now, let's clear the result view if no result.
+
+					// However, runProcessing is usually called immediately after add.
+					// If switching back to a pending image (e.g. error or cleared), we should maybe clear output.
+					// But we don't have "clear" method on ResultViewer.
+					// We can just not update it, but that leaves previous image.
+					// TODO: Add clear method to ResultViewer? Or just existing behavior.
+					// Let's leave it for now, assuming auto-process is ON or user clicks process.
+
+					els.outputPanel.classList.remove("has-image");
+					els.outputSize.textContent = "-";
+					els.downloadButton.style.display = "none";
+					els.downloadDropdownButton.style.display = "none";
+					els.downloadMenu.classList.remove("show");
+				}
+
+				els.dropArea.classList.add("has-image");
+				els.inputSize.textContent = `${item.original.width}x${item.original.height} px`;
+
+				// Trigger processing if pending and auto-process is ON
+				// Note: For multiple images, auto-process is forced OFF above, so this only runs for single image
+				// unless we change logic.
+				if (item.status === "pending" && els.autoProcessToggle.checked) {
+					runProcessing();
+				}
+
+				// Update BG extraction color if method is RGB
+				// (Or update RGB inputs if picking from image)
+			} else {
+				// No active image
+				els.dropArea.classList.remove("has-image");
+				els.outputPanel.classList.remove("has-image");
+				els.inputSize.textContent = "-";
+				els.outputSize.textContent = "-";
+				const ctx = els.originalCanvas.getContext("2d");
+				ctx?.clearRect(
+					0,
+					0,
+					els.originalCanvas.width,
+					els.originalCanvas.height,
+				);
+			}
+			updateReduceColorsDisabledStates();
+			updateBgDisabledStates();
+		},
+	});
+
+	// Image List UI Updater
+	const updateImageList = () => {
+		const images = imageSession.getImages();
+		// Hide if 0 or 1 image (User Request)
+		if (images.length <= 1) {
+			els.imageListPanel.style.display = "none";
+			return;
+		}
+		els.imageListPanel.style.display = "block";
+
+		els.imageListContainer.innerHTML = "";
+		const activeId = imageSession.getActiveImage()?.id;
+
+		images.forEach((img) => {
+			const item = document.createElement("div");
+			item.className = `image-item ${img.id === activeId ? "active" : ""}`;
+			item.dataset.status = img.status;
+			item.title = img.file.name;
+
+			const thumb = document.createElement("img");
+			thumb.src = img.thumbnail;
+			item.appendChild(thumb);
+
+			const statusInd = document.createElement("div");
+			statusInd.className = "status-indicator";
+			item.appendChild(statusInd);
+
+			const removeBtn = document.createElement("button");
+			removeBtn.className = "remove-btn";
+			removeBtn.innerHTML = "×";
+			removeBtn.title = i18n.t("ui.remove_image") || "Remove";
+			removeBtn.onclick = (e) => {
+				e.stopPropagation();
+				imageSession.removeImage(img.id);
+			};
+			item.appendChild(removeBtn);
+
+			item.onclick = () => {
+				imageSession.setActiveImage(img.id);
+			};
+
+			els.imageListContainer.appendChild(item);
+		});
+	};
+
 	let currentFixedPalette: RGB[] | undefined;
 	let lastBgChecks: {
 		preRemove: boolean;
@@ -465,7 +703,7 @@ export const initApp = (): void => {
 		removeInner: boolean;
 	} | null = null;
 
-	let isGridManuallyToggled = false;
+	const isGridManuallyToggled = false;
 
 	const saveSettings = () => {
 		const settings: SavedSettings = {
@@ -501,9 +739,22 @@ export const initApp = (): void => {
 		}
 	};
 
+	let currentExtractedPalette: RGB[] = [];
+
+	// Comparison specific variables
+	const compareBeforeCanvas = document.createElement("canvas");
+	const compareAfterCanvas = document.createElement("canvas");
+	const compareBeforeSanitizedCanvas = document.createElement("canvas");
+
+	let compareBeforeOriginalUrl = "";
+	let compareBeforeSanitizedUrl = "";
+	let compareAfterUrl = "";
+	let compareBeforeMode: "original" | "sanitized" = "original";
+
 	// Processing Function
 	const runProcessing = async () => {
-		if (!currentImage) return;
+		const images = imageSession.getImages();
+		if (images.length === 0) return;
 
 		mainResultViewer.setLoading(true);
 
@@ -512,6 +763,21 @@ export const initApp = (): void => {
 		els.loadingOverlay.style.display = "flex";
 		els.outputPanel.classList.add("is-processing");
 		els.outputPanel.setAttribute("aria-busy", "true");
+
+		// 現在のアクティブ画像のみを処理する設計
+		// (一括処理は別途実装が必要だが、今回は切り替え時に自動処理される仕組み)
+		const currentItem = imageSession.getActiveImage();
+		if (!currentItem) {
+			// クリーンアップして終了
+			els.loadingOverlay.style.display = "none";
+			els.outputPanel.classList.remove("is-processing");
+			els.outputPanel.removeAttribute("aria-busy");
+			els.processButton.disabled = false;
+			return;
+		}
+
+		const currentImage = currentItem.original;
+		imageSession.setImageStatus(currentItem.id, "processing");
 
 		try {
 			const parseOptionalInt = (
@@ -623,7 +889,8 @@ export const initApp = (): void => {
 			// 今回はシンプルさを優先してコピーのままにする。
 
 			const resultImage = result;
-			currentResult = resultImage;
+			// currentResult = resultImage; // No longer used directly
+			imageSession.updateImageResult(currentItem.id, resultImage);
 
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);
@@ -693,7 +960,9 @@ export const initApp = (): void => {
 			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
 			updateBgColorFromMethod();
 		} catch (err) {
-			showError(`${i18n.t("error.process_failed")}: ${(err as Error).message}`);
+			const msg = `${i18n.t("error.process_failed")}: ${(err as Error).message}`;
+			showError(msg);
+			imageSession.setImageStatus(currentItem.id, "error", msg);
 		} finally {
 			els.loadingOverlay.style.display = "none";
 			els.outputPanel.classList.remove("is-processing");
@@ -704,9 +973,10 @@ export const initApp = (): void => {
 
 	// スポイト機能の状態
 	const openEyedropperModal = () => {
-		if (!currentImage) return;
+		const img = imageSession.getActiveImage()?.original;
+		if (!img) return;
 		els.eyedropperModal.style.display = "flex";
-		drawRawImageToCanvas(currentImage, els.eyedropperCanvas);
+		drawRawImageToCanvas(img, els.eyedropperCanvas);
 	};
 
 	const closeEyedropperModal = () => {
@@ -745,7 +1015,7 @@ export const initApp = (): void => {
 
 	els.eyedropperButton.addEventListener("click", (e) => {
 		e.stopPropagation();
-		if (!currentImage) {
+		if (!imageSession.getActiveImage()) {
 			showError(i18n.t("error.no_image"));
 			return;
 		}
@@ -759,6 +1029,7 @@ export const initApp = (): void => {
 	});
 
 	els.eyedropperCanvas.addEventListener("click", (e) => {
+		const currentImage = imageSession.getActiveImage()?.original;
 		if (!currentImage) return;
 
 		const rect = els.eyedropperCanvas.getBoundingClientRect();
@@ -900,7 +1171,7 @@ export const initApp = (): void => {
 	const triggerAutoProcess = () => {
 		if (!els.autoProcessToggle.checked) return;
 		// 画像未設定時は変換を実行しない
-		if (!currentImage) return;
+		if (!imageSession.getActiveImage()) return;
 
 		// 既に実行予約があればキャンセル（デバウンス）
 		if (autoProcessTimeout) {
@@ -960,7 +1231,7 @@ export const initApp = (): void => {
 	const updatePaletteButtonVisibility = () => {
 		const mode = els.reduceColorModeSelect.value;
 		const isFixed = mode === "fixed";
-		const hasImage = currentImage !== null;
+		const hasImage = !!imageSession.getActiveImage();
 
 		// In Fixed mode, Import is shown. (Only if image is set)
 		els.fixedPaletteImportButton.style.display =
@@ -1095,6 +1366,7 @@ export const initApp = (): void => {
 
 	const updateBgColorFromMethod = () => {
 		const method = els.bgExtractionMethod.value;
+		const currentImage = imageSession.getActiveImage()?.original;
 		if (method !== "none" && method !== "rgb" && currentImage) {
 			const w = currentImage.width;
 			const h = currentImage.height;
@@ -1214,38 +1486,45 @@ export const initApp = (): void => {
 		});
 	};
 
-	const loadFile = async (file: File) => {
+	const loadFiles = async (files: File[]) => {
+		// Only process images
+		const imageFiles = Array.from(files).filter((f) =>
+			f.type.startsWith("image/"),
+		);
+
+		if (imageFiles.length === 0) {
+			if (files.length > 0 && !files[0].name.endsWith(".gpl")) {
+				// If files were dropped but none were images (and not GPL), show error
+				// But we handle GPL separately in drop handler.
+			}
+			return;
+		}
+
 		try {
-			const raw = await imageToRawImage(file);
-			currentImage = raw;
+			// Process one by one or Promise.all?
+			// Creating raw images is fast, sequential is fine.
 
-			currentResult = null; // 新しい画像が読み込まれたら結果をリセット
-			currentFixedPalette = undefined; // Reset fixed palette on new image load? Or keep it?
-			// Let's keep it if the user imported it. But if they just drop an image, maybe we shouldn't reset.
-			// However, if they drop a GPL file, we handle that separately.
-			// For now, let's NOT reset fixed palette so users can batch process with the same palette.
+			for (const file of imageFiles) {
+				const raw = await imageToRawImage(file);
+				imageSession.addImage(file, raw);
+			}
 
-			isGridManuallyToggled = false; // 新しい画像が読み込まれたら手動フラグをリセット
-
-			els.downloadButton.style.display = "none";
-			els.downloadDropdownButton.style.display = "none";
-			els.downloadMenu.classList.remove("show");
-			updateGrid(); // グリッドもクリア
-			drawRawImageToCanvas(raw, els.originalCanvas);
-			els.dropArea.classList.add("has-image");
-			els.outputPanel.classList.remove("has-image");
-			els.inputSize.textContent = `${raw.width}x${raw.height} px`;
-			els.outputSize.textContent = "-";
-
-			// 自動処理の実行
-			runProcessing();
+			// Select the last added image (User Request)
+			const allImages = imageSession.getImages();
+			if (allImages.length > 0) {
+				const lastImage = allImages[allImages.length - 1];
+				imageSession.setActiveImage(lastImage.id);
+			}
 		} catch (err) {
-			// 失敗時はUIをリセット
-			currentImage = null;
-			updateReduceColorsDisabledStates();
 			showError(`${i18n.t("error.load_failed")}: ${(err as Error).message}`);
 		}
 	};
+
+	els.clearAllButton.addEventListener("click", () => {
+		if (confirm(i18n.t("ui.confirm_clear_all") || "Clear all images?")) {
+			imageSession.clearAll();
+		}
+	});
 
 	// Drag & Drop visual feedback
 	const highlight = () => els.dropArea.classList.add("drag-over");
@@ -1281,7 +1560,9 @@ export const initApp = (): void => {
 		if (!files || files.length === 0) {
 			return;
 		}
-		loadFile(files[0]);
+		loadFiles(Array.from(files));
+		// Reset value so same files can be selected again if needed
+		els.fileInput.value = "";
 	});
 
 	els.dropArea.addEventListener("drop", async (e) => {
@@ -1302,11 +1583,9 @@ export const initApp = (): void => {
 					}
 				}
 			} else {
-				loadFile(file);
+				loadFiles(Array.from(files));
 				// Update file input to match (optional but good for consistency)
-				const container = new DataTransfer();
-				container.items.add(file);
-				els.fileInput.files = container.files;
+				// Cannot easily set FileList to input, but we don't need to.
 			}
 		}
 	});
