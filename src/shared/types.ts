@@ -33,6 +33,12 @@ export interface RGB {
 
 export type OutlineStyle = "none" | "rounded" | "sharp";
 
+/** 背景透過の適用範囲（scope） */
+export type BackgroundRemovalScope = "off" | "selected" | "outer" | "all";
+
+/** 連結判定に斜め（8近傍）を含めるか */
+export type Connectivity = "4" | "8";
+
 export interface Oklab {
 	L: number; // Lightness
 	a: number; // Green-Red component

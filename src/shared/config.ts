@@ -236,9 +236,10 @@ export const RETRO_PALETTES: Record<
 export const PROCESS_DEFAULTS = {
 	preRemoveBackground: true,
 	postRemoveBackground: true,
-	// 「四隅から連結」だけでなく、背景色（四隅の色）に近いピクセルを画像全体で透過にする
-	// ※背景と同じ色がキャラクター内にある場合、それも透過されうるためUIで切替可能にする
-	removeInnerBackground: false,
+	// 背景透過の適用範囲（off/selected/outer/all）
+	bgRemovalScope: "outer",
+	// 連結判定に斜め（8近傍）を含めるか（4=含めない, 8=含める）
+	bgConnectivity: "4",
 	// 出力後に内容物BBoxでトリムする（既定はON）
 	trimToContent: true,
 	autoGridFromTrimmed: true,
