@@ -52,7 +52,8 @@ type Elements = {
 	toleranceSlider: HTMLInputElement;
 	preRemoveCheck: HTMLInputElement;
 	postRemoveCheck: HTMLInputElement;
-	removeInnerBackgroundCheck: HTMLInputElement;
+	bgRemovalScopeSelect: HTMLSelectElement;
+	bgConnectivitySelect: HTMLSelectElement;
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	gridDetectionModeSelect: HTMLSelectElement;
@@ -74,7 +75,6 @@ type Elements = {
 	gridOutputCheck: HTMLInputElement;
 	outputPanel: HTMLElement;
 	loadingOverlay: HTMLElement;
-	enableBgRemovalCheck: HTMLInputElement;
 	bgExtractionMethod: HTMLSelectElement;
 	rgbPickerContainer: HTMLElement;
 	bgRgbInput: HTMLInputElement;
@@ -158,9 +158,8 @@ const getElements = (): Elements => {
 		toleranceSlider: get<HTMLInputElement>("tolerance-slider"),
 		preRemoveCheck: get<HTMLInputElement>("pre-remove"),
 		postRemoveCheck: get<HTMLInputElement>("post-remove"),
-		removeInnerBackgroundCheck: get<HTMLInputElement>(
-			"remove-inner-background",
-		),
+		bgRemovalScopeSelect: get<HTMLSelectElement>("bg-removal-scope"),
+		bgConnectivitySelect: get<HTMLSelectElement>("bg-connectivity"),
 		trimToContentCheck: get<HTMLInputElement>("trim-to-content"),
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
 			"fast-auto-grid-from-trimmed",
@@ -186,7 +185,6 @@ const getElements = (): Elements => {
 		gridOutputCheck: get<HTMLInputElement>("grid-output"),
 		outputPanel: get<HTMLElement>("output-panel"),
 		loadingOverlay: get<HTMLElement>("loading-overlay"),
-		enableBgRemovalCheck: get<HTMLInputElement>("enable-bg-removal"),
 		bgExtractionMethod: get<HTMLSelectElement>("bg-extraction-method"),
 		rgbPickerContainer: get<HTMLElement>("rgb-picker-container"),
 		bgRgbInput: get<HTMLInputElement>("bg-rgb-input"),
@@ -819,12 +817,6 @@ export const initApp = (): void => {
 	};
 
 	let currentFixedPalette: RGB[] | undefined;
-	let lastBgChecks: {
-		preRemove: boolean;
-		postRemove: boolean;
-		removeInner: boolean;
-	} | null = null;
-
 	const isGridManuallyToggled = false;
 
 	const saveSettings = () => {
@@ -938,10 +930,9 @@ export const initApp = (): void => {
 				PROCESS_RANGES.floatingMaxPercent,
 			);
 			const totalPixels = currentImage.width * currentImage.height;
-			const bgEnabled = els.enableBgRemovalCheck.checked;
-			const method = (
-				bgEnabled ? els.bgExtractionMethod.value : "none"
-			) as ProcessOptions["bgExtractionMethod"];
+			const method = els.bgExtractionMethod
+				.value as ProcessOptions["bgExtractionMethod"];
+			const bgEnabled = method !== "none";
 			const floatingMaxPixels = bgEnabled
 				? floatingMaxPercent <= 0
 					? 0
@@ -1000,8 +991,12 @@ export const initApp = (): void => {
 				hintPixelsH,
 				preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
 				postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
-				removeInnerBackground:
-					bgEnabled && els.removeInnerBackgroundCheck.checked,
+				bgRemovalScope: bgEnabled
+					? (els.bgRemovalScopeSelect.value as ProcessOptions["bgRemovalScope"])
+					: "off",
+				bgConnectivity: bgEnabled
+					? (els.bgConnectivitySelect.value as ProcessOptions["bgConnectivity"])
+					: "4",
 				backgroundTolerance: tolerance,
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
@@ -1253,8 +1248,8 @@ export const initApp = (): void => {
 
 		els.preRemoveCheck.checked = PROCESS_DEFAULTS.preRemoveBackground;
 		els.postRemoveCheck.checked = PROCESS_DEFAULTS.postRemoveBackground;
-		els.removeInnerBackgroundCheck.checked =
-			PROCESS_DEFAULTS.removeInnerBackground;
+		els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
+		els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
@@ -1263,7 +1258,7 @@ export const initApp = (): void => {
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
-		els.enableBgRemovalCheck.checked = true;
+		els.bgExtractionMethod.value = "top-left";
 
 		const applyTooltipRange = (
 			id: string,
@@ -1454,36 +1449,9 @@ export const initApp = (): void => {
 
 	updateDisabledStates();
 
-	// 背景除去チェックボックスによるUI制御
+	// 背景抽出方法が none のときは背景関連UIを無効化
 	const updateBgDisabledStates = () => {
-		const isBgDisabled = !els.enableBgRemovalCheck.checked;
-
-		// チェックボックスOFF時は背景透過関連の処理が走らないように状態自体もOFFにする
-		// （disabled だけだと checked=true のまま worker に渡ってしまい、浮きノイズ除去が有効になる）
-		if (isBgDisabled) {
-			if (!lastBgChecks) {
-				lastBgChecks = {
-					preRemove: els.preRemoveCheck.checked,
-					postRemove: els.postRemoveCheck.checked,
-					removeInner: els.removeInnerBackgroundCheck.checked,
-				};
-			}
-			els.preRemoveCheck.checked = false;
-			els.postRemoveCheck.checked = false;
-			els.removeInnerBackgroundCheck.checked = false;
-		} else if (lastBgChecks) {
-			// 無効から戻したときに、直前の状態を復元する
-			els.preRemoveCheck.checked = lastBgChecks.preRemove;
-			els.postRemoveCheck.checked = lastBgChecks.postRemove;
-			els.removeInnerBackgroundCheck.checked = lastBgChecks.removeInner;
-			lastBgChecks = null;
-		}
-
-		// Extraction Method セレクトボックスの制御
-		const methodItem = els.bgExtractionMethod.closest(".setting-item");
-		if (methodItem) {
-			methodItem.classList.toggle("disabled", isBgDisabled);
-		}
+		const isBgDisabled = els.bgExtractionMethod.value === "none";
 
 		// 背景透過に関連する項目の制御
 		[
@@ -1491,7 +1459,10 @@ export const initApp = (): void => {
 			els.toleranceSlider,
 			els.preRemoveCheck,
 			els.postRemoveCheck,
-			els.removeInnerBackgroundCheck,
+			els.bgRemovalScopeSelect,
+			els.bgConnectivitySelect,
+			els.floatingMaxPercentInput,
+			els.floatingMaxPercentSlider,
 		].forEach((el) => {
 			const item = el.closest(".setting-item");
 			if (item) {
@@ -1499,19 +1470,7 @@ export const initApp = (): void => {
 			}
 		});
 
-		// 浮きノイズ上限の制御（背景透過が無効の時に無効化）
-		[els.floatingMaxPercentInput, els.floatingMaxPercentSlider].forEach(
-			(el) => {
-				const item = el.closest(".setting-item");
-				if (item) {
-					item.classList.toggle("disabled", isBgDisabled);
-				}
-			},
-		);
-
-		// RGB入力とスポイトボタンの有効/無効制御
 		const rgbContainer = els.rgbPickerContainer;
-
 		if (isBgDisabled) {
 			rgbContainer.classList.add("disabled");
 		} else {
@@ -1544,8 +1503,6 @@ export const initApp = (): void => {
 
 	els.bgExtractionMethod.addEventListener("change", () => {
 		updateBgColorFromMethod();
-	});
-	els.enableBgRemovalCheck.addEventListener("change", () => {
 		updateBgDisabledStates();
 		triggerAutoProcess();
 	});
@@ -1572,7 +1529,8 @@ export const initApp = (): void => {
 		els.forcePixelsHInput,
 		els.preRemoveCheck,
 		els.postRemoveCheck,
-		els.removeInnerBackgroundCheck,
+		els.bgRemovalScopeSelect,
+		els.bgConnectivitySelect,
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
 		els.gridDetectionModeSelect,
@@ -1973,7 +1931,8 @@ export const initApp = (): void => {
 			els.toleranceSlider,
 			els.preRemoveCheck,
 			els.postRemoveCheck,
-			els.removeInnerBackgroundCheck,
+			els.bgRemovalScopeSelect,
+			els.bgConnectivitySelect,
 			els.trimToContentCheck,
 			els.fastAutoGridFromTrimmedCheck,
 			els.gridDetectionModeSelect,
@@ -1987,7 +1946,6 @@ export const initApp = (): void => {
 			els.outlineColorInput,
 			els.floatingMaxPercentInput,
 			els.floatingMaxPercentSlider,
-			els.enableBgRemovalCheck,
 			els.bgExtractionMethod,
 			els.bgRgbInput,
 			els.bgColorInput,
@@ -2019,6 +1977,31 @@ export const initApp = (): void => {
 			state["grid-detection-mode"] = state["enable-grid-detection"]
 				? "auto"
 				: "off";
+		}
+
+		// Backward compatibility: migrate enable-bg-removal to bg-extraction-method
+		if (
+			state["bg-extraction-method"] === undefined &&
+			typeof state["enable-bg-removal"] === "boolean"
+		) {
+			state["bg-extraction-method"] = state["enable-bg-removal"]
+				? "top-left"
+				: "none";
+		}
+
+		// Backward compatibility: migrate remove-inner-background to bg-removal-scope
+		if (
+			state["bg-removal-scope"] === undefined &&
+			typeof state["remove-inner-background"] === "boolean"
+		) {
+			state["bg-removal-scope"] = state["remove-inner-background"]
+				? "all"
+				: "outer";
+		}
+
+		// 背景透過の範囲から「透過しない」を廃止: off は outer にマッピング
+		if (state["bg-removal-scope"] === "off") {
+			state["bg-removal-scope"] = "outer";
 		}
 
 		for (const [id, value] of Object.entries(state)) {
