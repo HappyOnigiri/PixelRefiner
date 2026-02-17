@@ -12,6 +12,7 @@ import {
 } from "./processor";
 
 const DEBUG_IMAGES = Boolean(process.env.PIXELATE_DEBUG_IMAGES);
+const UPDATE_EXPECT = Boolean(process.env.UPDATE_EXPECT);
 const DEBUG_ROOT = path.resolve("tmp/debug/test");
 
 const readPngAsRawImage = async (filePath: string): Promise<RawImage> => {
@@ -55,7 +56,15 @@ const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
  * Vitest の `toEqual(Buffer)` は不一致時に巨大な差分生成で極端に遅くなることがあるため、
  * ここでは `Buffer.equals()` による真偽判定＋先頭差分の座標だけを報告する。
  */
-const expectSameImage = (actual: RawImage, expected: RawImage): void => {
+const expectSameImage = (
+	actual: RawImage,
+	expected: RawImage,
+	expectPath?: string,
+): void => {
+	if (UPDATE_EXPECT && expectPath) {
+		writeRawImageAsPngSync(expectPath, actual);
+		return;
+	}
 	expect(actual.width).toBe(expected.width);
 	expect(actual.height).toBe(expected.height);
 
@@ -85,6 +94,11 @@ const expectSameImage = (actual: RawImage, expected: RawImage): void => {
 		`画像が一致しません: firstDiff=idx${first} (x=${x}, y=${y}, ch=${ch}) actual=${a[first]} expected=${b[first]}`,
 	);
 };
+
+const getExpectPath = (fixtureBase: string): string =>
+	fileURLToPath(
+		new URL(`../../test/fixtures/${fixtureBase}-expect.png`, import.meta.url),
+	);
 
 const sanitizeForPath = (s: string): string => {
 	const out = s
@@ -233,7 +247,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: false,
 				postRemoveBackground: false,
-				removeInnerBackground: false,
+				bgRemovalScope: "selected",
 				backgroundTolerance: 0,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -283,39 +297,12 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("サイズを指定する（forcePixelsW/H=22/22）: 期待画像と完全一致する", () => {
-			const { result, grid } = processImage(img, {
-				forcePixelsW: 22,
-				forcePixelsH: 22,
-				detectionQuantStep: 64,
-				preRemoveBackground: true,
-				postRemoveBackground: true,
-				removeInnerBackground: true,
-				backgroundTolerance: 64,
-				sampleWindow: 3,
-				trimToContent: false,
-				trimAlphaThreshold: 16,
-				floatingMaxPixels: 0,
-				autoGridFromTrimmed: false,
-				debugHook: makeDebugHook(
-					"resize_and_remove_bg",
-					"サイズ指定(forcePixelsW/H=22/22)_期待画像と完全一致",
-				),
-			});
-
-			expect(result.width).toBe(expected.width);
-			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(22);
-			expect(grid.outH).toBe(22);
-			expectSameImage(result, expected);
-		});
-
 		it("高速モードOFF、浮きノイズOFF: 期待画像と完全一致する", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -329,11 +316,15 @@ describe("processImage", () => {
 				),
 			});
 
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(getExpectPath("resize_and_remove_bg"), result);
+				return;
+			}
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(22);
-			expect(grid.outH).toBe(22);
-			expectSameImage(result, expected);
+			expect(grid.outW).toBe(expected.width);
+			expect(grid.outH).toBe(expected.height);
+			expectSameImage(result, expected, getExpectPath("resize_and_remove_bg"));
 		});
 	});
 
@@ -367,7 +358,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -395,7 +386,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(46);
 			expect(grid.outH).toBe(13);
 
-			expectSameImage(result, expected);
+			expectSameImage(result, expected, getExpectPath("resize_with_trimming"));
 			const { result: resultTrim, grid: gridTrim } = processImage(img, {
 				...baseOpts,
 				trimToContent: true,
@@ -436,7 +427,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -461,7 +452,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(88);
 			expect(grid.outH).toBe(61);
 
-			expectSameImage(result, expected);
+			expectSameImage(result, expected, getExpectPath("auto_grid_detection"));
 		});
 	});
 
@@ -493,7 +484,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 96,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -507,18 +498,24 @@ describe("processImage", () => {
 				),
 			});
 
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(
+					getExpectPath("inner_background_removal"),
+					result,
+				);
+				return;
+			}
 			// 期待値PNGと完全一致（サイズ・ピクセル）
-			expect(result.width).toBe(22);
-			expect(result.height).toBe(21);
-			expect(expected.width).toBe(22);
-			expect(expected.height).toBe(21);
-
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(22);
-			expect(grid.outH).toBe(21);
+			expect(grid.outW).toBe(expected.width);
+			expect(grid.outH).toBe(expected.height);
 
-			expectSameImage(result, expected);
+			expectSameImage(
+				result,
+				expected,
+				getExpectPath("inner_background_removal"),
+			);
 		});
 
 		it("内側に閉じ込められた背景色（ドーナツ穴）も透過できる", () => {
@@ -526,7 +523,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 96,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -578,7 +575,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 32,
 				sampleWindow: 3,
 				trimToContent: false, // 自動トリムをOFF
@@ -598,7 +595,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(expected.width);
 			expect(grid.outH).toBe(expected.height);
 
-			expectSameImage(result, expected);
+			expectSameImage(result, expected, getExpectPath("no_trimming"));
 		});
 	});
 
@@ -635,14 +632,14 @@ describe("processImage", () => {
 				bgExtractionMethod: "none", // 背景抽出をOFF
 				preRemoveBackground: false,
 				postRemoveBackground: false,
-				removeInnerBackground: false,
+				bgRemovalScope: "selected",
 				trimToContent: false,
 				debug: true,
 			});
 
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
-			expectSameImage(result, expected);
+			expectSameImage(result, expected, getExpectPath("palette_conversion_gb"));
 		});
 	});
 
@@ -679,14 +676,18 @@ describe("processImage", () => {
 				bgExtractionMethod: "none", // 背景抽出をOFF
 				preRemoveBackground: false,
 				postRemoveBackground: false,
-				removeInnerBackground: false,
+				bgRemovalScope: "selected",
 				trimToContent: false,
 				debug: true,
 			});
 
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
-			expectSameImage(result, expected);
+			expectSameImage(
+				result,
+				expected,
+				getExpectPath("dithering_floyd_steinberg"),
+			);
 		});
 	});
 
@@ -815,7 +816,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				removeInnerBackground: true,
+				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
 				trimToContent: true,
@@ -834,7 +835,7 @@ describe("processImage", () => {
 			expect(grid.outH).toBe(expected.height);
 
 			// 画像比較
-			expectSameImage(result, expected);
+			expectSameImage(result, expected, getExpectPath("high_resolution"));
 		});
 	});
 

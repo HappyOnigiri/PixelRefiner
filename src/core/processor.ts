@@ -6,6 +6,8 @@ import {
 	RETRO_PALETTES,
 } from "../shared/config";
 import type {
+	BackgroundRemovalScope,
+	Connectivity,
 	DitherMode,
 	OutlineStyle,
 	PixelData,
@@ -294,10 +296,14 @@ export type ProcessOptions = DetectOptions & {
 	hintPixelsW?: number;
 	hintPixelsH?: number;
 	/**
-	 * 背景除去（pre/post/トリム用マスク）で、四隅と近い背景色を画像全体で透過にする。
-	 * 四隅から連結していない「内側の背景色」（例: ドーナツ穴）も透過できる。
+	 * 背景透過の適用範囲（off/selected/outer/all）
+	 * RGB指定＋selected の場合は自動で outer 扱い
 	 */
-	removeInnerBackground?: boolean;
+	bgRemovalScope?: BackgroundRemovalScope;
+	/**
+	 * 連結判定に斜め（8近傍）を含めるか
+	 */
+	bgConnectivity?: Connectivity;
 	backgroundTolerance?: number;
 	sampleWindow?: number;
 	trimToContent?: boolean;
@@ -395,7 +401,8 @@ const normalizeProcessOptions = (
 	forcePixelsH?: number;
 	hintPixelsW?: number;
 	hintPixelsH?: number;
-	removeInnerBackground: boolean;
+	bgRemovalScope: BackgroundRemovalScope;
+	bgConnectivity: Connectivity;
 	backgroundTolerance: number;
 	sampleWindow: number;
 	trimToContent: boolean;
@@ -455,8 +462,8 @@ const normalizeProcessOptions = (
 		raw.hintPixelsH,
 		PROCESS_RANGES.forcePixelsH,
 	);
-	const removeInnerBackground =
-		raw.removeInnerBackground ?? PROCESS_DEFAULTS.removeInnerBackground;
+	const bgRemovalScope = raw.bgRemovalScope ?? PROCESS_DEFAULTS.bgRemovalScope;
+	const bgConnectivity = raw.bgConnectivity ?? PROCESS_DEFAULTS.bgConnectivity;
 	const backgroundTolerance = clampInt(
 		raw.backgroundTolerance ?? PROCESS_RANGES.backgroundTolerance.default,
 		PROCESS_RANGES.backgroundTolerance,
@@ -507,7 +514,8 @@ const normalizeProcessOptions = (
 		forcePixelsH,
 		hintPixelsW,
 		hintPixelsH,
-		removeInnerBackground,
+		bgRemovalScope,
+		bgConnectivity,
 		backgroundTolerance,
 		sampleWindow,
 		trimToContent,
@@ -532,17 +540,58 @@ const normalizeProcessOptions = (
 	};
 };
 
-const removeBackgroundByFloodFill = (
+const isCandidate = (
+	r: number,
+	g: number,
+	b: number,
+	bgTargets: Array<[number, number, number]>,
+	tolerance: number,
+): boolean => {
+	for (const [tr, tg, tb] of bgTargets) {
+		if (
+			Math.abs(r - tr) <= tolerance &&
+			Math.abs(g - tg) <= tolerance &&
+			Math.abs(b - tb) <= tolerance
+		) {
+			return true;
+		}
+	}
+	return false;
+};
+
+const getBorderPixels = (w: number, h: number): Array<[number, number]> => {
+	const out: Array<[number, number]> = [];
+	for (let x = 0; x < w; x += 1) {
+		out.push([x, 0]);
+		if (h > 1) out.push([x, h - 1]);
+	}
+	for (let y = 1; y < h - 1; y += 1) {
+		out.push([0, y]);
+		if (w > 1) out.push([w - 1, y]);
+	}
+	return out;
+};
+
+/**
+ * Legacy-compatible background removal by flood fill.
+ *
+ * - Corner methods: flood fill from the selected corner (seed-color tolerance).
+ * - RGB method: scan pixels near the specified RGB and flood fill from those seeds.
+ *
+ * Note: connectivity is configurable here, but legacy default was effectively 4-way.
+ */
+const removeBackgroundByFloodFillLegacy = (
 	img: RawImage,
 	tolerance: number,
+	connectivity: Connectivity,
+	bgTargets: Array<[number, number, number]>,
 	method:
 		| "none"
 		| "top-left"
 		| "bottom-left"
 		| "top-right"
 		| "bottom-right"
-		| "rgb" = "top-left",
-	bgRgb?: string,
+		| "rgb",
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 
@@ -550,34 +599,27 @@ const removeBackgroundByFloodFill = (
 	const w = img.width;
 	const h = img.height;
 
-	if (method === "rgb" && bgRgb) {
-		const hex = bgRgb.replace("#", "");
-		const r = parseInt(hex.substring(0, 2), 16);
-		const g = parseInt(hex.substring(2, 4), 16);
-		const b = parseInt(hex.substring(4, 6), 16);
-
-		// 指定色のピクセルを全走査してシードにする
-		// 効率化のため、visited配列を共有して重複走査を防ぐ
+	// RGB: scan all pixels and use matched pixels as flood-fill seeds.
+	// Use a shared visited map to avoid redundant flood fills (legacy behavior).
+	if (method === "rgb") {
+		if (bgTargets.length === 0) return out;
 		const visited = new Uint8Array(w * h);
 		const src32 = new Uint32Array(img.data.buffer);
-		for (let y = 0; y < h; y++) {
-			for (let x = 0; x < w; x++) {
-				const idx = y * w + x;
+		for (let y = 0; y < h; y += 1) {
+			const row = y * w;
+			for (let x = 0; x < w; x += 1) {
+				const idx = row + x;
 				if (visited[idx]) continue;
 
 				const pixel = src32[idx];
-				const pr = pixel & 0xff;
-				const pg = (pixel >> 8) & 0xff;
-				const pb = (pixel >> 16) & 0xff;
+				const r = pixel & 0xff;
+				const g = (pixel >> 8) & 0xff;
+				const b = (pixel >> 16) & 0xff;
 
-				if (
-					Math.abs(pr - r) <= tolerance &&
-					Math.abs(pg - g) <= tolerance &&
-					Math.abs(pb - b) <= tolerance
-				) {
-					// 既に透過処理済みのピクセルはスキップ
-					if (out.data[idx * 4 + 3] !== 0) {
-						floodFillTransparent(out, x, y, tolerance, visited);
+				if (isCandidate(r, g, b, bgTargets, tolerance)) {
+					const a = out.data[idx * 4 + 3];
+					if (a !== 0) {
+						floodFillTransparent(out, x, y, tolerance, visited, connectivity);
 					}
 				}
 				visited[idx] = 1;
@@ -586,22 +628,26 @@ const removeBackgroundByFloodFill = (
 		return out;
 	}
 
-	const corners: Array<[number, number]> = [];
-	if (method === "top-left") corners.push([0, 0]);
-	else if (method === "bottom-left") corners.push([0, h - 1]);
-	else if (method === "top-right") corners.push([w - 1, 0]);
-	else if (method === "bottom-right") corners.push([w - 1, h - 1]);
-
-	for (const [x, y] of corners) {
-		floodFillTransparent(out, x, y, tolerance);
+	// Corner methods: flood fill from the selected corner only (legacy behavior).
+	let sx = 0;
+	let sy = 0;
+	if (method === "bottom-left") {
+		sy = h - 1;
+	} else if (method === "top-right") {
+		sx = w - 1;
+	} else if (method === "bottom-right") {
+		sx = w - 1;
+		sy = h - 1;
 	}
+	floodFillTransparent(out, sx, sy, tolerance, undefined, connectivity);
 	return out;
 };
 
 const removeBackground = (
 	img: RawImage,
 	tolerance: number,
-	removeInnerBackground: boolean,
+	bgRemovalScope: BackgroundRemovalScope,
+	bgConnectivity: Connectivity,
 	bgTargets: Array<[number, number, number]>,
 	method:
 		| "none"
@@ -609,36 +655,79 @@ const removeBackground = (
 		| "bottom-left"
 		| "top-right"
 		| "bottom-right"
-		| "rgb" = "top-left",
-	bgRgb?: string,
+		| "rgb",
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
+	if (bgRemovalScope === "off") return cloneImage(img);
 
-	const out = removeBackgroundByFloodFill(img, tolerance, method, bgRgb);
-	if (!removeInnerBackground) return out;
+	// 4/8 近傍(connectivity)が有効になるのは selected / outer のみ。
+	if (bgRemovalScope === "selected") {
+		return removeBackgroundByFloodFillLegacy(
+			img,
+			tolerance,
+			bgConnectivity,
+			bgTargets,
+			method,
+		);
+	}
 
-	// 入力画像（クロップ前）から推定した「背景色候補」を、画像全体に適用する。
+	if (bgRemovalScope === "outer") {
+		const out = cloneImage(img);
+		const w = img.width;
+		const h = img.height;
+		const visited = new Uint8Array(w * h);
+		const data = out.data;
+		const border = getBorderPixels(w, h);
+
+		const fillFrom = (sx: number, sy: number): void => {
+			if (sx < 0 || sy < 0 || sx >= w || sy >= h) return;
+			const idx = sy * w + sx;
+			if (visited[idx]) return;
+			const i = idx * 4;
+			if (data[i + 3] === 0) return;
+			if (bgTargets.length > 0) {
+				const r = data[i];
+				const g = data[i + 1];
+				const b = data[i + 2];
+				if (!isCandidate(r, g, b, bgTargets, tolerance)) return;
+			}
+			floodFillTransparent(out, sx, sy, tolerance, visited, bgConnectivity);
+		};
+
+		for (const [x, y] of border) {
+			const idx = y * w + x;
+			const i = idx * 4;
+			if (data[i + 3] === 0) continue;
+			if (
+				bgTargets.length > 0 &&
+				!isCandidate(data[i], data[i + 1], data[i + 2], bgTargets, tolerance)
+			) {
+				continue;
+			}
+			fillFrom(x, y);
+		}
+		return out;
+	}
+
+	// bgRemovalScope === "all": legacy-compatible behavior
+	// - First, remove background by legacy flood fill.
+	// - Then, remove inner background by scanning the whole image for bgTargets.
+	// NOTE: connectivity is intentionally fixed to 4-way here.
+	const out = removeBackgroundByFloodFillLegacy(
+		img,
+		tolerance,
+		"4",
+		bgTargets,
+		method,
+	);
 	if (bgTargets.length === 0) return out;
 
-	const out32 = new Uint32Array(out.data.buffer);
-	for (let i = 0; i < out.data.length; i += 4) {
-		const a = out.data[i + 3];
+	const d = out.data;
+	for (let i = 0; i < d.length; i += 4) {
+		const a = d[i + 3];
 		if (a === 0) continue;
-
-		const pixel = out32[i / 4];
-		const r = pixel & 0xff;
-		const g = (pixel >> 8) & 0xff;
-		const b = (pixel >> 16) & 0xff;
-
-		for (const [tr, tg, tb] of bgTargets) {
-			if (
-				Math.abs(r - tr) <= tolerance &&
-				Math.abs(g - tg) <= tolerance &&
-				Math.abs(b - tb) <= tolerance
-			) {
-				out.data[i + 3] = 0;
-				break;
-			}
+		if (isCandidate(d[i], d[i + 1], d[i + 2], bgTargets, tolerance)) {
+			d[i + 3] = 0;
 		}
 	}
 	return out;
@@ -1460,9 +1549,10 @@ export const processImage = (
 	});
 
 	const bgTargetsStart = performance.now();
-	const bgTargets = o.removeInnerBackground
-		? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
-		: [];
+	const bgTargets =
+		o.bgRemovalScope !== "off"
+			? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
+			: [];
 	log(
 		`Background targets extracted in ${(performance.now() - bgTargetsStart).toFixed(2)}ms`,
 		bgTargets,
@@ -1470,12 +1560,32 @@ export const processImage = (
 
 	const workingStart = performance.now();
 	const working = o.preRemoveBackground
-		? removeBackgroundByFloodFill(
-				img,
-				o.backgroundTolerance,
-				o.bgExtractionMethod,
-				o.bgRgb,
-			)
+		? o.bgRemovalScope === "outer"
+			? removeBackground(
+					img,
+					o.backgroundTolerance,
+					"outer",
+					o.bgConnectivity,
+					bgTargets,
+					o.bgExtractionMethod,
+				)
+			: o.bgRemovalScope === "selected"
+				? removeBackgroundByFloodFillLegacy(
+						img,
+						o.backgroundTolerance,
+						o.bgConnectivity,
+						bgTargets,
+						o.bgExtractionMethod,
+					)
+				: o.bgRemovalScope === "all"
+					? removeBackgroundByFloodFillLegacy(
+							img,
+							o.backgroundTolerance,
+							"4",
+							bgTargets,
+							o.bgExtractionMethod,
+						)
+					: cloneImage(img)
 		: cloneImage(img);
 	log(
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
@@ -1494,10 +1604,10 @@ export const processImage = (
 		const masked = removeBackground(
 			working,
 			bgTol,
-			o.removeInnerBackground,
+			o.bgRemovalScope,
+			o.bgConnectivity,
 			bgTargets,
 			o.bgExtractionMethod,
-			o.bgRgb,
 		);
 		if (o.floatingMaxPixels > 0) {
 			const floatingStart = performance.now();
@@ -1578,10 +1688,10 @@ export const processImage = (
 			? removeBackground(
 					down2,
 					o.backgroundTolerance,
-					o.removeInnerBackground,
+					o.bgRemovalScope,
+					o.bgConnectivity,
 					bgTargets,
 					o.bgExtractionMethod,
-					o.bgRgb,
 				)
 			: down2;
 		log(
@@ -1643,10 +1753,10 @@ export const processImage = (
 		const masked = removeBackground(
 			working,
 			bgTol,
-			o.removeInnerBackground,
+			o.bgRemovalScope,
+			o.bgConnectivity,
 			bgTargets,
 			o.bgExtractionMethod,
-			o.bgRgb,
 		);
 		if (o.floatingMaxPixels > 0) {
 			removeSmallFloatingComponentsInPlace(
@@ -1732,10 +1842,10 @@ export const processImage = (
 			? removeBackground(
 					working,
 					bgTol,
-					o.removeInnerBackground,
+					o.bgRemovalScope,
+					o.bgConnectivity,
 					bgTargets,
 					o.bgExtractionMethod,
-					o.bgRgb,
 				)
 			: null;
 	if (maskedForDebugOrAuto) {
@@ -1885,10 +1995,10 @@ export const processImage = (
 		const masked = removeBackground(
 			down,
 			bgTol,
-			o.removeInnerBackground,
+			o.bgRemovalScope,
+			o.bgConnectivity,
 			bgTargets,
 			o.bgExtractionMethod,
-			o.bgRgb,
 		);
 		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
@@ -1937,10 +2047,10 @@ export const processImage = (
 		? removeBackground(
 				trimmed,
 				o.backgroundTolerance,
-				o.removeInnerBackground,
+				o.bgRemovalScope,
+				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
-				o.bgRgb,
 			)
 		: trimmed;
 	log(
