@@ -796,33 +796,11 @@ describe("processImage", () => {
 			cleanDebugDir("makeSquare");
 		});
 
-		const mkImg = (w: number, h: number): RawImage => {
-			const data = new Uint8ClampedArray(w * h * 4);
-			const set = (
-				x: number,
-				y: number,
-				r: number,
-				g: number,
-				b: number,
-				a: number,
-			) => {
-				const idx = (y * w + x) * 4;
-				data[idx] = r;
-				data[idx + 1] = g;
-				data[idx + 2] = b;
-				data[idx + 3] = a;
-			};
-			for (let y = 0; y < h; y += 1) {
-				for (let x = 0; x < w; x += 1) {
-					// わかりやすいように不透明な色で塗りつぶす
-					set(x, y, 255, 0, 0, 255);
-				}
-			}
-			return { width: w, height: h, data };
-		};
-
-		it("幅が広い画像(横長)を正方形にする", () => {
-			const img = mkImg(10, 4); // 横長
+		it("幅が広い画像(横長)を正方形にする", async () => {
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/wide_red.png", import.meta.url),
+			);
+			const img = await readPngAsRawImage(imgPath);
 			const { result, grid } = processImage(img, {
 				trimToContent: false,
 				preRemoveBackground: false,
@@ -840,15 +818,18 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(10);
 			expect(grid.outH).toBe(10);
 
-			// 中央(0, 3)には元の赤いピクセルがあり、上下の余白(0, 0)などは透明になっていること
-			const topAlpha = result.data[3]; // (0, 0)
+			// 中央(10x4画像を中央配置すると y=3)には元の赤いピクセルがあり、上下の余白(0, 0)などは透明になっていること
+			const topAlpha = result.data[3]; // (0, 0). (0,0,0,0)
 			expect(topAlpha).toBe(0);
 			const centerAlpha = result.data[(3 * 10 + 0) * 4 + 3]; // (0, 3)
 			expect(centerAlpha).toBe(255);
 		});
 
-		it("高さが高い画像(縦長)を正方形にする", () => {
-			const img = mkImg(4, 10); // 縦長
+		it("高さが高い画像(縦長)を正方形にする", async () => {
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/tall_red.png", import.meta.url),
+			);
+			const img = await readPngAsRawImage(imgPath);
 			const { result, grid } = processImage(img, {
 				trimToContent: false,
 				preRemoveBackground: false,
@@ -866,7 +847,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(10);
 			expect(grid.outH).toBe(10);
 
-			// 中央(3, 0)には元の赤いピクセルがあり、左右の余白(0, 0)などは透明になっていること
+			// 中央(4x10画像を中央配置すると x=3)には元の赤いピクセルがあり、左右の余白(0, 0)などは透明になっていること
 			const leftEdgeAlpha = result.data[3]; // (0, 0)
 			expect(leftEdgeAlpha).toBe(0);
 			const centerAlpha = result.data[(0 * 10 + 3) * 4 + 3]; // (3, 0)
