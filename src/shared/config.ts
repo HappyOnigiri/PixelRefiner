@@ -247,6 +247,8 @@ export const PROCESS_DEFAULTS = {
 	fastAutoGridFromTrimmed: true,
 	// グリッド検出と縮小を有効にする（デフォルトON）
 	enableGridDetection: true,
+	// Fill the shorter side with transparent pixels to make the image square
+	makeSquare: false,
 	// グリッド検出モード（UI用）
 	gridDetectionMode: "auto",
 

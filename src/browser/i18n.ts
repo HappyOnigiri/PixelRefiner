@@ -48,11 +48,12 @@ const resources = {
 		"setting.advanced": "詳細設定",
 		"setting.grid_detection": "グリッド検出",
 		"setting.grid_mode": "グリッド検出モード",
-		"setting.quant_step": "減色ステップ",
-		"setting.sample_window": "サンプル範囲",
-		"setting.force_width": "指定ピクセル(横)",
-		"setting.force_height": "指定ピクセル(縦)",
+		"setting.quant_step": "減色段階",
+		"setting.sample_window": "サンプル対象範囲",
+		"setting.force_width": "強制幅 (px)",
+		"setting.force_height": "強制高さ (px)",
 		"setting.fast_mode": "高速モード",
+		"setting.make_square": "正方形にする",
 		"setting.bg_removal": "背景透過",
 		"setting.bg_method": "背景抽出方法",
 		"setting.bg_rgb": "背景色(RGB)",
@@ -81,7 +82,7 @@ const resources = {
 		"ui.preset_loaded": "プリセット「{name}」を読み込みました",
 		"ui.preset_saved": "プリセット「{name}」を保存しました",
 		"tooltip.help.auto_process":
-			"設定変更時に自動で処理を実行します。\n\nOFFにすると、手動で「処理を実行」ボタンをクリックする必要があります。",
+			"設定を変更した際に、自動で変換処理を実行します。\n\n手動でボタンを押して実行したい場合はOFFにしてください。",
 
 		// Tooltips
 		"tooltip.help.color_mode":
@@ -117,9 +118,11 @@ const resources = {
 		"tooltip.help.bg_connectivity":
 			"「繋がっている」の判定方法です。\n\n4方向: 斜めを含めない厳しい判定。\n8方向: 斜めも繋がりとみなします。",
 		"tooltip.help.floating_max":
-			"背景に囲まれて浮いている小さな島（連結成分）を除去対象とみなす最大面積（元画像の総ピクセル数に対する割合）です。\n0%のときは浮きノイズ除去を行いません。\n例: 1% → (幅×高さ×0.01) px\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+			"背景に囲まれて浮きノイズとみなす最大面積（元画像の総ピクセル数に対する割合）です。\n0%のときは浮きノイズ除去を行いません。\n例: 1% → (幅×高さ×0.01) px\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.auto_trim":
-			"出力結果を「内容物のある範囲」に合わせて自動でトリミングします。\n\n余白（背景）が大きい画像で、縦横のマス数を正しく検出したい場合に有効です。",
+			"出力後に内容物が存在する範囲で自動的にトリミング（余白削除）を行います。\n\n余白（背景）が大きい画像に対して、これをONにすることで正しい縦横のマス数が検出されやすくなります。",
+		"tooltip.help.make_square":
+			"画像全体が正方形になるように、足りない部分を透過ピクセルで埋め合わせます。\n\n元の画像は中心に配置されます。",
 
 		// Select Options
 		"option.none": "無効",
@@ -245,6 +248,7 @@ const resources = {
 		"setting.force_width": "Force Width (px)",
 		"setting.force_height": "Force Height (px)",
 		"setting.fast_mode": "Fast Mode",
+		"setting.make_square": "Make Square",
 		"setting.bg_removal": "Background Removal",
 		"setting.bg_method": "Extraction Method",
 		"setting.bg_rgb": "Background Color (RGB)",
@@ -312,6 +316,8 @@ const resources = {
 			"The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.\nWhen set to 0%, floating noise removal is skipped.\nExample: 1% → (Width × Height × 0.01) px\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.auto_trim":
 			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
+		"tooltip.help.make_square":
+			"Pads the image with transparent pixels to make it perfectly square.\n\nThe original content is placed in the center.",
 
 		// Select Options
 		"option.none": "None",

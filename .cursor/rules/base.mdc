@@ -49,6 +49,7 @@ It uses TypeScript (Vanilla), Vite, and Vitest, and does not use UI frameworks (
 - Use `pngjs` to assist with image I/O for testing.
 
 ### Commit Messages (Compliant with SKILL.md)
+- **Automatic execution prohibited:** Never perform `git commit`, `git push`, or `gh pr create` unless explicitly instructed by the user.
 - **Language:** English
 - **Format:** `<type>: <description>` (e.g., `feat: improve grid detection algorithm`)
 - **Type List:**

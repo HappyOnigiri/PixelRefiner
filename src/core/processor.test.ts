@@ -791,6 +791,70 @@ describe("processImage", () => {
 			expect(colors.size).toBeLessThanOrEqual(2);
 		});
 	});
+	describe("makeSquare", () => {
+		beforeAll(() => {
+			cleanDebugDir("makeSquare");
+		});
+
+		it("幅が広い画像(横長)を正方形にする", async () => {
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/wide_red.png", import.meta.url),
+			);
+			const img = await readPngAsRawImage(imgPath);
+			const { result, grid } = processImage(img, {
+				trimToContent: false,
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				makeSquare: true,
+				enableGridDetection: false,
+				debugHook: makeDebugHook(
+					"makeSquare",
+					"幅が広い画像(横長)を正方形にする",
+				),
+			});
+
+			expect(result.width).toBe(10);
+			expect(result.height).toBe(10);
+			expect(grid.outW).toBe(10);
+			expect(grid.outH).toBe(10);
+
+			// 中央(10x4画像を中央配置すると y=3)には元の赤いピクセルがあり、上下の余白(0, 0)などは透明になっていること
+			const topAlpha = result.data[3]; // (0, 0). (0,0,0,0)
+			expect(topAlpha).toBe(0);
+			const centerAlpha = result.data[(3 * 10 + 0) * 4 + 3]; // (0, 3)
+			expect(centerAlpha).toBe(255);
+		});
+
+		it("高さが高い画像(縦長)を正方形にする", async () => {
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/tall_red.png", import.meta.url),
+			);
+			const img = await readPngAsRawImage(imgPath);
+			const { result, grid } = processImage(img, {
+				trimToContent: false,
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				makeSquare: true,
+				enableGridDetection: false,
+				debugHook: makeDebugHook(
+					"makeSquare",
+					"高さが高い画像(縦長)を正方形にする",
+				),
+			});
+
+			expect(result.width).toBe(10);
+			expect(result.height).toBe(10);
+			expect(grid.outW).toBe(10);
+			expect(grid.outH).toBe(10);
+
+			// 中央(4x10画像を中央配置すると x=3)には元の赤いピクセルがあり、左右の余白(0, 0)などは透明になっていること
+			const leftEdgeAlpha = result.data[3]; // (0, 0)
+			expect(leftEdgeAlpha).toBe(0);
+			const centerAlpha = result.data[(0 * 10 + 3) * 4 + 3]; // (3, 0)
+			expect(centerAlpha).toBe(255);
+		});
+	});
+
 	describe("high_resolution", () => {
 		let img: RawImage;
 		let expected: RawImage;
