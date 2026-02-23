@@ -1,0 +1,9 @@
+language: "en-US"
+tone_instructions: "Please provide the PR summary and review comments in both English and Japanese. Use <details> tags to make the Japanese translation collapsible."
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  sequence_diagrams: true
