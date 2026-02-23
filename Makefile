@@ -91,3 +91,9 @@ html-fix-diff:
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
+
+# .cursor のファイルを .agent に同期 (削除も追従)
+sync-agent:
+	@mkdir -p .agent
+	rsync -av --delete .cursor/ .agent/
+	@echo ".cursor files have been synchronized to .agent."

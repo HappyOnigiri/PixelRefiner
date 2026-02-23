@@ -1,64 +1,58 @@
 ---
 name: commit
-description: Analyzes code changes, runs CI checks, and performs atomic commits with concise English messages. Use this when the user explicitly asks to "commit", "save changes", or "check it in".
-disable-model-invocation: false
+description: Analyzes code changes and performs atomic commits with concise English messages. Used when the user explicitly requests to "commit," "save changes," or "check in code."
 ---
 
-## Basic Rules
+# Role: Git Commit Specialist (Atomic Commits)
 
-- **Language:** All interactions, explanations, and commit messages must be in **English**.
-
-# Role: Git Commit Specialist (Atomic Commit)
-
-You are an engineer who analyzes all current changes (new files, modifications, deletions), effectively divides them into logical units, and executes commits.
-Each commit must focus on a single purpose (feature addition, bug fix, documentation update, etc.) and include a concise, professional English commit message.
-This skill file serves as your operating guideline.
+You are an engineer who analyzes all current changes (new files, modifications, deletions), divides them into logically appropriate units, and executes commits.
+Each commit focuses on a single purpose (e.g., feature addition, bug fix, documentation update) and must include a concise, professional English commit message.
+This skill file serves as your operational guideline.
 
 ## 1. Workflow
 
-Systematically execute the following steps:
+Execute the following steps systematically:
 
-1.  **Check Changes:** Run `git status` and `git diff` to thoroughly check all changes, including untracked files, modifications, and deletions.
-    - If there are no changes, report this to the user and end the process.
-2.  **CI Check:** Run `make ci` to check for errors.
-    - If errors occur, analyze the cause and fix it before proceeding.
-3.  **Determine Commit Units:** Analyze changes and group related fixes into logical units (atomic commits).
+1.  **Run CI:** Always run `make ci` before committing. If errors occur, ensure the code is fixed and passes `make ci` again before proceeding.
+2.  **Verify Current Status:** Run `git status` and `git diff` to thoroughly check all changes, including untracked files, modifications, and deletions. Also, check the current branch with `git branch --show-current`.
+    - If there are no changes, report this to the user and terminate the process.
+3.  **Branch Adjustment:** If the current branch is `main`, devise an appropriate branch name based on the changes (e.g., `feat/add-login-function`), then create and switch to the new branch.
+4.  **Determine Commit Units:** Analyze the changes and group related changes into logical units (atomic commits).
     - For example, separate "Update README" and "Fix logic bug" into different commits.
-4.  **Loop Execution:** Repeat the following for each identified group:
+5.  **Execution Loop:** Repeat the following for each identified group:
     a. **Staging:** `git add` only the files or hunks related to that specific unit.
-    b. **Message Generation:** Create a concise English commit message following the rules below.
-    c. **Commit:** Run `git commit -m "<generated message>"`.
-5.  **Final Verification:** Use `git status` to confirm all changes have been committed and report completion. Briefly summarize how the commits were split.
+    b. **Message Generation:** Create a concise English commit message according to the rules below.
+    c. **Commit:** Execute `git commit -m "<generated_message>"`.
+6.  **Final Confirmation:** Use `git status` to verify that all changes have been committed and report completion. Summarize briefly how the commits were divided.
 
-## 2. Commit Message Rules
+## 2. Commit Message Rules (Conventional Commits)
 
-Strictly adhere to the following format and rules:
+This project uses `release-please` for automated version management.
+Commit messages **must strictly adhere to the following format (Conventional Commits)**.
+Also, **never directly modify version numbers (in apps.json, etc.) or manually create CHANGELOG.md.**
 
 **Format:**
-`<type>: <description in English>`
+`<type>(<scope>): <description>`
 
 **Rules:**
 
-- **Structure:** **Must be one line**. Do not include newlines or multi-line details.
-- **Tone:** Use concise and clear expressions.
-- **Type:** Use **strictly only** the following defined prefixes. Do not add scopes (e.g., `(ui)`) or alter/arrange the spelling (e.g., `fett`).
-  - `feat`: New feature
-  - `fix`: Bug fix
-  - `docs`: Documentation only changes
-  - `style`: Changes that do not affect code meaning (whitespace, formatting, etc.)
-  - `refactor`: Code changes that are neither bug fixes nor feature additions
-  - `perf`: Code changes that improve performance
-  - `test`: Adding missing tests or correcting existing tests
-  - `chore`: Changes to the build process or auxiliary tools/libraries globally
+- **Language:** The description part must be in **English**.
+- **Structure:** Use **exactly one line**. Do not include line breaks or multi-line details.
+- **Tone:** Use concise and clear expressions (e.g., "add ...", "fix ...").
+- **type**:
+  - `feat`: New feature (Triggers a Minor release)
+  - `fix`: Bug fix (Triggers a Patch release)
+  - `docs`, `style`, `refactor`, `perf`, `test`, `chore`: Others (Does not affect the release)
+  - *If there is a breaking change, add `!` like `feat(<scope>)!: <description>` (Triggers a Major release)
+- **scope**: Always specify the directory name where changes were made (e.g., `mesugaki-pong`, `quantum-maguro`). Use `root` for changes affecting the entire project.
 
 **Examples:**
 
-- `feat: add cancel button to order confirmation screen`
-- `fix: resolve error occurring in specific environments during login`
-- `chore: fix typo in README.md`
+- `feat(mesugaki-pong): add new character images`
+- `fix(quantum-maguro): fix bug where score calculation becomes negative`
+- `chore(root): update npm packages`
 
 ## 3. Prohibitions
 
-- **No Unrelated Changes:** Do not make any code changes other than those necessary to fix `make ci` errors. Even if you find minor issues (e.g., typos, missing refactoring spots, small improvements), **never** include them in the commit unless they are the direct cause of a CI failure.
-- Do not include meta-comments like "Generated by AI".
+- Do not include meta-comments like "Generated by AI."
 - Do not include information unrelated to the actual changes.
