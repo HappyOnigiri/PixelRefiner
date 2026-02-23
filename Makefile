@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules sync-agent
 
 # コードの変更を検知して再ビルドを実行
 watch-dev:
@@ -91,3 +91,9 @@ html-fix-diff:
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
+
+# .cursor のファイルを .agent に同期 (削除も追従)
+sync-agent:
+	@mkdir -p .agent
+	rsync -av --delete .cursor/ .agent/
+	@echo ".cursor files have been synchronized to .agent."
