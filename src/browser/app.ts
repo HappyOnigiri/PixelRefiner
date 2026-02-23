@@ -56,6 +56,7 @@ type Elements = {
 	bgConnectivitySelect: HTMLSelectElement;
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
+	makeSquareCheck: HTMLInputElement;
 	gridDetectionModeSelect: HTMLSelectElement;
 	reduceColorModeSelect: HTMLSelectElement;
 	ditherModeSelect: HTMLSelectElement;
@@ -164,6 +165,7 @@ const getElements = (): Elements => {
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
 			"fast-auto-grid-from-trimmed",
 		),
+		makeSquareCheck: get<HTMLInputElement>("make-square"),
 		gridDetectionModeSelect: get<HTMLSelectElement>("grid-detection-mode"),
 		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
 		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
@@ -1001,6 +1003,7 @@ export const initApp = (): void => {
 				sampleWindow,
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
+				makeSquare: els.makeSquareCheck.checked,
 				enableGridDetection,
 				reduceColors,
 				reduceColorMode,
@@ -1253,6 +1256,7 @@ export const initApp = (): void => {
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
+		els.makeSquareCheck.checked = PROCESS_DEFAULTS.makeSquare;
 		els.gridDetectionModeSelect.value =
 			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
@@ -1533,6 +1537,7 @@ export const initApp = (): void => {
 		els.bgConnectivitySelect,
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
+		els.makeSquareCheck,
 		els.gridDetectionModeSelect,
 		els.reduceColorModeSelect,
 		els.ditherModeSelect,
@@ -1935,6 +1940,7 @@ export const initApp = (): void => {
 			els.bgConnectivitySelect,
 			els.trimToContentCheck,
 			els.fastAutoGridFromTrimmedCheck,
+			els.makeSquareCheck,
 			els.gridDetectionModeSelect,
 			els.reduceColorModeSelect,
 			els.ditherModeSelect,

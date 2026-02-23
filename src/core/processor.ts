@@ -331,6 +331,10 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	enableGridDetection?: boolean;
 	/**
+	 * 短辺を透過ピクセルで埋めて正方形にする
+	 */
+	makeSquare?: boolean;
+	/**
 	 * 減色を有効にする。
 	 */
 	reduceColors?: boolean;
@@ -410,6 +414,7 @@ const normalizeProcessOptions = (
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	enableGridDetection: boolean;
+	makeSquare: boolean;
 	reduceColors: boolean;
 	reduceColorMode: string;
 	ditherMode: DitherMode;
@@ -481,6 +486,7 @@ const normalizeProcessOptions = (
 		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
+	const makeSquare = raw.makeSquare ?? PROCESS_DEFAULTS.makeSquare;
 	const enableGridDetection =
 		raw.enableGridDetection ?? PROCESS_DEFAULTS.enableGridDetection;
 	const reduceColors = raw.reduceColors ?? PROCESS_DEFAULTS.reduceColors;
@@ -523,6 +529,7 @@ const normalizeProcessOptions = (
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		enableGridDetection,
+		makeSquare,
 		reduceColors,
 		reduceColorMode,
 		ditherMode,
@@ -1721,14 +1728,61 @@ export const processImage = (
 			cropW: b.w,
 			cropH: b.h,
 		};
-		const compareBefore = cropRawImageNearestFromGrid(
+		let compareBefore = cropRawImageNearestFromGrid(
 			img,
 			forcedTrimmedGridForOriginal,
 		);
 
 		// Sanitized comparison: use the same downsample as the pipeline (median sampling).
 		const croppedOriginal = cropRawImage(img, b.x, b.y, b.w, b.h);
-		const compareBeforeSanitized = downsample(croppedOriginal, g, sw);
+		let compareBeforeSanitized = downsample(croppedOriginal, g, sw);
+
+		let finalGridForForce = g;
+		if (o.makeSquare) {
+			const w = finalResult.width;
+			const h = finalResult.height;
+			if (w !== h) {
+				const size = Math.max(w, h);
+				const dw = size - w;
+				const dh = size - h;
+				const padLeft = Math.floor(dw / 2);
+				const padTop = Math.floor(dh / 2);
+				const padRight = dw - padLeft;
+				const padBottom = dh - padTop;
+				finalResult = padRawImage(
+					finalResult,
+					padLeft,
+					padTop,
+					padRight,
+					padBottom,
+				);
+				compareBefore = padRawImage(
+					compareBefore,
+					padLeft * finalGridForForce.cellW,
+					padTop * finalGridForForce.cellH,
+					padRight * finalGridForForce.cellW,
+					padBottom * finalGridForForce.cellH,
+				);
+				compareBeforeSanitized = padRawImage(
+					compareBeforeSanitized,
+					padLeft,
+					padTop,
+					padRight,
+					padBottom,
+				);
+				const baseCropX = finalGridForForce.cropX ?? finalGridForForce.offsetX;
+				const baseCropY = finalGridForForce.cropY ?? finalGridForForce.offsetY;
+				finalGridForForce = {
+					...finalGridForForce,
+					outW: size,
+					outH: size,
+					cropX: baseCropX - padLeft * finalGridForForce.cellW,
+					cropY: baseCropY - padTop * finalGridForForce.cellH,
+					cropW: size * finalGridForForce.cellW,
+					cropH: size * finalGridForForce.cellH,
+				};
+			}
+		}
 
 		o.debugHook?.("99-result", finalResult, {
 			postRemoveBackground: o.postRemoveBackground,
@@ -1740,7 +1794,7 @@ export const processImage = (
 		const extracted = extractUsedColors(finalResult);
 		return {
 			result: finalResult,
-			grid: g,
+			grid: finalGridForForce,
 			extractedPalette: extracted,
 			compareBefore,
 			compareBeforeSanitized,
@@ -1769,6 +1823,7 @@ export const processImage = (
 
 		let finalResult = working;
 		let compareBefore = img;
+		let compareBeforeSanitized = img;
 		let outW = working.width;
 		let outH = working.height;
 		let cropX = 0;
@@ -1791,10 +1846,79 @@ export const processImage = (
 			if (b) {
 				finalResult = cropRawImage(finalResult, b.x, b.y, b.w, b.h);
 				compareBefore = cropRawImage(compareBefore, b.x, b.y, b.w, b.h);
+				compareBeforeSanitized = cropRawImage(
+					compareBeforeSanitized,
+					b.x,
+					b.y,
+					b.w,
+					b.h,
+				);
 				outW = b.w;
 				outH = b.h;
 				cropX = b.x;
 				cropY = b.y;
+			}
+		}
+
+		let finalGridForNoGrid = {
+			cellW: 1,
+			cellH: 1,
+			offsetX: 0,
+			offsetY: 0,
+			outW,
+			outH,
+			cropX,
+			cropY,
+			cropW: outW,
+			cropH: outH,
+			score: 0,
+		};
+
+		if (o.makeSquare) {
+			const w = finalResult.width;
+			const h = finalResult.height;
+			if (w !== h) {
+				const size = Math.max(w, h);
+				const dw = size - w;
+				const dh = size - h;
+				const padLeft = Math.floor(dw / 2);
+				const padTop = Math.floor(dh / 2);
+				const padRight = dw - padLeft;
+				const padBottom = dh - padTop;
+				finalResult = padRawImage(
+					finalResult,
+					padLeft,
+					padTop,
+					padRight,
+					padBottom,
+				);
+				compareBefore = padRawImage(
+					compareBefore,
+					padLeft,
+					padTop,
+					padRight,
+					padBottom,
+				);
+				compareBeforeSanitized = padRawImage(
+					compareBeforeSanitized,
+					padLeft,
+					padTop,
+					padRight,
+					padBottom,
+				);
+				const baseCropX =
+					finalGridForNoGrid.cropX ?? finalGridForNoGrid.offsetX;
+				const baseCropY =
+					finalGridForNoGrid.cropY ?? finalGridForNoGrid.offsetY;
+				finalGridForNoGrid = {
+					...finalGridForNoGrid,
+					outW: size,
+					outH: size,
+					cropX: baseCropX - padLeft * finalGridForNoGrid.cellW,
+					cropY: baseCropY - padTop * finalGridForNoGrid.cellH,
+					cropW: size * finalGridForNoGrid.cellW,
+					cropH: size * finalGridForNoGrid.cellH,
+				};
 			}
 		}
 
@@ -1810,22 +1934,10 @@ export const processImage = (
 
 		return {
 			result: finalResult,
-			grid: {
-				cellW: 1,
-				cellH: 1,
-				offsetX: 0,
-				offsetY: 0,
-				outW,
-				outH,
-				cropX,
-				cropY,
-				cropW: outW,
-				cropH: outH,
-				score: 0,
-			},
+			grid: finalGridForNoGrid,
 			extractedPalette: extracted,
 			compareBefore,
-			compareBeforeSanitized: compareBefore,
+			compareBeforeSanitized,
 		};
 	}
 
@@ -2116,6 +2228,52 @@ export const processImage = (
 				cropY: baseCropY - cellDh * trimmedGrid.cellH,
 				cropW: finalResult.width * trimmedGrid.cellW,
 				cropH: finalResult.height * trimmedGrid.cellH,
+			};
+		}
+	}
+
+	if (o.makeSquare) {
+		const w = finalResult.width;
+		const h = finalResult.height;
+		if (w !== h) {
+			const size = Math.max(w, h);
+			const dw = size - w;
+			const dh = size - h;
+			const padLeft = Math.floor(dw / 2);
+			const padTop = Math.floor(dh / 2);
+			const padRight = dw - padLeft;
+			const padBottom = dh - padTop;
+			finalResult = padRawImage(
+				finalResult,
+				padLeft,
+				padTop,
+				padRight,
+				padBottom,
+			);
+			compareBefore = padRawImage(
+				compareBefore,
+				padLeft * trimmedGrid.cellW,
+				padTop * trimmedGrid.cellH,
+				padRight * trimmedGrid.cellW,
+				padBottom * trimmedGrid.cellH,
+			);
+			compareBeforeSanitized = padRawImage(
+				compareBeforeSanitized,
+				padLeft,
+				padTop,
+				padRight,
+				padBottom,
+			);
+			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
+			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
+			trimmedGrid = {
+				...trimmedGrid,
+				outW: size,
+				outH: size,
+				cropX: baseCropX - padLeft * trimmedGrid.cellW,
+				cropY: baseCropY - padTop * trimmedGrid.cellH,
+				cropW: size * trimmedGrid.cellW,
+				cropH: size * trimmedGrid.cellH,
 			};
 		}
 	}
