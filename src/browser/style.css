@@ -119,7 +119,7 @@ h1 {
   justify-content: center;
   margin-bottom: 12px;
   position: relative;
-  /* 必要に応じて追加 */
+  /* Add if necessary */
 }
 
 .hero-badge {
@@ -136,7 +136,7 @@ h1 {
   text-transform: uppercase;
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
   white-space: nowrap;
-  /* テキストの折り返し防止 */
+  /* Prevent text wrap */
 }
 
 .text-highlight {
@@ -247,7 +247,6 @@ main {
 }
 
 .row {
-  display: none;
   /* Deprecated */
 }
 

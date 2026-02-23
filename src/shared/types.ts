@@ -33,10 +33,10 @@ export interface RGB {
 
 export type OutlineStyle = "none" | "rounded" | "sharp";
 
-/** 背景透過の適用範囲（scope） */
+/** Scope of background removal */
 export type BackgroundRemovalScope = "off" | "selected" | "outer" | "all";
 
-/** 連結判定に斜め（8近傍）を含めるか */
+/** Whether to include diagonals (8-neighbors) in connectivity check */
 export type Connectivity = "4" | "8";
 
 export interface Oklab {
@@ -45,7 +45,7 @@ export interface Oklab {
 	b: number; // Blue-Yellow component
 }
 
-// 透過情報付きのピクセルデータ
+// Pixel data with transparency
 export interface PixelData extends RGB {
 	alpha: number; // 0-255 (Alpha)
 }

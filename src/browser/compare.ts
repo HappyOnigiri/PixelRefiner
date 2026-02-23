@@ -48,13 +48,13 @@ export class ImageComparer {
 		window.addEventListener("mousemove", onMove);
 		window.addEventListener("touchmove", onMove);
 
-		// コンテナサイズ変更時に画像のサイズを同期する
+		// Sync image size when container size changes
 		const resizeObserver = new ResizeObserver(() => {
 			this.syncImageSize();
 		});
 		resizeObserver.observe(this.container);
 
-		// 初期位置
+		// Initial position
 		this.setSliderPos(50);
 		this.syncImageSize();
 	}
@@ -63,8 +63,8 @@ export class ImageComparer {
 		const rect = this.container.getBoundingClientRect();
 		const img = this.overlay.querySelector("img");
 		if (img) {
-			// オーバーレイ内の画像サイズをコンテナ全体に合わせる
-			// これにより、オーバーレイ幅が変わっても画像が縮小されず、クリッピングされるようになる
+			// Sync image size in overlay to match the entire container.
+			// This ensures the image is clipped rather than shrunk when the overlay width changes.
 			img.style.width = `${rect.width}px`;
 			img.style.height = `${rect.height}px`;
 		}
@@ -80,7 +80,7 @@ export class ImageComparer {
 			x = e.touches[0].pageX - rect.left;
 		}
 
-		// ページスクロール分を考慮
+		// Consider page scroll offset
 		x = x - window.pageXOffset;
 
 		let percent = (x / rect.width) * 100;
@@ -105,7 +105,7 @@ export class ImageComparer {
 		if (imgBefore) imgBefore.src = srcBefore;
 		if (imgAfter) imgAfter.src = srcAfter;
 
-		// 画像更新時にもサイズ同期を行う（念のため）
+		// Also sync size when updating images (just in case)
 		this.syncImageSize();
 	}
 }

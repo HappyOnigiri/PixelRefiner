@@ -98,7 +98,7 @@ export class ImageSession {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.result = result;
-			// サイズ指定(force)などで candidates が落ちても、直前の自動検出候補は保持して再選択できるようにする
+			// Keep previous auto-detection candidates so they can be re-selected even if candidates are lost due to size specification (force), etc.
 			if (grid) {
 				const prevCandidates = img.grid?.candidates;
 				if (

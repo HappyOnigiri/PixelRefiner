@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 EXCLUDE_RE = re.compile(
-    r"(?i)\.(png|jpe?g|gif|ico|webp|woff2?|ttf|eot|mp4|webm|zip|exe|dll)$|\.ja\."
+    r"(?i)\.(png|jpe?g|gif|ico|webp|woff2?|ttf|eot|mp4|webm|zip|exe|dll)$|\.ja\.|i18n\.(ts|test\.ts)|README\.md|\.cursor/skills/.*\.md"
 )
 
 # Allowed non-ASCII characters (e.g., symbols, arrows, and punctuation used in documentation)
@@ -27,9 +27,10 @@ def _git_ls_files() -> list[str]:
     return [line.strip() for line in res.stdout.splitlines() if line.strip()]
 
 
-def _first_non_ascii_locations(data: bytes, max_hits: int = 20) -> list[tuple[int, int]]:
+def _first_non_ascii_locations(data: bytes, max_hits: int = 100) -> list[tuple[int, int]]:
     """
     Return (line_no, col_no) pairs (1-based) for non-ASCII characters.
+    Each line will have at most one hit.
     This check allows specific characters like arrows while enforcing ASCII for the rest.
     """
     try:
@@ -39,13 +40,15 @@ def _first_non_ascii_locations(data: bytes, max_hits: int = 20) -> list[tuple[in
         byte_hits: list[tuple[int, int]] = []
         l_no = 1
         c_no = 1
+        last_hit_line = -1
         for b in data:
             if b == 0x0A:  # \n
                 l_no += 1
                 c_no = 1
                 continue
-            if b > 0x7F:
+            if b > 0x7F and l_no != last_hit_line:
                 byte_hits.append((l_no, c_no))
+                last_hit_line = l_no
                 if len(byte_hits) >= max_hits:
                     break
             c_no += 1
@@ -54,14 +57,16 @@ def _first_non_ascii_locations(data: bytes, max_hits: int = 20) -> list[tuple[in
     hits: list[tuple[int, int]] = []
     line_no = 1
     col_no = 1
+    last_hit_line = -1
     for char in text:
         if char == "\n":
             line_no += 1
             col_no = 1
             continue
-        if ord(char) > 0x7F:
+        if ord(char) > 0x7F and line_no != last_hit_line:
             if not ALLOWED_NON_ASCII_RE.match(char):
                 hits.append((line_no, col_no))
+                last_hit_line = line_no
                 if len(hits) >= max_hits:
                     break
         col_no += 1

@@ -21,7 +21,7 @@ export const imageToRawImage = async (
 	canvas.height = height;
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		throw new Error("Canvas 2D context の取得に失敗しました。");
+		throw new Error("Failed to get Canvas 2D context.");
 	}
 	ctx.drawImage(source as CanvasImageSource, 0, 0, width, height);
 	const imageData = ctx.getImageData(0, 0, width, height);
@@ -36,7 +36,7 @@ export const drawRawImageToCanvas = (
 	canvas.height = img.height;
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		throw new Error("Canvas 2D context の取得に失敗しました。");
+		throw new Error("Failed to get Canvas 2D context.");
 	}
 	const imageData = new ImageData(
 		new Uint8ClampedArray(img.data),
@@ -60,22 +60,22 @@ export const drawGridToCanvas = (
 
 	ctx.clearRect(0, 0, width, height);
 
-	// 非常に薄い色で描画して、画像の視認性を妨げないようにする
-	// 暗いドット上でも明るいドット上でも見えるように、半透明の白またはグレーを使用
-	// ここでは単純化のため薄いグレーを使用
+	// Draw with a very faint color to avoid obscuring the image.
+	// Use semi-transparent white or gray so it's visible on both dark and light pixels.
+	// Using light gray here for simplicity.
 	ctx.strokeStyle = "rgba(128, 128, 128, 0.4)";
 	ctx.lineWidth = 1;
 
-	// パスを開始
+	// Start path
 	ctx.beginPath();
 
-	// 縦線
+	// Vertical lines
 	for (let x = 1; x < width; x++) {
 		ctx.moveTo(x + 0.5, 0);
 		ctx.lineTo(x + 0.5, height);
 	}
 
-	// 横線
+	// Horizontal lines
 	for (let y = 1; y < height; y++) {
 		ctx.moveTo(0, y + 0.5);
 		ctx.lineTo(width, y + 0.5);

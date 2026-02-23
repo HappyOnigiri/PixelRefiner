@@ -467,7 +467,7 @@ export class ResultViewer {
 		}
 
 		if ((this.currentGrid?.candidates?.length ?? 0) > 0) {
-			this.sizeLabel.innerHTML = `${this.currentImage.width} x ${this.currentImage.height} <span style="font-size: 0.8em; opacity: 0.7;">▼</span>`;
+			this.sizeLabel.innerHTML = `${this.currentImage.width} x ${this.currentImage.height} <span style="font-size: 0.8em; opacity: 0.7;">&#9660;</span>`;
 			this.sizeLabel.style.cursor = "pointer";
 			this.sizeLabel.style.textDecoration = "underline";
 			this.sizeLabel.style.textDecorationStyle = "dotted";
@@ -532,28 +532,28 @@ export class ResultViewer {
 		menu.style.borderBottom = "1px solid var(--border-color)";
 		menu.appendChild(note);
 
-		// 候補と現在のサイズを統合してソート
+		// Combine candidates and current size, then sort
 		const current = this.currentGrid;
 		const rawCandidates = [...(this.currentGrid.candidates || [])];
 
-		// 1. 現在のサイズと「近すぎる」候補を排除する
-		// 2. 候補同士で「近すぎる」ものを排除する
-		// 判定基準: 面積差が小さい、かつセルサイズ(px)の差が小さい
+		// 1. Exclude candidates that are "too close" to the current size.
+		// 2. Exclude candidates that are "too close" to each other.
+		// Criteria: small difference in area and cell size (px).
 		const isSimilar = (a: PixelGrid, b: PixelGrid) => {
 			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
 			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
 			const areaDiff = Math.abs(areaA - areaB);
 			const cellDiff = Math.abs(a.cellW - b.cellW);
 
-			// 面積差が 2% 以内かつ、ピクセルサイズ差が 0.2px 以内なら同一視
+			// Consider identical if area difference is within 2% and pixel size difference is within 0.2px.
 			const areaThreshold = Math.max(areaA, areaB) * 0.02;
 			return areaDiff <= Math.max(2, areaThreshold) && cellDiff < 0.2;
 		};
 
-		// まず現在のサイズを基準にフィルタリング
+		// First, filter based on current size
 		const filtered = rawCandidates.filter((c) => !isSimilar(c, current));
 
-		// 候補同士でも重複を排除（サイズ順に並べて隣接要素と比較）
+		// Exclude duplicates among candidates (sort by size and compare adjacent elements)
 		filtered.sort(
 			(a, b) => (a.outW ?? 0) * (a.outH ?? 0) - (b.outW ?? 0) * (b.outH ?? 0),
 		);
@@ -567,17 +567,17 @@ export class ResultViewer {
 			}
 		}
 
-		// 現在のサイズを統合
+		// Integrate current size
 		const candidates = [current, ...uniqueCandidates];
 
-		// 最終的なサイズ順（面積順）にソート
+		// Sort by final size order (area order)
 		candidates.sort((a, b) => {
 			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
 			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
 			return areaA - areaB;
 		});
 
-		// 最大件数を制限
+		// Limit to maximum number of items
 		const displayCandidates = candidates.slice(0, 12);
 
 		displayCandidates.forEach((c) => {
@@ -597,7 +597,7 @@ export class ResultViewer {
 				currentItem.style.alignItems = "center";
 
 				const check = document.createElement("span");
-				check.innerHTML = "✓";
+				check.innerHTML = "&#10003;";
 				check.style.marginRight = "8px";
 				check.style.color = "var(--accent-color)";
 				currentItem.prepend(check);
