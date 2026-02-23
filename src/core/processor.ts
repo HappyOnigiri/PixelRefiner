@@ -331,7 +331,7 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	enableGridDetection?: boolean;
 	/**
-	 * 短辺を透過ピクセルで埋めて正方形にする
+	 * Fill the shorter side with transparent pixels to make the image square
 	 */
 	makeSquare?: boolean;
 	/**
@@ -1749,6 +1749,12 @@ export const processImage = (
 				const padTop = Math.floor(dh / 2);
 				const padRight = dw - padLeft;
 				const padBottom = dh - padTop;
+
+				const padLeftPx = Math.round(padLeft * finalGridForForce.cellW);
+				const padTopPx = Math.round(padTop * finalGridForForce.cellH);
+				const padRightPx = Math.round(padRight * finalGridForForce.cellW);
+				const padBottomPx = Math.round(padBottom * finalGridForForce.cellH);
+
 				finalResult = padRawImage(
 					finalResult,
 					padLeft,
@@ -1758,10 +1764,10 @@ export const processImage = (
 				);
 				compareBefore = padRawImage(
 					compareBefore,
-					padLeft * finalGridForForce.cellW,
-					padTop * finalGridForForce.cellH,
-					padRight * finalGridForForce.cellW,
-					padBottom * finalGridForForce.cellH,
+					padLeftPx,
+					padTopPx,
+					padRightPx,
+					padBottomPx,
 				);
 				compareBeforeSanitized = padRawImage(
 					compareBeforeSanitized,
@@ -1776,8 +1782,8 @@ export const processImage = (
 					...finalGridForForce,
 					outW: size,
 					outH: size,
-					cropX: baseCropX - padLeft * finalGridForForce.cellW,
-					cropY: baseCropY - padTop * finalGridForForce.cellH,
+					cropX: baseCropX - padLeftPx,
+					cropY: baseCropY - padTopPx,
 					cropW: size * finalGridForForce.cellW,
 					cropH: size * finalGridForForce.cellH,
 				};
@@ -1885,6 +1891,12 @@ export const processImage = (
 				const padTop = Math.floor(dh / 2);
 				const padRight = dw - padLeft;
 				const padBottom = dh - padTop;
+
+				const padLeftPx = Math.round(padLeft * finalGridForNoGrid.cellW);
+				const padTopPx = Math.round(padTop * finalGridForNoGrid.cellH);
+				const padRightPx = Math.round(padRight * finalGridForNoGrid.cellW);
+				const padBottomPx = Math.round(padBottom * finalGridForNoGrid.cellH);
+
 				finalResult = padRawImage(
 					finalResult,
 					padLeft,
@@ -1894,10 +1906,10 @@ export const processImage = (
 				);
 				compareBefore = padRawImage(
 					compareBefore,
-					padLeft,
-					padTop,
-					padRight,
-					padBottom,
+					padLeftPx,
+					padTopPx,
+					padRightPx,
+					padBottomPx,
 				);
 				compareBeforeSanitized = padRawImage(
 					compareBeforeSanitized,
@@ -1914,8 +1926,8 @@ export const processImage = (
 					...finalGridForNoGrid,
 					outW: size,
 					outH: size,
-					cropX: baseCropX - padLeft * finalGridForNoGrid.cellW,
-					cropY: baseCropY - padTop * finalGridForNoGrid.cellH,
+					cropX: baseCropX - padLeftPx,
+					cropY: baseCropY - padTopPx,
 					cropW: size * finalGridForNoGrid.cellW,
 					cropH: size * finalGridForNoGrid.cellH,
 				};
@@ -2243,6 +2255,12 @@ export const processImage = (
 			const padTop = Math.floor(dh / 2);
 			const padRight = dw - padLeft;
 			const padBottom = dh - padTop;
+
+			const padLeftPx = Math.round(padLeft * trimmedGrid.cellW);
+			const padTopPx = Math.round(padTop * trimmedGrid.cellH);
+			const padRightPx = Math.round(padRight * trimmedGrid.cellW);
+			const padBottomPx = Math.round(padBottom * trimmedGrid.cellH);
+
 			finalResult = padRawImage(
 				finalResult,
 				padLeft,
@@ -2252,10 +2270,10 @@ export const processImage = (
 			);
 			compareBefore = padRawImage(
 				compareBefore,
-				padLeft * trimmedGrid.cellW,
-				padTop * trimmedGrid.cellH,
-				padRight * trimmedGrid.cellW,
-				padBottom * trimmedGrid.cellH,
+				padLeftPx,
+				padTopPx,
+				padRightPx,
+				padBottomPx,
 			);
 			compareBeforeSanitized = padRawImage(
 				compareBeforeSanitized,
@@ -2270,8 +2288,8 @@ export const processImage = (
 				...trimmedGrid,
 				outW: size,
 				outH: size,
-				cropX: baseCropX - padLeft * trimmedGrid.cellW,
-				cropY: baseCropY - padTop * trimmedGrid.cellH,
+				cropX: baseCropX - padLeftPx,
+				cropY: baseCropY - padTopPx,
 				cropW: size * trimmedGrid.cellW,
 				cropH: size * trimmedGrid.cellH,
 			};
