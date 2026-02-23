@@ -1,29 +1,30 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules sync-agent
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules check-non-ascii sync-agent
 
-# コードの変更を検知して再ビルドを実行
+# Rebuild when changes are detected in code (for development)
 watch-dev:
 	npm run build -- --watch
 
-# repomixを実行してファイルをまとめ、tmp/repomix/ フォルダに出力
+# Run repomix to bundle files into tmp/repomix/ folder
 repomix:
 	mkdir -p tmp/repomix
-	# フルバージョン
+	# Full version
 	npx repomix --output tmp/repomix/repomix-full.txt
-	# ロックファイル、画像、ライセンス等を除外したバージョン
+	# Version excluding lockfiles, images, licenses, etc.
 	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
-	# さらにテストファイルを除外したバージョン
+	# Version further excluding test files
 	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
-# ローカル実行向け: 可能な範囲で自動整形 → チェック → テスト
+# For local execution: Auto-fix if possible -> Check -> Test
 ci:
 	python3 scripts/run_ci.py
 
-# CI（サーバ）向け: 自動修正せず、差分があれば失敗
+# For CI (Server): Do not auto-fix, fail if there are diffs
 ci-check:
 	$(MAKE) ts-check-diff
 	$(MAKE) html-check-diff
 	$(MAKE) type-check
 	$(MAKE) check-ts-rules
+	$(MAKE) check-non-ascii
 	$(MAKE) test
 
 test:
@@ -39,6 +40,9 @@ type-check:
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
 
+check-non-ascii:
+	python3 scripts/check_non_ascii.py
+
 ts-check-diff:
 	@files="$$( ( \
 		git diff --name-only --diff-filter=ACMRTUXB HEAD -- '*.ts' '*.tsx' 2>/dev/null; \
@@ -52,7 +56,7 @@ ts-check-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes @biomejs/biome@latest check $$files
 
-# 変更のあるTS/TSXに対して、Biomeの安全な修正（format/organizeImports等）を適用する
+# Apply safe Biome fixes (format, organizeImports, etc.) to changed TS/TSX files
 ts-fix-diff:
 	@files="$$( ( \
 		git diff --name-only --diff-filter=ACMRTUXB HEAD -- '*.ts' '*.tsx' 2>/dev/null; \
@@ -92,7 +96,7 @@ html-fix-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
 
-# .cursor のファイルを .agent に同期 (削除も追従)
+# Sync .cursor files to .agent (follows deletions)
 sync-agent:
 	@mkdir -p .agent
 	rsync -av --delete .cursor/ .agent/

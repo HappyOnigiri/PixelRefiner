@@ -10,7 +10,7 @@ describe("Floating Content Removal", () => {
 	): { working: RawImage; masked: RawImage } => {
 		const data = new Uint8ClampedArray(w * h * 4);
 		for (let i = 0; i < map.length; i++) {
-			// mapの値が1なら不透明(黒)、0なら透明
+			// If map value is 1, opaque (black), if 0, transparent
 			const alpha = map[i] === 1 ? 255 : 0;
 			data[i * 4] = 0;
 			data[i * 4 + 1] = 0;
@@ -19,14 +19,14 @@ describe("Floating Content Removal", () => {
 		}
 		return {
 			working: { width: w, height: h, data: new Uint8ClampedArray(data) },
-			masked: { width: w, height: h, data: new Uint8ClampedArray(data) }, // コピー
+			masked: { width: w, height: h, data: new Uint8ClampedArray(data) }, // Copy
 		};
 	};
 
-	it("斜め配置は連結とみなさず、個別に除去判定されること(4近傍確認)", () => {
+	it("should not consider diagonal placement as connected and judge removal individually (4-connectivity check)", () => {
 		// 3x3
 		// 1 0 0
-		// 0 1 0  <- 中央は左上と連結していないはず
+		// 0 1 0  <- Center should not be connected to top-left
 		// 0 0 1
 		const { working, masked } = createTestImage(
 			3,
@@ -34,8 +34,8 @@ describe("Floating Content Removal", () => {
 			[1, 0, 0, 0, 1, 0, 0, 0, 1],
 		);
 
-		// maxPixels=1 なので、それぞれ(サイズ1)は除去対象になるはず
-		// ただし、最大の1つは残る仕様
+		// Since maxPixels=1, each (size 1) should be eligible for removal
+		// However, the specification is to keep the largest one.
 		const result = removeSmallFloatingComponentsInPlace(
 			working,
 			masked,
@@ -43,8 +43,8 @@ describe("Floating Content Removal", () => {
 			1,
 		);
 
-		expect(result.removedPixels).toBe(2); // 3つ中2つが除去される
-		// どこか1つだけ残っているはず
+		expect(result.removedPixels).toBe(2); // 2 out of 3 are removed
+		// Only one should remain somewhere
 		let opaqueCount = 0;
 		for (let i = 0; i < 9; i++) {
 			if (masked.data[i * 4 + 3] === 255) opaqueCount++;
@@ -52,11 +52,11 @@ describe("Floating Content Removal", () => {
 		expect(opaqueCount).toBe(1);
 	});
 
-	it("しきい値(maxPixels)以下の塊のみ除去されること", () => {
+	it("should only remove components below the threshold (maxPixels)", () => {
 		// 4x2
 		// 1 1 0 1
 		// 1 1 0 0
-		// 左(サイズ4)は残り、右(サイズ1)は消えるべき
+		// Left (size 4) should remain, right (size 1) should disappear
 		const { working, masked } = createTestImage(4, 2, [1, 1, 0, 1, 1, 1, 0, 0]);
 
 		const result = removeSmallFloatingComponentsInPlace(
@@ -68,17 +68,17 @@ describe("Floating Content Removal", () => {
 
 		expect(result.removedPixels).toBe(1);
 
-		// 右上のピクセル(3,0)が透明になっているか確認
+		// Check if top-right pixel (3,0) became transparent
 		expect(masked.data[3 * 4 + 3]).toBe(0);
-		// 左上のピクセル(0,0)は不透明のままか確認
+		// Check if top-left pixel (0,0) remains opaque
 		expect(masked.data[0 * 4 + 3]).toBe(255);
 	});
 
-	it("ドーナツ型: 内部の穴にあるノイズが正しく除去されるか", () => {
+	it("Donut shape: should correctly remove noise in the inner hole", () => {
 		// 5x5
 		// 1 1 1 1 1
 		// 1 0 0 0 1
-		// 1 0 1 0 1  <- 真ん中に 1
+		// 1 0 1 0 1  <- 1 in the middle
 		// 1 0 0 0 1
 		// 1 1 1 1 1
 		const { working, masked } = createTestImage(
@@ -97,11 +97,11 @@ describe("Floating Content Removal", () => {
 			1,
 		);
 		expect(result.removedPixels).toBe(1);
-		// 真ん中のピクセル (2,2) = index 12
+		// Middle pixel (2,2) = index 12
 		expect(masked.data[12 * 4 + 3]).toBe(0);
 	});
 
-	it("コの字型: 凹凸のある形状が一つの塊として認識されるか", () => {
+	it("U-shape: should recognize irregular shapes as a single component", () => {
 		// 3x3
 		// 1 1 1
 		// 1 0 0
@@ -118,7 +118,7 @@ describe("Floating Content Removal", () => {
 			128,
 			10,
 		);
-		// 全部で7ピクセル。1つの塊なので、最大成分として残る
+		// 7 pixels in total. Since it's a single component, it remains as the largest component.
 		expect(result.removedPixels).toBe(0);
 	});
 });

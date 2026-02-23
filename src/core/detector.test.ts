@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { Pixel, RawImage } from "../shared/types";
 import { detectGrid, getRunLengths } from "./detector";
 
-// quantize is not exported, but it's used internally by getRunLengths.
+// detectGrid is not exported, but it's used internally by getRunLengths.
 // We can verify its effect through getRunLengths.
 
 describe("detector.ts (helpers)", () => {
@@ -114,20 +114,19 @@ describe("detector.ts (helpers)", () => {
 	});
 
 	describe("estimateFromSegments (Unit Test)", () => {
-		// estimateFromSegments は export されていないため、
-		// テスト用に export するか、あるいは detectGrid を通じて間接的にテストする。
-		// ここでは detectGrid を使って、合成データで精度を検証する。
+		// estimateFromSegments is not exported, so we test it indirectly through detectGrid.
+		// Here we verify accuracy using synthetic data.
 
-		it("完璧なストライプ模様から正解のセルサイズを検出できること", () => {
-			// 16x16, 8px周期のストライプ
-			// 黒(0,0,0)と白(255,255,255)の境界が 8px ごとに現れる
+		it("should detect correct cell size from perfect stripe patterns", () => {
+			// 16x16, 8px period stripes
+			// Black (0,0,0) and White (255,255,255) boundaries appear every 8px
 			const width = 16;
 			const height = 16;
 			const data = new Uint8ClampedArray(width * height * 4);
 			for (let y = 0; y < height; y++) {
 				for (let x = 0; x < width; x++) {
 					const idx = (y * width + x) * 4;
-					// 8px ごとに色を変える
+					// Change color every 8px
 					const isBlack =
 						Math.floor(x / 8) % 2 === 0 && Math.floor(y / 8) % 2 === 0;
 					const color = isBlack ? 0 : 255;
@@ -138,7 +137,7 @@ describe("detector.ts (helpers)", () => {
 				}
 			}
 			const img: RawImage = { width, height, data };
-			// autoMaxCells を小さく制限して、確実に 8px が選ばれるようにする (16/8 = 2 cells)
+			// Restrict autoMaxCells to ensure 8px is picked (16/8 = 2 cells)
 			const grid = detectGrid(img, { autoMaxCellsW: 2, autoMaxCellsH: 2 });
 
 			expect(grid.cellW).toBe(8);
@@ -147,8 +146,8 @@ describe("detector.ts (helpers)", () => {
 			expect(grid.offsetY).toBe(0);
 		});
 
-		it("オフセットがある場合でも正しく検出できること", () => {
-			// 24x24, 4px周期, オフセット(2, 2)
+		it("should detect correctly even with offsets", () => {
+			// 24x24, 4px period, offset (2, 2)
 			const width = 24;
 			const height = 24;
 			const cell = 4;

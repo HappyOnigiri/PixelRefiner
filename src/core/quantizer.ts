@@ -422,7 +422,7 @@ export class OklabKMeans {
 				}
 
 				const threshold = matrix[(y % size) * size + (x % size)];
-				// 閾値を -0.5 ~ 0.5 に変換して強度を掛ける
+				// Convert threshold to range -0.5 ~ 0.5 and multiply by strength
 				const bias = (threshold - 0.5) * strength * 255;
 
 				const biasedR = Math.max(0, Math.min(255, p.r + bias));
@@ -532,22 +532,22 @@ export class PaletteQuantizer {
 					// Oklab distance
 					let dist = this.colorDistanceSq(lab, targetLab);
 
-					// 暗いピクセルの場合、茶色などの暗色に引っ張られないよう
-					// 純粋な黒（L=0）への判定にバイアスをかけるか、RGB距離を補助的に使用する。
-					// 特に NES の黒 (#000000) と茶色 (#503000) の誤判定を防ぐ。
+					// For dark pixels, to prevent them from being pulled towards dark colors like brown,
+					// apply a bias to the pure black (L=0) judgment or use RGB distance as an aid.
+					// This specifically prevents misclassification of NES black (#000000) and brown (#503000).
 					const isTargetBlack =
 						targetRgb.r === 0 && targetRgb.g === 0 && targetRgb.b === 0;
 
 					if (isTargetBlack) {
-						// L=0.2 程度（sRGBで約45-50）以下の極めて暗いピクセルのみバイアスをかける。
-						// こうすることで、Game Boy パレットなどの「暗いグレー」が黒に判定されるのを防ぐ。
+						// Apply bias only to extremely dark pixels below approx L=0.2 (approx 45-50 in sRGB).
+						// This prevents "dark gray" in palettes like Game Boy from being judged as black.
 						if (lab.L < 0.2) {
 							const lBias = (0.2 - lab.L) * 1.5;
 							dist -= lBias * lBias;
 						}
 					}
 
-					// RGB 空間での距離も補助的に使用する（極めて暗い色のみ）。
+					// Also supplementally use the distance in RGB space (only for extremely dark colors).
 					if (lab.L < 0.1) {
 						const dR = (p.r - targetRgb.r) / 255;
 						const dG = (p.g - targetRgb.g) / 255;

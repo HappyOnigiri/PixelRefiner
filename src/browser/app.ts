@@ -24,7 +24,7 @@ import { PresetManager } from "./presets";
 import { ResultViewer } from "./result-viewer";
 import { ImageSession } from "./session";
 
-// Workerのインスタンス化
+// Instantiate worker
 const workerInstance = new Worker(
 	new URL("../core/worker.ts", import.meta.url),
 	{ type: "module" },
@@ -246,7 +246,7 @@ const getElements = (): Elements => {
 };
 
 /**
- * エラーをオーバーレイで表示する
+ * Display error in overlay
  */
 const showError = (message: string) => {
 	const toast = document.createElement("div");
@@ -255,12 +255,12 @@ const showError = (message: string) => {
 	toast.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span>${message}</span>`;
 	document.body.appendChild(toast);
 
-	// 次のフレームで表示開始
+	// Start showing in the next frame
 	requestAnimationFrame(() => {
 		toast.classList.add("show");
 	});
 
-	// 5秒後に消去
+	// Remove after 5 seconds
 	setTimeout(() => {
 		toast.classList.remove("show");
 		toast.addEventListener(
@@ -274,7 +274,7 @@ const showError = (message: string) => {
 };
 
 /**
- * 情報（成功など）をトーストで表示する
+ * Display information (success, etc.) in toast
  */
 const showInfo = (message: string) => {
 	const toast = document.createElement("div");
@@ -641,7 +641,7 @@ export const initApp = (): void => {
 		onCompare: () => openCompareModal(),
 		onImageClick: () => {
 			resultModalController.open();
-			// モーダル表示時にグリッドなどの描画を更新（サイズが異なるため）
+			// Update grid and other drawings when modal is displayed (due to size difference)
 			requestAnimationFrame(() => {
 				modalResultViewer.drawGrid();
 			});
@@ -802,7 +802,7 @@ export const initApp = (): void => {
 
 			const removeBtn = document.createElement("button");
 			removeBtn.className = "remove-btn";
-			removeBtn.innerHTML = "×";
+			removeBtn.innerHTML = "x";
 			removeBtn.title = i18n.t("ui.remove_image") || "Remove";
 			removeBtn.onclick = (e) => {
 				e.stopPropagation();
@@ -843,7 +843,7 @@ export const initApp = (): void => {
 			if (settings.autoProcess !== undefined)
 				els.autoProcessToggle.checked = settings.autoProcess;
 
-			// ボタン表示状態を更新
+			// Update button visibility status
 			updateProcessButtonVisibility();
 
 			if (settings.bgType !== undefined) {
@@ -880,11 +880,11 @@ export const initApp = (): void => {
 		els.outputPanel.classList.add("is-processing");
 		els.outputPanel.setAttribute("aria-busy", "true");
 
-		// 現在のアクティブ画像のみを処理する設計
-		// (一括処理は別途実装が必要だが、今回は切り替え時に自動処理される仕組み)
+		// Design to process only the currently active image
+		// (Batch processing requires separate implementation, but currently auto-processes on switch)
 		const currentItem = imageSession.getActiveImage();
 		if (!currentItem) {
-			// クリーンアップして終了
+			// Cleanup and finish
 			els.loadingOverlay.style.display = "none";
 			els.outputPanel.classList.remove("is-processing");
 			els.outputPanel.removeAttribute("aria-busy");
@@ -1018,12 +1018,11 @@ export const initApp = (): void => {
 				fixedPalette: currentFixedPalette,
 			});
 
-			// 転送されたデータは元のスレッドで使えなくなる（Comlinkの挙動に依存するが、
-			// 基本的にRawImageは再利用しない設計なので、ここで再代入しておく）
-			// ただし、Comlinkはデフォルトでコピー（構造化複製）を行うため、
-			// 明示的に transfer を使わない限り currentImage は維持される。
-			// 今回はシンプルさを優先してコピーのままにする。
-
+			// Transferred data might become unavailable in the caller thread (depending on Comlink behavior,
+			// basically designed so RawImage is not reused, so re-assigned here)
+			// However, Comlink uses structured cloning by default,
+			// so currentImage is maintained unless transfer is used explicitly.
+			// Keeping it as a copy for simplicity.
 			const resultImage = result;
 			// currentResult = resultImage; // No longer used directly
 			const effectiveGrid = imageSession.updateImageResult(
@@ -1036,12 +1035,12 @@ export const initApp = (): void => {
 			modalResultViewer.updateImage(resultImage, effectiveGrid);
 			mainResultViewer.setLoading(false);
 
-			// 256pxを超える場合はデフォルトでグリッドをOFFにする（手動でONにしていない場合）
+			// Turn OFF grid by default if exceeds 256px (if not manually enabled)
 			if (!isGridManuallyToggled) {
 				if (resultImage.width > 256 || resultImage.height > 256) {
 					if (els.gridOutputCheck.checked) {
 						els.gridOutputCheck.checked = false;
-						// グリッドをクリア
+						// Clear grid
 						mainResultViewer.setGrid(false);
 						modalResultViewer.setGrid(false);
 					}
@@ -1056,7 +1055,7 @@ export const initApp = (): void => {
 			els.downloadButton.style.display = "flex";
 			els.downloadDropdownButton.style.display = "flex";
 
-			// ダウンロードメニューのサイズ表示を更新
+			// Update size display in download menu
 			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
 				const scale = Number(btn.dataset.scale);
 				if (scale && scale > 1) {
@@ -1064,7 +1063,7 @@ export const initApp = (): void => {
 				}
 			});
 
-			// 比較スライダーの更新（元画像リサイズ / サニタイズ の両方を生成）
+			// Update comparison slider (generate both resized original and sanitized)
 			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
 			drawRawImageToCanvas(
 				compareBeforeSanitized,
@@ -1082,22 +1081,22 @@ export const initApp = (): void => {
 					: compareBeforeOriginalUrl;
 			comparer.updateImages(before, compareAfterUrl);
 
-			// モーダルが開いている場合は、直ちに反映（サイズ同期も）
+			// If modal is open, reflect immediately (including size sync)
 			if (els.compareModal.style.display !== "none") {
 				requestAnimationFrame(() => {
 					comparer.syncImageSize();
 				});
 			}
 
-			// 処理結果が更新されたらグリッドも再描画
-			// DOMの更新（canvasの表示サイズ確定）を待つために少し遅らせる
+			// Redraw grid when processing result is updated
+			// Delay slightly to wait for DOM update (canvas display size determination)
 			requestAnimationFrame(() => {
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // Handled by ResultViewer
 
-			// 背景抽出方法が四隅指定の場合、抽出された色をUIに反映
+			// If background removal method is corner-based, reflect extracted color in UI
 			updateBgColorFromMethod();
 		} catch (err) {
 			const msg = `${i18n.t("error.process_failed")}: ${(err as Error).message}`;
@@ -1111,7 +1110,7 @@ export const initApp = (): void => {
 		}
 	};
 
-	// スポイト機能の状態
+	// Eyedropper state
 	const openEyedropperModal = () => {
 		const img = imageSession.getActiveImage()?.original;
 		if (!img) return;
@@ -1123,7 +1122,7 @@ export const initApp = (): void => {
 		els.eyedropperModal.style.display = "none";
 	};
 
-	// RGB入力の同期
+	// Sync RGB inputs
 	const updateRgbInputs = (hex: string) => {
 		els.bgRgbInput.value = hex;
 		els.bgColorInput.value = hex;
@@ -1136,7 +1135,7 @@ export const initApp = (): void => {
 		if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
 			if (!val.startsWith("#")) val = `#${val}`;
 			els.bgColorInput.value = val;
-			// 手動入力されたらRGB指定モードに切り替え
+			// Switch to RGB mode on manual input
 			if (els.bgExtractionMethod.value !== "rgb") {
 				els.bgExtractionMethod.value = "rgb";
 				updateBgDisabledStates();
@@ -1146,7 +1145,7 @@ export const initApp = (): void => {
 
 	els.bgColorInput.addEventListener("input", () => {
 		els.bgRgbInput.value = els.bgColorInput.value;
-		// 手動入力されたらRGB指定モードに切り替え
+		// Switch to RGB mode on manual input
 		if (els.bgExtractionMethod.value !== "rgb") {
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
@@ -1173,8 +1172,8 @@ export const initApp = (): void => {
 		if (!currentImage) return;
 
 		const rect = els.eyedropperCanvas.getBoundingClientRect();
-		// モーダル内のキャンバスは等倍表示なので、クリック座標をそのまま画像座標として扱う
-		// ただし、CSSでのスケーリングがある場合は考慮が必要
+		// Canvas in modal is shown 1:1, so click coordinates are treated as image coordinates.
+		// However, consideration is needed if CSS scaling is applied.
 		const x = Math.floor(
 			((e.clientX - rect.left) / rect.width) * currentImage.width,
 		);
@@ -1189,14 +1188,14 @@ export const initApp = (): void => {
 			const b = currentImage.data[idx + 2];
 			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 			updateRgbInputs(hex);
-			// スポイトで選択されたらRGB指定モードに切り替え
+			// Switch to RGB mode when color is picked with eyedropper
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
 			closeEyedropperModal();
 		}
 	});
 
-	// 設定ファイルのデフォルト/範囲を UI に反映
+	// Apply default/range from config file to UI
 	const applyConfigToUi = () => {
 		const setNumberInput = (
 			input: HTMLInputElement,
@@ -1290,7 +1289,7 @@ export const initApp = (): void => {
 		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
 		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
 
-		// 言語切り替えボタンのイベントリスナー
+		// Event listeners for language switching buttons
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
 				const lang = el.getAttribute("data-lang-btn") as "ja" | "en";
@@ -1298,11 +1297,11 @@ export const initApp = (): void => {
 			});
 		});
 
-		// 初回翻訳適用
+		// Apply initial translation
 		i18n.updatePage();
 	};
 
-	// Auto Process の状態に応じて Process ボタンの表示を切り替え
+	// Toggle Process button visibility based on Auto Process state
 	const updateProcessButtonVisibility = () => {
 		els.processButton.style.display = els.autoProcessToggle.checked
 			? "none"
@@ -1312,10 +1311,10 @@ export const initApp = (): void => {
 	let autoProcessTimeout: number | undefined;
 	const triggerAutoProcess = () => {
 		if (!els.autoProcessToggle.checked) return;
-		// 画像未設定時は変換を実行しない
+		// Do not run conversion if no image is set
 		if (!imageSession.getActiveImage()) return;
 
-		// 既に実行予約があればキャンセル（デバウンス）
+		// Cancel existing reservation if any (debounce)
 		if (autoProcessTimeout) {
 			window.clearTimeout(autoProcessTimeout);
 		}
@@ -1347,7 +1346,7 @@ export const initApp = (): void => {
 	syncSliderAndInput(els.colorCountSlider, els.colorCountInput);
 	syncSliderAndInput(els.ditherStrengthSlider, els.ditherStrengthInput);
 
-	// グリッド検出無効時のUI制御
+	// UI control when grid detection is disabled
 	const updateDisabledStates = () => {
 		const mode = els.gridDetectionModeSelect.value;
 		const isOff = mode === "off";
@@ -1381,7 +1380,7 @@ export const initApp = (): void => {
 
 	els.gridDetectionModeSelect.addEventListener("change", updateDisabledStates);
 
-	// 減色設定のUI制御
+	// UI control for color reduction settings
 	const updatePaletteButtonVisibility = () => {
 		const mode = els.reduceColorModeSelect.value;
 		const isFixed = mode === "fixed";
@@ -1409,10 +1408,10 @@ export const initApp = (): void => {
 
 		const ditherMode = els.ditherModeSelect.value;
 		const isDitherNone = ditherMode === "none";
-		// ディザリングが有効なら強度を表示
+		// Show strength if dithering is enabled
 		els.ditherStrengthSetting.style.display = !isDitherNone ? "flex" : "none";
 
-		// 減色モードが None のときはディザリング設定を無効化
+		// Disable dithering settings when color reduction mode is None
 		const ditherModeItem = els.ditherModeSelect.closest(".setting-item");
 		if (ditherModeItem) {
 			ditherModeItem.classList.toggle("disabled", !isEnabled);
@@ -1447,17 +1446,17 @@ export const initApp = (): void => {
 	});
 	els.outlineColorInput.addEventListener("input", triggerAutoProcess);
 
-	// ディザリング設定のUI制御（常に表示、ただし減色モードがNone以外のときのみ有効など検討可能）
-	// 現状はシンプルに維持
+	// UI control for dithering (could keep it always shown, but enabled only when mode is not None)
+	// Keeping it simple for now
 	updateReduceColorsDisabledStates();
 
 	updateDisabledStates();
 
-	// 背景抽出方法が none のときは背景関連UIを無効化
+	// Disable background-related UI when background removal method is none
 	const updateBgDisabledStates = () => {
 		const isBgDisabled = els.bgExtractionMethod.value === "none";
 
-		// 背景透過に関連する項目の制御
+		// Control items related to background transparency
 		[
 			els.toleranceInput,
 			els.toleranceSlider,
@@ -1515,19 +1514,19 @@ export const initApp = (): void => {
 
 	updateProcessButtonVisibility();
 
-	// 設定変更時に保存するための共通リスナー（表示条件のみ）
+	// Common listener for saving on setting changes (display conditions only)
 	[els.zoomOutputCheck, els.gridOutputCheck, els.autoProcessToggle].forEach(
 		(el) => {
 			el.addEventListener("change", () => saveSettings());
 		},
 	);
 
-	// Auto Process トグル変更時にプロセスボタンの表示/非表示を切り替え
+	// Toggle process button visibility when Auto Process toggle changes
 	els.autoProcessToggle.addEventListener("change", () => {
 		updateProcessButtonVisibility();
 	});
 
-	// 設定変更時に自動処理をトリガーするイベントリスナーを追加
+	// Add event listeners to trigger auto-processing on setting changes
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
@@ -1547,7 +1546,7 @@ export const initApp = (): void => {
 		els.bgColorInput,
 	].forEach((el) => {
 		el.addEventListener("change", triggerAutoProcess);
-		// テキスト入力などは input イベントでも拾う
+		// Also capture text inputs with input event
 		if (
 			el instanceof HTMLInputElement &&
 			(el.type === "text" || el.type === "number")
@@ -1828,12 +1827,12 @@ export const initApp = (): void => {
 		runProcessing();
 	});
 
-	// 表示切替ロジック
+	// Display toggle logic
 	const openCompareModal = () => {
 		compareModalController.open();
 
-		// 背景色を同期 (mainResultViewerから取得するか、保存された設定から取得)
-		// 簡易的に localStorage から取得
+		// Sync background color (from mainResultViewer or saved settings)
+		// Simply retrieve from localStorage
 		try {
 			const saved = localStorage.getItem(STORAGE_KEY);
 			if (saved) {
@@ -1856,7 +1855,7 @@ export const initApp = (): void => {
 			console.error(e);
 		}
 
-		// モーダルが開いた直後にサイズ同期を行う必要がある
+		// Need size synchronization immediately after modal opens
 		requestAnimationFrame(() => {
 			// Always keep grid OFF in compare modal (nothing to draw, but keep state consistent)
 			// (No-op for now, since compare modal does not use grid-canvas.)
@@ -1911,7 +1910,7 @@ export const initApp = (): void => {
 		setCompareBeforeMode("sanitized");
 	});
 
-	// アプリの準備が整ったら表示
+	// Display when app is ready
 	document.body.classList.add("loaded");
 
 	// Background selector logic (Moved to ResultViewer, but we might need initial sync or setup if logic was here)
@@ -2005,7 +2004,7 @@ export const initApp = (): void => {
 				: "outer";
 		}
 
-		// 背景透過の範囲から「透過しない」を廃止: off は outer にマッピング
+		// Deprecated "off" from bg removal scope: map to "outer"
 		if (state["bg-removal-scope"] === "off") {
 			state["bg-removal-scope"] = "outer";
 		}

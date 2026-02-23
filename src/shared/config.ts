@@ -224,32 +224,32 @@ export const RETRO_PALETTES: Record<
 		],
 	},
 	sfc_sprite: {
-		name: "SFC風 (16色/スプライト)",
-		colors: [], // K-means 16色 + 15bit丸め
+		name: "SFC Style (16 colors/Sprite)",
+		colors: [], // K-means 16 colors + 15bit rounding
 	},
 	sfc_bg: {
-		name: "SFC風 (256色/背景)",
-		colors: [], // K-means 256色 + 15bit丸め
+		name: "SFC Style (256 colors/BG)",
+		colors: [], // K-means 256 colors + 15bit rounding
 	},
 };
 
 export const PROCESS_DEFAULTS = {
 	preRemoveBackground: true,
 	postRemoveBackground: true,
-	// 背景透過の適用範囲（off/selected/outer/all）
+	// Scope of background removal (off/selected/outer/all)
 	bgRemovalScope: "outer",
-	// 連結判定に斜め（8近傍）を含めるか（4=含めない, 8=含める）
+	// Whether to include diagonals (8-neighbors) in connectivity search (4=no, 8=yes)
 	bgConnectivity: "4",
-	// 出力後に内容物BBoxでトリムする（既定はON）
+	// Trim to content BBox after processing (default ON)
 	trimToContent: true,
 	autoGridFromTrimmed: true,
-	// autoGridFromTrimmed のグリッド推定を高速化する（結果が変わる可能性あり）
+	// Speed up grid estimation for autoGridFromTrimmed (may affect results)
 	fastAutoGridFromTrimmed: true,
-	// グリッド検出と縮小を有効にする（デフォルトON）
+	// Enable grid detection and downsampling (default ON)
 	enableGridDetection: true,
 	// Fill the shorter side with transparent pixels to make the image square
 	makeSquare: false,
-	// グリッド検出モード（UI用）
+	// Grid detection mode (for UI)
 	gridDetectionMode: "auto",
 
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,

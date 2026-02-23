@@ -63,8 +63,8 @@ export const posterize = (img: RawImage, step: number): RawImage => {
 };
 
 /**
- * SFCのハードウェア仕様（15bitカラー / RGB各5bit）に色を丸める。
- * 0-255 を 0-31 (5bit) に変換し、また 0-248 (8bit相当) に戻す。
+ * Rounds colors to the Super Famicom's 15-bit color specification (5 bits each for RGB).
+ * Converts 0-255 to 0-31 (5-bit equivalent) and then back to 0-248 (8-bit equivalent).
  */
 export const roundTo15bitColor = (img: RawImage): RawImage => {
 	const out = new Uint8ClampedArray(img.data.length);
@@ -86,8 +86,8 @@ export const extractStrip = (
 	if (axis === "y") {
 		const y = Math.min(img.height - 1, Math.max(0, Math.round(pos)));
 		for (let x = 0; x < img.width; x += 1) {
-			// ここでは strip に追加するため新しい配列が必要だが、
-			// getPixel(img, x, y) を直接呼ぶ
+			// Need a new array to add to strip,
+			// but call getPixel(img, x, y) directly
 			strip.push(getPixel(img, x, y));
 		}
 		return strip;

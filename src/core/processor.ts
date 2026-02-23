@@ -29,7 +29,7 @@ const cloneImage = (img: RawImage): RawImage => ({
 const medianOf = (values: number[]): number => {
 	const n = values.length;
 	if (n === 0) return 0;
-	// 結果に影響しない（中央値のみ必要）ため、コピーせず in-place にソートする。
+	// Sort in-place as it doesn't affect the result (only median is needed).
 	values.sort((a, b) => a - b);
 	const mid = Math.floor(n / 2);
 	if (n % 2 === 0) {
@@ -67,7 +67,7 @@ export const downsample = (
 	const imgWMax = imgW - 1;
 	const imgHMax = imgH - 1;
 
-	// 各ピクセルごとの配列生成を避け、再利用する（値の列と順序は維持）。
+	// Reuse arrays to avoid allocation for each pixel (keep value sequence and order).
 	const valuesR: number[] = [];
 	const valuesG: number[] = [];
 	const valuesB: number[] = [];
@@ -276,32 +276,32 @@ export type ProcessOptions = DetectOptions & {
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
-	 * 内容物BBoxでトリムした後、指定したピクセルサイズ(W×H)に強制変換する。
-	 * 有効なときは自動グリッド検出(detectGrid)を行わない。
+	 * Force conversion to the specified pixel size (W x H) after trimming with content BBox.
+	 * When enabled, automatic grid detection (detectGrid) is not performed.
 	 *
-	 * 注意:
-	 * - 有効条件は forcePixelsW/H の両方が指定されていること
-	 * - 拡大が必要な場合は最近傍相当（sampleWindow=1）で変換する
+	 * Note:
+	 * - Conditions: both forcePixelsW/H must be specified.
+	 * - If upscaling is needed, nearest neighbor (sampleWindow=1) is used.
 	 */
 	forcePixelsW?: number;
 	forcePixelsH?: number;
 	/**
-	 * 指定ピクセルサイズ(W×H)を「ヒント」として使い、自動グリッド推定をその近傍から精密探索で開始する。
-	 * 完全ピクセル指定（forcePixelsW/H）とは異なり、自動検出を行う。
+	 * Use the specified pixel size (W x H) as a "hint" to start automatic grid estimation with a precise search from its neighborhood.
+	 * Unlike full pixel specification (forcePixelsW/H), automatic detection is still performed.
 	 *
-	 * 注意:
-	 * - 有効条件は hintPixelsW/H の両方が指定されていること
-	 * - 主に autoGridFromTrimmed の探索開始点として利用する
+	 * Note:
+	 * - Conditions: both hintPixelsW/H must be specified.
+	 * - Mainly used as a starting point for autoGridFromTrimmed search.
 	 */
 	hintPixelsW?: number;
 	hintPixelsH?: number;
 	/**
-	 * 背景透過の適用範囲（off/selected/outer/all）
-	 * RGB指定＋selected の場合は自動で outer 扱い
+	 * Scope of background removal (off/selected/outer/all)
+	 * For RGB specification + selected, it is automatically treated as outer.
 	 */
 	bgRemovalScope?: BackgroundRemovalScope;
 	/**
-	 * 連結判定に斜め（8近傍）を含めるか
+	 * Whether to include diagonals (8-neighbors) in connectivity search.
 	 */
 	bgConnectivity?: Connectivity;
 	backgroundTolerance?: number;
@@ -309,25 +309,25 @@ export type ProcessOptions = DetectOptions & {
 	trimToContent?: boolean;
 	trimAlphaThreshold?: number;
 	/**
-	 * 除去対象とみなす最大ピクセル数（元画像ピクセル）。
-	 * 0 のときは浮きノイズ除去をスキップする。
+	 * Maximum number of pixels to consider as target for removal (original image pixels).
+	 * If 0, skip removal of floating noise.
 	 */
 	floatingMaxPixels?: number;
 	/**
-	 * trimToContent=true のとき、背景除去→BBoxクロップした領域から出力グリッド(outW/outH)を推定する。
+	 * When trimToContent=true, estimate the output grid (outW/outH) from the background removed -> BBox cropped area.
 	 */
 	autoGridFromTrimmed?: boolean;
 	/**
-	 * autoGridFromTrimmed のグリッド推定を高速化する（結果が変わる可能性あり）。
-	 * OFFにすると従来の探索ロジックを使用する。
+	 * Speed up grid estimation for autoGridFromTrimmed (may affect results).
+	 * If OFF, use legacy search logic.
 	 *
-	 * 既定: true
+	 * Default: true
 	 */
 	fastAutoGridFromTrimmed?: boolean;
 	/**
-	 * グリッド検出と縮小を有効にする（デフォルトON）。
-	 * OFFにすると、グリッド検出と縮小をスキップします（等倍ドット絵用）。
-	 * 背景トリミングと背景透過は引き続き有効。
+	 * Enable grid detection and downsampling (default ON).
+	 * If OFF, skip grid detection and downsampling (for same-size pixel art).
+	 * Background trimming and transparency are still applied.
 	 */
 	enableGridDetection?: boolean;
 	/**
@@ -335,31 +335,31 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	makeSquare?: boolean;
 	/**
-	 * 減色を有効にする。
+	 * Enable color reduction.
 	 */
 	reduceColors?: boolean;
 	/**
-	 * 減色モード
+	 * Color reduction mode
 	 */
 	reduceColorMode?: string;
 	/**
-	 * ディザリングモード
+	 * Dithering mode
 	 */
 	ditherMode?: DitherMode;
 	/**
-	 * 減色後の色数。
+	 * Number of colors after reduction.
 	 */
 	colorCount?: number;
 	/**
-	 * ディザリング強度 (0-100)。0 のときはディザリングなし。
+	 * Dithering strength (0-100). If 0, no dithering.
 	 */
 	ditherStrength?: number;
 	/**
-	 * 固定パレット
+	 * Fixed palette
 	 */
 	fixedPalette?: RGB[];
 	/**
-	 * 背景抽出方法
+	 * Background extraction method
 	 */
 	bgExtractionMethod?:
 		| "none"
@@ -369,14 +369,14 @@ export type ProcessOptions = DetectOptions & {
 		| "bottom-right"
 		| "rgb";
 	/**
-	 * RGB指定時の背景色 (#rrggbb)
+	 * Background color for RGB specification (#rrggbb)
 	 */
 	bgRgb?: string;
 	outlineStyle?: OutlineStyle;
 	outlineColor?: RGB;
 	/**
-	 * デバッグ用に中間画像を取り出すためのフック。
-	 * ブラウザ環境でも動くよう、PNG書き出し等は呼び出し側で行う。
+	 * Hook to extract intermediate images for debugging.
+	 * To work in browser environment, PNG export, etc., should be performed on the calling side.
 	 */
 	debugHook?: (
 		name: string,
@@ -667,7 +667,7 @@ const removeBackground = (
 	if (method === "none") return cloneImage(img);
 	if (bgRemovalScope === "off") return cloneImage(img);
 
-	// 4/8 近傍(connectivity)が有効になるのは selected / outer のみ。
+	// 4/8 connectivity is only valid for selected / outer.
 	if (bgRemovalScope === "selected") {
 		return removeBackgroundByFloodFillLegacy(
 			img,
@@ -795,7 +795,7 @@ const removeSmallFloatingComponentsInPlace = (
 ): { removedComponents: number; removedPixels: number } => {
 	if (maxPixels <= 0) return { removedComponents: 0, removedPixels: 0 };
 	if (working.width !== masked.width || working.height !== masked.height) {
-		throw new Error("working と masked のサイズが一致しません。");
+		throw new Error("working and masked sizes do not match.");
 	}
 	const w = masked.width;
 	const h = masked.height;
@@ -829,7 +829,7 @@ const removeSmallFloatingComponentsInPlace = (
 			if (storing) {
 				pixels.push(cur);
 				if (pixels.length > maxPixels) {
-					// これ以上は除去対象にならないので、記録をやめる
+					// Stop recording as it is no longer a target for removal
 					storing = false;
 					pixels = [];
 				}
@@ -838,7 +838,7 @@ const removeSmallFloatingComponentsInPlace = (
 			const x = cur % w;
 			const y = (cur / w) | 0;
 
-			// 4-neighborhood
+			// Downsampling logic for nearest-neighbor scaling
 			if (x > 0) {
 				const p2 = cur - 1;
 				if (!visited[p2] && isOpaque(p2)) {
@@ -873,13 +873,13 @@ const removeSmallFloatingComponentsInPlace = (
 			largestSize = size;
 			largestId = id;
 		}
-		// 除去候補（小さいもの）だけ座標を保持しておく
+		// Only keep coordinates for candidate for removal (small components)
 		if (size <= maxPixels && pixels.length > 0) {
 			small.push({ id, pixels, size });
 		}
 	}
 
-	// 最大の連結成分は「本体」とみなし、除去候補でも残す
+	// The largest connected component is considered the "main object" and is kept even if it's a candidate for removal
 	let removedComponents = 0;
 	let removedPixels = 0;
 	for (const comp of small) {
@@ -998,8 +998,8 @@ const applyColorReduction = (
 		});
 	}
 
-	// SFCモードの場合は、減色前に15bitカラーに丸めることで、
-	// K-meansがSFCの色空間内で最適なパレットを選べるようにする
+	// In SFC mode, round to 15-bit color before color reduction,
+	// allowing K-means to select the optimal palette within the SFC color space.
 	let workingPixelData = pixelData;
 	const isSfcMode = mode === "sfc_sprite" || mode === "sfc_bg";
 	if (isSfcMode && !customPalette) {
@@ -1127,9 +1127,9 @@ type GridSizeCandidate = {
 };
 
 /**
- * 候補サイズを「ある程度分散」させるため、outH 範囲をバケット分割して各バケットの最良を拾う。
- * - 大幅にサイズが外れている場合でも、近傍に寄りすぎない候補が得られる
- * - ベスト候補は必ず含め、不足分はスコア順で補完する
+ * To "disperse" candidate sizes to some extent, divide the outH range into buckets and pick the best from each bucket.
+ * - Even if the scale differs significantly, candidates that are not too close to each other are obtained.
+ * - The best candidate is always included, and any shortfall is filled in order of score.
  */
 const pickDistributedGridSizeCandidates = (
 	results: GridSizeCandidate[],
@@ -1168,7 +1168,7 @@ const pickDistributedGridSizeCandidates = (
 	const selected: GridSizeCandidate[] = [];
 	const seen = new Set<string>();
 
-	// ベスト候補は必ず含める
+	// Always include the best candidate
 	const best = byScore[0];
 	selected.push(best);
 	seen.add(`${best.outW}x${best.outH}`);
@@ -1182,7 +1182,7 @@ const pickDistributedGridSizeCandidates = (
 		if (selected.length >= count) break;
 	}
 
-	// 空きがあれば、スコア順で補完
+	// If there is space, fill with others in order of score
 	for (const r of byScore) {
 		if (selected.length >= count) break;
 		const key = `${r.outW}x${r.outH}`;
@@ -1191,7 +1191,7 @@ const pickDistributedGridSizeCandidates = (
 		seen.add(key);
 	}
 
-	// UIで見やすいよう、サイズ順に並べる
+	// Sort by size for better display in UI
 	selected.sort((a, b) => a.outH - b.outH || a.outW - b.outW);
 	return selected.slice(0, count);
 };
@@ -1262,7 +1262,7 @@ export class FastGridSearchFromTrimmed
 			const small = downsample(cropped, grid, sampleWindow);
 			const smallData = small.data;
 
-			// 再構成誤差（背景は mask の alpha=0 を無視）
+			// Reconstruction error (ignore mask alpha=0 for background)
 			let err = 0;
 			let n = 0;
 			for (let y = 0; y < croppedH; y += pixelStride) {
@@ -1291,9 +1291,8 @@ export class FastGridSearchFromTrimmed
 			if (n === 0) continue;
 
 			const reconErr = err / n;
-			// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
-			// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
-			// 低解像度（セル数少）と高解像度（セル数多）のバランスを取るため、平方根オーダーにする
+			// Reconstruction error tends to drop monotonically with over-partitioning, so add a penalty proportional to number of cells.
+			// Use square root order to balance between low resolution (few cells) and high resolution (many cells).
 			const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
 			allResults.push({ outH, outW, score });
@@ -1337,23 +1336,23 @@ export class FastGridSearchFromTrimmed
 		sampleWindow: number,
 		hint?: { outW: number; outH: number },
 	): GridEstimateFromTrimmed | null {
-		// 比率に基づき outH を振って outW を決める（探索空間を抑える）
+		// Vary outH based on ratio to determine outW (limits search space)
 		const outHMin = Math.max(2, Math.floor(cropped.height / 32));
-		// 1セルが小さすぎる（=過分割）と常に誤差が下がってしまうため、最低でも 4px/セル程度を要求する
+		// If 1 cell is too small (= over-partitioned), error always drops, so require at least ~4px/cell
 		const outHMax = Math.min(
 			512,
 			Math.max(outHMin, Math.floor(cropped.height / 4)),
 		);
 
-		// 画像が大きいほど、粗いスキップで候補数を減らす
+		// If image is larger, reduce candidates with coarser steps
 		const span = outHMax - outHMin;
 		const outHStep = span >= 64 ? 3 : span >= 32 ? 2 : 1;
 
-		// 再構成誤差の評価点を間引く（大きい画像ほど効果が大きい）
+		// Downsample the reconstruction error evaluation points (more effective for larger images)
 		const maxDim = Math.max(cropped.width, cropped.height);
 		const pixelStride = Math.min(4, Math.max(1, Math.floor(maxDim / 512)));
 
-		// ヒント指定時は、その近傍から精密探索（outHStep=1）で開始する
+		// If hint is specified, start precise search (outHStep=1) from its neighborhood
 		if (hint) {
 			const hintOutH = clampInt(hint.outH, {
 				min: outHMin,
@@ -1388,7 +1387,7 @@ export class FastGridSearchFromTrimmed
 		);
 		if (!coarse) return null;
 
-		// 粗探索ベスト近傍だけを細かく再探索（範囲は狭いので stride を少し戻す）
+		// Fine-grained re-scan around the best coarse-search candidate (stride is reduced as the range is narrow)
 		const refineRadius = outHStep * 2;
 		const r0 = Math.max(outHMin, coarse.bestOutH - refineRadius);
 		const r1 = Math.min(outHMax, coarse.bestOutH + refineRadius);
@@ -1402,8 +1401,8 @@ export class FastGridSearchFromTrimmed
 			Math.max(1, Math.floor(pixelStride / 2)),
 		);
 		// NOTE:
-		// 候補一覧（UIでのサイズ調整用途）は「広域探索(coarse)のTop3」を採用する。
-		// 最終採用グリッド自体は精密探索(refine)のベストを維持する。
+		// Candidate list (for size adjustment in UI) uses Top 3 from "coarse-search".
+		// The finally adopted grid maintains the best result from "refined-search".
 		const best = refined?.est ?? coarse.est;
 		return { ...best, candidates: coarse.est.candidates };
 	}
@@ -1423,10 +1422,10 @@ const legacySearchGridFromTrimmed = (
 	sampleWindow: number,
 	hint?: { outW: number; outH: number },
 ): GridEstimateFromTrimmed | null => {
-	// 比率に基づき outH を振って outW を決める（探索空間を抑える）
+	// Determine outW by varying outH based on ratio (to limit search space)
 	const ratio = cropped.width / Math.max(1, cropped.height);
 	const outHMin = Math.max(2, Math.floor(cropped.height / 32));
-	// 1セルが小さすぎる（=過分割）と常に誤差が下がってしまうため、最低でも 4px/セル程度を要求する
+	// If 1 cell is too small (= over-partitioned), error always drops, so require at least ~4px/cell
 	const outHMax = Math.min(
 		512,
 		Math.max(outHMin, Math.floor(cropped.height / 4)),
@@ -1467,7 +1466,7 @@ const legacySearchGridFromTrimmed = (
 		};
 		const small = downsample(cropped, grid, sampleWindow);
 
-		// 再構成誤差（背景は mask の alpha=0 を無視）
+		// Reconstruction error (ignore mask alpha=0 for background)
 		let err = 0;
 		let n = 0;
 		const croppedData = cropped.data;
@@ -1500,9 +1499,8 @@ const legacySearchGridFromTrimmed = (
 		if (n === 0) continue;
 
 		const reconErr = err / n;
-		// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
-		// 過分割は再構成誤差が単調に下がりがちなので、セル数に比例したペナルティを足す
-		// 低解像度（セル数少）と高解像度（セル数多）のバランスを取るため、平方根オーダーにする
+		// Reconstruction error tends to drop monotonically with over-partitioning, so add a penalty proportional to number of cells.
+		// Use square root order to balance between low resolution (few cells) and high resolution (many cells).
 		const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 		const score = reconErr + complexityPenalty;
 		allResults.push({ outH, outW, score });
@@ -1605,7 +1603,7 @@ export const processImage = (
 	const trimToContent = o.trimToContent;
 	const trimAlphaThreshold = o.trimAlphaThreshold;
 
-	// force: 内容物BBoxでトリム → 指定ピクセル(W×H)へ強制変換（自動検出は行わない）
+	// force: Trim with content BBox -> Force convert to specified pixel size (W x H) (no auto-detection)
 	if (o.forcePixelsW !== undefined && o.forcePixelsH !== undefined) {
 		const bgTol = o.backgroundTolerance;
 		const masked = removeBackground(
@@ -1645,7 +1643,9 @@ export const processImage = (
 		const boundsStart = performance.now();
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
 		if (!b) {
-			throw new Error("内容物が見つからないため指定ピクセル変換できません。");
+			throw new Error(
+				"Specified pixel conversion failed because no content was found.",
+			);
 		}
 		log(
 			`Opaque bounds found in ${(performance.now() - boundsStart).toFixed(2)}ms`,
@@ -1678,7 +1678,7 @@ export const processImage = (
 			score: 0,
 		};
 
-		// 拡大が必要な場合は最近傍相当（sampleWindow=1）にする
+		// 2. Downsampling / Sanitization
 		const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
 		const downsampleStart = performance.now();
 		const down2 = downsample(cropped, g, sw);
@@ -1690,6 +1690,7 @@ export const processImage = (
 			forced: true,
 		});
 
+		// 3. Post-process Transparency (Background removal)
 		const postBgStart = performance.now();
 		const result2 = o.postRemoveBackground
 			? removeBackground(
@@ -1705,7 +1706,7 @@ export const processImage = (
 			`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 		);
 
-		// 減色処理
+		// Color reduction
 		let finalResult = result2;
 		if (o.reduceColors || o.fixedPalette) {
 			finalResult = applyColorReduction(
@@ -1807,7 +1808,7 @@ export const processImage = (
 		};
 	}
 
-	// enableGridDetection: グリッド検出と縮小をスキップ
+	// enableGridDetection: Skip grid detection and downsampling
 	if (!o.enableGridDetection) {
 		const bgTol = o.backgroundTolerance;
 		const masked = removeBackground(
@@ -1953,12 +1954,12 @@ export const processImage = (
 		};
 	}
 
-	// auto: まず背景トリム（縮小前）した領域から outW/outH を推定して、そのまま縮小する
-	// （隙間の多い画像でも、内容物領域にフォーカスして安定させたい）
+	// auto: First, estimate outW/outH from the background-trimmed area (before downsampling) and downsample as is.
+	// (Even for images with many gaps, we want to focus on the content area for stability.)
 	const autoGridFromTrimmed = o.autoGridFromTrimmed;
 
-	// 縮小前（downsample前）に「背景トリミング後」の見た目を確認できるように出力する。
-	// 実処理のパイプラインは変えず、デバッグ用途のみで算出する。
+	// Output the "after background trimming" look (before downsampling) for debugging.
+	// This is calculated for debug output only and does not change the actual processing pipeline.
 	const bgTol = o.backgroundTolerance;
 	const maskedStart = performance.now();
 	const maskedForDebugOrAuto =
@@ -2044,9 +2045,9 @@ export const processImage = (
 			);
 			if (est) {
 				// NOTE:
-				// - トリムOFF時でも「内容物BBoxからの推定グリッド」は使いたい（潰れ対策）。
-				// - ただしトリムOFFは背景（余白）を残すだけなので、縮小は全体(working)に適用する。
-				//   これにより、中心オブジェクトのセル数（見かけサイズ）は一定になりやすい。
+				// - Even when trimming is OFF, we want to use the "estimated grid from content BBox" (to prevent crushing).
+				// - However, trimming OFF just leaves background (margins), so apply downsampling to the whole image (working).
+				//   This makes the number of cells (apparent size) of the center object more stable.
 				const outW = Math.max(1, Math.floor(working.width / est.cellW));
 				const outH = Math.max(1, Math.floor(working.height / est.cellH));
 				const includeCandidates = hint === undefined;
@@ -2113,8 +2114,8 @@ export const processImage = (
 	let trimmedGrid = grid;
 	if (trimToContent) {
 		const trimStart = performance.now();
-		// 背景（四隅から連結）を透過化した上で、内容物のBBoxでセル単位にトリムする。
-		// これにより、上下左右に大きな余白がある画像でも outW/outH を「内容物」に合わせられる。
+		// After removing background (flood fill from corners), trim by content BBox in cell units.
+		// This allows outW/outH to fit the "content" even for images with large margins.
 		const bgTol = o.backgroundTolerance;
 		const masked = removeBackground(
 			down,
@@ -2181,7 +2182,7 @@ export const processImage = (
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
 
-	// 減色処理
+	// Color reduction
 	let finalResult = result;
 	if (o.reduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
@@ -2195,13 +2196,13 @@ export const processImage = (
 		);
 	}
 
-	// アウトライン処理
+	// Outline processing
 	if (o.outlineStyle !== "none") {
 		const prevW = finalResult.width;
 		const prevH = finalResult.height;
 		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
 
-		// 画像サイズが拡張された場合、グリッド情報も更新する
+		// Update grid info if image size was expanded
 		if (finalResult.width !== prevW || finalResult.height !== prevH) {
 			const dw = finalResult.width - prevW;
 			const dh = finalResult.height - prevH;

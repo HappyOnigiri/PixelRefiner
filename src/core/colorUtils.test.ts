@@ -14,11 +14,11 @@ describe("colorUtils.ts", () => {
 		];
 
 		testColors.forEach(({ name, rgb }) => {
-			it(`${name} が正しく変換・逆変換（ラウンドトリップ）できること`, () => {
+			it(`should correctly convert and reconvert (roundtrip) ${name}`, () => {
 				const lab = rgbToOklab(rgb);
 				const backRgb = oklabToRgb(lab);
 
-				// 許容誤差 ±1 以内であることを確認
+				// Verify it's within tolerance of +/- 1
 				expect(backRgb.r).toBeGreaterThanOrEqual(rgb.r - 1);
 				expect(backRgb.r).toBeLessThanOrEqual(rgb.r + 1);
 				expect(backRgb.g).toBeGreaterThanOrEqual(rgb.g - 1);
@@ -30,15 +30,15 @@ describe("colorUtils.ts", () => {
 	});
 
 	describe("oklabToRgb clipping", () => {
-		it("結果が 0-255 の範囲にクリッピングされていること", () => {
-			// 非常に大きなL値を持つOklab（白を超えるはず）
+		it("should clip results to 0-255 range", () => {
+			// Oklab with very large L (should exceed white)
 			const brightLab = { L: 2.0, a: 0, b: 0 };
 			const rgb = oklabToRgb(brightLab);
 			expect(rgb.r).toBe(255);
 			expect(rgb.g).toBe(255);
 			expect(rgb.b).toBe(255);
 
-			// 非常に小さなL値を持つOklab（黒を下回るはず）
+			// Oklab with very small L (should be below black)
 			const darkLab = { L: -1.0, a: 0, b: 0 };
 			const darkRgb = oklabToRgb(darkLab);
 			expect(darkRgb.r).toBe(0);

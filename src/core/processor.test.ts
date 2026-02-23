@@ -33,9 +33,9 @@ const writeRawImageAsPngSync = (outPath: string, img: RawImage): void => {
 };
 
 /**
- * PNGの「完全透過ピクセル(alpha=0)のRGB値」は見た目に影響しないが、
- * 生成ツールによってRGBが0埋めだったり元値が残ったりして差分になりうる。
- * テストではalpha=0のRGBを0に正規化してから比較する。
+ * RGB values of fully transparent pixels (alpha=0) in PNG do not affect visual appearance,
+ * but depending on the generator tool, RGB might be zero-filled or retain original values, which can cause differences.
+ * In tests, we normalize RGB to 0 when alpha=0 before comparison.
  */
 const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
 	const out = new Uint8ClampedArray(img.data);
@@ -51,10 +51,10 @@ const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
 };
 
 /**
- * 画像の完全一致を確認する（不一致時も重いdiffを出さず、原因が追える短いメッセージにする）。
+ * Verify images match exactly (provides shorter messages to trace causes without heavy diffs on mismatch).
  *
- * Vitest の `toEqual(Buffer)` は不一致時に巨大な差分生成で極端に遅くなることがあるため、
- * ここでは `Buffer.equals()` による真偽判定＋先頭差分の座標だけを報告する。
+ * Vitest's `toEqual(Buffer)` can be extremely slow on mismatch due to large diff generation,
+ * so here we report truthiness evaluation by `Buffer.equals()` + coordinates of the first difference.
  */
 const expectSameImage = (
 	actual: RawImage,
@@ -82,7 +82,7 @@ const expectSameImage = (
 	}
 	if (first < 0) {
 		throw new Error(
-			`画像が一致しません（length違い） actual=${a.length} expected=${b.length}`,
+			`Image mismatch (length difference) actual=${a.length} expected=${b.length}`,
 		);
 	}
 
@@ -91,7 +91,7 @@ const expectSameImage = (
 	const x = pixel % actual.width;
 	const y = (pixel / actual.width) | 0;
 	throw new Error(
-		`画像が一致しません: firstDiff=idx${first} (x=${x}, y=${y}, ch=${ch}) actual=${a[first]} expected=${b[first]}`,
+		`Image mismatch: firstDiff=idx${first} (x=${x}, y=${y}, ch=${ch}) actual=${a[first]} expected=${b[first]}`,
 	);
 };
 
@@ -111,13 +111,13 @@ const sanitizeForPath = (s: string): string => {
 
 const cleanDebugDir = (testcaseName: string): void => {
 	if (!DEBUG_IMAGES) return;
-	// `make test-debug` は先に `rm -rf tmp/debug` するので、ルート自体を作り直す
+	// `make test-debug` runs `rm -rf tmp/debug` first, so recreate the root itself.
 	mkdirSync(DEBUG_ROOT, { recursive: true });
 	const dir = path.join(DEBUG_ROOT, sanitizeForPath(testcaseName));
 	rmSync(dir, { recursive: true, force: true });
 
-	// 旧形式（currentTestName を丸ごとディレクトリ名にしていた頃）の掃除。
-	// 例: processImage___test6__... のような長いディレクトリが残り続けるのを防ぐ。
+	// Cleanup for legacy format (from when currentTestName was used directly as directory name).
+	// e.g. prevents long directories like processImage___test6__... from remaining.
 	const legacyPrefix = `processImage___${sanitizeForPath(testcaseName)}__`;
 	try {
 		for (const e of readdirSync(DEBUG_ROOT, { withFileTypes: true })) {
@@ -126,7 +126,7 @@ const cleanDebugDir = (testcaseName: string): void => {
 			rmSync(path.join(DEBUG_ROOT, e.name), { recursive: true, force: true });
 		}
 	} catch {
-		// 念のため: DEBUG_ROOT が消えていても掃除はスキップする
+		// Just in case: skip cleanup if DEBUG_ROOT doesn't exist
 	}
 };
 
@@ -184,8 +184,8 @@ const currentTestDebugDir = (): string => {
 	return path.join(DEBUG_ROOT, group, caseDir);
 };
 
-// `processImage({ debug: true })` 時に、テスト側で `debugHook` を渡さなくても
-// 中間画像/最終結果(99-result)が出力されるようにする。
+// When `processImage({ debug: true })`, ensure intermediate images/final result (99-result)
+// are output even if `debugHook` is not passed on the test side.
 if (DEBUG_IMAGES) {
 	globalThis.__PIXEL_REFINER_DEBUG_HOOK__ = (name, raw) => {
 		const dir = currentTestDebugDir();
@@ -233,12 +233,12 @@ describe("processImage", () => {
 					set(x, y, 0, 0, 0, 255);
 				}
 			}
-			// floating noise: 1px at (8, 8) (corner seedを汚さない位置)
+			// floating noise: 1px at (8, 8) (position that doesn't foul the corner seed)
 			set(8, 8, 0, 0, 0, 255);
 			return { width: w, height: h, data };
 		};
 
-		it("指定ピクセル時も floatingMaxPixels>0 ならBBoxが浮きノイズに引っ張られない", () => {
+		it("should not let BBox be pulled by floating noise if floatingMaxPixels > 0 even for specified pixels", () => {
 			const img = mkImg();
 
 			const base = {
@@ -260,7 +260,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 0,
 				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=0"),
 			});
-			// 浮きノイズ(8,8)まで含むBBox: x=1..8, y=1..8 => 8x8
+			// BBox including floating noise (8,8): x=1..8, y=1..8 => 8x8
 			expect(gridNoIgnore.cropW).toBe(8);
 			expect(gridNoIgnore.cropH).toBe(8);
 
@@ -269,7 +269,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 4,
 				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=4"),
 			});
-			// 浮きノイズ除去後のBBox: x=1..4, y=1..4 => 4x4
+			// BBox after removing floating noise: x=1..4, y=1..4 => 4x4
 			expect(gridIgnore.cropW).toBe(4);
 			expect(gridIgnore.cropH).toBe(4);
 		});
@@ -297,7 +297,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("高速モードOFF、浮きノイズOFF: 期待画像と完全一致する", () => {
+		it("should match expected image perfectly when fast mode OFF and floating noise OFF", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -308,11 +308,11 @@ describe("processImage", () => {
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: false, // 高速モードOFF
-				floatingMaxPixels: 0, // 浮きノイズOFF
+				fastAutoGridFromTrimmed: false, // Fast mode OFF
+				floatingMaxPixels: 0, // Floating noise OFF
 				debugHook: makeDebugHook(
 					"resize_and_remove_bg",
-					"高速モードOFF(fastAutoGridFromTrimmed=false)_浮きノイズOFF(floatingMaxPixels=0)_期待画像と完全一致",
+					"fastModeOFF(fastAutoGridFromTrimmed=false)_floatingNoiseOFF(floatingMaxPixels=0)_matchExpectedImage",
 				),
 			});
 
@@ -351,7 +351,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("指定ピクセル(forcePixelsW/H)=46/13 で 46x13 に強制変換され、期待画像と完全一致する", () => {
+		it("should force convert to 46x13 when forcePixelsW/H=46/13 and match expected image perfectly", () => {
 			const baseOpts = {
 				forcePixelsW: 46,
 				forcePixelsH: 13,
@@ -374,11 +374,11 @@ describe("processImage", () => {
 				forcePixelsH: 13,
 				debugHook: makeDebugHook(
 					"resize_with_trimming",
-					"指定ピクセル(forcePixelsW/H)=46/13_で_46x13_に強制変換され、期待画像と完全一致する",
+					"forcePixelsW_H=46_13_force_conversion_match_expected",
 				),
 			});
 
-			// 期待値PNGと完全一致（サイズ・ピクセル）
+			// Perfect match with expected PNG (size and pixels)
 			expect(result.width).toBe(46);
 			expect(result.height).toBe(13);
 			expect(result.width).toBe(expected.width);
@@ -392,7 +392,7 @@ describe("processImage", () => {
 				trimToContent: true,
 				debugHook: makeDebugHook(
 					"resize_with_trimming",
-					"trimToContent=true_でもサイズは変わらない",
+					"size_does_not_change_even_with_trimToContent=true",
 				),
 			});
 			expect(resultTrim.width).toBe(46);
@@ -422,7 +422,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("期待画像と完全一致する（サイズ・ピクセル）", () => {
+		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -437,11 +437,11 @@ describe("processImage", () => {
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
 					"auto_grid_detection",
-					"期待画像と完全一致する（サイズ・ピクセル）",
+					"match_expected_image_size_pixels",
 				),
 			});
 
-			// 期待値PNGと完全一致（サイズ・ピクセル）
+			// Perfect match with expected PNG (size and pixels)
 			expect(result.width).toBe(88);
 			expect(result.height).toBe(61);
 			expect(expected.width).toBe(88);
@@ -479,7 +479,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("期待画像と完全一致する（サイズ・ピクセル）", () => {
+		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -494,7 +494,7 @@ describe("processImage", () => {
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
 					"inner_background_removal",
-					"期待画像と完全一致する（サイズ・ピクセル）",
+					"match_expected_image_size_pixels",
 				),
 			});
 
@@ -505,7 +505,7 @@ describe("processImage", () => {
 				);
 				return;
 			}
-			// 期待値PNGと完全一致（サイズ・ピクセル）
+			// Perfect match with expected PNG (size and pixels)
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
@@ -518,7 +518,7 @@ describe("processImage", () => {
 			);
 		});
 
-		it("内側に閉じ込められた背景色（ドーナツ穴）も透過できる", () => {
+		it("should also remove background colors trapped inside (donut hole)", () => {
 			const { result } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -533,11 +533,11 @@ describe("processImage", () => {
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
 					"inner_background_removal",
-					"内側に閉じ込められた背景色（ドーナツ穴）も透過できる",
+					"inner_background_donut_hole_also_removable",
 				),
 			});
 
-			// 中心付近（内側背景）の alpha が 0 になることを確認する
+			// Verify that alpha near center (inner background) becomes 0
 			const cx = Math.floor(result.width / 2);
 			const cy = Math.floor(result.height / 2);
 			const alphas: number[] = [];
@@ -570,7 +570,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("自動トリム(trimToContent)をOFFにしても、期待画像と一致する", () => {
+		it("should match expected image even when trimToContent is OFF", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -578,18 +578,18 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 32,
 				sampleWindow: 3,
-				trimToContent: false, // 自動トリムをOFF
+				trimToContent: false, // Turn OFF auto trimming
 				trimAlphaThreshold: 16,
 
 				floatingMaxPixels: 50000,
 				autoGridFromTrimmed: true,
 				debugHook: makeDebugHook(
 					"no_trimming",
-					"自動トリム(trimToContent)_OFFでも期待画像と一致する",
+					"match_expected_even_with_trimToContent_OFF",
 				),
 			});
 
-			// 期待値PNGと完全一致（サイズ・ピクセル）
+			// Perfect match with expected PNG (size and pixels)
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
@@ -621,15 +621,15 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("GBパレット(4色)に正しく変換され、期待画像と一致すること", () => {
-			// ゲームボーイ(Legacy)モードで実行
+		it("should correctly convert to GB palette (4 colors) and match expected image", () => {
+			// Run in Game Boy (Legacy) mode
 			const { result } = processImage(img, {
 				reduceColors: true,
 				reduceColorMode: "gb_pocket",
 				ditherStrength: 0,
-				// 他の処理はOFFにしておく
+				// Leave other processing OFF
 				enableGridDetection: false,
-				bgExtractionMethod: "none", // 背景抽出をOFF
+				bgExtractionMethod: "none", // Background extraction OFF
 				preRemoveBackground: false,
 				postRemoveBackground: false,
 				bgRemovalScope: "selected",
@@ -665,15 +665,15 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("ディザリングありで処理され、期待画像と一致すること", () => {
-			// 2色（白黒）＋ディザリング
+		it("should process with dithering and match expected image", () => {
+			// 2 colors (Black & White) + Dithering
 			const { result } = processImage(img, {
 				reduceColors: true,
-				reduceColorMode: "mono", // 白黒
+				reduceColorMode: "mono", // Monochrome
 				ditherMode: "floyd-steinberg",
 				ditherStrength: 100,
 				enableGridDetection: false,
-				bgExtractionMethod: "none", // 背景抽出をOFF
+				bgExtractionMethod: "none", // Background extraction OFF
 				preRemoveBackground: false,
 				postRemoveBackground: false,
 				bgRemovalScope: "selected",
@@ -729,14 +729,14 @@ describe("processImage", () => {
 			return { width: w, height: h, data };
 		};
 
-		it("enableGridDetection=false のとき、縮小されず等倍で出力される", () => {
+		it("should output at actual size without downsampling when enableGridDetection=false", () => {
 			const img = mkImg();
 			const { result, grid } = processImage(img, {
 				enableGridDetection: false,
 				trimToContent: false,
 				debugHook: makeDebugHook(
 					"enableGridDetection",
-					"enableGridDetection=false_縮小されず等倍で出力",
+					"enableGridDetection=false_output_at_actual_size",
 				),
 			});
 
@@ -746,7 +746,7 @@ describe("processImage", () => {
 			expect(grid.cellH).toBe(1);
 		});
 
-		it("enableGridDetection=false かつ trimToContent=true のとき、トリミングのみ行われる", () => {
+		it("should only perform trimming when enableGridDetection=false and trimToContent=true", () => {
 			const img = mkImg();
 			const { result, grid } = processImage(img, {
 				enableGridDetection: false,
@@ -755,7 +755,7 @@ describe("processImage", () => {
 				backgroundTolerance: 0,
 				debugHook: makeDebugHook(
 					"enableGridDetection",
-					"enableGridDetection=false_かつ_trimToContent=true_トリミングのみ",
+					"enableGridDetection=false_trimToContent=true_only_trimming",
 				),
 			});
 
@@ -768,7 +768,7 @@ describe("processImage", () => {
 			expect(grid.cellH).toBe(1);
 		});
 
-		it("enableGridDetection=false のときも減色が動作する", () => {
+		it("should work with color reduction even when enableGridDetection=false", () => {
 			const img = mkImg();
 			const { result } = processImage(img, {
 				enableGridDetection: false,
@@ -777,17 +777,17 @@ describe("processImage", () => {
 				colorCount: 2,
 				debugHook: makeDebugHook(
 					"enableGridDetection",
-					"enableGridDetection=false_かつ_reduceColors=true",
+					"enableGridDetection=false_reduceColors=true",
 				),
 			});
 
-			// 色数をカウント
+			// Count colors
 			const colors = new Set<number>();
 			const data32 = new Uint32Array(result.data.buffer);
 			for (let i = 0; i < data32.length; i++) {
 				colors.add(data32[i]);
 			}
-			// 背景(白)とオブジェクト(黒)の2色になるはず
+			// Should be 2 colors: background (white) and object (black)
 			expect(colors.size).toBeLessThanOrEqual(2);
 		});
 	});
@@ -796,7 +796,7 @@ describe("processImage", () => {
 			cleanDebugDir("makeSquare");
 		});
 
-		it("幅が広い画像(横長)を正方形にする", async () => {
+		it("should make wide image (landscape) square", async () => {
 			const imgPath = fileURLToPath(
 				new URL("../../test/fixtures/wide_red.png", import.meta.url),
 			);
@@ -809,7 +809,7 @@ describe("processImage", () => {
 				enableGridDetection: false,
 				debugHook: makeDebugHook(
 					"makeSquare",
-					"幅が広い画像(横長)を正方形にする",
+					"make_wide_image_landscape_square",
 				),
 			});
 
@@ -818,14 +818,14 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(10);
 			expect(grid.outH).toBe(10);
 
-			// 中央(10x4画像を中央配置すると y=3)には元の赤いピクセルがあり、上下の余白(0, 0)などは透明になっていること
+			// Red pixels exist at center (y=3 when 10x4 image centered), upper/lower margins (0,0 etc) should be transparent
 			const topAlpha = result.data[3]; // (0, 0). (0,0,0,0)
 			expect(topAlpha).toBe(0);
 			const centerAlpha = result.data[(3 * 10 + 0) * 4 + 3]; // (0, 3)
 			expect(centerAlpha).toBe(255);
 		});
 
-		it("高さが高い画像(縦長)を正方形にする", async () => {
+		it("should make tall image (portrait) square", async () => {
 			const imgPath = fileURLToPath(
 				new URL("../../test/fixtures/tall_red.png", import.meta.url),
 			);
@@ -838,7 +838,7 @@ describe("processImage", () => {
 				enableGridDetection: false,
 				debugHook: makeDebugHook(
 					"makeSquare",
-					"高さが高い画像(縦長)を正方形にする",
+					"make_tall_image_portrait_square",
 				),
 			});
 
@@ -847,7 +847,7 @@ describe("processImage", () => {
 			expect(grid.outW).toBe(10);
 			expect(grid.outH).toBe(10);
 
-			// 中央(4x10画像を中央配置すると x=3)には元の赤いピクセルがあり、左右の余白(0, 0)などは透明になっていること
+			// Red pixels exist at center (x=3 when 4x10 image centered), left/right margins (0,0 etc) should be transparent
 			const leftEdgeAlpha = result.data[3]; // (0, 0)
 			expect(leftEdgeAlpha).toBe(0);
 			const centerAlpha = result.data[(0 * 10 + 3) * 4 + 3]; // (3, 0)
@@ -875,7 +875,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		it("高解像度画像（1ドットが小さい画像）が適切に検出・処理されること", () => {
+		it("should correctly detect and process high-resolution images (small pixels)", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
@@ -885,27 +885,27 @@ describe("processImage", () => {
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
-				// ユーザーからのフィードバックに基づき、autoGridFromTrimmed: true でも
-				// 探索範囲の緩和とペナルティ調整により、高解像度グリッドが検出されることを確認する。
+				// Based on user feedback, verify that high-resolution grids are detected
+				// even with autoGridFromTrimmed: true by relaxing search range and adjusting penalties.
 				autoGridFromTrimmed: true,
 				debug: true,
-				debugHook: makeDebugHook("high_resolution", "結果確認用"),
+				debugHook: makeDebugHook("high_resolution", "for_verification"),
 			});
 
-			// 検出結果の検証
+			// Verify detection results
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
 			expect(grid.outH).toBe(expected.height);
 
-			// 画像比較
+			// Image comparison
 			expectSameImage(result, expected, getExpectPath("high_resolution"));
 		});
 	});
 
 	describe("Grid Search Strategies Consistency", () => {
-		it("FastモードとLegacyモードが同じ結果を導き出すか (シンプルな画像)", () => {
-			// 16x16 のグリッド画像を作成 (8x8セルが2x2並んでいる想定)
+		it("should yield same results for Fast and Legacy modes (simple image)", () => {
+			// Create 16x16 grid image (assuming 2x2 grid of 8x8 cells)
 			const width = 16;
 			const height = 16;
 			const data = new Uint8ClampedArray(width * height * 4);
@@ -927,7 +927,7 @@ describe("processImage", () => {
 				data: new Uint8ClampedArray(data),
 			};
 
-			// 内部クラスにアクセスするために型をキャストして使用
+			// Cast to access internal classes
 			const legacy = new (
 				LegacyGridSearchFromTrimmed as unknown as {
 					new (): {

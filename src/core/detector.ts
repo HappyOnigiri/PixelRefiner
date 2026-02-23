@@ -115,27 +115,27 @@ type Estimate = { cellSize: number; offset: number; score: number };
 export type DetectOptions = {
 	detectionQuantStep?: number;
 	/**
-	 * 自動検出時の最大セル数（= outW/outH の上限）を調整する。
-	 * デフォルトは 128。
+	 * Maximum number of cells for automatic detection (upper limit for outW/outH).
+	 * Default is 128.
 	 */
 	autoMaxCellsW?: number;
 	autoMaxCellsH?: number;
 	/**
-	 * 自動検出時のサンプリング本数（各軸）。大きいほど安定しやすいが遅くなる。
-	 * デフォルト: 12
+	 * Number of sample strips for automatic detection (each axis). Larger values are more stable but slower.
+	 * Default: 12
 	 */
 	detectionStrips?: number;
 	/**
-	 * 背景色を推定してマスクした上で検出する（背景ノイズ対策）。
-	 * デフォルト: true
+	 * Guess the background color and mask it before detection (to handle background noise).
+	 * Default: true
 	 */
 	backgroundMask?: boolean;
 	/**
-	 * 背景マスクの許容誤差（RGB の各チャンネル絶対差）。未指定なら四隅から自動推定。
+	 * Tolerance for background mask (absolute difference for each RGB channel). If not specified, it is automatically estimated from the four corners.
 	 */
 	backgroundMaskTolerance?: number;
 	/**
-	 * 検出過程を console に出す（調査用）。
+	 * Logs the detection process to the console (for debugging).
 	 */
 	debug?: boolean;
 	debugLabel?: string;
@@ -235,7 +235,9 @@ export const detectGrid = (
 		scores.sort((a, b) => b.score - a.score);
 
 		const picked: number[] = [];
-		// 隙間の多い画像では「内容のあるライン」が局所的に固まるので、離しすぎない
+		// If there is no assumed grid, select "dense" lines for detection.
+		// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
+		// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
 		const minSep = Math.max(1, Math.floor(len / Math.max(1, count * 6)));
 		for (const item of scores) {
 			if (item.score <= 0) break;
@@ -250,9 +252,9 @@ export const detectGrid = (
 	const stripCount = options.detectionStrips ?? 12;
 	const shouldMaskBackground = options.backgroundMask ?? true;
 
-	// 想定グリッドが無い場合は「内容が濃い」ラインを選んで検出する。
-	// ただし背景マスクは「ライン選定」にだけ使い、run 境界の計算は元画像（ポスタライズ結果）で行う。
-	// （隙間の多い画像では、背景をマスクしすぎると周期（セルサイズ）が推定しづらくなるため）
+	// If there is no assumed grid, select "dense" lines for detection.
+	// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
+	// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
 	const bgInfo = shouldMaskBackground ? dominantBackground(det) : null;
 	const detForPick = bgInfo ? maskBackgroundByKeys(det, bgInfo.bgKeySet) : det;
 	const detForDetect = det;
@@ -324,14 +326,14 @@ export const detectGrid = (
 
 		for (const line of lines) {
 			let i = 0;
-			// 初期状態
+			// Initial state
 			const isFgAt = (pos: number): 0 | 1 => {
 				let idx: number;
 				if (axis === "x") {
-					// y 固定で x を動かす
+					// y is fixed, x moves
 					idx = (line * w + pos) * 4;
 				} else {
-					// x 固定で y を動かす
+					// x is fixed, y moves
 					idx = (pos * w + line) * 4;
 				}
 				const key = `${detForDetect.data[idx]},${detForDetect.data[idx + 1]},${detForDetect.data[idx + 2]}`;
@@ -456,7 +458,7 @@ export const detectGrid = (
 
 		const counts = new Array(maxLen + 1).fill(0);
 		for (const rl of runLengths) {
-			const v = Math.min(maxLen, Math.max(0, Math.floor(rl)));
+			const v = Math.min(maxCell, Math.max(0, Math.floor(rl)));
 			counts[v] += 1;
 		}
 
@@ -544,7 +546,7 @@ export const detectGrid = (
 	// if the first pass detected > 96 cells.
 	// This was causing high-resolution images (where dot size is small, e.g. 4px) to be
 	// incorrectly detected as having larger cells (e.g. 16px).
-	// We remove this retry restriction to support fine grids.
+	// We remove this retry restriction to support finer grids.
 
 	const ySegLists = xs.map((x) => {
 		const strip = extractStrip(detForDetect, "x", x);
@@ -573,7 +575,7 @@ export const detectGrid = (
 	const finalY = estY;
 
 	if (!finalX || !finalY) {
-		// 検出失敗時のフォールバック
+		// Fallback for detection failure
 		const fallbackX = finalX ?? { cellSize: w, offset: 0, score: 0 };
 		const fallbackY = finalY ?? { cellSize: h, offset: 0, score: 0 };
 
