@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules sync-agent
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules check-non-ascii sync-agent
 
 # コードの変更を検知して再ビルドを実行
 watch-dev:
@@ -24,6 +24,7 @@ ci-check:
 	$(MAKE) html-check-diff
 	$(MAKE) type-check
 	$(MAKE) check-ts-rules
+	$(MAKE) check-non-ascii
 	$(MAKE) test
 
 test:
@@ -38,6 +39,9 @@ type-check:
 
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
+
+check-non-ascii:
+	python3 scripts/check_non_ascii.py
 
 ts-check-diff:
 	@files="$$( ( \

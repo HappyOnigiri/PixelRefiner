@@ -36,7 +36,7 @@ def execute_phase(phase_name, tasks):
     """
     if phase_name:
         print(f"--- {phase_name} ---")
-    
+
     failed = False
     failure_details = []
 
@@ -56,7 +56,7 @@ def execute_phase(phase_name, tasks):
                 print(f"❌ {name} ({duration:.2f}s)")
                 failed = True
                 failure_details.append((name, output))
-    
+
     # エラー詳細の表示
     if failed:
         print("\n=== FAILURE DETAILS ===")
@@ -65,7 +65,7 @@ def execute_phase(phase_name, tasks):
             print(output.strip())
             print("-----------------------")
         return False
-    
+
     return True
 
 def main():
@@ -75,7 +75,7 @@ def main():
         ("TS Fix", ["make", "ts-fix-diff"]),
         ("HTML Fix", ["make", "html-fix-diff"]),
     ]
-    
+
     # fix phase は何もないことが多いので、ヘッダーを控えめにしてもいいが、明確にするために表示
     if not execute_phase("Auto Fix Phase", fix_tasks):
         print("Fix phase failed. Stopping.")
@@ -88,6 +88,7 @@ def main():
         ("HTML Check", ["make", "html-check-diff"]),
         ("Type Check", ["make", "type-check"]),
         ("Custom Rules", ["make", "check-ts-rules"]),
+        ("Non-ASCII Check", ["make", "check-non-ascii"]),
         ("Tests", ["make", "test"]),
     ]
 
