@@ -55,7 +55,7 @@ def main():
                     f.write(content + "\n")
 
                 # Format with prettier
-                subprocess.run(["npx", "prettier", "--write", filepath], check=True)
+                subprocess.run(["npx", "--yes", "prettier", "--write", filepath], check=True)
                 print(f"Successfully formatted {filepath}")
             except subprocess.CalledProcessError as e:
                 print(f"prettier formatting failed: {e}")

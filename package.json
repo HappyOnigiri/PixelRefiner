@@ -12,10 +12,12 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@intellectronica/ruler": "latest",
     "@types/jszip": "^3.4.0",
     "@types/node": "latest",
     "@types/pngjs": "^6.0.5",
     "pngjs": "latest",
+    "prettier": "latest",
     "typescript": "latest",
     "vite": "latest",
     "vitest": "latest"
