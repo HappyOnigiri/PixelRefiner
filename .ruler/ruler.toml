@@ -1,7 +1,7 @@
 # Ruler Configuration File
 # See https://ai.intellectronica.net/ruler for documentation.
 
-# デフォルトで有効にするエージェント
+# Agents to enable by default
 default_agents = ["antigravity", "cursor", "claude"]
 
 [agents.claude]
