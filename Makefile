@@ -96,6 +96,6 @@ html-fix-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
 
-# Sync ruler configuration and regenerate AGENTS.md
+# Sync ruler configuration and regenerate AGENTS.md / CLAUDE.md
 sync-ruler:
 	python3 scripts/sync_ruler.py

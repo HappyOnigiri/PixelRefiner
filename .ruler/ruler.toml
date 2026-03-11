@@ -6,7 +6,7 @@ default_agents = ["antigravity", "cursor", "claude"]
 
 [agents.claude]
 enabled = true
-output_path = "AGENTS.md"
+output_path = "CLAUDE.md"
 
 [agents.cursor]
 enabled = true
@@ -14,7 +14,7 @@ output_path = "AGENTS.md"
 
 [agents.antigravity]
 enabled = true
-output_path = "AGENTS.md"
+output_path = ".agent/rules/ruler.md"
 
 # --- Skills ---
 [skills]
