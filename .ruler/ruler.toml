@@ -1,0 +1,24 @@
+# Ruler Configuration File
+# See https://ai.intellectronica.net/ruler for documentation.
+
+# デフォルトで有効にするエージェント
+default_agents = ["antigravity", "cursor", "claude"]
+
+[agents.claude]
+enabled = true
+output_path = "AGENTS.md"
+
+[agents.cursor]
+enabled = true
+output_path = "AGENTS.md"
+
+[agents.antigravity]
+enabled = true
+output_path = "AGENTS.md"
+
+# --- Skills ---
+[skills]
+enabled = true
+
+[gitignore]
+enabled = true

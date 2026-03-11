@@ -1,5 +1,5 @@
 ---
-alwaysApply: true
+description: Base rules for Pixel Refiner, covering project structure, coding conventions, and architecture.
 ---
 
 # Pixel Refiner Cursor Rules

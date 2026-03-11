@@ -1,10 +1,12 @@
-## Cursor Cloud specific instructions
+---
+description: Product overview and key commands
+---
 
-### Product overview
+## Product overview
 
 Pixel Refiner is a client-side web tool for optimizing AI-generated pixel art. No backend server or database — everything runs in the browser. Built with TypeScript + Vite.
 
-### Key commands
+## Key commands
 
 | Task | Command |
 |------|---------|
@@ -15,7 +17,7 @@ Pixel Refiner is a client-side web tool for optimizing AI-generated pixel art. N
 | Build | `npm run build` |
 | Type check | `npx tsc --noEmit` |
 
-### Non-obvious notes
+## Non-obvious notes
 
 - `make ci` runs `python3 scripts/run_ci.py`, which auto-fixes lint issues before checking. Use this locally instead of `make ci-check` (which does not auto-fix and is intended for CI servers).
 - Biome and Prettier are invoked via `npx` (not installed locally), so they are fetched on first use. Lint targets in the Makefile only check git-changed files, not the full codebase.

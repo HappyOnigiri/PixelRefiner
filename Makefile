@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules check-non-ascii sync-agent
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules check-non-ascii sync-agent sync-ruler
 
 # Rebuild when changes are detected in code (for development)
 watch-dev:
@@ -101,3 +101,7 @@ sync-agent:
 	@mkdir -p .agent
 	rsync -av --delete .cursor/ .agent/
 	@echo ".cursor files have been synchronized to .agent."
+
+# Sync ruler configuration and regenerate AGENTS.md
+sync-ruler:
+	python3 scripts/sync_ruler.py
