@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules check-non-ascii sync-ruler
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler
 
 # Rebuild when changes are detected in code (for development)
 watch-dev:
