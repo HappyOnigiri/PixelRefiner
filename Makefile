@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug check-ts-rules check-non-ascii sync-agent
+.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler
 
 # Rebuild when changes are detected in code (for development)
 watch-dev:
@@ -96,8 +96,6 @@ html-fix-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
 
-# Sync .cursor files to .agent (follows deletions)
-sync-agent:
-	@mkdir -p .agent
-	rsync -av --delete .cursor/ .agent/
-	@echo ".cursor files have been synchronized to .agent."
+# Sync ruler configuration and regenerate AGENTS.md / CLAUDE.md
+sync-ruler:
+	python3 scripts/sync_ruler.py
