@@ -60,7 +60,7 @@ def main():
             except subprocess.CalledProcessError as e:
                 print(f"prettier formatting failed: {e}")
                 sys.exit(1)
-            except Exception as e:
+            except OSError as e:
                 print(f"Failed to clean up {filepath}: {e}")
                 sys.exit(1)
         else:
