@@ -13,7 +13,7 @@ def main():
             try:
                 os.remove(filepath)
                 print(f"Removed existing {filepath}")
-            except Exception as e:
+            except OSError as e:
                 print(f"Failed to remove {filepath}: {e}")
                 sys.exit(1)
 
