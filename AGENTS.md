@@ -15,6 +15,11 @@ Pixel Refiner is a client-side web tool for optimizing AI-generated pixel art. N
 | Build | `npm run build` |
 | Type check | `npx tsc --noEmit` |
 
+### Git config
+
+- **Do NOT include `Co-authored-by` trailers in commit messages.**
+- Commit message format follows Conventional Commits — see `.cursor/skills/commit/SKILL.md`.
+
 ### Non-obvious notes
 
 - `make ci` runs `python3 scripts/run_ci.py`, which auto-fixes lint issues before checking. Use this locally instead of `make ci-check` (which does not auto-fix and is intended for CI servers).
