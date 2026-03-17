@@ -25,3 +25,17 @@ Vanilla TypeScript + Vite client-side web tool for optimizing pixel art. No back
 - **CI & Formatting**: **Always run `make ci`** after changes. It executes `python3 scripts/run_ci.py` which auto-fixes formatting (Biome), runs tests (Vitest), and synchronizes ruler configuration.
 - **Tests**: Write logic tests in `src/core/*.test.ts`. Test fixtures are in `test/fixtures/`. Set `PIXELATE_DEBUG_IMAGES=1 npm test` to output debug images to `tmp/debug`.
 - **Git/Commits**: Use Conventional Commits in English. Never push/commit/PR without explicit user instruction.
+
+## Intent Comments (`[Intended]` / `[Policy]` / `[Workaround]`)
+
+Code that may look like a bug, inefficiency, or over-engineering but is intentionally implemented has the following tag comments.
+
+- `// [Intended] reason` — Design intent; do not refactor or optimize.
+- `// [Policy] reason` — Operational constraint; keep until the rule changes.
+- `// [Workaround] reason` — Workaround for external bug/library; remove when resolved.
+
+### Instructions for Agents
+
+1. Do not change, delete, or refactor code with these tags.
+2. When change is required, first confirm the reason in the comment and judge if it is still valid.
+3. When writing new code, add appropriate tag comments if the implementation falls under the above.
