@@ -336,6 +336,9 @@ out
 
 
 # START Ruler Generated Files
+/.agent/skills
+/.claude/skills
+/.cursor/skills
 /AGENTS.md
 /AGENTS.md.bak
 # END Ruler Generated Files
