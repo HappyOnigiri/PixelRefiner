@@ -6,19 +6,22 @@ default_agents = ["antigravity", "cursor", "claude"]
 
 [agents.claude]
 enabled = true
-output_path = "CLAUDE.md"
+# [Intended] Use AGENTS.md only to avoid loading both AGENTS.md and CLAUDE.md (context pressure).
+output_path = "AGENTS.md"
 
 [agents.cursor]
 enabled = true
+# [Intended] Use AGENTS.md only to avoid loading both AGENTS.md and .cursor/rules (context pressure).
 output_path = "AGENTS.md"
 
 [agents.antigravity]
 enabled = true
-output_path = ".agent/rules/ruler.md"
+# [Intended] Use AGENTS.md only to avoid loading both AGENTS.md and .agent/rules (context pressure).
+output_path = "AGENTS.md"
 
 # --- Skills ---
 [skills]
 enabled = true
 
 [gitignore]
-enabled = true
+enabled = false
