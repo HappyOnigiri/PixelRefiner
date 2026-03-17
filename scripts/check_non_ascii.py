@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 
 EXCLUDE_RE = re.compile(
-    r"(?i)\.(png|jpe?g|gif|ico|webp|woff2?|ttf|eot|mp4|webm|zip|exe|dll)$|\.ja\.|i18n\.(ts|test\.ts)|README\.md|\.cursor/skills/.*\.md"
+    r"(?i)\.(png|jpe?g|gif|ico|webp|woff2?|ttf|eot|mp4|webm|zip|exe|dll)$|\.ja\.|i18n\.(ts|test\.ts)|README\.md|\.(cursor|ruler)/skills/.*\.md"
 )
 
 # Allowed non-ASCII characters (e.g., symbols, arrows, and punctuation used in documentation)
