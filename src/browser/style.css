@@ -78,10 +78,16 @@ h1 {
 }
 
 .header-top {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   width: 100%;
+}
+
+.header-top .lang-selector {
+  position: absolute;
+  right: 0;
 }
 
 .lang-selector {
