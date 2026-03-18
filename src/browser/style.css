@@ -77,6 +77,13 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .lang-selector {
   display: flex;
   align-items: center;
