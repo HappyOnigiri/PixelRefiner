@@ -1,8 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler setup
-
-# Rebuild when changes are detected in code (for development)
-watch-dev:
-	npm run build -- --watch
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler setup
 
 # Run repomix to bundle files into tmp/repomix/ folder
 repomix:
