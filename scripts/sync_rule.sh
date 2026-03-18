@@ -12,6 +12,10 @@ fi
 # --- skills ---
 SKILLS_SRC=".ai/skills"
 if [ -d "$SKILLS_SRC" ]; then
+  if ! command -v rsync >/dev/null 2>&1; then
+    echo "sync-ruler: rsync is required but not found in PATH" >&2
+    exit 1
+  fi
   for dest in .claude/skills .cursor/skills .agent/skills; do
     mkdir -p "$dest"
     rsync -a --delete "$SKILLS_SRC/" "$dest/"

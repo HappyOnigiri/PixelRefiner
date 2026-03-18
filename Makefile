@@ -94,6 +94,6 @@ sync-ruler:
 	@sh scripts/sync_rule.sh
 
 setup:
-	@printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge
-	@printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout
+	@if [ -e .git/hooks/post-merge ]; then echo "setup: skipping post-merge (already exists)"; else printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge; fi
+	@if [ -e .git/hooks/post-checkout ]; then echo "setup: skipping post-checkout (already exists)"; else printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; fi
 	@echo "setup: git hooks installed"
