@@ -33,7 +33,7 @@ jobs:
       - name: Fail if auto-fix produced diffs
         run: |
           git diff --exit-code || {
-            echo "::error::Auto-fix により差分が発生しました。ローカルで make ci を実行してコミットしてください。"
+            echo "::error::Auto-fix produced diffs. Run 'make ci' locally and commit the changes."
             git diff --stat
             exit 1
           }
