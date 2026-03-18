@@ -335,10 +335,8 @@ out
 *.local.*
 
 
-# START Ruler Generated Files
-/.agent/skills
-/.claude/skills
-/.cursor/skills
+# AI Rules
 /AGENTS.md
-/AGENTS.md.bak
-# END Ruler Generated Files
+/.cursor
+/.agent
+/.claude

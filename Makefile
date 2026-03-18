@@ -1,4 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler setup
 
 # Rebuild when changes are detected in code (for development)
 watch-dev:
@@ -91,4 +91,9 @@ html-fix-diff:
 
 # Sync ruler configuration and regenerate AGENTS.md / CLAUDE.md
 sync-ruler:
-	python3 scripts/sync_ruler.py
+	@sh scripts/sync_rule.sh
+
+setup:
+	@printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge
+	@printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout
+	@echo "setup: git hooks installed"
