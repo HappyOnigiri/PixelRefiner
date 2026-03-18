@@ -1,4 +1,4 @@
-.PHONY: ci ci-check ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff watch-dev repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler
 
 # Rebuild when changes are detected in code (for development)
 watch-dev:
@@ -14,18 +14,11 @@ repomix:
 	# Version further excluding test files
 	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
-# For local execution: Auto-fix if possible -> Check -> Test
+# CI entrypoint (local and GitHub Actions)
+# Strategy: run auto-fix, then GitHub Actions detects diffs via git diff --exit-code
+# NOTE: if you change this target, also check .github/workflows/ci.yml
 ci:
 	python3 scripts/run_ci.py
-
-# For CI (Server): Do not auto-fix, fail if there are diffs
-ci-check:
-	$(MAKE) ts-check-diff
-	$(MAKE) html-check-diff
-	$(MAKE) type-check
-	$(MAKE) check-ts-rules
-	$(MAKE) check-non-ascii
-	$(MAKE) test
 
 test:
 	npm run test

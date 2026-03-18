@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run CI
+        run: make ci
+
+      - name: Fail if auto-fix produced diffs
+        run: |
+          git diff --exit-code || {
+            echo "::error::Auto-fix により差分が発生しました。ローカルで make ci を実行してコミットしてください。"
+            git diff --stat
+            exit 1
+          }
