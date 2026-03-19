@@ -1,4 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii sync-ruler setup
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii sync-rule setup
 
 # Run repomix to bundle files into tmp/repomix/ folder
 repomix:
@@ -85,11 +85,11 @@ html-fix-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
 
-# Sync ruler configuration and regenerate AGENTS.md / CLAUDE.md
-sync-ruler:
+# Sync rule configuration and regenerate AGENTS.md / CLAUDE.md
+sync-rule:
 	@sh scripts/sync_rule.sh
 
 setup:
-	@if [ -e .git/hooks/post-merge ]; then echo "setup: skipping post-merge (already exists)"; else printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge; fi
-	@if [ -e .git/hooks/post-checkout ]; then echo "setup: skipping post-checkout (already exists)"; else printf '#!/bin/sh\nmake sync-ruler\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; fi
+	@if [ -e .git/hooks/post-merge ]; then echo "setup: skipping post-merge (already exists)"; else printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge; fi
+	@if [ -e .git/hooks/post-checkout ]; then echo "setup: skipping post-checkout (already exists)"; else printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; fi
 	@echo "setup: git hooks installed"

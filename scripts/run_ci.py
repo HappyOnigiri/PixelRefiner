@@ -74,7 +74,7 @@ def main():
     fix_tasks = [
         ("TS Fix", ["make", "ts-fix-diff"]),
         ("HTML Fix", ["make", "html-fix-diff"]),
-        ("Sync Ruler", ["make", "sync-ruler"]),
+        ("Sync Rule", ["make", "sync-rule"]),
     ]
 
     # The fix phase is often empty, but display it explicitly for clarity.
