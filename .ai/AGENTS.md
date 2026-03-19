@@ -22,7 +22,7 @@ Vanilla TypeScript + Vite client-side web tool for optimizing pixel art. No back
 
 ## Commands & CI
 - **Dev Server**: `npm run dev` (`--host 0.0.0.0` available).
-- **CI & Formatting**: **Always run `make ci`** after changes. It executes `python3 scripts/run_ci.py` which auto-fixes formatting (Biome), runs tests (Vitest), and synchronizes ruler configuration.
+- **CI & Formatting**: **Always run `make ci`** after changes. It executes `python3 scripts/run_ci.py` which auto-fixes formatting (Biome), runs tests (Vitest), and synchronizes rule configuration.
 - **Tests**: Write logic tests in `src/core/*.test.ts`. Test fixtures are in `test/fixtures/`. Set `PIXELATE_DEBUG_IMAGES=1 npm test` to output debug images to `tmp/debug`.
 - **Git/Commits**: Use Conventional Commits in English. Never push/commit/PR without explicit user instruction.
 
