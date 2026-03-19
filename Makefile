@@ -90,6 +90,24 @@ sync-rule:
 	@sh scripts/sync_rule.sh
 
 setup:
-	@if [ -e .git/hooks/post-merge ]; then echo "setup: skipping post-merge (already exists)"; else printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge; fi
-	@if [ -e .git/hooks/post-checkout ]; then echo "setup: skipping post-checkout (already exists)"; else printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; fi
+	@if [ -e .git/hooks/post-merge ]; then \
+		if grep -q 'make sync-ruler' .git/hooks/post-merge; then \
+			sed -i 's/make sync-ruler/make sync-rule/g' .git/hooks/post-merge; \
+			echo "setup: migrated post-merge hook (sync-ruler -> sync-rule)"; \
+		else \
+			echo "setup: skipping post-merge (already exists)"; \
+		fi; \
+	else \
+		printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge; \
+	fi
+	@if [ -e .git/hooks/post-checkout ]; then \
+		if grep -q 'make sync-ruler' .git/hooks/post-checkout; then \
+			sed -i 's/make sync-ruler/make sync-rule/g' .git/hooks/post-checkout; \
+			echo "setup: migrated post-checkout hook (sync-ruler -> sync-rule)"; \
+		else \
+			echo "setup: skipping post-checkout (already exists)"; \
+		fi; \
+	else \
+		printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; \
+	fi
 	@echo "setup: git hooks installed"
