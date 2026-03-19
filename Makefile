@@ -92,8 +92,12 @@ sync-rule:
 setup:
 	@if [ -e .git/hooks/post-merge ]; then \
 		if grep -q 'make sync-ruler' .git/hooks/post-merge; then \
-			tmp=$$(mktemp); sed 's/make sync-ruler/make sync-rule/g' .git/hooks/post-merge > "$$tmp" && mv "$$tmp" .git/hooks/post-merge && chmod +x .git/hooks/post-merge; \
-			echo "setup: migrated post-merge hook (sync-ruler -> sync-rule)"; \
+			tmp=$$(mktemp); \
+			if sed 's/make sync-ruler/make sync-rule/g' .git/hooks/post-merge > "$$tmp" && mv "$$tmp" .git/hooks/post-merge && chmod +x .git/hooks/post-merge; then \
+				echo "setup: migrated post-merge hook (sync-ruler -> sync-rule)"; \
+			else \
+				rm -f "$$tmp"; exit 1; \
+			fi; \
 		else \
 			echo "setup: skipping post-merge (already exists)"; \
 		fi; \
@@ -102,8 +106,12 @@ setup:
 	fi
 	@if [ -e .git/hooks/post-checkout ]; then \
 		if grep -q 'make sync-ruler' .git/hooks/post-checkout; then \
-			tmp=$$(mktemp); sed 's/make sync-ruler/make sync-rule/g' .git/hooks/post-checkout > "$$tmp" && mv "$$tmp" .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; \
-			echo "setup: migrated post-checkout hook (sync-ruler -> sync-rule)"; \
+			tmp=$$(mktemp); \
+			if sed 's/make sync-ruler/make sync-rule/g' .git/hooks/post-checkout > "$$tmp" && mv "$$tmp" .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout; then \
+				echo "setup: migrated post-checkout hook (sync-ruler -> sync-rule)"; \
+			else \
+				rm -f "$$tmp"; exit 1; \
+			fi; \
 		else \
 			echo "setup: skipping post-checkout (already exists)"; \
 		fi; \
