@@ -90,7 +90,16 @@ sync-rule:
 	@sh scripts/sync_rule.sh
 
 setup:
-	@printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge
-	@printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout
-	@echo "setup: git hooks installed"
+	@for hook in post-merge post-checkout; do \
+		hook_file=".git/hooks/$$hook"; \
+		tmp=$$(mktemp); \
+		printf '#!/bin/sh\n# ### sync-rule managed by make setup ###\nmake sync-rule\n' > "$$tmp"; \
+		if [ ! -f "$$hook_file" ]; then \
+			mv "$$tmp" "$$hook_file" && chmod +x "$$hook_file" && echo "setup: installed $$hook_file"; \
+		elif grep -qF 'sync-rule managed by make setup' "$$hook_file" || grep -qF 'sync-ruler' "$$hook_file"; then \
+			mv "$$tmp" "$$hook_file" && chmod +x "$$hook_file" && echo "setup: updated $$hook_file"; \
+		else \
+			rm -f "$$tmp" && echo "setup: skipped $$hook_file (custom hook detected, not modified)"; \
+		fi; \
+	done
 	@make sync-rule
