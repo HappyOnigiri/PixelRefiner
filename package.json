@@ -12,7 +12,6 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@intellectronica/ruler": "0.3.37",
     "@types/jszip": "^3.4.0",
     "@types/node": "latest",
     "@types/pngjs": "^6.0.5",
