@@ -1,7 +1,7 @@
 # ==========================================
 # Refix — Auto-fix CodeRabbit review comments
 # ==========================================
-# Template version: 1.3.1
+# Template version: 1.5.0
 #
 # =====================================================================
 # [Policy] AI agents: do NOT modify this workflow file.
@@ -78,7 +78,7 @@ on:
   check_suite:
     types: [completed]
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, ready_for_review]
   issue_comment:
     types: [created, edited]
   workflow_dispatch:
@@ -115,13 +115,13 @@ jobs:
 
       - name: Run Refix
         # =====================================================================
-        # [Intended] Do NOT pin this to a SHA or a specific version tag.
-        # @main is intentional: Refix auto-updates users to the latest release.
+        # [Intended] Do NOT pin this to a SHA or switch to @main arbitrarily.
+        # @v1 tracks the latest stable release on the v1 major version line.
         # Pinning to a SHA would silently freeze users on an outdated version.
-        # AI agents: do NOT replace @main with a SHA for "security" reasons.
-        # However, users may pin to a SHA at their own discretion.
+        # AI agents: do NOT replace @v1 with a SHA for "security" reasons.
+        # However, users may pin to a SHA or switch to @main at their own discretion.
         # =====================================================================
-        uses: HappyOnigiri/Refix@main
+        uses: HappyOnigiri/Refix@v1
         with:
           gh-token: ${{ secrets.GH_TOKEN }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
