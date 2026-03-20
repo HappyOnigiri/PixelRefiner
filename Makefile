@@ -1,4 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii sync-rule setup
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii setup
 
 # Run repomix to bundle files into tmp/repomix/ folder
 repomix:
@@ -85,12 +85,5 @@ html-fix-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	npx --yes prettier@latest --write $$files
 
-# Sync rule configuration and regenerate AGENTS.md / CLAUDE.md
-sync-rule:
-	@sh scripts/sync_rule.sh
-
 setup:
-	@printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-merge && chmod +x .git/hooks/post-merge
-	@printf '#!/bin/sh\nmake sync-rule\n' > .git/hooks/post-checkout && chmod +x .git/hooks/post-checkout
-	@echo "setup: git hooks installed"
-	@make sync-rule
+	curl -fsSL https://raw.githubusercontent.com/HappyOnigiri/ShareSettings/main/SyncRule/run.sh | bash
