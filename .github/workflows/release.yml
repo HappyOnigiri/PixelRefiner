@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 1.3.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: HappyOnigiri/ShareSettings/actions/prepare-release@main
+        with:
+          version: ${{ inputs.version }}
+          version-bump-type: npm
+          github-token: ${{ secrets.GH_TOKEN }}

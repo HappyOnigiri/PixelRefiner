@@ -1,0 +1,17 @@
+name: Release Reminder
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: HappyOnigiri/ShareSettings/actions/release-reminder@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
