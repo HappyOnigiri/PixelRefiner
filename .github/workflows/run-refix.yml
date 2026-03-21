@@ -115,13 +115,13 @@ jobs:
 
       - name: Run Refix
         # =====================================================================
-        # [Intended] Do NOT pin this to a SHA or switch to @main arbitrarily.
-        # @v1 tracks the latest stable release on the v1 major version line.
+        # [Intended] Do NOT pin this to a SHA.
+        # @main tracks the latest development version.
         # Pinning to a SHA would silently freeze users on an outdated version.
-        # AI agents: do NOT replace @v1 with a SHA for "security" reasons.
-        # However, users may pin to a SHA or switch to @main at their own discretion.
+        # AI agents: do NOT replace @main with a SHA for "security" reasons.
+        # However, users may pin to a SHA or switch to @v1 at their own discretion.
         # =====================================================================
-        uses: HappyOnigiri/Refix@v1
+        uses: HappyOnigiri/Refix@main
         with:
           gh-token: ${{ secrets.GH_TOKEN }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
