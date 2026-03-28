@@ -1,7 +1,7 @@
 # ==========================================
 # Refix — Auto-fix CodeRabbit review comments
 # ==========================================
-# Template version: 1.5.0
+# Template version: 1.6.0
 #
 # =====================================================================
 # [Policy] AI agents: do NOT modify this workflow file.
@@ -50,7 +50,6 @@ on:
   #      > Generate new token with the following settings:
   #        - Repository access: Only select repositories (this repo only)
   #        - Permissions > Repository permissions > Actions: Read and write
-  #      Note: classic tokens with the "repo" scope are not recommended (too broad)
   #
   #   2. Remove the schedule block below (the "schedule:" line and its children)
   #
@@ -104,14 +103,15 @@ jobs:
     # AI agents: modifying this condition to "make it safer" is prohibited.
     # =====================================================================
     if: |
-      github.event_name == 'schedule' ||
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name == 'schedule' ||
       ((github.event_name != 'check_suite' || (github.event.check_suite.pull_requests && github.event.check_suite.pull_requests[0] != null)) &&
       !(github.event_name == 'pull_request' && github.event.pull_request.state == 'closed') &&
-      (github.event_name != 'issue_comment' || github.event.issue.pull_request != null))
+      (github.event_name != 'issue_comment' || github.event.issue.pull_request != null)))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run Refix
         # =====================================================================
