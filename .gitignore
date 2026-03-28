@@ -340,3 +340,6 @@ out
 /.cursor
 /.agent
 /.claude
+
+# AI Rules
+/CLAUDE.md
