@@ -87,3 +87,5 @@ html-fix-diff:
 
 setup:
 	curl -fsSL https://raw.githubusercontent.com/HappyOnigiri/ShareSettings/main/SyncRule/run.sh | bash
+	corepack enable
+	pnpm install --frozen-lockfile
