@@ -1,6 +1,9 @@
 {
   "name": "pixel-refiner",
   "version": "0.10.0",
+  "engines": {
+		"node": "24.x"
+	},
   "license": "MIT",
   "private": false,
   "type": "module",
