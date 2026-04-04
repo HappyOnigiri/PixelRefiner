@@ -4,11 +4,11 @@
 repomix:
 	mkdir -p tmp/repomix
 	# Full version
-	npx repomix --output tmp/repomix/repomix-full.txt
+	pnpm dlx repomix --output tmp/repomix/repomix-full.txt
 	# Version excluding lockfiles, images, licenses, etc.
-	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
+	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
 	# Version further excluding test files
-	npx repomix --ignore "**/package-lock.json,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
+	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
 # CI entrypoint (local and GitHub Actions)
 # Strategy: run auto-fix, then GitHub Actions detects diffs via git diff --exit-code
@@ -17,14 +17,14 @@ ci:
 	python3 scripts/run_ci.py
 
 test:
-	npm run test
+	pnpm run test
 
 test-debug:
 	rm -rf tmp/debug
-	PIXELATE_DEBUG_IMAGES=1 npm run test
+	PIXELATE_DEBUG_IMAGES=1 pnpm run test
 
 type-check:
-	npx tsc --noEmit
+	pnpm exec tsc --noEmit
 
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
@@ -43,7 +43,7 @@ ts-check-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	npx --yes @biomejs/biome@latest check $$files
+	pnpm dlx @biomejs/biome@latest check $$files
 
 # Apply safe Biome fixes (format, organizeImports, etc.) to changed TS/TSX files
 ts-fix-diff:
@@ -57,7 +57,7 @@ ts-fix-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	npx --yes @biomejs/biome@latest check --write $$files
+	pnpm dlx @biomejs/biome@latest check --write $$files
 
 html-check-diff:
 	@files="$$( ( \
@@ -70,7 +70,7 @@ html-check-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	npx --yes prettier@latest --check $$files
+	pnpm dlx prettier@latest --check $$files
 
 html-fix-diff:
 	@files="$$( ( \
@@ -83,7 +83,9 @@ html-fix-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	npx --yes prettier@latest --write $$files
+	pnpm dlx prettier@latest --write $$files
 
 setup:
 	curl -fsSL https://raw.githubusercontent.com/HappyOnigiri/ShareSettings/main/SyncRule/run.sh | bash
+	corepack enable
+	pnpm install --frozen-lockfile
