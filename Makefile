@@ -1,4 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii setup
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-non-ascii setup loc
 
 # Run repomix to bundle files into tmp/repomix/ folder
 repomix:
@@ -84,6 +84,9 @@ html-fix-diff:
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
 	pnpm dlx prettier@latest --write $$files
+
+loc:
+	python3 scripts/loc.py
 
 setup:
 	curl -fsSL https://raw.githubusercontent.com/HappyOnigiri/ShareSettings/main/SyncRule/run.sh | bash
