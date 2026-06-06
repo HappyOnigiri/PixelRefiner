@@ -794,9 +794,8 @@ describe("processImage", () => {
 
 			const { result, grid } = processImage(img, {
 				preRemoveBackground: false,
-				postRemoveBackground: true,
-				bgRemovalScope: "outer",
-				backgroundTolerance: 0,
+				postRemoveBackground: false,
+				bgRemovalScope: "off",
 				autoGridFromTrimmed: true,
 				fastAutoGridFromTrimmed: true,
 				trimToContent: true,
