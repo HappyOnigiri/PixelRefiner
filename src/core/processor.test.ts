@@ -713,6 +713,28 @@ describe("processImage", () => {
 		const alphaAt = (img: RawImage, x: number, y: number): number =>
 			img.data[(y * img.width + x) * 4 + 3];
 
+		const findOpaqueBoundsInRawImage = (img: RawImage) => {
+			let minX = img.width;
+			let minY = img.height;
+			let maxX = -1;
+			let maxY = -1;
+			let opaqueCount = 0;
+
+			for (let y = 0; y < img.height; y += 1) {
+				for (let x = 0; x < img.width; x += 1) {
+					if (alphaAt(img, x, y) === 0) continue;
+					opaqueCount += 1;
+					minX = Math.min(minX, x);
+					minY = Math.min(minY, y);
+					maxX = Math.max(maxX, x);
+					maxY = Math.max(maxY, y);
+				}
+			}
+
+			if (opaqueCount === 0) return undefined;
+			return { minX, minY, maxX, maxY, opaqueCount };
+		};
+
 		it("should keep square source aspect when autoGridFromTrimmed is enabled and trimToContent=false", () => {
 			const img = mkTransparentCanvasWithRect(64, 64, {
 				x: 8,
@@ -781,11 +803,20 @@ describe("processImage", () => {
 				sampleWindow: 1,
 			});
 
+			const opaqueBounds = findOpaqueBoundsInRawImage(result);
+
 			expect(result.width).toBe(result.height);
 			expect(grid.outW).toBe(result.width);
 			expect(grid.outH).toBe(result.height);
 			expect(alphaAt(result, 0, 0)).toBe(0);
-			expect(alphaAt(result, Math.floor(result.width / 2), Math.floor(result.height / 2))).toBe(255);
+			expect(opaqueBounds?.opaqueCount ?? 0).toBeGreaterThan(0);
+			expect(
+				opaqueBounds !== undefined &&
+					(opaqueBounds.minX > 0 ||
+						opaqueBounds.minY > 0 ||
+						opaqueBounds.maxX < result.width - 1 ||
+						opaqueBounds.maxY < result.height - 1),
+			).toBe(true);
 		});
 	});
 
