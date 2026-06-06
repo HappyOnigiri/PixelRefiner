@@ -1,6 +1,6 @@
 # Pixel Refiner
 
-[Japanese version](./README.ja.md)
+[Japanese version](./README.ja.md) | [Simplified Chinese version](./README.zh-CN.md)
 
 ![Pixel Refiner Demo](.github/assets/demo.png)
 
@@ -69,21 +69,21 @@ Built with TypeScript + Vite.
 
 ### Prerequisites
 
-- Node.js v18+
-- npm
+- Node.js 24.x
+- pnpm
 
 ### Setup
 
 ```bash
 git clone https://github.com/HappyOnigiri/PixelRefiner.git
 cd PixelRefiner
-npm install
+pnpm install
 ```
 
 ### Dev server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Then open `http://localhost:5173` in your browser.
@@ -91,7 +91,7 @@ Then open `http://localhost:5173` in your browser.
 ### Build
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Output goes to the `dist` directory.
@@ -101,7 +101,7 @@ Output goes to the `dist` directory.
 Runs unit tests for the core image processing logic.
 
 ```bash
-npm test
+pnpm test
 ```
 
 ## 📂 Project Structure
