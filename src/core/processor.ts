@@ -978,6 +978,73 @@ const padRawImage = (
 	return { width: outW, height: outH, data: out };
 };
 
+type AspectPadding = {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+	width: number;
+	height: number;
+};
+
+const getAspectRatio = (img: RawImage): number =>
+	img.height > 0 ? img.width / img.height : 1;
+
+const getAspectPadding = (
+	width: number,
+	height: number,
+	targetRatio: number,
+): AspectPadding => {
+	const safeRatio =
+		targetRatio > 0 && Number.isFinite(targetRatio) ? targetRatio : 1;
+	const currentRatio = height > 0 ? width / height : safeRatio;
+	if (Math.abs(currentRatio - safeRatio) < 0.0001) {
+		return { left: 0, top: 0, right: 0, bottom: 0, width, height };
+	}
+
+	const widthForHeight = Math.max(width, Math.ceil(height * safeRatio));
+	const heightForWidth = Math.max(height, Math.ceil(width / safeRatio));
+	const widthFirstError = Math.abs(widthForHeight / height - safeRatio);
+	const heightFirstError = Math.abs(width / heightForWidth - safeRatio);
+	const useWidthFirst =
+		widthFirstError < heightFirstError ||
+		(widthFirstError === heightFirstError &&
+			widthForHeight * height <= width * heightForWidth);
+
+	const outW = useWidthFirst ? widthForHeight : width;
+	const outH = useWidthFirst ? height : heightForWidth;
+	const dw = outW - width;
+	const dh = outH - height;
+	const left = Math.floor(dw / 2);
+	const top = Math.floor(dh / 2);
+
+	return {
+		left,
+		top,
+		right: dw - left,
+		bottom: dh - top,
+		width: outW,
+		height: outH,
+	};
+};
+
+const padImageToAspectRatio = (
+	img: RawImage,
+	targetRatio: number,
+): { image: RawImage; padding: AspectPadding } => {
+	const padding = getAspectPadding(img.width, img.height, targetRatio);
+	return {
+		image: padRawImage(
+			img,
+			padding.left,
+			padding.top,
+			padding.right,
+			padding.bottom,
+		),
+		padding,
+	};
+};
+
 const applyColorReduction = (
 	img: RawImage,
 	mode: string,
