@@ -2115,31 +2115,55 @@ export const processImage = (
 				// - Even when trimming is OFF, we want to use the "estimated grid from content BBox" (to prevent crushing).
 				// - However, trimming OFF just leaves background (margins), so apply downsampling to the whole image (working).
 				//   This makes the number of cells (apparent size) of the center object more stable.
-				const outW = Math.max(1, Math.floor(working.width / est.cellW));
-				const outH = Math.max(1, Math.floor(working.height / est.cellH));
+				// Use the content BBox only to estimate pixel size. When projecting back to
+				// the full image, derive the output grid from a single cell size so the
+				// working/source aspect ratio is preserved.
+				const cellSize = Math.max(1, Math.min(est.cellW, est.cellH));
+				const outW = Math.max(1, Math.floor(working.width / cellSize));
+				const outH = Math.max(1, Math.floor(working.height / cellSize));
+				const cellW = working.width / outW;
+				const cellH = working.height / outH;
 				const includeCandidates = hint === undefined;
 				grid = {
-					cellW: est.cellW,
-					cellH: est.cellH,
+					cellW,
+					cellH,
 					offsetX: 0,
 					offsetY: 0,
 					outW,
 					outH,
 					cropX: 0,
 					cropY: 0,
-					cropW: outW * est.cellW,
-					cropH: outH * est.cellH,
+					cropW: working.width,
+					cropH: working.height,
 					score: est.score ?? 0,
 					candidates: includeCandidates
-						? est.candidates?.map((c) => ({
-								cellW: c.cellW,
-								cellH: c.cellH,
-								offsetX: 0,
-								offsetY: 0,
-								outW: c.outW,
-								outH: c.outH,
-								score: c.score ?? 0,
-							}))
+						? est.candidates?.map((c) => {
+								const candidateCellSize = Math.max(
+									1,
+									Math.min(c.cellW, c.cellH),
+								);
+								const candidateOutW = Math.max(
+									1,
+									Math.floor(working.width / candidateCellSize),
+								);
+								const candidateOutH = Math.max(
+									1,
+									Math.floor(working.height / candidateCellSize),
+								);
+								return {
+									cellW: working.width / candidateOutW,
+									cellH: working.height / candidateOutH,
+									offsetX: 0,
+									offsetY: 0,
+									outW: candidateOutW,
+									outH: candidateOutH,
+									cropX: 0,
+									cropY: 0,
+									cropW: working.width,
+									cropH: working.height,
+									score: c.score ?? 0,
+								};
+							})
 						: undefined,
 				};
 				o.debugHook?.("04-grid-crop", working, {
