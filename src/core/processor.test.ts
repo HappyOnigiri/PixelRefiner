@@ -691,6 +691,104 @@ describe("processImage", () => {
 		});
 	});
 
+	describe("preserve source aspect ratio", () => {
+		const mkTransparentCanvasWithRect = (
+			width: number,
+			height: number,
+			rect: { x: number; y: number; w: number; h: number },
+		): RawImage => {
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = rect.y; y < rect.y + rect.h; y += 1) {
+				for (let x = rect.x; x < rect.x + rect.w; x += 1) {
+					const idx = (y * width + x) * 4;
+					data[idx] = 32;
+					data[idx + 1] = 32;
+					data[idx + 2] = 32;
+					data[idx + 3] = 255;
+				}
+			}
+			return { width, height, data };
+		};
+
+		const alphaAt = (img: RawImage, x: number, y: number): number =>
+			img.data[(y * img.width + x) * 4 + 3];
+
+		it("should keep square source aspect when autoGridFromTrimmed is enabled and trimToContent=false", () => {
+			const img = mkTransparentCanvasWithRect(64, 64, {
+				x: 8,
+				y: 20,
+				w: 48,
+				h: 24,
+			});
+
+			const { result, grid } = processImage(img, {
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				bgRemovalScope: "off",
+				autoGridFromTrimmed: true,
+				fastAutoGridFromTrimmed: true,
+				trimToContent: false,
+				sampleWindow: 1,
+			});
+
+			expect(result.width).toBe(result.height);
+			expect(grid.outW).toBe(result.width);
+			expect(grid.outH).toBe(result.height);
+			expect(result.width).toBeGreaterThan(1);
+			expect(alphaAt(result, 0, 0)).toBe(0);
+		});
+
+		it("should keep non-square source aspect when autoGridFromTrimmed is enabled and trimToContent=false", () => {
+			const img = mkTransparentCanvasWithRect(80, 40, {
+				x: 16,
+				y: 10,
+				w: 48,
+				h: 20,
+			});
+
+			const { result, grid } = processImage(img, {
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				bgRemovalScope: "off",
+				autoGridFromTrimmed: true,
+				fastAutoGridFromTrimmed: true,
+				trimToContent: false,
+				sampleWindow: 1,
+			});
+
+			expect(result.width / result.height).toBeCloseTo(2, 1);
+			expect(grid.outW).toBe(result.width);
+			expect(grid.outH).toBe(result.height);
+			expect(result.width).toBeGreaterThan(result.height);
+		});
+
+		it("should pad trimmed output back to source aspect when trimToContent=true", () => {
+			const img = mkTransparentCanvasWithRect(64, 64, {
+				x: 8,
+				y: 20,
+				w: 48,
+				h: 24,
+			});
+
+			const { result, grid } = processImage(img, {
+				preRemoveBackground: false,
+				postRemoveBackground: true,
+				bgRemovalScope: "outer",
+				backgroundTolerance: 0,
+				autoGridFromTrimmed: true,
+				fastAutoGridFromTrimmed: true,
+				trimToContent: true,
+				sampleWindow: 1,
+			});
+
+			expect(result.width).toBe(result.height);
+			expect(grid.outW).toBe(result.width);
+			expect(grid.outH).toBe(result.height);
+			expect(alphaAt(result, 0, 0)).toBe(0);
+			expect(alphaAt(result, Math.floor(result.width / 2), Math.floor(result.height / 2))).toBe(255);
+		});
+	});
+
 	describe("enableGridDetection", () => {
 		beforeAll(() => {
 			cleanDebugDir("enableGridDetection");
