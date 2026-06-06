@@ -1668,6 +1668,7 @@ export const processImage = (
 		preRemoveBackground: o.preRemoveBackground,
 	});
 	const trimToContent = o.trimToContent;
+	const sourceAspectRatio = getAspectRatio(img);
 	const trimAlphaThreshold = o.trimAlphaThreshold;
 
 	// force: Trim with content BBox -> Force convert to specified pixel size (W x H) (no auto-detection)
@@ -2330,6 +2331,47 @@ export const processImage = (
 				outH: finalResult.height,
 				cropX: baseCropX - cellDw * trimmedGrid.cellW,
 				cropY: baseCropY - cellDh * trimmedGrid.cellH,
+				cropW: finalResult.width * trimmedGrid.cellW,
+				cropH: finalResult.height * trimmedGrid.cellH,
+			};
+		}
+	}
+
+	if (!o.makeSquare) {
+		const { image: paddedResult, padding } = padImageToAspectRatio(
+			finalResult,
+			sourceAspectRatio,
+		);
+		if (paddedResult !== finalResult) {
+			const padLeftPx = Math.round(padding.left * trimmedGrid.cellW);
+			const padTopPx = Math.round(padding.top * trimmedGrid.cellH);
+			const padRightPx = Math.round(padding.right * trimmedGrid.cellW);
+			const padBottomPx = Math.round(padding.bottom * trimmedGrid.cellH);
+
+			finalResult = paddedResult;
+			compareBefore = padRawImage(
+				compareBefore,
+				padLeftPx,
+				padTopPx,
+				padRightPx,
+				padBottomPx,
+			);
+			compareBeforeSanitized = padRawImage(
+				compareBeforeSanitized,
+				padding.left,
+				padding.top,
+				padding.right,
+				padding.bottom,
+			);
+
+			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
+			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
+			trimmedGrid = {
+				...trimmedGrid,
+				outW: finalResult.width,
+				outH: finalResult.height,
+				cropX: baseCropX - padLeftPx,
+				cropY: baseCropY - padTopPx,
 				cropW: finalResult.width * trimmedGrid.cellW,
 				cropH: finalResult.height * trimmedGrid.cellH,
 			};

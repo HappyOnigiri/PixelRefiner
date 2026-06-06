@@ -441,16 +441,15 @@ describe("processImage", () => {
 				),
 			});
 
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(getExpectPath("auto_grid_detection"), result);
+				return;
+			}
 			// Perfect match with expected PNG (size and pixels)
-			expect(result.width).toBe(88);
-			expect(result.height).toBe(61);
-			expect(expected.width).toBe(88);
-			expect(expected.height).toBe(61);
-
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(88);
-			expect(grid.outH).toBe(61);
+			expect(grid.outW).toBe(expected.width);
+			expect(grid.outH).toBe(expected.height);
 
 			expectSameImage(result, expected, getExpectPath("auto_grid_detection"));
 		});
@@ -1020,6 +1019,10 @@ describe("processImage", () => {
 				debugHook: makeDebugHook("high_resolution", "for_verification"),
 			});
 
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(getExpectPath("high_resolution"), result);
+				return;
+			}
 			// Verify detection results
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
