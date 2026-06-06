@@ -1028,9 +1028,9 @@ const getAspectPadding = (
 	};
 };
 
-const padImageToAspectRatio = (
+export const padImageToAspectRatio = (
 	img: RawImage,
-	targetRatio: number,
+	targetRatio = getAspectRatio(img),
 ): { image: RawImage; padding: AspectPadding } => {
 	const padding = getAspectPadding(img.width, img.height, targetRatio);
 	return {
