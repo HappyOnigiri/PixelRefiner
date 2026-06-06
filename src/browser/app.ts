@@ -18,7 +18,7 @@ import {
 	sortPalette,
 } from "../utils/palette";
 import { ImageComparer } from "./compare";
-import { i18n } from "./i18n";
+import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { PresetManager } from "./presets";
 import { ResultViewer } from "./result-viewer";
@@ -1292,7 +1292,7 @@ export const initApp = (): void => {
 		// Event listeners for language switching buttons
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
-				const lang = el.getAttribute("data-lang-btn") as "ja" | "en";
+				const lang = el.getAttribute("data-lang-btn") as Language | null;
 				if (lang) i18n.setLanguage(lang);
 			});
 		});
