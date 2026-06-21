@@ -18,7 +18,7 @@ import {
 	sortPalette,
 } from "../utils/palette";
 import { ImageComparer } from "./compare";
-import { i18n } from "./i18n";
+import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { PresetManager } from "./presets";
 import { ResultViewer } from "./result-viewer";
@@ -57,6 +57,7 @@ type Elements = {
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	makeSquareCheck: HTMLInputElement;
+	keepAspectRatioCheck: HTMLInputElement;
 	gridDetectionModeSelect: HTMLSelectElement;
 	reduceColorModeSelect: HTMLSelectElement;
 	ditherModeSelect: HTMLSelectElement;
@@ -166,6 +167,7 @@ const getElements = (): Elements => {
 			"fast-auto-grid-from-trimmed",
 		),
 		makeSquareCheck: get<HTMLInputElement>("make-square"),
+		keepAspectRatioCheck: get<HTMLInputElement>("keep-aspect-ratio"),
 		gridDetectionModeSelect: get<HTMLSelectElement>("grid-detection-mode"),
 		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
 		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
@@ -1004,6 +1006,7 @@ export const initApp = (): void => {
 				trimToContent: els.trimToContentCheck.checked,
 				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 				makeSquare: els.makeSquareCheck.checked,
+				keepAspectRatio: els.keepAspectRatioCheck.checked,
 				enableGridDetection,
 				reduceColors,
 				reduceColorMode,
@@ -1256,6 +1259,7 @@ export const initApp = (): void => {
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 		els.makeSquareCheck.checked = PROCESS_DEFAULTS.makeSquare;
+		els.keepAspectRatioCheck.checked = PROCESS_DEFAULTS.keepAspectRatio;
 		els.gridDetectionModeSelect.value =
 			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
@@ -1292,7 +1296,7 @@ export const initApp = (): void => {
 		// Event listeners for language switching buttons
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
-				const lang = el.getAttribute("data-lang-btn") as "ja" | "en";
+				const lang = el.getAttribute("data-lang-btn") as Language | null;
 				if (lang) i18n.setLanguage(lang);
 			});
 		});
@@ -1537,6 +1541,7 @@ export const initApp = (): void => {
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
 		els.makeSquareCheck,
+		els.keepAspectRatioCheck,
 		els.gridDetectionModeSelect,
 		els.reduceColorModeSelect,
 		els.ditherModeSelect,

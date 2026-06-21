@@ -1,6 +1,6 @@
 # Pixel Refiner
 
-[English version (English)](./README.md)
+[English version](./README.md) | [简体中文版](./README.zh-CN.md)
 
 ![Pixel Refiner Demo](.github/assets/demo.png)
 
@@ -69,21 +69,21 @@ AIで生成したドット絵は、しばしば「ドットがぼやけている
 
 ### 前提条件
 
-- Node.js (推奨: v18以上)
-- npm
+- Node.js 24.x
+- pnpm
 
 ### インストール
 
 ```bash
 git clone https://github.com/HappyOnigiri/PixelRefiner.git
 cd PixelRefiner
-npm install
+pnpm install
 ```
 
 ### 開発サーバーの起動
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ブラウザで `http://localhost:5173` にアクセスしてください。
@@ -91,7 +91,7 @@ npm run dev
 ### ビルド
 
 ```bash
-npm run build
+pnpm build
 ```
 
 `dist` ディレクトリに静的ファイルが出力されます。
@@ -101,7 +101,7 @@ npm run build
 コアロジック（画像処理部分）の単体テストを実行します。
 
 ```bash
-npm test
+pnpm test
 ```
 
 ## 📂 プロジェクト構成

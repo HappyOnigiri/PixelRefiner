@@ -25,7 +25,9 @@
     />
 
     <!-- Language / Locale -->
+    <link rel="alternate" hreflang="en" href="https://pixel-refiner.app/" />
     <link rel="alternate" hreflang="ja" href="https://pixel-refiner.app/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://pixel-refiner.app/" />
     <link
       rel="alternate"
       hreflang="x-default"
@@ -59,6 +61,8 @@
     <meta property="og:url" content="https://pixel-refiner.app/" />
     <meta property="og:site_name" content="Pixel Refiner" />
     <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:locale:alternate" content="zh_CN" />
     <meta
       property="og:title"
       content="Pixel Refiner | AI Pixel Art Optimizer & Background Remover"
@@ -281,6 +285,8 @@
             <button class="lang-btn" data-lang-btn="en">EN</button>
             <span class="separator">/</span>
             <button class="lang-btn" data-lang-btn="ja">JA</button>
+            <span class="separator">/</span>
+            <button class="lang-btn" data-lang-btn="zh-CN">ZH</button>
           </div>
         </div>
         <p class="app-description" data-i18n="app.description" data-i18n-html>
@@ -1040,6 +1046,21 @@
                       >
                     </span>
                     <input id="make-square" type="checkbox" />
+                  </label>
+
+                  <label class="setting-item">
+                    <span class="label-text">
+                      <span data-i18n="setting.keep_aspect_ratio"
+                        >Keep Aspect Ratio</span
+                      >
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.keep_aspect_ratio"
+                        data-tooltip="Pads the output with transparent pixels to preserve the original image's aspect ratio.&#10;&#10;Useful for maintaining sprite canvas proportions after trimming."
+                        >?</span
+                      >
+                    </span>
+                    <input id="keep-aspect-ratio" type="checkbox" />
                   </label>
                 </div>
               </div>

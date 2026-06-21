@@ -1,4 +1,18 @@
-type Language = "ja" | "en";
+export type Language = "ja" | "en" | "zh-CN";
+
+const isLanguage = (value: string | null): value is Language =>
+	value === "ja" || value === "en" || value === "zh-CN";
+
+const detectBrowserLanguage = (): Language => {
+	const lang = typeof navigator !== "undefined" ? navigator.language : "";
+	if (lang.startsWith("zh")) {
+		return "zh-CN";
+	}
+	if (lang.startsWith("ja")) {
+		return "ja";
+	}
+	return "en";
+};
 
 const resources = {
 	ja: {
@@ -54,6 +68,7 @@ const resources = {
 		"setting.force_height": "強制高さ (px)",
 		"setting.fast_mode": "高速モード",
 		"setting.make_square": "正方形にする",
+		"setting.keep_aspect_ratio": "アスペクト比を維持",
 		"setting.bg_removal": "背景透過",
 		"setting.bg_method": "背景抽出方法",
 		"setting.bg_rgb": "背景色(RGB)",
@@ -123,6 +138,8 @@ const resources = {
 			"出力後に内容物が存在する範囲で自動的にトリミング（余白削除）を行います。\n\n余白（背景）が大きい画像に対して、これをONにすることで正しい縦横のマス数が検出されやすくなります。",
 		"tooltip.help.make_square":
 			"画像全体が正方形になるように、足りない部分を透過ピクセルで埋め合わせます。\n\n元の画像は中心に配置されます。",
+		"tooltip.help.keep_aspect_ratio":
+			"トリミング後の出力画像が元画像のアスペクト比を維持するように、透過ピクセルでパディングします。\n\nスプライトのキャンバスサイズを揃えたい場合に便利です。",
 
 		// Select Options
 		"option.none": "無効",
@@ -196,6 +213,201 @@ const resources = {
 		// Footer
 		"footer.privacy": "画像はブラウザ内で安全に処理されます",
 	},
+	"zh-CN": {
+		// UI Headings & Labels
+		"app.title": "Pixel Refiner | AI 像素画优化与背景透明工具",
+		"app.description":
+			'将 AI 生成的像素画优化为可直接用于<span class="text-highlight">素材</span>和<span class="text-highlight">图标</span>的品质。<br />' +
+			'数秒内完成<span class="text-highlight">抗锯齿清理</span>和<span class="text-highlight">背景透明化</span>。',
+		"section.input": "输入图片",
+		"section.result": "处理结果",
+		"section.palette": "调色板",
+		"ui.process_btn": "开始处理",
+		"ui.images": "图片列表",
+		"ui.auto_process": "自动",
+		"ui.download_btn": "下载",
+		"ui.export_gpl": "导出 .GPL",
+		"ui.export_png": "导出 .PNG",
+		"ui.import_palette": "导入调色板",
+		"ui.show_palette": "显示调色板",
+		"ui.clear_all": "全部清除",
+		"ui.download_all": "全部下载",
+		"ui.download_all_zip": "全部下载 (ZIP)",
+		"ui.pixel_size": "像素尺寸",
+		"ui.select_size_title": "选择要切换的尺寸",
+		"ui.select_size_note":
+			"*以下为估算值。选择后会根据该尺寸重新判定最佳网格。",
+		"ui.change_to_this_size": "切换到此尺寸",
+		"ui.remove_image": "移除图片",
+		"ui.confirm_clear_all": "确定要清除所有图片吗？",
+		"ui.size": "尺寸",
+		"ui.view_single": "单图",
+		"ui.view_compare": "对比",
+		"ui.compare_before_original": "原图",
+		"ui.compare_before_sanitized": "预处理",
+		"ui.placeholder.input":
+			'将图片拖放到这里<br /><span class="drop-subtext">或点击选择<br />(支持多张)</span>',
+		"ui.placeholder.result": "处理结果会显示在这里",
+		"ui.close": "关闭",
+		"ui.download_options": "选择下载类型",
+
+		// Settings
+		"setting.color_reduction": "减色",
+		"setting.color_mode": "减色模式",
+		"setting.color_count": "颜色数量",
+		"setting.dither_mode": "抖动",
+		"setting.dither_strength": "抖动强度 (%)",
+		"setting.advanced": "高级设置",
+		"setting.grid_detection": "网格检测",
+		"setting.grid_mode": "网格检测模式",
+		"setting.quant_step": "量化步长",
+		"setting.sample_window": "采样范围",
+		"setting.force_width": "强制宽度 (px)",
+		"setting.force_height": "强制高度 (px)",
+		"setting.fast_mode": "快速模式",
+		"setting.make_square": "转为正方形",
+		"setting.keep_aspect_ratio": "保持宽高比",
+		"setting.bg_removal": "背景透明化",
+		"setting.bg_method": "背景提取方式",
+		"setting.bg_rgb": "背景色 (RGB)",
+		"setting.bg_tolerance": "背景色容差",
+		"setting.pre_remove": "处理前透明化",
+		"setting.post_remove": "处理后透明化",
+		"setting.bg_removal_scope": "背景透明化范围",
+		"setting.bg_connectivity": "连通判定",
+
+		"setting.floating_max": "漂浮噪点上限 (%)",
+		"setting.trimming": "裁剪",
+		"setting.auto_trim": "自动裁剪",
+		"setting.outline": "描边",
+		"setting.outline_style": "样式",
+		"setting.outline_color": "颜色",
+		"setting.processing": "处理",
+		"setting.auto_process": "自动转换",
+		"section.presets": "预设",
+		"ui.preset_name": "预设名称",
+		"ui.save_preset": "保存",
+		"ui.load_preset": "加载",
+		"ui.delete_preset": "删除",
+		"ui.confirm_delete_preset": "确定要删除此预设吗？",
+		"ui.confirm_overwrite_preset": "已存在同名预设。要覆盖它吗？",
+		"ui.preset_loaded": "已加载预设“{name}”",
+		"ui.preset_saved": "已保存预设“{name}”",
+		"tooltip.help.auto_process":
+			"设置变化时自动运行转换处理。\n\n如果想手动点击处理按钮，请关闭此选项。",
+
+		// Tooltips
+		"tooltip.help.color_mode":
+			"限制输出结果的颜色数量。\n\n适合将画面整理成更接近经典像素画的色彩风格。\n无：不进行减色。\nGame Boy / PICO-8 / NES：使用对应主机的调色板。\n自定义数量：自动减色到指定颜色数量。",
+		"tooltip.help.color_count":
+			"指定输出的最大颜色数量。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.dither_strength":
+			"减色时应用抖动（误差扩散）。\n\n100%：完整误差扩散。\n0%：不使用抖动，直接取最接近的颜色。\n\n可以用较少颜色表现更平滑的渐变，但会产生像素画常见的颗粒感。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.grid_mode":
+			"切换网格检测的工作方式。\n\n自动检测：自动检测网格（默认）。\n像素指定 + 自动检测：把指定像素尺寸作为提示，并在附近进行精细搜索。\n完全像素指定：强制转换为指定尺寸（不自动检测）。\n关闭：跳过网格检测和缩小（适合 1:1 像素画）。",
+		"tooltip.help.quant_step":
+			"设置网格检测使用的减色级别。\n\n高：颜色会被归并，更抗噪，但细微色差可能丢失。\n低：能捕捉更细的颜色边界，但更容易误判噪点。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.sample_window":
+			"决定每个像素块颜色时参考的范围（像素数）。\n\n高：噪点更容易被去除，颜色更稳定，但细节更容易丢失。\n低：更忠实于原图，但更容易受错位和噪点影响。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.force_width":
+			"指定像素宽度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该宽度。\n\n范围：1 到 1024 (默认：自动)",
+		"tooltip.help.force_height":
+			"指定像素高度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该高度。\n\n范围：1 到 1024 (默认：自动)",
+		"tooltip.help.fast_mode":
+			"开启后使用更高效的算法加快搜索。\n关闭后会进行更大范围、更精细的搜索。\n\n如果自动检测结果错位，或图片包含大量噪点和细碎纹理，关闭后可能提高准确度。",
+		"tooltip.help.bg_method":
+			"选择从哪里提取背景色。\n\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
+		"tooltip.help.bg_rgb":
+			"用十六进制格式指定要视为背景的颜色（例如 #ffffff）。\n选择四角时会自动填入颜色。也可以用吸管按钮从图片中取色。",
+		"tooltip.help.bg_tolerance":
+			"判断背景色相似度的误差范围。\n\n高：即使背景因压缩噪点产生轻微偏差也能移除，但可能误删需要保留的颜色。\n低：只移除更接近精确背景色的颜色，但可能残留噪点。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.pre_remove":
+			"在网格检测前忽略背景色。\n\n优点：图片留白较大时，更容易正确检测主体网格。\n注意：如果角色内部也有背景同色区域，检测准确度可能下降。",
+		"tooltip.help.post_remove":
+			"处理完成后将背景色替换为透明。\n\n优点：可以保存为透明背景 PNG。\n注意：不会影响网格检测过程本身。",
+		"tooltip.help.bg_removal_scope":
+			"决定背景透明化的范围。\n\n仅选中部分：只透明化从所选角落连通的背景。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：外侧背景加上内部孔洞也一起透明化。",
+		"tooltip.help.bg_connectivity":
+			"决定相邻区域是否算作连通。\n\n4 方向：更严格，不包含斜向。\n8 方向：包含斜向相邻。",
+		"tooltip.help.floating_max":
+			"被视为漂浮噪点并移除的最大面积，占原图总像素数的百分比。\n设为 0% 时不移除漂浮噪点。\n示例：1% -> (宽度 x 高度 x 0.01) px\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.auto_trim":
+			"处理后自动裁剪到包含内容的范围。\n\n对于留白（背景）较大的图片，开启后更容易检测到正确的横纵格数。",
+		"tooltip.help.make_square":
+			"用透明像素填充不足的边，使整张图片变为正方形。\n\n原内容会居中放置。",
+		"tooltip.help.keep_aspect_ratio":
+			"裁剪后的输出图片使用透明像素填充，以保持原图的宽高比。\n\n适用于需要统一精灵画布尺寸的场景。",
+
+		// Select Options
+		"option.none": "无",
+		"option.mono": "黑白",
+		"option.gb_legacy": "Game Boy (初代)",
+		"option.gb_pocket": "Game Boy (Pocket)",
+		"option.gb_light": "Game Boy (Light)",
+		"option.pico8": "PICO-8",
+		"option.nes": "NES",
+		"option.pc98": "PC-9801",
+		"option.msx": "MSX1",
+		"option.c64": "Commodore 64",
+		"option.arne16": "Arne 16",
+		"option.sfc_sprite": "SFC 风格 (16 色/精灵)",
+		"option.sfc_bg": "SFC 风格 (256 色/背景)",
+		"option.auto": "自定义数量",
+		"option.fixed": "固定/自定义调色板",
+		"option.dither_none": "无",
+		"option.dither_floyd": "Floyd-Steinberg",
+		"option.dither_bayer2": "Bayer 2x2",
+		"option.dither_bayer4": "Bayer 4x4",
+		"option.dither_bayer8": "Bayer 8x8",
+		"option.dither_ordered": "Ordered",
+		"option.outline_none": "无",
+		"option.outline_rounded": "圆润 (8 方向)",
+		"option.outline_sharp": "锐利 (4 方向)",
+		"option.grid_mode_auto": "自动检测（默认）",
+		"option.grid_mode_hint": "像素指定 + 自动检测",
+		"option.grid_mode_force": "完全像素指定",
+		"option.grid_mode_off": "关闭",
+		"option.bg_none": "无",
+		"option.bg_scope_selected": "仅从所选角落连通的部分",
+		"option.bg_scope_outer": "所有与外边缘连通的部分",
+		"option.bg_scope_all": "外侧 + 内部孔洞",
+		"option.bg_connectivity_4": "4 方向（不含斜向）",
+		"option.bg_connectivity_8": "8 方向（含斜向）",
+		"option.bg_top_left": "左上（默认）",
+		"option.bg_bottom_left": "左下",
+		"option.bg_top_right": "右上",
+		"option.bg_bottom_right": "右下",
+		"option.bg_rgb": "RGB 指定",
+
+		// JS Messages
+		"error.no_image": "请先选择图片。",
+		"error.process_failed": "处理失败",
+		"error.load_failed": "加载失败",
+		"info.grid_updated": "网格尺寸已更新为 {w}x{h}",
+
+		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
+		"error.no_processed_images": "没有可下载的已处理图片。",
+		"error.download_failed": "下载失败",
+		"status.processing": "处理中...",
+		"status.processing_batch": "正在批量处理... ({current}/{total})",
+
+		// Attributes & Titles
+		"attr.title.bg_checkered": "背景：棋盘格",
+		"attr.title.bg_white": "背景：白色",
+		"attr.title.bg_black": "背景：黑色",
+		"attr.title.bg_green": "背景：绿色",
+		"attr.title.grid_toggle": "显示网格（仅缩放时有效）",
+		"attr.title.zoom_toggle": "放大显示",
+		"attr.title.eyedropper": "用吸管从图片中选择颜色",
+		"attr.placeholder.auto": "自动",
+
+		// Modal
+		"modal.eyedropper.title": "选择背景色",
+		"modal.eyedropper.instruction": "点击图片中要作为背景的颜色",
+
+		// Footer
+		"footer.privacy": "图片会在浏览器内安全处理",
+	},
 	en: {
 		// UI Headings & Labels
 		"app.title": "Pixel Refiner | AI Pixel Art Optimizer & Background Remover",
@@ -249,6 +461,7 @@ const resources = {
 		"setting.force_height": "Force Height (px)",
 		"setting.fast_mode": "Fast Mode",
 		"setting.make_square": "Make Square",
+		"setting.keep_aspect_ratio": "Keep Aspect Ratio",
 		"setting.bg_removal": "Background Removal",
 		"setting.bg_method": "Extraction Method",
 		"setting.bg_rgb": "Background Color (RGB)",
@@ -318,6 +531,8 @@ const resources = {
 			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
 		"tooltip.help.make_square":
 			"Pads the image with transparent pixels to make it perfectly square.\n\nThe original content is placed in the center.",
+		"tooltip.help.keep_aspect_ratio":
+			"Pads the trimmed output with transparent pixels to preserve the original image's aspect ratio.\n\nUseful for maintaining sprite canvas proportions after trimming.",
 
 		// Select Options
 		"option.none": "None",
@@ -393,6 +608,8 @@ const resources = {
 	},
 };
 
+type ResourceKey = keyof (typeof resources)["en"];
+
 export class I18nManager {
 	currentLang: Language = "en";
 
@@ -407,11 +624,7 @@ export class I18nManager {
 			// Ignore security errors or missing localStorage
 		}
 
-		const browser =
-			typeof navigator !== "undefined" && navigator.language?.startsWith("ja")
-				? "ja"
-				: "en";
-		this.currentLang = (saved as Language) || browser;
+		this.currentLang = isLanguage(saved) ? saved : detectBrowserLanguage();
 	}
 
 	setLanguage(lang: Language) {
@@ -427,10 +640,7 @@ export class I18nManager {
 	}
 
 	// キーからテキストを取得
-	t(
-		key: keyof (typeof resources)["ja"],
-		params?: Record<string, string | number>,
-	): string {
+	t(key: ResourceKey, params?: Record<string, string | number>): string {
 		const text = resources[this.currentLang][key] || key;
 		if (params) {
 			let interpolated = text;
@@ -451,9 +661,7 @@ export class I18nManager {
 
 		// 1. テキストコンテンツの更新 (innerHTML を使用してタグを維持)
 		document.querySelectorAll("[data-i18n]").forEach((el) => {
-			const key = el.getAttribute(
-				"data-i18n",
-			) as keyof (typeof resources)["ja"];
+			const key = el.getAttribute("data-i18n") as ResourceKey;
 			if (key) {
 				const text = this.t(key);
 				if (el.hasAttribute("data-i18n-html")) {
@@ -471,7 +679,7 @@ export class I18nManager {
 
 			for (const pair of config.split(",")) {
 				const [attr, key] = pair.split(":");
-				el.setAttribute(attr, this.t(key as keyof (typeof resources)["ja"]));
+				el.setAttribute(attr, this.t(key as ResourceKey));
 			}
 		});
 

@@ -691,6 +691,49 @@ describe("processImage", () => {
 		});
 	});
 
+	describe("keepAspectRatio", () => {
+		let img: RawImage;
+
+		beforeAll(async () => {
+			cleanDebugDir("keepAspectRatio");
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/auto_grid_detection.png", import.meta.url),
+			);
+			img = await readPngAsRawImage(imgPath);
+		});
+
+		it("should match expected image when keepAspectRatio is enabled", async () => {
+			const { result, grid } = processImage(img, {
+				detectionQuantStep: 64,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
+				bgRemovalScope: "all",
+				backgroundTolerance: 64,
+				sampleWindow: 3,
+				trimToContent: true,
+				trimAlphaThreshold: 16,
+				floatingMaxPixels: 0,
+				autoGridFromTrimmed: true,
+				keepAspectRatio: true,
+				debugHook: makeDebugHook("keepAspectRatio", "match_expected_image"),
+			});
+
+			const expPath = getExpectPath("keep_aspect_ratio");
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(expPath, result);
+				return;
+			}
+
+			const expected = await readPngAsRawImage(expPath);
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expect(grid.outW).toBe(result.width);
+			expect(grid.outH).toBe(result.height);
+
+			expectSameImage(result, expected, expPath);
+		});
+	});
+
 	describe("enableGridDetection", () => {
 		beforeAll(() => {
 			cleanDebugDir("enableGridDetection");

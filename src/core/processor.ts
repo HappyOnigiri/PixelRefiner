@@ -335,6 +335,10 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	makeSquare?: boolean;
 	/**
+	 * Pad the output with transparent pixels to preserve the source aspect ratio
+	 */
+	keepAspectRatio?: boolean;
+	/**
 	 * Enable color reduction.
 	 */
 	reduceColors?: boolean;
@@ -415,6 +419,7 @@ const normalizeProcessOptions = (
 	fastAutoGridFromTrimmed: boolean;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
+	keepAspectRatio: boolean;
 	reduceColors: boolean;
 	reduceColorMode: string;
 	ditherMode: DitherMode;
@@ -487,6 +492,8 @@ const normalizeProcessOptions = (
 	const fastAutoGridFromTrimmed =
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 	const makeSquare = raw.makeSquare ?? PROCESS_DEFAULTS.makeSquare;
+	const keepAspectRatio =
+		raw.keepAspectRatio ?? PROCESS_DEFAULTS.keepAspectRatio;
 	const enableGridDetection =
 		raw.enableGridDetection ?? PROCESS_DEFAULTS.enableGridDetection;
 	const reduceColors = raw.reduceColors ?? PROCESS_DEFAULTS.reduceColors;
@@ -530,6 +537,7 @@ const normalizeProcessOptions = (
 		fastAutoGridFromTrimmed,
 		enableGridDetection,
 		makeSquare,
+		keepAspectRatio,
 		reduceColors,
 		reduceColorMode,
 		ditherMode,
@@ -976,6 +984,73 @@ const padRawImage = (
 		}
 	}
 	return { width: outW, height: outH, data: out };
+};
+
+type AspectPadding = {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+	width: number;
+	height: number;
+};
+
+const getAspectRatio = (img: RawImage): number =>
+	img.height > 0 ? img.width / img.height : 1;
+
+const getAspectPadding = (
+	width: number,
+	height: number,
+	targetRatio: number,
+): AspectPadding => {
+	const safeRatio =
+		targetRatio > 0 && Number.isFinite(targetRatio) ? targetRatio : 1;
+	const currentRatio = height > 0 ? width / height : safeRatio;
+	if (Math.abs(currentRatio - safeRatio) < 0.0001) {
+		return { left: 0, top: 0, right: 0, bottom: 0, width, height };
+	}
+
+	const widthForHeight = Math.max(width, Math.ceil(height * safeRatio));
+	const heightForWidth = Math.max(height, Math.ceil(width / safeRatio));
+	const widthFirstError = Math.abs(widthForHeight / height - safeRatio);
+	const heightFirstError = Math.abs(width / heightForWidth - safeRatio);
+	const useWidthFirst =
+		widthFirstError < heightFirstError ||
+		(widthFirstError === heightFirstError &&
+			widthForHeight * height <= width * heightForWidth);
+
+	const outW = useWidthFirst ? widthForHeight : width;
+	const outH = useWidthFirst ? height : heightForWidth;
+	const dw = outW - width;
+	const dh = outH - height;
+	const left = Math.floor(dw / 2);
+	const top = Math.floor(dh / 2);
+
+	return {
+		left,
+		top,
+		right: dw - left,
+		bottom: dh - top,
+		width: outW,
+		height: outH,
+	};
+};
+
+export const padImageToAspectRatio = (
+	img: RawImage,
+	targetRatio = getAspectRatio(img),
+): { image: RawImage; padding: AspectPadding } => {
+	const padding = getAspectPadding(img.width, img.height, targetRatio);
+	return {
+		image: padRawImage(
+			img,
+			padding.left,
+			padding.top,
+			padding.right,
+			padding.bottom,
+		),
+		padding,
+	};
 };
 
 const applyColorReduction = (
@@ -1601,6 +1676,7 @@ export const processImage = (
 		preRemoveBackground: o.preRemoveBackground,
 	});
 	const trimToContent = o.trimToContent;
+	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(img) : 0;
 	const trimAlphaThreshold = o.trimAlphaThreshold;
 
 	// force: Trim with content BBox -> Force convert to specified pixel size (W x H) (no auto-detection)
@@ -2069,8 +2145,8 @@ export const processImage = (
 								cellH: c.cellH,
 								offsetX: 0,
 								offsetY: 0,
-								outW: c.outW,
-								outH: c.outH,
+								outW: Math.max(1, Math.floor(working.width / c.cellW)),
+								outH: Math.max(1, Math.floor(working.height / c.cellH)),
 								score: c.score ?? 0,
 							}))
 						: undefined,
@@ -2239,6 +2315,47 @@ export const processImage = (
 				outH: finalResult.height,
 				cropX: baseCropX - cellDw * trimmedGrid.cellW,
 				cropY: baseCropY - cellDh * trimmedGrid.cellH,
+				cropW: finalResult.width * trimmedGrid.cellW,
+				cropH: finalResult.height * trimmedGrid.cellH,
+			};
+		}
+	}
+
+	if (o.keepAspectRatio && !o.makeSquare) {
+		const { image: paddedResult, padding } = padImageToAspectRatio(
+			finalResult,
+			sourceAspectRatio,
+		);
+		if (paddedResult !== finalResult) {
+			const padLeftPx = Math.round(padding.left * trimmedGrid.cellW);
+			const padTopPx = Math.round(padding.top * trimmedGrid.cellH);
+			const padRightPx = Math.round(padding.right * trimmedGrid.cellW);
+			const padBottomPx = Math.round(padding.bottom * trimmedGrid.cellH);
+
+			finalResult = paddedResult;
+			compareBefore = padRawImage(
+				compareBefore,
+				padLeftPx,
+				padTopPx,
+				padRightPx,
+				padBottomPx,
+			);
+			compareBeforeSanitized = padRawImage(
+				compareBeforeSanitized,
+				padding.left,
+				padding.top,
+				padding.right,
+				padding.bottom,
+			);
+
+			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
+			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
+			trimmedGrid = {
+				...trimmedGrid,
+				outW: finalResult.width,
+				outH: finalResult.height,
+				cropX: baseCropX - padLeftPx,
+				cropY: baseCropY - padTopPx,
 				cropW: finalResult.width * trimmedGrid.cellW,
 				cropH: finalResult.height * trimmedGrid.cellH,
 			};
