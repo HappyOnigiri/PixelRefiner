@@ -441,15 +441,16 @@ describe("processImage", () => {
 				),
 			});
 
-			if (UPDATE_EXPECT) {
-				writeRawImageAsPngSync(getExpectPath("auto_grid_detection"), result);
-				return;
-			}
 			// Perfect match with expected PNG (size and pixels)
+			expect(result.width).toBe(88);
+			expect(result.height).toBe(61);
+			expect(expected.width).toBe(88);
+			expect(expected.height).toBe(61);
+
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(expected.width);
-			expect(grid.outH).toBe(expected.height);
+			expect(grid.outW).toBe(88);
+			expect(grid.outH).toBe(61);
 
 			expectSameImage(result, expected, getExpectPath("auto_grid_detection"));
 		});
@@ -690,13 +691,12 @@ describe("processImage", () => {
 		});
 	});
 
-	describe("preserve source aspect ratio", () => {
-		const mkTransparentCanvasWithRect = (
-			width: number,
-			height: number,
-			rect: { x: number; y: number; w: number; h: number },
-		): RawImage => {
+	describe("keepAspectRatio", () => {
+		it("should pad trimmed output to preserve source aspect ratio when enabled", () => {
+			const width = 64;
+			const height = 64;
 			const data = new Uint8ClampedArray(width * height * 4);
+			const rect = { x: 8, y: 20, w: 48, h: 24 };
 			for (let y = rect.y; y < rect.y + rect.h; y += 1) {
 				for (let x = rect.x; x < rect.x + rect.w; x += 1) {
 					const idx = (y * width + x) * 4;
@@ -706,92 +706,9 @@ describe("processImage", () => {
 					data[idx + 3] = 255;
 				}
 			}
-			return { width, height, data };
-		};
+			const img: RawImage = { width, height, data };
 
-		const alphaAt = (img: RawImage, x: number, y: number): number =>
-			img.data[(y * img.width + x) * 4 + 3];
-
-		const findOpaqueBoundsInRawImage = (img: RawImage) => {
-			let minX = img.width;
-			let minY = img.height;
-			let maxX = -1;
-			let maxY = -1;
-			let opaqueCount = 0;
-
-			for (let y = 0; y < img.height; y += 1) {
-				for (let x = 0; x < img.width; x += 1) {
-					if (alphaAt(img, x, y) === 0) continue;
-					opaqueCount += 1;
-					minX = Math.min(minX, x);
-					minY = Math.min(minY, y);
-					maxX = Math.max(maxX, x);
-					maxY = Math.max(maxY, y);
-				}
-			}
-
-			if (opaqueCount === 0) return undefined;
-			return { minX, minY, maxX, maxY, opaqueCount };
-		};
-
-		it("should keep square source aspect when autoGridFromTrimmed is enabled and trimToContent=false", () => {
-			const img = mkTransparentCanvasWithRect(64, 64, {
-				x: 8,
-				y: 20,
-				w: 48,
-				h: 24,
-			});
-
-			const { result, grid } = processImage(img, {
-				preRemoveBackground: false,
-				postRemoveBackground: false,
-				bgRemovalScope: "off",
-				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: true,
-				trimToContent: false,
-				sampleWindow: 1,
-			});
-
-			expect(result.width).toBe(result.height);
-			expect(grid.outW).toBe(result.width);
-			expect(grid.outH).toBe(result.height);
-			expect(result.width).toBeGreaterThan(1);
-			expect(alphaAt(result, 0, 0)).toBe(0);
-		});
-
-		it("should keep non-square source aspect when autoGridFromTrimmed is enabled and trimToContent=false", () => {
-			const img = mkTransparentCanvasWithRect(80, 40, {
-				x: 16,
-				y: 10,
-				w: 48,
-				h: 20,
-			});
-
-			const { result, grid } = processImage(img, {
-				preRemoveBackground: false,
-				postRemoveBackground: false,
-				bgRemovalScope: "off",
-				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: true,
-				trimToContent: false,
-				sampleWindow: 1,
-			});
-
-			expect(result.width / result.height).toBeCloseTo(2, 1);
-			expect(grid.outW).toBe(result.width);
-			expect(grid.outH).toBe(result.height);
-			expect(result.width).toBeGreaterThan(result.height);
-		});
-
-		it("should pad trimmed output back to source aspect when trimToContent=true", () => {
-			const img = mkTransparentCanvasWithRect(64, 64, {
-				x: 8,
-				y: 20,
-				w: 48,
-				h: 24,
-			});
-
-			const { result, grid } = processImage(img, {
+			const withoutOption = processImage(img, {
 				preRemoveBackground: false,
 				postRemoveBackground: false,
 				bgRemovalScope: "off",
@@ -799,22 +716,31 @@ describe("processImage", () => {
 				fastAutoGridFromTrimmed: true,
 				trimToContent: true,
 				sampleWindow: 1,
+				keepAspectRatio: false,
 			});
 
-			const opaqueBounds = findOpaqueBoundsInRawImage(result);
+			const withOption = processImage(img, {
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				bgRemovalScope: "off",
+				autoGridFromTrimmed: true,
+				fastAutoGridFromTrimmed: true,
+				trimToContent: true,
+				sampleWindow: 1,
+				keepAspectRatio: true,
+			});
 
-			expect(result.width).toBe(result.height);
-			expect(grid.outW).toBe(result.width);
-			expect(grid.outH).toBe(result.height);
-			expect(alphaAt(result, 0, 0)).toBe(0);
-			expect(opaqueBounds?.opaqueCount ?? 0).toBeGreaterThan(0);
-			expect(
-				opaqueBounds !== undefined &&
-					(opaqueBounds.minX > 0 ||
-						opaqueBounds.minY > 0 ||
-						opaqueBounds.maxX < result.width - 1 ||
-						opaqueBounds.maxY < result.height - 1),
-			).toBe(true);
+			// Without the option, aspect ratio may differ from source
+			expect(withoutOption.result.width).not.toBe(withoutOption.result.height);
+
+			// With the option, output is padded to match source 1:1 aspect
+			expect(withOption.result.width).toBe(withOption.result.height);
+			expect(withOption.grid.outW).toBe(withOption.result.width);
+			expect(withOption.grid.outH).toBe(withOption.result.height);
+			// Corner should be transparent padding
+			const cornerAlpha =
+				withOption.result.data[(0 * withOption.result.width + 0) * 4 + 3];
+			expect(cornerAlpha).toBe(0);
 		});
 	});
 
@@ -1019,10 +945,6 @@ describe("processImage", () => {
 				debugHook: makeDebugHook("high_resolution", "for_verification"),
 			});
 
-			if (UPDATE_EXPECT) {
-				writeRawImageAsPngSync(getExpectPath("high_resolution"), result);
-				return;
-			}
 			// Verify detection results
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);

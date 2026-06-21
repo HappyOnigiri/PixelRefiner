@@ -249,6 +249,8 @@ export const PROCESS_DEFAULTS = {
 	enableGridDetection: true,
 	// Fill the shorter side with transparent pixels to make the image square
 	makeSquare: false,
+	// Pad output to preserve the source aspect ratio
+	keepAspectRatio: false,
 	// Grid detection mode (for UI)
 	gridDetectionMode: "auto",
 
