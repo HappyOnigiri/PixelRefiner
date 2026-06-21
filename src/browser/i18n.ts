@@ -68,6 +68,7 @@ const resources = {
 		"setting.force_height": "強制高さ (px)",
 		"setting.fast_mode": "高速モード",
 		"setting.make_square": "正方形にする",
+		"setting.keep_aspect_ratio": "アスペクト比を維持",
 		"setting.bg_removal": "背景透過",
 		"setting.bg_method": "背景抽出方法",
 		"setting.bg_rgb": "背景色(RGB)",
@@ -137,6 +138,8 @@ const resources = {
 			"出力後に内容物が存在する範囲で自動的にトリミング（余白削除）を行います。\n\n余白（背景）が大きい画像に対して、これをONにすることで正しい縦横のマス数が検出されやすくなります。",
 		"tooltip.help.make_square":
 			"画像全体が正方形になるように、足りない部分を透過ピクセルで埋め合わせます。\n\n元の画像は中心に配置されます。",
+		"tooltip.help.keep_aspect_ratio":
+			"トリミング後の出力画像が元画像のアスペクト比を維持するように、透過ピクセルでパディングします。\n\nスプライトのキャンバスサイズを揃えたい場合に便利です。",
 
 		// Select Options
 		"option.none": "無効",
@@ -263,6 +266,7 @@ const resources = {
 		"setting.force_height": "强制高度 (px)",
 		"setting.fast_mode": "快速模式",
 		"setting.make_square": "转为正方形",
+		"setting.keep_aspect_ratio": "保持宽高比",
 		"setting.bg_removal": "背景透明化",
 		"setting.bg_method": "背景提取方式",
 		"setting.bg_rgb": "背景色 (RGB)",
@@ -286,8 +290,7 @@ const resources = {
 		"ui.load_preset": "加载",
 		"ui.delete_preset": "删除",
 		"ui.confirm_delete_preset": "确定要删除此预设吗？",
-		"ui.confirm_overwrite_preset":
-			"已存在同名预设。要覆盖它吗？",
+		"ui.confirm_overwrite_preset": "已存在同名预设。要覆盖它吗？",
 		"ui.preset_loaded": "已加载预设“{name}”",
 		"ui.preset_saved": "已保存预设“{name}”",
 		"tooltip.help.auto_process":
@@ -332,6 +335,8 @@ const resources = {
 			"处理后自动裁剪到包含内容的范围。\n\n对于留白（背景）较大的图片，开启后更容易检测到正确的横纵格数。",
 		"tooltip.help.make_square":
 			"用透明像素填充不足的边，使整张图片变为正方形。\n\n原内容会居中放置。",
+		"tooltip.help.keep_aspect_ratio":
+			"裁剪后的输出图片使用透明像素填充，以保持原图的宽高比。\n\n适用于需要统一精灵画布尺寸的场景。",
 
 		// Select Options
 		"option.none": "无",
@@ -380,8 +385,7 @@ const resources = {
 		"error.load_failed": "加载失败",
 		"info.grid_updated": "网格尺寸已更新为 {w}x{h}",
 
-		"error.palette_limit":
-			"警告：图片包含{count}种颜色。调色板将限制为256色。",
+		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
 		"error.no_processed_images": "没有可下载的已处理图片。",
 		"error.download_failed": "下载失败",
 		"status.processing": "处理中...",
@@ -457,6 +461,7 @@ const resources = {
 		"setting.force_height": "Force Height (px)",
 		"setting.fast_mode": "Fast Mode",
 		"setting.make_square": "Make Square",
+		"setting.keep_aspect_ratio": "Keep Aspect Ratio",
 		"setting.bg_removal": "Background Removal",
 		"setting.bg_method": "Extraction Method",
 		"setting.bg_rgb": "Background Color (RGB)",
@@ -526,6 +531,8 @@ const resources = {
 			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
 		"tooltip.help.make_square":
 			"Pads the image with transparent pixels to make it perfectly square.\n\nThe original content is placed in the center.",
+		"tooltip.help.keep_aspect_ratio":
+			"Pads the trimmed output with transparent pixels to preserve the original image's aspect ratio.\n\nUseful for maintaining sprite canvas proportions after trimming.",
 
 		// Select Options
 		"option.none": "None",
@@ -654,9 +661,7 @@ export class I18nManager {
 
 		// 1. テキストコンテンツの更新 (innerHTML を使用してタグを維持)
 		document.querySelectorAll("[data-i18n]").forEach((el) => {
-			const key = el.getAttribute(
-				"data-i18n",
-			) as ResourceKey;
+			const key = el.getAttribute("data-i18n") as ResourceKey;
 			if (key) {
 				const text = this.t(key);
 				if (el.hasAttribute("data-i18n-html")) {
