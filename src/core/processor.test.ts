@@ -692,55 +692,45 @@ describe("processImage", () => {
 	});
 
 	describe("keepAspectRatio", () => {
-		it("should pad trimmed output to preserve source aspect ratio when enabled", () => {
-			const width = 64;
-			const height = 64;
-			const data = new Uint8ClampedArray(width * height * 4);
-			const rect = { x: 8, y: 20, w: 48, h: 24 };
-			for (let y = rect.y; y < rect.y + rect.h; y += 1) {
-				for (let x = rect.x; x < rect.x + rect.w; x += 1) {
-					const idx = (y * width + x) * 4;
-					data[idx] = 32;
-					data[idx + 1] = 32;
-					data[idx + 2] = 32;
-					data[idx + 3] = 255;
-				}
-			}
-			const img: RawImage = { width, height, data };
+		let img: RawImage;
 
-			const withoutOption = processImage(img, {
-				preRemoveBackground: false,
-				postRemoveBackground: false,
-				bgRemovalScope: "off",
-				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: true,
-				trimToContent: true,
-				sampleWindow: 1,
-				keepAspectRatio: false,
-			});
+		beforeAll(async () => {
+			cleanDebugDir("keepAspectRatio");
+			const imgPath = fileURLToPath(
+				new URL("../../test/fixtures/auto_grid_detection.png", import.meta.url),
+			);
+			img = await readPngAsRawImage(imgPath);
+		});
 
-			const withOption = processImage(img, {
-				preRemoveBackground: false,
-				postRemoveBackground: false,
-				bgRemovalScope: "off",
-				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: true,
+		it("should match expected image when keepAspectRatio is enabled", async () => {
+			const { result, grid } = processImage(img, {
+				detectionQuantStep: 64,
+				preRemoveBackground: true,
+				postRemoveBackground: true,
+				bgRemovalScope: "all",
+				backgroundTolerance: 64,
+				sampleWindow: 3,
 				trimToContent: true,
-				sampleWindow: 1,
+				trimAlphaThreshold: 16,
+				floatingMaxPixels: 0,
+				autoGridFromTrimmed: true,
 				keepAspectRatio: true,
+				debugHook: makeDebugHook("keepAspectRatio", "match_expected_image"),
 			});
 
-			// Without the option, aspect ratio may differ from source
-			expect(withoutOption.result.width).not.toBe(withoutOption.result.height);
+			const expPath = getExpectPath("keep_aspect_ratio");
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(expPath, result);
+				return;
+			}
 
-			// With the option, output is padded to match source 1:1 aspect
-			expect(withOption.result.width).toBe(withOption.result.height);
-			expect(withOption.grid.outW).toBe(withOption.result.width);
-			expect(withOption.grid.outH).toBe(withOption.result.height);
-			// Corner should be transparent padding
-			const cornerAlpha =
-				withOption.result.data[(0 * withOption.result.width + 0) * 4 + 3];
-			expect(cornerAlpha).toBe(0);
+			const expected = await readPngAsRawImage(expPath);
+			expect(result.width).toBe(expected.width);
+			expect(result.height).toBe(expected.height);
+			expect(grid.outW).toBe(result.width);
+			expect(grid.outH).toBe(result.height);
+
+			expectSameImage(result, expected, expPath);
 		});
 	});
 
