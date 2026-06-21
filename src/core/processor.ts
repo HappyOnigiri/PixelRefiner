@@ -2145,8 +2145,8 @@ export const processImage = (
 								cellH: c.cellH,
 								offsetX: 0,
 								offsetY: 0,
-								outW: c.outW,
-								outH: c.outH,
+								outW: Math.max(1, Math.floor(working.width / c.cellW)),
+								outH: Math.max(1, Math.floor(working.height / c.cellH)),
 								score: c.score ?? 0,
 							}))
 						: undefined,
