@@ -53,6 +53,7 @@ jobs:
   run-refix:
     # Dependabot の PR は secrets にアクセスできないため、Refix は実行できません。
     if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
       github.actor != 'dependabot[bot]' &&
       (github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.event.pull_request.state != 'closed'))
