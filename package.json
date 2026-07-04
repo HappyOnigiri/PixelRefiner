@@ -26,7 +26,7 @@
     "vitest": "latest"
   },
   "dependencies": {
-    "@vercel/analytics": "^1.6.1",
+    "@vercel/analytics": "^2.0.1",
     "comlink": "^4.4.2",
     "jszip": "^3.10.1"
   }
