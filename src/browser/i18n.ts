@@ -19,7 +19,7 @@ const resources = {
 		// UI Headings & Labels
 		"app.title": "Pixel Refiner | AIドット絵の最適化・背景透過ツール",
 		"app.description":
-			'ローカルでAI生成のドット絵を、<span class="text-highlight">素材</span>や<span class="text-highlight">アイコン</span>として使えるクオリティに。<br />' +
+			'AIで生成したドット絵を、<span class="text-highlight">素材</span>や<span class="text-highlight">アイコン</span>として使えるクオリティに。<br />' +
 			'<span class="text-highlight">アンチエイリアス除去</span>・<span class="text-highlight">背景透過</span>を数秒で完了します。',
 		"section.input": "入力画像",
 		"section.result": "処理結果",
@@ -210,13 +210,14 @@ const resources = {
 		"modal.eyedropper.instruction":
 			"画像内の背景にしたい色をクリックしてください",
 
-
+		// Footer
+		"footer.privacy": "画像はブラウザ内で安全に処理されます",
 	},
 	"zh-CN": {
 		// UI Headings & Labels
 		"app.title": "Pixel Refiner | AI 像素画优化与背景透明工具",
 		"app.description":
-			'本地将 AI 生成的像素画优化为可直接用于<span class="text-highlight">素材</span>和<span class="text-highlight">图标</span>的品质。<br />' +
+			'将 AI 生成的像素画优化为可直接用于<span class="text-highlight">素材</span>和<span class="text-highlight">图标</span>的品质。<br />' +
 			'数秒内完成<span class="text-highlight">抗锯齿清理</span>和<span class="text-highlight">背景透明化</span>。',
 		"section.input": "输入图片",
 		"section.result": "处理结果",
@@ -404,13 +405,14 @@ const resources = {
 		"modal.eyedropper.title": "选择背景色",
 		"modal.eyedropper.instruction": "点击图片中要作为背景的颜色",
 
-
+		// Footer
+		"footer.privacy": "图片会在浏览器内安全处理",
 	},
 	en: {
 		// UI Headings & Labels
 		"app.title": "Pixel Refiner | AI Pixel Art Optimizer & Background Remover",
 		"app.description":
-			'Locally optimize AI-generated pixel art into <span class="text-highlight">high-quality assets</span> and <span class="text-highlight">icons</span>.<br />' +
+			'Optimize AI-generated pixel art into <span class="text-highlight">high-quality assets</span> and <span class="text-highlight">icons</span>.<br />' +
 			'Complete <span class="text-highlight">anti-aliasing removal</span> and <span class="text-highlight">background transparency</span> in seconds.',
 		"section.input": "Input Image",
 		"section.result": "Result",
@@ -601,7 +603,8 @@ const resources = {
 		"modal.eyedropper.instruction":
 			"Click on the color in the image you want to set as background",
 
-
+		// Footer
+		"footer.privacy": "Images are processed safely within your browser",
 	},
 };
 
