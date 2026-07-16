@@ -31,8 +31,8 @@ importers:
         specifier: latest
         version: 7.0.0
       prettier:
-        specifier: 3.9.4
-        version: 3.9.4
+        specifier: 3.9.5
+        version: 3.9.5
       typescript:
         specifier: latest
         version: 7.0.2
@@ -534,8 +534,8 @@ packages:
     resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
     engines: {node: ^10 || ^12 || >=14}
 
-  prettier@3.9.4:
-    resolution: {integrity: sha512-yWG/o/4oJfo036EKAfK6ACAoDOfHeRHx4tuxkfBZiauURiaSmYwlpOr5LQqKtIkRD2z1PLteme2WoxEnj4tHTg==}
+  prettier@3.9.5:
+    resolution: {integrity: sha512-/FVl766LpUfB5vXgCYOYa0MeV/441Ia99AeICQIQFTY/Nw0roZwULcXpku5i1/m5kt/baz+s4Zogspd839HSMg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -1018,7 +1018,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  prettier@3.9.4: {}
+  prettier@3.9.5: {}
 
   process-nextick-args@2.0.1: {}
 
