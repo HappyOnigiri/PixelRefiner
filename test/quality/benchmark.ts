@@ -214,6 +214,83 @@ const escapeHtml = (value: string): string =>
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#039;");
 
+const REPORT_TRANSLATIONS = {
+	en: {
+		title: "PixelRefiner quality report",
+		groundTruth: "Ground truth",
+		input: "Input",
+		legacy: "Legacy",
+		result: "Result",
+		groundTruthDifference: "Ground-truth difference",
+		legacyDifference: "Legacy difference",
+		backgroundMask: "Background mask",
+		inputKind: "Input kind",
+		route: "Route",
+		confidence: "Confidence",
+		notAvailable: "not available",
+		warnings: "Warnings",
+		none: "none",
+		topCandidates: "Top candidates",
+		metrics: "Metrics",
+		options: "Options",
+		filterCases: "Filter cases",
+		allStatuses: "All statuses",
+		passed: "passed",
+		failed: "failed",
+		preserve: "preserve",
+		refine: "refine",
+		workflow: "workflow",
+		assertions: {
+			"exact-image-match": "exact image match",
+			"mean-rgba-error": "mean RGBA error",
+			"edge-f1": "edge retention",
+			"background-mask-iou": "background mask",
+			"small-component-retention": "small component retention",
+			"expected-width": "expected width",
+			"expected-height": "expected height",
+			"deterministic-output": "deterministic output",
+			"catastrophic-failure": "catastrophic failure",
+		},
+	},
+	ja: {
+		title: "\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8",
+		groundTruth: "\u671f\u5f85\u7d50\u679c",
+		input: "\u5165\u529b",
+		legacy: "\u5f93\u6765\u7d50\u679c",
+		result: "\u51e6\u7406\u7d50\u679c",
+		groundTruthDifference: "\u671f\u5f85\u7d50\u679c\u3068\u306e\u5dee\u5206",
+		legacyDifference: "\u5f93\u6765\u7d50\u679c\u3068\u306e\u5dee\u5206",
+		backgroundMask: "\u80cc\u666f\u30de\u30b9\u30af",
+		inputKind: "\u5165\u529b\u7a2e\u5225",
+		route: "\u51e6\u7406\u30eb\u30fc\u30c8",
+		confidence: "\u4fe1\u983c\u5ea6",
+		notAvailable: "\u53d6\u5f97\u4e0d\u53ef",
+		warnings: "\u8b66\u544a",
+		none: "\u306a\u3057",
+		topCandidates: "\u4e0a\u4f4d\u5019\u88dc",
+		metrics: "\u8a55\u4fa1\u6307\u6a19",
+		options: "\u51e6\u7406\u8a2d\u5b9a",
+		filterCases: "\u30b1\u30fc\u30b9\u3092\u7d5e\u308a\u8fbc\u3080",
+		allStatuses: "\u3059\u3079\u3066\u306e\u72b6\u614b",
+		passed: "\u5408\u683c",
+		failed: "\u4e0d\u5408\u683c",
+		preserve: "\u4fdd\u6301",
+		refine: "\u5fa9\u5143",
+		workflow: "\u5b9f\u884c\u30ed\u30b0",
+		assertions: {
+			"exact-image-match": "\u753b\u50cf\u306e\u5b8c\u5168\u4e00\u81f4",
+			"mean-rgba-error": "RGBA\u5e73\u5747\u8aa4\u5dee",
+			"edge-f1": "\u8f2a\u90ed\u306e\u4fdd\u6301",
+			"background-mask-iou": "\u80cc\u666f\u30de\u30b9\u30af",
+			"small-component-retention": "\u5c0f\u8981\u7d20\u306e\u4fdd\u6301",
+			"expected-width": "\u671f\u5f85\u3059\u308b\u5e45",
+			"expected-height": "\u671f\u5f85\u3059\u308b\u9ad8\u3055",
+			"deterministic-output": "\u51fa\u529b\u306e\u518d\u73fe\u6027",
+			"catastrophic-failure": "\u81f4\u547d\u7684\u306a\u5931\u6557",
+		},
+	},
+} as const;
+
 const renderHtml = (results: QualityResults): string => {
 	const cards = results.cases
 		.map((result) => {
@@ -225,30 +302,40 @@ const renderHtml = (results: QualityResults): string => {
 				...result.degradationPatterns,
 			].join(" ");
 			const images = [
-				["Ground truth", result.files.groundTruth],
-				["Input", result.files.input],
-				["Legacy", result.files.legacy],
-				["Result", result.files.result],
-				["Ground-truth difference", result.files.diff],
-				["Legacy difference", result.files.legacyDiff],
-				["Background mask", result.files.backgroundMask],
+				["groundTruth", "Ground truth", result.files.groundTruth],
+				["input", "Input", result.files.input],
+				["legacy", "Legacy", result.files.legacy],
+				["result", "Result", result.files.result],
+				["groundTruthDifference", "Ground-truth difference", result.files.diff],
+				["legacyDifference", "Legacy difference", result.files.legacyDiff],
+				["backgroundMask", "Background mask", result.files.backgroundMask],
 			]
 				.map(
-					([label, source]) =>
-						`<figure><figcaption>${label}</figcaption><img src="${source}" alt="${label}"></figure>`,
+					([key, label, source]) =>
+						`<figure><figcaption data-i18n="${key}">${label}</figcaption><img src="${source}" alt="${label}" data-i18n-alt="${key}"></figure>`,
 				)
 				.join("");
+			const warnings =
+				result.warnings.length === 0
+					? '<span data-i18n="none">none</span>'
+					: result.warnings
+							.map(
+								(warning) =>
+									`<span data-i18n="assertions.${escapeHtml(warning)}">${escapeHtml(warning)}</span>`,
+							)
+							.join(", ");
 			return `<article class="case ${result.status}" data-search="${escapeHtml(searchable)}">
-			<h2>${escapeHtml(result.id)} <span>${result.status}</span></h2>
+			<h2>${escapeHtml(result.id)} <span data-i18n="${result.status}">${result.status}</span></h2>
 			<div class="images">${images}</div>
-			<dl><dt>Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt>Route</dt><dd>${result.route}</dd><dt>Confidence</dt><dd>not available</dd><dt>Warnings</dt><dd>${escapeHtml(result.warnings.join(", ") || "none")}</dd><dt>Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt>Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt>Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl>
+			<dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="confidence">Confidence</dt><dd data-i18n="notAvailable">not available</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl>
 		</article>`;
 		})
 		.join("\n");
-	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>PixelRefiner quality report</title><style>
+	const translations = JSON.stringify(REPORT_TRANSLATIONS);
+	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title data-i18n="title">PixelRefiner quality report</title><style>
 	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1500px;padding:24px}header{position:sticky;top:0;background:#15131ae8;padding:12px 0;z-index:2}input,select{padding:8px;margin-right:8px;background:#25212d;color:inherit;border:1px solid #635a70}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:16px 0}.case.failed{border-color:#ff6b6b}.case h2 span{font-size:.7em}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;image-rendering:pixelated;background:repeating-conic-gradient(#bbb 0 25%,#eee 0 50%) 50%/16px 16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}</style></head><body>
-	<header><h1>PixelRefiner quality report</h1><p>PR ${escapeHtml(results.metadata.prNumber)} &middot; head ${escapeHtml(results.metadata.headCommit)} &middot; base ${escapeHtml(results.metadata.baseCommit)} &middot; ${escapeHtml(results.metadata.generatedAt)} &middot; <a href="${escapeHtml(results.metadata.workflowRunUrl)}">workflow</a> &middot; benchmark v${results.metadata.benchmarkVersion} &middot; report v${results.metadata.reportVersion}</p><input id="search" placeholder="Filter cases"><select id="status"><option value="">All statuses</option><option>passed</option><option>failed</option></select></header>
-	<main>${cards}</main><script>const q=document.querySelector('#search'),s=document.querySelector('#status'),cards=[...document.querySelectorAll('.case')];function filter(){const text=q.value.toLowerCase(),status=s.value;for(const card of cards){card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!status||card.classList.contains(status)))}}q.addEventListener('input',filter);s.addEventListener('change',filter);</script></body></html>`;
+	<header><h1 data-i18n="title">PixelRefiner quality report</h1><p>PR ${escapeHtml(results.metadata.prNumber)} &middot; head ${escapeHtml(results.metadata.headCommit)} &middot; base ${escapeHtml(results.metadata.baseCommit)} &middot; ${escapeHtml(results.metadata.generatedAt)} &middot; <a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a> &middot; benchmark v${results.metadata.benchmarkVersion} &middot; report v${results.metadata.reportVersion}</p><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"><select id="status"><option value="" data-i18n="allStatuses">All statuses</option><option value="passed" data-i18n="passed">passed</option><option value="failed" data-i18n="failed">failed</option></select></header>
+	<main>${cards}</main><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),s=document.querySelector('#status'),cards=[...document.querySelectorAll('.case')];function filter(){const text=q.value.toLowerCase(),status=s.value;for(const card of cards){card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!status||card.classList.contains(status)))}}q.addEventListener('input',filter);s.addEventListener('change',filter);</script></body></html>`;
 };
 
 const renderMarkdown = (results: QualityResults): string => {

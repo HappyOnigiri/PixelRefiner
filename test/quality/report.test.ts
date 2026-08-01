@@ -22,6 +22,10 @@ describe.skipIf(!enabled)("quality report", () => {
 			readFileSync(path.join(reportRoot, "results.json"), "utf8"),
 		) as { cases: unknown[] };
 		expect(serialized.cases).toHaveLength(selectedCases.length);
+		const html = readFileSync(path.join(reportRoot, "index.html"), "utf8");
+		expect(html).toContain("navigator.languages");
+		expect(html).toContain('data-i18n="title"');
+		expect(html).toContain("\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8");
 		for (const qualityCase of selectedCases) {
 			expect(
 				existsSync(
