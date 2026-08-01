@@ -149,7 +149,7 @@ describe("processImage modes", () => {
 			expect(grid.outH).toBe(result.height);
 
 			expectSameImage(result, expected, expPath);
-		}, 20_000);
+		});
 	});
 
 	describe("enableGridDetection", () => {
@@ -361,7 +361,7 @@ describe("processImage modes", () => {
 
 			// Image comparison
 			expectSameImage(result, expected, getExpectPath("high_resolution"));
-		}, 20_000);
+		});
 	});
 
 	describe("Grid Search Strategies Consistency", () => {
