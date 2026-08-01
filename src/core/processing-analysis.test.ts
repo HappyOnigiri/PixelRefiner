@@ -73,8 +73,24 @@ describe("processing analysis", () => {
 		expect(processed.analysis.gridCandidates[0]).toMatchObject({
 			outW: processed.grid.outW,
 			outH: processed.grid.outH,
-			totalScore: processed.grid.score,
 		});
+		expect(
+			processed.analysis.gridCandidates[
+				processed.analysis.gridCandidates.length - 1
+			].method,
+		).toBe("preserve");
+		expect(
+			processed.analysis.gridCandidates.every(
+				(candidate, index, candidates) =>
+					index === 0 ||
+					candidates[index - 1].totalScore >= candidate.totalScore,
+			),
+		).toBe(true);
+		expect(
+			Object.values(processed.analysis.gridCandidates[0].subscores ?? {}).every(
+				(score) => score >= 0 && score <= 1,
+			),
+		).toBe(true);
 		expect(
 			processed.analysis.gridCandidates.every(
 				(candidate) => candidate.confidence >= 0 && candidate.confidence <= 1,
@@ -99,6 +115,7 @@ describe("processing analysis", () => {
 		expect(processed.analysis.warnings).toContain("ONE_AXIS_DETECTION_FAILED");
 		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
 		expect(processed.analysis.confidence).toBe(0);
+		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
 	});
 
 	it("warns when grid detection cannot produce a reliable result", () => {
@@ -113,6 +130,13 @@ describe("processing analysis", () => {
 
 		expect(processed.grid.outW).toBe(64);
 		expect(processed.grid.outH).toBe(64);
+		expect(processed.analysis.gridCandidates.length).toBeGreaterThan(1);
+		expect(
+			processed.analysis.gridCandidates.some(
+				(candidate) => candidate.method === "preserve",
+			),
+		).toBe(true);
+		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
 		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
 	});
 

@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "commit": "000acc0a434ec2d771bbcadafc8c2b32aef2478d",
+  "commit": "working-tree",
   "cases": [
     {
       "id": "remove-background-trim-auto-grid",
@@ -367,6 +367,17 @@
     },
     {
       "id": "restore-transparent-rgb-padding-to-8x8",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "withhold-ambiguous-axis-grid",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,

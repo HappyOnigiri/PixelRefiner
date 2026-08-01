@@ -1,4 +1,8 @@
-import { PROCESS_RANGES } from "../shared/config";
+import {
+	GRID_CANDIDATE_CELL_SCALES,
+	PROCESS_ANALYSIS_THRESHOLDS,
+	PROCESS_RANGES,
+} from "../shared/config";
 import type { Pixel, PixelGrid, RawImage } from "../shared/types";
 import { computeMedian, computePercentile } from "./math";
 import { extractStrip, posterize } from "./ops";
@@ -680,7 +684,11 @@ export const detectGrid = (
 		if (!finalX && !finalY) {
 			// [Intended] A total detection failure preserves the source instead of
 			// collapsing an arbitrary image into a single logical pixel.
-			return createFallbackGrid(1, 1, 0, 0);
+			const preserve = createFallbackGrid(1, 1, 0, 0);
+			const coarse = createFallbackGrid(w, h, 0, 0);
+			coarse.score = PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore;
+			preserve.candidates = [coarse];
+			return preserve;
 		}
 
 		const detectedCell = Math.round((finalX ?? finalY)?.cellSize ?? 1);
@@ -700,6 +708,7 @@ export const detectGrid = (
 			finalY?.offset ?? 0,
 		);
 		const preserve = createFallbackGrid(1, 1, 0, 0);
+		preserve.score = PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore;
 		selected.candidates = [partial, preserve];
 		return selected;
 	}
@@ -723,6 +732,52 @@ export const detectGrid = (
 		});
 	}
 
+	const candidates: PixelGrid[] = [];
+	for (const scale of GRID_CANDIDATE_CELL_SCALES) {
+		const candidateCellW = Math.max(1, Math.round(cellW * scale));
+		const candidateCellH = Math.max(1, Math.round(cellH * scale));
+		if (candidateCellW === cellW && candidateCellH === cellH) continue;
+		const candidateOffsetX = offsetX % candidateCellW;
+		const candidateOffsetY = offsetY % candidateCellH;
+		const candidateOutW = Math.max(
+			1,
+			Math.floor((w - candidateOffsetX) / candidateCellW),
+		);
+		const candidateOutH = Math.max(
+			1,
+			Math.floor((h - candidateOffsetY) / candidateCellH),
+		);
+		candidates.push({
+			cellW: candidateCellW,
+			cellH: candidateCellH,
+			offsetX: candidateOffsetX,
+			offsetY: candidateOffsetY,
+			score: (finalX.score + finalY.score) / 2 + Math.abs(1 - scale),
+			cropX: candidateOffsetX,
+			cropY: candidateOffsetY,
+			cropW: candidateOutW * candidateCellW,
+			cropH: candidateOutH * candidateCellH,
+			outW: candidateOutW,
+			outH: candidateOutH,
+			scoreX: finalX.score,
+			scoreY: finalY.score,
+		});
+	}
+	// [Intended] Preserve is always available as the safe automatic fallback.
+	candidates.push({
+		cellW: 1,
+		cellH: 1,
+		offsetX: 0,
+		offsetY: 0,
+		score: PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore,
+		cropX: 0,
+		cropY: 0,
+		cropW: w,
+		cropH: h,
+		outW: w,
+		outH: h,
+	});
+
 	return {
 		cellW,
 		cellH,
@@ -737,5 +792,6 @@ export const detectGrid = (
 		outH,
 		scoreX: finalX.score,
 		scoreY: finalY.score,
+		candidates,
 	};
 };
