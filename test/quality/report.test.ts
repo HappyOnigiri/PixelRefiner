@@ -27,11 +27,16 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-i18n="title"');
 		expect(html).toContain("\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8");
 		expect(html).toContain(
-			'href="https://github.com/HappyOnigiri/PixelRefiner/pull/local"',
+			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
 		);
-		expect(html).toContain(
-			'href="https://github.com/HappyOnigiri/PixelRefiner/commit/local"',
-		);
+		for (const commit of [
+			results.metadata.headCommit,
+			results.metadata.baseCommit,
+		]) {
+			expect(html).toContain(
+				`href="${results.metadata.repositoryUrl}/commit/${encodeURIComponent(commit)}"`,
+			);
+		}
 		for (const qualityCase of selectedCases) {
 			expect(
 				existsSync(
