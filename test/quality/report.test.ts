@@ -71,7 +71,11 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
 			selectedCases.length,
 		);
+		expect(html.match(/data-i18n="confidence"/g)).toHaveLength(
+			selectedCases.length,
+		);
 		expect(html).toContain('processingTime":"時間"');
+		expect(html).toContain('confidence":"信頼度（診断値）"');
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -144,6 +148,14 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(compactDetail).toContain(".back-link:hover { border-color: #c2b4ff");
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
+		expect(compactDetail).toContain(
+			'<dt data-i18n="confidence">Confidence (diagnostic)</dt>',
+		);
+		expect(compactDetail).toContain(
+			`<dd>${results.cases
+				.find((result) => result.id === compactCaseId)
+				?.confidence?.toFixed(4)}</dd>`,
+		);
 		expect(compactDetail).toContain('class="case-description"');
 		expect(compactDetail).toContain('class="image-stage dialog-stage"');
 		for (const imageKey of [
@@ -158,6 +170,8 @@ describe.skipIf(!enabled)("quality report", () => {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
 		expect(html).toContain("品質レポート");
+		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
+		expect(markdown).toContain("|Confidence (diagnostic)|");
 		expect(html).toContain(
 			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
 		);

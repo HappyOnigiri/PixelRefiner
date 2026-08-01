@@ -971,8 +971,9 @@ select:focus {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Error Toast */
-.error-toast {
+/* Error and processing warning toasts */
+.error-toast,
+.warning-toast {
   position: fixed;
   bottom: 32px;
   left: 50%;
@@ -993,7 +994,13 @@ select:focus {
   pointer-events: none;
 }
 
-.error-toast.show {
+.warning-toast {
+	background: #b45309;
+	white-space: pre-line;
+}
+
+.error-toast.show,
+.warning-toast.show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }

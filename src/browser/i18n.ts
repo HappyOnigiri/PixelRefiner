@@ -187,6 +187,17 @@ const resources = {
 		"error.process_failed": "処理失敗",
 		"error.load_failed": "読み込み失敗",
 		"info.grid_updated": "グリッドサイズを {w}x{h} に更新しました",
+		"warning.low_grid_confidence":
+			"グリッド判定の信頼度が低いため、結果を確認してください。",
+		"warning.background_uncertain": "背景の判定が不確かです。",
+		"warning.content_loss_risk":
+			"処理によって内容が大きく失われた可能性があります。",
+		"warning.one_axis_detection_failed":
+			"片方向のグリッドを検出できませんでした。",
+		"warning.extreme_output_size": "出力サイズが非常に大きくなっています。",
+		"warning.no_content": "処理対象の内容を検出できませんでした。",
+		"warning.fallback_to_preserve": "安全のため元のサイズを維持しました。",
+		"warning.unknown": "不明な処理警告です（{code}）。",
 
 		"error.palette_limit":
 			"警告: 画像には{count}色が含まれています。パレットは256色に制限されます。",
@@ -384,6 +395,14 @@ const resources = {
 		"error.process_failed": "处理失败",
 		"error.load_failed": "加载失败",
 		"info.grid_updated": "网格尺寸已更新为 {w}x{h}",
+		"warning.low_grid_confidence": "网格判断可信度较低，请检查结果。",
+		"warning.background_uncertain": "背景判断存在不确定性。",
+		"warning.content_loss_risk": "处理可能导致大量内容丢失。",
+		"warning.one_axis_detection_failed": "无法检测一个方向的网格。",
+		"warning.extreme_output_size": "输出尺寸非常大。",
+		"warning.no_content": "未检测到可处理的内容。",
+		"warning.fallback_to_preserve": "为安全起见，已保留原始尺寸。",
+		"warning.unknown": "未知处理警告（{code}）。",
 
 		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
 		"error.no_processed_images": "没有可下载的已处理图片。",
@@ -580,6 +599,18 @@ const resources = {
 		"error.process_failed": "Processing failed",
 		"error.load_failed": "Loading failed",
 		"info.grid_updated": "Grid updated to {w}x{h}",
+		"warning.low_grid_confidence":
+			"Grid confidence is low. Please check the result.",
+		"warning.background_uncertain": "The background detection is uncertain.",
+		"warning.content_loss_risk":
+			"Processing may have removed a large amount of content.",
+		"warning.one_axis_detection_failed":
+			"The grid could not be detected on one axis.",
+		"warning.extreme_output_size": "The output size is extremely large.",
+		"warning.no_content": "No processable content was detected.",
+		"warning.fallback_to_preserve":
+			"The original size was preserved for safety.",
+		"warning.unknown": "Unknown processing warning ({code}).",
 
 		"error.palette_limit":
 			"Warning: The image contains {count} colors. Palette will be limited to 256 colors.",

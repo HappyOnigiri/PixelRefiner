@@ -10,7 +10,6 @@ import {
 	calculateMetrics,
 	createBackgroundMaskImage,
 	createDiffImage,
-	topGridCandidates,
 } from "./metrics";
 import { runQualityReportClient } from "./report/client";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./report/styles";
@@ -152,6 +151,19 @@ export const runQualityCase = (
 			baselineImage === null ? null : `${caseDirectory}/baseline-diff.png`,
 		backgroundMask: `${caseDirectory}/background-mask.png`,
 	};
+	const selectedCandidate =
+		currentRun.analysis.gridCandidates[
+			currentRun.analysis.selectedCandidateIndex ?? 0
+		];
+	const rankedCandidates = [...currentRun.analysis.gridCandidates].sort(
+		(left, right) => left.totalScore - right.totalScore,
+	);
+	let topCandidates = rankedCandidates.slice(0, 3);
+	if (selectedCandidate && !topCandidates.includes(selectedCandidate)) {
+		topCandidates = [...topCandidates.slice(0, 2), selectedCandidate].sort(
+			(left, right) => left.totalScore - right.totalScore,
+		);
+	}
 	if (writeArtifacts) {
 		const outputDirectory = path.join(REPORT_ROOT, caseDirectory);
 		mkdirSync(outputDirectory, { recursive: true });
@@ -189,15 +201,14 @@ export const runQualityCase = (
 		changedPixelCount: imageComparison.changedPixelCount,
 		changedPixelRate: imageComparison.changedPixelRate,
 		diffBoundingBox: imageComparison.diffBoundingBox,
-		classification: qualityCase.inputKind,
-		route:
-			qualityCase.options.enableGridDetection === false ? "preserve" : "refine",
-		confidence: null,
-		warnings: failed,
-		gridCandidates: topGridCandidates(currentRun.grid).map((candidate) => ({
-			width: candidate.outW ?? null,
-			height: candidate.outH ?? null,
-			score: candidate.score,
+		classification: currentRun.analysis.classification ?? qualityCase.inputKind,
+		route: currentRun.analysis.route,
+		confidence: currentRun.analysis.confidence,
+		warnings: currentRun.analysis.warnings,
+		gridCandidates: topCandidates.map((candidate) => ({
+			width: candidate.outW,
+			height: candidate.outH,
+			score: candidate.totalScore,
 		})),
 		expectation: qualityCase.expectation,
 		options: qualityCase.options,
@@ -278,7 +289,7 @@ const REPORT_TRANSLATIONS = {
 		backgroundMask: "Background mask",
 		inputKind: "Input kind",
 		route: "Route",
-		confidence: "Confidence",
+		confidence: "Confidence (diagnostic)",
 		notAvailable: "not available",
 		warnings: "Warnings",
 		none: "none",
@@ -357,7 +368,7 @@ const REPORT_TRANSLATIONS = {
 		backgroundMask: "背景マスク",
 		inputKind: "入力種別",
 		route: "処理ルート",
-		confidence: "信頼度",
+		confidence: "信頼度（診断値）",
 		notAvailable: "取得不可",
 		warnings: "警告",
 		none: "なし",
@@ -436,7 +447,7 @@ const REPORT_TRANSLATIONS = {
 		backgroundMask: "背景蒙版",
 		inputKind: "输入类型",
 		route: "处理路径",
-		confidence: "置信度",
+		confidence: "置信度（诊断值）",
 		notAvailable: "不可用",
 		warnings: "警告",
 		none: "无",
@@ -511,6 +522,9 @@ const renderClientScript = (): string =>
 
 const formatMetric = (value: number | undefined): string =>
 	value === undefined ? "-" : Number(value.toFixed(3)).toString();
+
+const formatConfidence = (value: number | null): string =>
+	value === null ? "-" : value.toFixed(4);
 
 // [Policy] A case description must stand on its own: name the input characteristic,
 // the processing being exercised, and what must remain unchanged. Avoid vague text
@@ -730,7 +744,9 @@ const renderHtml = (results: QualityResults): string => {
 				'<strong data-i18n="meanRgbaErrorShort">Error</strong> ',
 				`${formatMetric(result.metrics.meanRgbaError)}/${errorTarget}`,
 				' &middot; <strong data-i18n="processingTime">Time</strong> ',
-				`${result.metrics.runtimeMs.toFixed(2)}ms</small>`,
+				`${result.metrics.runtimeMs.toFixed(2)}ms`,
+				' &middot; <strong data-i18n="confidence">Confidence (diagnostic)</strong> ',
+				`${formatConfidence(result.confidence)}</small>`,
 			].join("");
 			const searchable = [
 				result.id,
@@ -962,6 +978,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 			<dl>
 				<dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd>
 				<dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd>
+				<dt data-i18n="confidence">Confidence (diagnostic)</dt><dd>${formatConfidence(result.confidence)}</dd>
 				<dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd>
 				<dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd>
 				<dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd>
@@ -983,6 +1000,7 @@ const renderMarkdown = (results: QualityResults): string => {
 				`|${result.id}`,
 				`|${result.status}`,
 				`|${result.metrics.outputWidth}x${result.metrics.outputHeight}`,
+				`|${formatConfidence(result.confidence)}`,
 				`|${result.metrics.meanRgbaError.toFixed(3)}`,
 				`|${result.metrics.edgeF1.toFixed(3)}`,
 				`|${result.metrics.runtimeMs.toFixed(2)}|`,
@@ -1003,8 +1021,8 @@ const renderMarkdown = (results: QualityResults): string => {
 		1,
 	)}%
 
-|Case|Status|Output|Mean RGBA error|Edge F1|Runtime (ms)|
-|---|---|---:|---:|---:|---:|
+|Case|Status|Output|Confidence (diagnostic)|Mean RGBA error|Edge F1|Runtime (ms)|
+|---|---|---:|---:|---:|---:|---:|
 ${rows}
 `;
 };

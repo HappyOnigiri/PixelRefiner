@@ -1,7 +1,7 @@
 [
   {
     "id": "remove-background-trim-auto-grid",
-    "featureIds": ["PRF-001", "resize"],
+    "featureIds": ["PRF-001", "PRF-002", "resize"],
     "optionNames": ["fastAutoGridFromTrimmed", "bgRemovalScope"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -54,7 +54,7 @@
   },
   {
     "id": "remove-background-trim-resize-46x13",
-    "featureIds": ["PRF-001", "force-size"],
+    "featureIds": ["PRF-001", "PRF-002", "force-size"],
     "optionNames": ["forcePixelsW", "forcePixelsH", "trimToContent"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -1607,7 +1607,7 @@
   },
   {
     "id": "preserve-continuous-tone",
-    "featureIds": ["PRF-001", "continuous-tone"],
+    "featureIds": ["PRF-001", "PRF-002", "continuous-tone"],
     "profile": "smoke",
     "inputKind": "continuous-tone",
     "degradationPatterns": ["continuous-tone"],

@@ -1,6 +1,7 @@
 import {
 	clampInt,
 	clampOptionalInt,
+	PROCESS_ANALYSIS_THRESHOLDS,
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 	RETRO_PALETTES,
@@ -12,9 +13,16 @@ import type {
 	OutlineStyle,
 	PixelData,
 	PixelGrid,
+	ProcessingAnalysis,
+	ProcessingRoute,
+	ProcessingWarningCode,
+	ProcessResult,
 	RawImage,
 	RGB,
 } from "../shared/types";
+
+export type { ProcessResult } from "../shared/types";
+
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
 import { applyOutline } from "./outline";
@@ -255,21 +263,120 @@ const cropRawImageNearestFromGrid = (
 	return resizeRawImageNearest(img, cropX, cropY, cropW, cropH, cropW, cropH);
 };
 
-export type ProcessResult = {
-	result: RawImage;
-	grid: PixelGrid;
-	extractedPalette: RGB[];
-	/**
-	 * Comparison view "before" image.
-	 * This is the original image normalized to the same output geometry (downsample + trimming + padding)
-	 * as `result`, so it aligns pixel-perfect in the comparison slider.
-	 */
-	compareBefore: RawImage;
-	/**
-	 * Comparison view "before" image, but sanitized using the same downsample/median sampling
-	 * settings (grid detection + color sampling) as the processing pipeline.
-	 */
-	compareBeforeSanitized: RawImage;
+const clampUnit = (value: number): number => Math.min(1, Math.max(0, value));
+
+const foregroundRatio = (img: RawImage, alphaThreshold: number): number => {
+	const pixelCount = img.width * img.height;
+	if (pixelCount === 0) return 0;
+	let foregroundCount = 0;
+	for (let i = 3; i < img.data.length; i += 4) {
+		if (img.data[i] >= alphaThreshold) foregroundCount += 1;
+	}
+	return foregroundCount / pixelCount;
+};
+
+const getAxisAgreement = (grid: PixelGrid): number => {
+	if (grid.detectionFailedAxes && grid.detectionFailedAxes.length > 0) return 0;
+	if (grid.scoreX === undefined || grid.scoreY === undefined) return 1;
+	const denominator = Math.abs(grid.scoreX) + Math.abs(grid.scoreY) + 1;
+	return clampUnit(1 - Math.abs(grid.scoreX - grid.scoreY) / denominator);
+};
+
+const getGridConfidence = (grid: PixelGrid, route: ProcessingRoute): number => {
+	if (route !== "refine") return 1;
+	const scoreConfidence =
+		1 /
+		(1 + Math.max(0, grid.score) / PROCESS_ANALYSIS_THRESHOLDS.gridScoreScale);
+	return clampUnit(scoreConfidence * getAxisAgreement(grid));
+};
+
+const toCandidateReport = (
+	grid: PixelGrid,
+	source: RawImage,
+	route: ProcessingRoute,
+	method: string,
+) => {
+	const outW =
+		grid.outW ??
+		Math.max(1, Math.floor((source.width - grid.offsetX) / grid.cellW));
+	const outH =
+		grid.outH ??
+		Math.max(1, Math.floor((source.height - grid.offsetY) / grid.cellH));
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const cropW = grid.cropW ?? outW * grid.cellW;
+	const cropH = grid.cropH ?? outH * grid.cellH;
+	const axisAgreement = getAxisAgreement(grid);
+	const { candidates: _candidates, ...reportGrid } = grid;
+
+	return {
+		grid: reportGrid,
+		outW,
+		outH,
+		cropX,
+		cropY,
+		cropW,
+		cropH,
+		method,
+		totalScore: grid.score,
+		confidence: getGridConfidence(grid, route),
+		subscores: { axisAgreement },
+	};
+};
+
+const createProcessingAnalysis = (
+	source: RawImage,
+	result: RawImage,
+	comparisonBefore: RawImage,
+	grid: PixelGrid,
+	route: ProcessingRoute,
+	method: string,
+	alphaThreshold: number,
+): ProcessingAnalysis => {
+	const selected = toCandidateReport(grid, source, route, method);
+	const gridCandidates = [selected];
+	if (grid.candidates) {
+		for (const candidate of grid.candidates) {
+			const report = toCandidateReport(candidate, source, route, method);
+			const isSelected =
+				report.outW === selected.outW &&
+				report.outH === selected.outH &&
+				report.totalScore === selected.totalScore;
+			if (!isSelected) gridCandidates.push(report);
+		}
+	}
+
+	const before = foregroundRatio(comparisonBefore, alphaThreshold);
+	const after = foregroundRatio(result, alphaThreshold);
+	const contentLossRatio =
+		before === 0 ? 0 : clampUnit((before - after) / before);
+	const warnings: ProcessingWarningCode[] = [];
+	if (before === 0) warnings.push("NO_CONTENT");
+	// [Intended] Confidence remains diagnostic until PRF-100 calibrates scores
+	// across the different grid-detection methods.
+	if (grid.detectionFailedAxes?.length === 1) {
+		warnings.push("ONE_AXIS_DETECTION_FAILED");
+	}
+	if (contentLossRatio > PROCESS_ANALYSIS_THRESHOLDS.contentLossRatio) {
+		warnings.push("CONTENT_LOSS_RISK");
+	}
+	if (
+		result.width > PROCESS_ANALYSIS_THRESHOLDS.extremeOutputDimension ||
+		result.height > PROCESS_ANALYSIS_THRESHOLDS.extremeOutputDimension
+	) {
+		warnings.push("EXTREME_OUTPUT_SIZE");
+	}
+
+	return {
+		route,
+		confidence: selected.confidence,
+		warnings,
+		gridCandidates,
+		selectedCandidateIndex: 0,
+		foregroundRatioBefore: before,
+		foregroundRatioAfter: after,
+		contentLossRatio,
+	};
 };
 
 export type ProcessOptions = DetectOptions & {
@@ -1875,12 +1982,23 @@ export const processImage = (
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
 		const extracted = extractUsedColors(finalResult);
+		const analysis = createProcessingAnalysis(
+			img,
+			finalResult,
+			compareBeforeSanitized,
+			finalGridForForce,
+			"convert",
+			"forced-size",
+			trimAlphaThreshold,
+		);
+		log("Processing analysis", analysis);
 		return {
 			result: finalResult,
 			grid: finalGridForForce,
 			extractedPalette: extracted,
 			compareBefore,
 			compareBeforeSanitized,
+			analysis,
 		};
 	}
 
@@ -2021,12 +2139,23 @@ export const processImage = (
 			`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`,
 		);
 
+		const analysis = createProcessingAnalysis(
+			img,
+			finalResult,
+			compareBeforeSanitized,
+			finalGridForNoGrid,
+			"preserve",
+			"grid-disabled",
+			trimAlphaThreshold,
+		);
+		log("Processing analysis", analysis);
 		return {
 			result: finalResult,
 			grid: finalGridForNoGrid,
 			extractedPalette: extracted,
 			compareBefore,
 			compareBeforeSanitized,
+			analysis,
 		};
 	}
 
@@ -2088,6 +2217,7 @@ export const processImage = (
 	}
 
 	let grid: PixelGrid | null = null;
+	let gridMethod = "detect-grid";
 
 	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
 		log("Auto grid from trimmed mode");
@@ -2120,6 +2250,9 @@ export const processImage = (
 				est,
 			);
 			if (est) {
+				gridMethod = o.fastAutoGridFromTrimmed
+					? "trimmed-reconstruction-fast"
+					: "trimmed-reconstruction";
 				// NOTE:
 				// - Even when trimming is OFF, we want to use the "estimated grid from content BBox" (to prevent crushing).
 				// - However, trimming OFF just leaves background (margins), so apply downsampling to the whole image (working).
@@ -2173,6 +2306,9 @@ export const processImage = (
 	}
 
 	const downsampleStart = performance.now();
+	// [Intended] Candidate diagnostics stay in the detector's shared coordinate
+	// space while the selected output grid may later be trimmed or padded.
+	const diagnosticGrid = grid;
 	const down = downsample(working, grid, o.sampleWindow);
 	log(
 		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
@@ -2422,11 +2558,22 @@ export const processImage = (
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
 
 	const extracted = extractUsedColors(finalResult);
+	const analysis = createProcessingAnalysis(
+		img,
+		finalResult,
+		compareBeforeSanitized,
+		diagnosticGrid,
+		"refine",
+		gridMethod,
+		trimAlphaThreshold,
+	);
+	log("Processing analysis", analysis);
 	return {
 		result: finalResult,
 		grid: trimmedGrid,
 		extractedPalette: extracted,
 		compareBefore,
 		compareBeforeSanitized,
+		analysis,
 	};
 };
