@@ -134,7 +134,7 @@ def main() -> int:
 
     if warnings:
         print_warning_guidance()
-    if errors or read_errors:
+    if errors:
         print_error_guidance()
 
     if read_errors:
@@ -143,7 +143,8 @@ def main() -> int:
 
     print(
         f"\nChecked {len(paths)} TypeScript files: "
-        f"{len(warnings)} warning(s), {len(errors)} error(s).",
+        f"{len(warnings)} warning(s), {len(errors)} line-count error(s), "
+        f"{len(read_errors)} read error(s).",
     )
     return 1 if errors or read_errors else 0
 
