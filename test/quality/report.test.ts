@@ -31,8 +31,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).not.toContain("<header");
 		expect(html).not.toContain("<select");
 		expect(html).toContain(
-			'class="filter-button active" type="button" data-change-filter="changed" aria-pressed="true"',
+			'class="filter-button active" type="button" data-change-filter="" aria-pressed="true"',
 		);
+		expect(html).toContain('grid-template-areas:"main sidebar"');
+		expect(html).toContain("if(event.target===dialog)dialog.close()");
 		expect(html).toContain('data-change-filter=""');
 		expect(html).toContain('data-change-filter="regressed"');
 		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
@@ -50,15 +52,26 @@ describe.skipIf(!enabled)("quality report", () => {
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
 		const compactCaseEnd = html.indexOf("</article>", compactCaseIdIndex);
 		const compactCase = html.slice(compactCaseStart, compactCaseEnd);
-		expect(compactCase.match(/<figure>/g)).toHaveLength(1);
+		expect(compactCase.match(/<figure>/g)).toHaveLength(2);
+		expect(compactCase).toContain('data-i18n="input"');
 		expect(compactCase).toContain('data-i18n="result"');
-		expect(compactCase).not.toContain('data-i18n="comparison"');
+		expect(compactCase).toContain(
+			`href="cases/${compactCaseId}/index.html" data-i18n="details"`,
+		);
 		const reviewCaseIdIndex = html.indexOf("generated-bilinear");
 		const reviewCaseStart = html.lastIndexOf("<article", reviewCaseIdIndex);
 		const reviewCaseEnd = html.indexOf("</article>", reviewCaseIdIndex);
 		const reviewCase = html.slice(reviewCaseStart, reviewCaseEnd);
-		expect(reviewCase).toContain('<summary data-i18n="comparison">');
-		expect(reviewCase).toContain('<summary data-i18n="diagnostics">');
+		expect(reviewCase).toContain(
+			'href="cases/generated-bilinear/index.html" data-i18n="details"',
+		);
+		const compactDetail = readFileSync(
+			path.join(reportRoot, "cases", compactCaseId, "index.html"),
+			"utf8",
+		);
+		expect(compactDetail).toContain('href="../../index.html"');
+		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
+		expect(compactDetail).toContain('<h2 data-i18n="options">');
 		for (const imageKey of [
 			"input",
 			"groundTruth",
@@ -68,7 +81,7 @@ describe.skipIf(!enabled)("quality report", () => {
 			"baselineDifference",
 			"backgroundMask",
 		]) {
-			expect(reviewCase).toContain(`data-i18n="${imageKey}"`);
+			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
 		expect(html).toContain("\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8");
 		expect(html).toContain(
@@ -88,6 +101,11 @@ describe.skipIf(!enabled)("quality report", () => {
 			`<time datetime="${results.metadata.generatedAt}">${results.metadata.generatedAt}</time>`,
 		);
 		for (const qualityCase of selectedCases) {
+			expect(
+				existsSync(
+					path.join(reportRoot, "cases", qualityCase.id, "index.html"),
+				),
+			).toBe(true);
 			expect(
 				existsSync(
 					path.join(reportRoot, "cases", qualityCase.id, "result.png"),

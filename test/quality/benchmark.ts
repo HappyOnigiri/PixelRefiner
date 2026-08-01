@@ -324,6 +324,8 @@ const REPORT_TRANSLATIONS = {
 		backgroundMaskIou: "Background mask IoU",
 		smallComponentRetention: "Small component retention",
 		diagnostics: "All images and settings",
+		details: "Details",
+		backToReport: "Back to report",
 		noRegression: "No new quality regression",
 		hasRegression: "Quality regression detected",
 		assertions: {
@@ -395,6 +397,8 @@ const REPORT_TRANSLATIONS = {
 		smallComponentRetention: "\u5c0f\u8981\u7d20\u4fdd\u6301\u7387",
 		diagnostics:
 			"\u3059\u3079\u3066\u306e\u753b\u50cf\u3068\u51e6\u7406\u8a2d\u5b9a",
+		details: "\u8a73\u7d30",
+		backToReport: "\u30ec\u30dd\u30fc\u30c8\u306b\u623b\u308b",
 		noRegression:
 			"\u65b0\u305f\u306a\u54c1\u8cea\u60aa\u5316\u306f\u3042\u308a\u307e\u305b\u3093",
 		hasRegression:
@@ -431,8 +435,6 @@ const renderHtml = (results: QualityResults): string => {
 	);
 	const cards = sortedCases
 		.map((result) => {
-			const compact =
-				result.status === "passed" && result.changeStatus === "unchanged";
 			const searchable = [
 				result.status,
 				result.changeStatus,
@@ -453,82 +455,13 @@ const renderHtml = (results: QualityResults): string => {
 							`<figure><figcaption data-i18n="${key}">${label}</figcaption><img src="${source}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></figure>`,
 					)
 					.join("");
-			const primaryImages = renderImages(
-				compact
-					? [["result", "Result", result.files.result]]
-					: [
-							["baseline", "Baseline", result.files.baseline],
-							["result", "Result", result.files.result],
-						],
-			);
-			const allImages = renderImages([
+			const primaryImages = renderImages([
 				["input", "Input", result.files.input],
-				["groundTruth", "Ground truth", result.files.groundTruth],
-				["baseline", "Baseline", result.files.baseline],
 				["result", "Result", result.files.result],
-				["groundTruthDifference", "Ground-truth difference", result.files.diff],
-				[
-					"baselineDifference",
-					"Baseline difference",
-					result.files.baselineDiff,
-				],
-				["backgroundMask", "Background mask", result.files.backgroundMask],
 			]);
-			const warnings =
-				result.warnings.length === 0
-					? '<span data-i18n="none">none</span>'
-					: result.warnings
-							.map(
-								(warning) =>
-									`<span data-i18n="assertions.${escapeHtml(warning)}">${escapeHtml(warning)}</span>`,
-							)
-							.join(", ");
-			const metricState = (key: string): string => {
-				if (result.regressedMetrics.includes(key)) return "regressed";
-				if (result.improvedMetrics.includes(key)) return "improved";
-				return "unchanged";
-			};
-			const metricRow = (
-				key: string,
-				current: number,
-				baseline: number | undefined,
-				target: string,
-			): string => {
-				const delta = baseline === undefined ? undefined : current - baseline;
-				const deltaText =
-					delta === undefined
-						? "-"
-						: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
-				const state = metricState(key);
-				return `<tr class="${state}"><th data-i18n="${key}">${key}</th><td>${escapeHtml(target)}</td><td>${formatMetric(baseline)}</td><td>${formatMetric(current)}</td><td>${deltaText}</td><td data-i18n="${state}">${state}</td></tr>`;
-			};
-			const baselineMetrics = result.baselineMetrics;
-			const expectedSize =
-				result.expectation.expectedWidth !== undefined &&
-				result.expectation.expectedHeight !== undefined
-					? `${result.expectation.expectedWidth}x${result.expectation.expectedHeight}`
-					: "correct";
-			const sizeState = result.metrics.sizeCorrect ? "passed" : "failed";
-			const metricRows = `<tr class="${sizeState}"><th data-i18n="outputSize">Output size</th><td>${expectedSize}</td><td>${baselineMetrics ? `${baselineMetrics.outputWidth}x${baselineMetrics.outputHeight}` : "-"}</td><td>${result.metrics.outputWidth}x${result.metrics.outputHeight}</td><td>-</td><td data-i18n="${sizeState}">${sizeState}</td></tr>
-			${metricRow("meanRgbaError", result.metrics.meanRgbaError, baselineMetrics?.meanRgbaError, result.expectation.maxMeanRgbaError === undefined ? "-" : `<= ${result.expectation.maxMeanRgbaError}`)}
-			${metricRow("edgeF1", result.metrics.edgeF1, baselineMetrics?.edgeF1, result.expectation.minEdgeF1 === undefined ? "-" : `>= ${result.expectation.minEdgeF1}`)}
-			${metricRow("backgroundMaskIou", result.metrics.backgroundMaskIou, baselineMetrics?.backgroundMaskIou, result.expectation.minBackgroundMaskIou === undefined ? "-" : `>= ${result.expectation.minBackgroundMaskIou}`)}
-			${metricRow("smallComponentRetention", result.metrics.smallComponentRetention, baselineMetrics?.smallComponentRetention, result.expectation.minSmallComponentRetention === undefined ? "-" : `>= ${result.expectation.minSmallComponentRetention}`)}`;
-			const changedPixels =
-				result.changedPixelCount === null
-					? "-"
-					: `${result.changedPixelCount} (${((result.changedPixelRate ?? 0) * 100).toFixed(2)}%)`;
-			const tags = result.degradationPatterns
-				.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
-				.join(" ");
-			const reviewDetails = compact
-				? ""
-				: `<p>${tags}</p><p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
-			<details><summary data-i18n="comparison">Metric comparison</summary><div class="table-scroll"><table><thead><tr><th data-i18n="metric">Metric</th><th data-i18n="target">Target</th><th data-i18n="baseline">Baseline</th><th data-i18n="current">Current</th><th data-i18n="delta">Delta</th><th data-i18n="verdict">Verdict</th></tr></thead><tbody>${metricRows}</tbody></table></div></details>
-			<details><summary data-i18n="diagnostics">All images and settings</summary><div class="images">${allImages}</div><dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl></details>`;
 			return `<article class="case ${result.status} ${result.changeStatus}" data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
 			<h2>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span></h2>
-			<div class="images primary">${primaryImages}</div>${reviewDetails}
+			<div class="images primary">${primaryImages}</div><p><a class="detail-link" href="cases/${encodeURIComponent(result.id)}/index.html" data-i18n="details">Details</a></p>
 		</article>`;
 		})
 		.join("\n");
@@ -543,9 +476,82 @@ const renderHtml = (results: QualityResults): string => {
 	const verdictKey =
 		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title data-i18n="title">PixelRefiner quality report</title><style>
-	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1800px;padding:20px}a{color:#b9a7ff}.report-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:start}.sidebar{position:sticky;top:16px;display:grid;gap:14px;max-height:calc(100vh - 32px);overflow:auto;padding:16px;border:1px solid #494151;border-radius:10px;background:#1d1923}.sidebar h1{margin:0;font-size:1.2rem}.verdict{margin:0;font-size:.95rem;font-weight:700}.report-meta h2{margin:0 0 6px;font-size:.85rem;color:#d6cce4}.report-meta dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 8px;margin:0;font-size:.78rem}.report-meta dt{color:#aaa0b8}.report-meta dd{margin:0;overflow-wrap:anywhere}.report-meta code{font-size:inherit}.filter-panel{display:grid;gap:10px}.filter-group{margin:0;padding:8px;border:1px solid #494151;border-radius:8px;background:#25212d}.filter-group legend{padding:0 4px;font-size:.82rem;font-weight:700}.filter-row{display:grid;gap:5px}.search-row{display:grid;gap:5px;font-size:.82rem}.search-row input{box-sizing:border-box;width:100%;padding:7px;background:#25212d;color:inherit;border:1px solid #635a70}.filter-summary{margin:0;font-size:.78rem;color:#d6cce4}.filter-button{width:100%;padding:7px 8px;background:#302a39;color:inherit;border:1px solid #635a70;border-radius:6px;cursor:pointer;text-align:left;transition:transform .12s,border-color .12s,background .12s}.filter-button:hover{transform:translateX(2px);border-color:#c2b4ff}.filter-button.active{border-color:#fff;box-shadow:0 0 0 2px #ffffff22}.filter-button.active[data-change-filter=""]{background:#59458a}.filter-button.active[data-change-filter="changed"]{background:#725b20}.filter-button.active[data-change-filter="regressed"],.filter-button.active[data-status-filter="failed"]{background:#7a2930}.filter-button.active[data-change-filter="improved"],.filter-button.active[data-status-filter="passed"]{background:#236044}.filter-button.active[data-change-filter="unchanged"],.filter-button.active[data-status-filter=""]{background:#48536b}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:0 0 16px}.case.failed,.case.regressed{border-color:#ff6b6b}.case h2{margin-top:0}.badge,.tag{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.75em;background:#393241}.badge.regressed,.badge.failed{background:#7a2930}.badge.improved,.badge.passed{background:#236044}.badge.changed,.badge.new{background:#725b20}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;cursor:zoom-in;image-rendering:pixelated;background:repeating-conic-gradient(#777 0 25%,#aaa 0 50%) 50%/16px 16px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:7px;text-align:right;border-bottom:1px solid #494151}th:first-child{text-align:left}tr.regressed{color:#ff8f8f}tr.improved{color:#85e6a9}details{margin-top:16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}dialog{width:min(90vw,1000px);background:#15131a;border:1px solid #635a70}dialog img{width:100%;max-height:85vh;object-fit:contain;image-rendering:pixelated}@media(max-width:800px){body{padding:12px}.report-layout{grid-template-columns:1fr}.sidebar{position:static;max-height:none;overflow:visible}.filter-row{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}.filter-button:hover{transform:translateY(-1px)}}</style></head><body>
-	<div class="report-layout"><aside class="sidebar"><h1 data-i18n="title">PixelRefiner quality report</h1><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><section class="report-meta" aria-labelledby="report-meta-title"><h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2><dl><dt data-i18n="pullRequest">Pull request</dt><dd><a href="${prUrl}">#${escapeHtml(results.metadata.prNumber)}</a></dd><dt data-i18n="headCommit">Head</dt><dd><a href="${headCommitUrl}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd><dt data-i18n="baseCommit">PR base</dt><dd><a href="${baseCommitUrl}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd><dt data-i18n="baselineCommit">Baseline snapshot</dt><dd><a href="${baselineCommitUrl}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd><dt data-i18n="generatedAt">Generated</dt><dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd><dt data-i18n="workflow">Workflow</dt><dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd></dl></section><div class="filter-panel"><fieldset class="filter-group"><legend data-i18n="changeStatus">Change status</legend><div class="filter-row"><button class="filter-button" type="button" data-change-filter="" aria-pressed="false"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button><button class="filter-button active" type="button" data-change-filter="changed" aria-pressed="true"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="qualityStatus">Quality status</legend><div class="filter-row"><button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button><button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button><button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button></div></fieldset><label class="search-row" for="search"><span data-i18n="filterCases">Filter cases</span><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"></label><p class="filter-summary" aria-live="polite"><span data-i18n="displayConditions">Showing</span>: <strong id="active-change-label"></strong> &times; <strong id="active-status-label"></strong> &mdash; <strong id="visible-count">0</strong> / ${results.summary.caseCount} <span data-i18n="casesShown">cases</span></p></div></aside>
-	<main>${cards}</main></div><dialog id="image-dialog"><button id="dialog-close">&times;</button><img alt=""></dialog><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),changeButtons=[...document.querySelectorAll('[data-change-filter]')],statusButtons=[...document.querySelectorAll('[data-status-filter]')],cards=[...document.querySelectorAll('.case')],changeLabel=document.querySelector('#active-change-label'),statusLabel=document.querySelector('#active-status-label'),visibleCount=document.querySelector('#visible-count');let activeChange='changed',activeStatus='';function updateButtons(buttons,attribute,value){for(const button of buttons){const active=button.dataset[attribute]===value;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))}}function selectedLabel(buttons,attribute,value){return buttons.find(button=>button.dataset[attribute]===value)?.querySelector('[data-i18n]')?.textContent??''}function filter(){const text=q.value.toLowerCase();let visible=0;for(const card of cards){const changeMatches=!activeChange||(activeChange==='changed'?card.dataset.change!=='unchanged':card.dataset.change===activeChange);card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!activeStatus||card.dataset.status===activeStatus)&&changeMatches);if(!card.hidden)visible+=1}changeLabel.textContent=selectedLabel(changeButtons,'changeFilter',activeChange);statusLabel.textContent=selectedLabel(statusButtons,'statusFilter',activeStatus);visibleCount.textContent=String(visible)}q.addEventListener('input',filter);for(const button of changeButtons){button.addEventListener('click',()=>{activeChange=button.dataset.changeFilter;updateButtons(changeButtons,'changeFilter',activeChange);filter()})}for(const button of statusButtons){button.addEventListener('click',()=>{activeStatus=button.dataset.statusFilter;updateButtons(statusButtons,'statusFilter',activeStatus);filter()})}const dialog=document.querySelector('#image-dialog'),dialogImage=dialog.querySelector('img');for(const source of document.querySelectorAll('.images img')){source.addEventListener('click',()=>{dialogImage.src=source.src;dialogImage.alt=source.alt;dialog.showModal()})}document.querySelector('#dialog-close').addEventListener('click',()=>dialog.close());filter();</script></body></html>`;
+	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1800px;padding:20px}a{color:#b9a7ff}.report-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;grid-template-areas:"main sidebar";gap:24px;align-items:start}.sidebar{grid-area:sidebar;position:sticky;top:16px;display:grid;gap:14px;max-height:calc(100vh - 32px);overflow:auto;padding:16px;border:1px solid #494151;border-radius:10px;background:#1d1923}.report-main{grid-area:main}.sidebar h1{margin:0;font-size:1.2rem}.verdict{margin:0;font-size:.95rem;font-weight:700}.report-meta h2{margin:0 0 6px;font-size:.85rem;color:#d6cce4}.report-meta dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 8px;margin:0;font-size:.78rem}.report-meta dt{color:#aaa0b8}.report-meta dd{margin:0;overflow-wrap:anywhere}.report-meta code{font-size:inherit}.filter-panel{display:grid;gap:10px}.filter-group{margin:0;padding:8px;border:1px solid #494151;border-radius:8px;background:#25212d}.filter-group legend{padding:0 4px;font-size:.82rem;font-weight:700}.filter-row{display:grid;gap:5px}.search-row{display:grid;gap:5px;font-size:.82rem}.search-row input{box-sizing:border-box;width:100%;padding:7px;background:#25212d;color:inherit;border:1px solid #635a70}.filter-summary{margin:0;font-size:.78rem;color:#d6cce4}.filter-button{width:100%;padding:7px 8px;background:#302a39;color:inherit;border:1px solid #635a70;border-radius:6px;cursor:pointer;text-align:left;transition:transform .12s,border-color .12s,background .12s}.filter-button:hover{transform:translateX(2px);border-color:#c2b4ff}.filter-button.active{border-color:#fff;box-shadow:0 0 0 2px #ffffff22}.filter-button.active[data-change-filter=""]{background:#59458a}.filter-button.active[data-change-filter="changed"]{background:#725b20}.filter-button.active[data-change-filter="regressed"],.filter-button.active[data-status-filter="failed"]{background:#7a2930}.filter-button.active[data-change-filter="improved"],.filter-button.active[data-status-filter="passed"]{background:#236044}.filter-button.active[data-change-filter="unchanged"],.filter-button.active[data-status-filter=""]{background:#48536b}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:0 0 16px}.case.failed,.case.regressed{border-color:#ff6b6b}.case h2{margin-top:0}.detail-link{display:inline-block;padding:8px 12px;border:1px solid #635a70;border-radius:6px;background:#302a39;text-decoration:none}.detail-link:hover{border-color:#c2b4ff;background:#3b3346}.badge,.tag{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.75em;background:#393241}.badge.regressed,.badge.failed{background:#7a2930}.badge.improved,.badge.passed{background:#236044}.badge.changed,.badge.new{background:#725b20}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;cursor:zoom-in;image-rendering:pixelated;background:repeating-conic-gradient(#777 0 25%,#aaa 0 50%) 50%/16px 16px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:7px;text-align:right;border-bottom:1px solid #494151}th:first-child{text-align:left}tr.regressed{color:#ff8f8f}tr.improved{color:#85e6a9}details{margin-top:16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}dialog{width:min(90vw,1000px);background:#15131a;border:1px solid #635a70}dialog img{width:100%;max-height:85vh;object-fit:contain;image-rendering:pixelated}@media(max-width:800px){body{padding:12px}.report-layout{grid-template-columns:1fr;grid-template-areas:"sidebar" "main"}.sidebar{position:static;max-height:none;overflow:visible}.filter-row{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}.filter-button:hover{transform:translateY(-1px)}}</style></head><body>
+	<div class="report-layout"><aside class="sidebar"><h1 data-i18n="title">PixelRefiner quality report</h1><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><section class="report-meta" aria-labelledby="report-meta-title"><h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2><dl><dt data-i18n="pullRequest">Pull request</dt><dd><a href="${prUrl}">#${escapeHtml(results.metadata.prNumber)}</a></dd><dt data-i18n="headCommit">Head</dt><dd><a href="${headCommitUrl}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd><dt data-i18n="baseCommit">PR base</dt><dd><a href="${baseCommitUrl}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd><dt data-i18n="baselineCommit">Baseline snapshot</dt><dd><a href="${baselineCommitUrl}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd><dt data-i18n="generatedAt">Generated</dt><dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd><dt data-i18n="workflow">Workflow</dt><dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd></dl></section><div class="filter-panel"><fieldset class="filter-group"><legend data-i18n="changeStatus">Change status</legend><div class="filter-row"><button class="filter-button active" type="button" data-change-filter="" aria-pressed="true"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button><button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="qualityStatus">Quality status</legend><div class="filter-row"><button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button><button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button><button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button></div></fieldset><label class="search-row" for="search"><span data-i18n="filterCases">Filter cases</span><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"></label><p class="filter-summary" aria-live="polite"><span data-i18n="displayConditions">Showing</span>: <strong id="active-change-label"></strong> &times; <strong id="active-status-label"></strong> &mdash; <strong id="visible-count">0</strong> / ${results.summary.caseCount} <span data-i18n="casesShown">cases</span></p></div></aside>
+	<main class="report-main">${cards}</main></div><dialog id="image-dialog"><button id="dialog-close">&times;</button><img alt=""></dialog><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),changeButtons=[...document.querySelectorAll('[data-change-filter]')],statusButtons=[...document.querySelectorAll('[data-status-filter]')],cards=[...document.querySelectorAll('.case')],changeLabel=document.querySelector('#active-change-label'),statusLabel=document.querySelector('#active-status-label'),visibleCount=document.querySelector('#visible-count');let activeChange='',activeStatus='';function updateButtons(buttons,attribute,value){for(const button of buttons){const active=button.dataset[attribute]===value;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))}}function selectedLabel(buttons,attribute,value){return buttons.find(button=>button.dataset[attribute]===value)?.querySelector('[data-i18n]')?.textContent??''}function filter(){const text=q.value.toLowerCase();let visible=0;for(const card of cards){const changeMatches=!activeChange||(activeChange==='changed'?card.dataset.change!=='unchanged':card.dataset.change===activeChange);card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!activeStatus||card.dataset.status===activeStatus)&&changeMatches);if(!card.hidden)visible+=1}changeLabel.textContent=selectedLabel(changeButtons,'changeFilter',activeChange);statusLabel.textContent=selectedLabel(statusButtons,'statusFilter',activeStatus);visibleCount.textContent=String(visible)}q.addEventListener('input',filter);for(const button of changeButtons){button.addEventListener('click',()=>{activeChange=button.dataset.changeFilter;updateButtons(changeButtons,'changeFilter',activeChange);filter()})}for(const button of statusButtons){button.addEventListener('click',()=>{activeStatus=button.dataset.statusFilter;updateButtons(statusButtons,'statusFilter',activeStatus);filter()})}const dialog=document.querySelector('#image-dialog'),dialogImage=dialog.querySelector('img');for(const source of document.querySelectorAll('.images img')){source.addEventListener('click',()=>{dialogImage.src=source.src;dialogImage.alt=source.alt;dialog.showModal()})}dialog.addEventListener('click',(event)=>{if(event.target===dialog)dialog.close()});document.querySelector('#dialog-close').addEventListener('click',()=>dialog.close());filter();</script></body></html>`;
+};
+
+const renderCaseDetailHtml = (result: QualityCaseResult): string => {
+	const renderImages = (
+		images: Array<[string, string, string | null]>,
+	): string =>
+		images
+			.filter((image): image is [string, string, string] => image[2] !== null)
+			.map(([key, label, source]) => {
+				const fileName = escapeHtml(path.posix.basename(source));
+				return `<figure><figcaption data-i18n="${key}">${label}</figcaption><img src="${fileName}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></figure>`;
+			})
+			.join("");
+	const allImages = renderImages([
+		["input", "Input", result.files.input],
+		["groundTruth", "Ground truth", result.files.groundTruth],
+		["baseline", "Baseline", result.files.baseline],
+		["result", "Result", result.files.result],
+		["groundTruthDifference", "Ground-truth difference", result.files.diff],
+		["baselineDifference", "Baseline difference", result.files.baselineDiff],
+		["backgroundMask", "Background mask", result.files.backgroundMask],
+	]);
+	const warnings =
+		result.warnings.length === 0
+			? '<span data-i18n="none">none</span>'
+			: result.warnings
+					.map(
+						(warning) =>
+							`<span data-i18n="assertions.${escapeHtml(warning)}">${escapeHtml(warning)}</span>`,
+					)
+					.join(", ");
+	const metricState = (key: string): string => {
+		if (result.regressedMetrics.includes(key)) return "regressed";
+		if (result.improvedMetrics.includes(key)) return "improved";
+		return "unchanged";
+	};
+	const metricRow = (
+		key: string,
+		current: number,
+		baseline: number | undefined,
+		target: string,
+	): string => {
+		const delta = baseline === undefined ? undefined : current - baseline;
+		const deltaText =
+			delta === undefined
+				? "-"
+				: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
+		const state = metricState(key);
+		return `<tr class="${state}"><th data-i18n="${key}">${key}</th><td>${escapeHtml(target)}</td><td>${formatMetric(baseline)}</td><td>${formatMetric(current)}</td><td>${deltaText}</td><td data-i18n="${state}">${state}</td></tr>`;
+	};
+	const baselineMetrics = result.baselineMetrics;
+	const expectedSize =
+		result.expectation.expectedWidth !== undefined &&
+		result.expectation.expectedHeight !== undefined
+			? `${result.expectation.expectedWidth}x${result.expectation.expectedHeight}`
+			: "correct";
+	const sizeState = result.metrics.sizeCorrect ? "passed" : "failed";
+	const metricRows = `<tr class="${sizeState}"><th data-i18n="outputSize">Output size</th><td>${expectedSize}</td><td>${baselineMetrics ? `${baselineMetrics.outputWidth}x${baselineMetrics.outputHeight}` : "-"}</td><td>${result.metrics.outputWidth}x${result.metrics.outputHeight}</td><td>-</td><td data-i18n="${sizeState}">${sizeState}</td></tr>
+	${metricRow("meanRgbaError", result.metrics.meanRgbaError, baselineMetrics?.meanRgbaError, result.expectation.maxMeanRgbaError === undefined ? "-" : `<= ${result.expectation.maxMeanRgbaError}`)}
+	${metricRow("edgeF1", result.metrics.edgeF1, baselineMetrics?.edgeF1, result.expectation.minEdgeF1 === undefined ? "-" : `>= ${result.expectation.minEdgeF1}`)}
+	${metricRow("backgroundMaskIou", result.metrics.backgroundMaskIou, baselineMetrics?.backgroundMaskIou, result.expectation.minBackgroundMaskIou === undefined ? "-" : `>= ${result.expectation.minBackgroundMaskIou}`)}
+	${metricRow("smallComponentRetention", result.metrics.smallComponentRetention, baselineMetrics?.smallComponentRetention, result.expectation.minSmallComponentRetention === undefined ? "-" : `>= ${result.expectation.minSmallComponentRetention}`)}`;
+	const changedPixels =
+		result.changedPixelCount === null
+			? "-"
+			: `${result.changedPixelCount} (${((result.changedPixelRate ?? 0) * 100).toFixed(2)}%)`;
+	const tags = result.degradationPatterns
+		.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
+		.join(" ");
+	const translations = JSON.stringify(REPORT_TRANSLATIONS);
+	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(result.id)} - PixelRefiner quality report</title><style>
+	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1500px;padding:24px}a{color:#b9a7ff}.back-link{display:inline-block;margin-bottom:16px}.badge,.tag{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.75em;background:#393241}.badge.regressed,.badge.failed{background:#7a2930}.badge.improved,.badge.passed{background:#236044}.badge.changed,.badge.new{background:#725b20}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.images figure{margin:0}.images img{width:100%;height:280px;object-fit:contain;cursor:zoom-in;image-rendering:pixelated;background:repeating-conic-gradient(#777 0 25%,#aaa 0 50%) 50%/16px 16px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:8px;text-align:right;border-bottom:1px solid #494151}th:first-child{text-align:left}tr.regressed{color:#ff8f8f}tr.improved{color:#85e6a9}section{margin-top:28px}dl{display:grid;grid-template-columns:max-content 1fr;gap:8px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}dialog{width:min(90vw,1000px);background:#15131a;border:1px solid #635a70}dialog img{width:100%;max-height:85vh;object-fit:contain;image-rendering:pixelated}</style></head><body>
+	<a class="back-link" href="../../index.html" data-i18n="backToReport">Back to report</a><main><h1>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span></h1><p>${tags}</p><p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p><section><h2 data-i18n="diagnostics">All images and settings</h2><div class="images">${allImages}</div></section><section><h2 data-i18n="comparison">Metric comparison</h2><div class="table-scroll"><table><thead><tr><th data-i18n="metric">Metric</th><th data-i18n="target">Target</th><th data-i18n="baseline">Baseline</th><th data-i18n="current">Current</th><th data-i18n="delta">Delta</th><th data-i18n="verdict">Verdict</th></tr></thead><tbody>${metricRows}</tbody></table></div></section><section><h2 data-i18n="options">Options</h2><dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl></section></main><dialog id="image-dialog"><button id="dialog-close">&times;</button><img alt=""></dialog><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}const dialog=document.querySelector('#image-dialog'),dialogImage=dialog.querySelector('img');for(const source of document.querySelectorAll('.images img')){source.addEventListener('click',()=>{dialogImage.src=source.src;dialogImage.alt=source.alt;dialog.showModal()})}dialog.addEventListener('click',(event)=>{if(event.target===dialog)dialog.close()});document.querySelector('#dialog-close').addEventListener('click',()=>dialog.close());</script></body></html>`;
 };
 
 const renderMarkdown = (results: QualityResults): string => {
@@ -578,6 +584,12 @@ export const generateQualityReport = (
 	);
 	writeFileSync(path.join(REPORT_ROOT, "summary.md"), renderMarkdown(results));
 	writeFileSync(path.join(REPORT_ROOT, "index.html"), renderHtml(results));
+	for (const result of results.cases) {
+		writeFileSync(
+			path.join(REPORT_ROOT, "cases", result.id, "index.html"),
+			renderCaseDetailHtml(result),
+		);
+	}
 	return results;
 };
 
