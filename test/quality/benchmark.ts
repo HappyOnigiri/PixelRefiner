@@ -151,6 +151,19 @@ export const runQualityCase = (
 			baselineImage === null ? null : `${caseDirectory}/baseline-diff.png`,
 		backgroundMask: `${caseDirectory}/background-mask.png`,
 	};
+	const selectedCandidate =
+		currentRun.analysis.gridCandidates[
+			currentRun.analysis.selectedCandidateIndex ?? 0
+		];
+	const rankedCandidates = [...currentRun.analysis.gridCandidates].sort(
+		(left, right) => left.totalScore - right.totalScore,
+	);
+	let topCandidates = rankedCandidates.slice(0, 3);
+	if (selectedCandidate && !topCandidates.includes(selectedCandidate)) {
+		topCandidates = [...topCandidates.slice(0, 2), selectedCandidate].sort(
+			(left, right) => left.totalScore - right.totalScore,
+		);
+	}
 	if (writeArtifacts) {
 		const outputDirectory = path.join(REPORT_ROOT, caseDirectory);
 		mkdirSync(outputDirectory, { recursive: true });
@@ -192,7 +205,7 @@ export const runQualityCase = (
 		route: currentRun.analysis.route,
 		confidence: currentRun.analysis.confidence,
 		warnings: currentRun.analysis.warnings,
-		gridCandidates: currentRun.analysis.gridCandidates.map((candidate) => ({
+		gridCandidates: topCandidates.map((candidate) => ({
 			width: candidate.outW,
 			height: candidate.outH,
 			score: candidate.totalScore,

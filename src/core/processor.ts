@@ -327,6 +327,7 @@ const toCandidateReport = (
 const createProcessingAnalysis = (
 	source: RawImage,
 	result: RawImage,
+	comparisonBefore: RawImage,
 	grid: PixelGrid,
 	route: ProcessingRoute,
 	method: string,
@@ -345,7 +346,7 @@ const createProcessingAnalysis = (
 		}
 	}
 
-	const before = foregroundRatio(source, alphaThreshold);
+	const before = foregroundRatio(comparisonBefore, alphaThreshold);
 	const after = foregroundRatio(result, alphaThreshold);
 	const contentLossRatio =
 		before === 0 ? 0 : clampUnit((before - after) / before);
@@ -1988,6 +1989,7 @@ export const processImage = (
 		const analysis = createProcessingAnalysis(
 			img,
 			finalResult,
+			compareBeforeSanitized,
 			finalGridForForce,
 			"convert",
 			"forced-size",
@@ -2144,6 +2146,7 @@ export const processImage = (
 		const analysis = createProcessingAnalysis(
 			img,
 			finalResult,
+			compareBeforeSanitized,
 			finalGridForNoGrid,
 			"preserve",
 			"grid-disabled",
@@ -2307,6 +2310,9 @@ export const processImage = (
 	}
 
 	const downsampleStart = performance.now();
+	// [Intended] Candidate diagnostics stay in the detector's shared coordinate
+	// space while the selected output grid may later be trimmed or padded.
+	const diagnosticGrid = grid;
 	const down = downsample(working, grid, o.sampleWindow);
 	log(
 		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
@@ -2559,7 +2565,8 @@ export const processImage = (
 	const analysis = createProcessingAnalysis(
 		img,
 		finalResult,
-		trimmedGrid,
+		compareBeforeSanitized,
+		diagnosticGrid,
 		"refine",
 		gridMethod,
 		trimAlphaThreshold,

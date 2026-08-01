@@ -114,6 +114,58 @@ describe("processing analysis", () => {
 		expect(empty.analysis.warnings).toContain("NO_CONTENT");
 	});
 
+	it("does not treat transparent padding as content loss", () => {
+		const processed = processImage(solidImage(10, 4, [255, 0, 0, 255]), {
+			enableGridDetection: false,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			makeSquare: true,
+		});
+
+		expect(processed.result.width).toBe(10);
+		expect(processed.result.height).toBe(10);
+		expect(processed.analysis.contentLossRatio).toBe(0);
+		expect(processed.analysis.warnings).not.toContain("CONTENT_LOSS_RISK");
+	});
+
+	it("keeps all alternatives in the detector coordinate space", () => {
+		const stripes = stripedImage();
+		const padded: RawImage = {
+			width: 40,
+			height: 32,
+			data: new Uint8ClampedArray(40 * 32 * 4),
+		};
+		for (let y = 0; y < stripes.height; y += 1) {
+			const sourceStart = y * stripes.width * 4;
+			const targetStart = (y * padded.width + 4) * 4;
+			padded.data.set(
+				stripes.data.subarray(sourceStart, sourceStart + stripes.width * 4),
+				targetStart,
+			);
+		}
+		const processed = processImage(padded, {
+			autoGridFromTrimmed: true,
+			fastAutoGridFromTrimmed: true,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: true,
+			makeSquare: true,
+		});
+
+		const candidates = processed.analysis.gridCandidates;
+		expect(candidates.length).toBeGreaterThan(1);
+		expect(candidates[0].outW).not.toBe(processed.grid.outW);
+		expect(
+			new Set(
+				candidates.map(
+					(candidate) =>
+						`${candidate.outW}:${candidate.outH}:${candidate.totalScore}`,
+				),
+			).size,
+		).toBe(candidates.length);
+	});
+
 	it("is structured-clone compatible for worker transport", () => {
 		const processed = processImage(solidImage(4, 4, [0, 0, 0, 255]), {
 			enableGridDetection: false,
