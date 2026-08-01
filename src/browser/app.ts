@@ -10,7 +10,7 @@ import { ImageComparer } from "./compare";
 import { setupCompareControls } from "./compare-controls";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
-import { createModalController } from "./modal-controller";
+import { createModalControllerFactory } from "./modal-controller";
 import { showError } from "./notifications";
 import { setupPresetControls } from "./preset-controls";
 import { createRunProcessing } from "./processing-controller";
@@ -30,6 +30,9 @@ type SavedSettings = {
 
 export const initApp = (): void => {
 	const els = getElements();
+	const createModalController = createModalControllerFactory(
+		document.querySelector(".app"),
+	);
 	const comparer = new ImageComparer("compare-container");
 	const mainResultViewer = new ResultViewer(els.outputPanel);
 	const modalResultViewer = new ResultViewer(
