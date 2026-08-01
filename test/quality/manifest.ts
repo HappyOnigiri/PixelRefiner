@@ -49,6 +49,11 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		if (ids.has(qualityCase.id))
 			errors.push(`Duplicate case ID: ${qualityCase.id}`);
 		ids.add(qualityCase.id);
+		if (/^(legacy|generated)-/.test(qualityCase.id)) {
+			errors.push(
+				`${qualityCase.id}: case ID must describe behavior, not provenance`,
+			);
+		}
 		if (qualityCase.featureIds.length === 0) {
 			errors.push(`${qualityCase.id}: featureIds must not be empty`);
 		}

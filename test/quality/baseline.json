@@ -3,7 +3,7 @@
   "commit": "a801d4ba6b357b33bed5a2f83770c3c833606672",
   "cases": [
     {
-      "id": "legacy-resize-remove-background",
+      "id": "remove-background-trim-auto-grid",
       "status": "passed",
       "outputWidth": 22,
       "outputHeight": 22,
@@ -14,7 +14,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-resize-trimming",
+      "id": "remove-background-trim-resize-46x13",
       "status": "passed",
       "outputWidth": 46,
       "outputHeight": 13,
@@ -25,7 +25,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-auto-grid",
+      "id": "trim-auto-grid",
       "status": "passed",
       "outputWidth": 88,
       "outputHeight": 61,
@@ -36,7 +36,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-inner-background",
+      "id": "remove-inner-background-auto-grid",
       "status": "passed",
       "outputWidth": 22,
       "outputHeight": 21,
@@ -47,7 +47,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-no-trimming",
+      "id": "remove-background-preserve-canvas",
       "status": "passed",
       "outputWidth": 119,
       "outputHeight": 65,
@@ -58,7 +58,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-game-boy-palette",
+      "id": "convert-game-boy-pocket-palette",
       "status": "passed",
       "outputWidth": 512,
       "outputHeight": 512,
@@ -69,7 +69,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-floyd-steinberg",
+      "id": "convert-monochrome-floyd-steinberg",
       "status": "passed",
       "outputWidth": 330,
       "outputHeight": 325,
@@ -80,7 +80,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-keep-aspect-ratio",
+      "id": "remove-background-auto-grid-keep-aspect",
       "status": "passed",
       "outputWidth": 108,
       "outputHeight": 61,
@@ -91,7 +91,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-make-square-wide",
+      "id": "pad-wide-image-to-square",
       "status": "passed",
       "outputWidth": 10,
       "outputHeight": 10,
@@ -102,7 +102,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-make-square-tall",
+      "id": "pad-tall-image-to-square",
       "status": "passed",
       "outputWidth": 10,
       "outputHeight": 10,
@@ -113,7 +113,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "legacy-high-resolution",
+      "id": "restore-high-resolution-pixel-grid",
       "status": "passed",
       "outputWidth": 177,
       "outputHeight": 206,
@@ -124,7 +124,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-pixel-art-1x",
+      "id": "preserve-native-pixel-art",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -135,7 +135,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-2x",
+      "id": "restore-nearest-2x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -146,7 +146,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-3x",
+      "id": "restore-nearest-3x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -157,7 +157,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-4x",
+      "id": "restore-nearest-4x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -168,7 +168,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-8x",
+      "id": "restore-nearest-8x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -179,7 +179,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-16x",
+      "id": "restore-nearest-16x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -190,7 +190,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-32x",
+      "id": "restore-nearest-32x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -201,7 +201,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-1-5x",
+      "id": "restore-nearest-1-5x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -212,7 +212,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-2-5x",
+      "id": "restore-nearest-2-5x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -223,7 +223,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-nearest-3-2x",
+      "id": "restore-nearest-3-2x-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -234,7 +234,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-bilinear",
+      "id": "restore-bilinear-to-8x8",
       "status": "failed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -245,7 +245,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-bicubic-equivalent",
+      "id": "restore-bicubic-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -256,7 +256,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-light-blur",
+      "id": "restore-gaussian-blur-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -267,7 +267,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-rgb-noise",
+      "id": "restore-rgb-noise-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -278,7 +278,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-alpha-edge-blur",
+      "id": "restore-alpha-edge-blur-to-8x8",
       "status": "failed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -289,7 +289,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-crop-shifts",
+      "id": "restore-crop-shifts-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -300,7 +300,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-padding-white",
+      "id": "remove-white-padding-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -311,7 +311,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-padding-black",
+      "id": "remove-black-padding-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -322,7 +322,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-padding-solid",
+      "id": "remove-solid-padding-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -333,7 +333,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-padding-gradient",
+      "id": "remove-gradient-padding-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -344,7 +344,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-anisotropic",
+      "id": "restore-anisotropic-scale-to-8x8",
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
@@ -355,7 +355,7 @@
       "catastrophicFailure": false
     },
     {
-      "id": "generated-continuous-tone",
+      "id": "preserve-continuous-tone",
       "status": "passed",
       "outputWidth": 48,
       "outputHeight": 32,

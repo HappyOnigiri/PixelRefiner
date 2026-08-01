@@ -50,7 +50,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/class="case-description"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		const paletteCaseId = "legacy-game-boy-palette";
+		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
 		const paletteCaseEnd = html.indexOf("</article>", paletteCaseIdIndex);
@@ -61,7 +61,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(paletteCase).toContain(
 			"\u30b2\u30fc\u30e0\u30dc\u30fc\u30a4\u30dd\u30b1\u30c3\u30c8\u306e4\u8272\u30d1\u30ec\u30c3\u30c8",
 		);
-		const compactCaseId = "legacy-resize-remove-background";
+		const compactCaseId = "remove-background-trim-auto-grid";
 		const compactCaseIdIndex = html.indexOf(compactCaseId);
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
 		const compactCaseEnd = html.indexOf("</article>", compactCaseIdIndex);
@@ -72,12 +72,12 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(compactCase).toContain(
 			`href="cases/${compactCaseId}/index.html" data-i18n="details"`,
 		);
-		const reviewCaseIdIndex = html.indexOf("generated-bilinear");
+		const reviewCaseIdIndex = html.indexOf("restore-bilinear-to-8x8");
 		const reviewCaseStart = html.lastIndexOf("<article", reviewCaseIdIndex);
 		const reviewCaseEnd = html.indexOf("</article>", reviewCaseIdIndex);
 		const reviewCase = html.slice(reviewCaseStart, reviewCaseEnd);
 		expect(reviewCase).toContain(
-			'href="cases/generated-bilinear/index.html" data-i18n="details"',
+			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
 		);
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),

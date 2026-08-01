@@ -1,7 +1,7 @@
 [
   {
-    "id": "legacy-resize-remove-background",
-    "featureIds": ["PRF-001", "legacy-resize"],
+    "id": "remove-background-trim-auto-grid",
+    "featureIds": ["PRF-001", "resize"],
     "optionNames": ["fastAutoGridFromTrimmed", "bgRemovalScope"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -53,7 +53,7 @@
     ]
   },
   {
-    "id": "legacy-resize-trimming",
+    "id": "remove-background-trim-resize-46x13",
     "featureIds": ["PRF-001", "force-size"],
     "optionNames": ["forcePixelsW", "forcePixelsH", "trimToContent"],
     "profile": "smoke",
@@ -107,7 +107,7 @@
     ]
   },
   {
-    "id": "legacy-auto-grid",
+    "id": "trim-auto-grid",
     "featureIds": ["PRF-001", "auto-grid"],
     "optionNames": ["autoGridFromTrimmed"],
     "profile": "smoke",
@@ -159,7 +159,7 @@
     ]
   },
   {
-    "id": "legacy-inner-background",
+    "id": "remove-inner-background-auto-grid",
     "featureIds": ["PRF-001", "background-removal"],
     "optionNames": ["bgRemovalScope", "floatingMaxPixels"],
     "profile": "smoke",
@@ -215,7 +215,7 @@
     ]
   },
   {
-    "id": "legacy-no-trimming",
+    "id": "remove-background-preserve-canvas",
     "featureIds": ["PRF-001", "trim-control"],
     "optionNames": ["trimToContent"],
     "profile": "smoke",
@@ -267,7 +267,7 @@
     ]
   },
   {
-    "id": "legacy-game-boy-palette",
+    "id": "convert-game-boy-pocket-palette",
     "featureIds": ["PRF-001", "palette-conversion"],
     "optionNames": ["reduceColorMode", "ditherStrength"],
     "profile": "smoke",
@@ -318,7 +318,7 @@
     ]
   },
   {
-    "id": "legacy-floyd-steinberg",
+    "id": "convert-monochrome-floyd-steinberg",
     "featureIds": ["PRF-001", "dithering"],
     "optionNames": ["ditherMode", "ditherStrength"],
     "profile": "smoke",
@@ -370,7 +370,7 @@
     ]
   },
   {
-    "id": "legacy-keep-aspect-ratio",
+    "id": "remove-background-auto-grid-keep-aspect",
     "featureIds": ["PRF-001", "aspect-ratio"],
     "optionNames": ["keepAspectRatio"],
     "profile": "smoke",
@@ -423,7 +423,7 @@
     ]
   },
   {
-    "id": "legacy-make-square-wide",
+    "id": "pad-wide-image-to-square",
     "featureIds": ["PRF-001", "make-square"],
     "optionNames": ["makeSquare"],
     "profile": "smoke",
@@ -467,7 +467,7 @@
     ]
   },
   {
-    "id": "legacy-make-square-tall",
+    "id": "pad-tall-image-to-square",
     "featureIds": ["PRF-001", "make-square"],
     "optionNames": ["makeSquare"],
     "profile": "smoke",
@@ -511,7 +511,7 @@
     ]
   },
   {
-    "id": "legacy-high-resolution",
+    "id": "restore-high-resolution-pixel-grid",
     "featureIds": ["PRF-001", "high-resolution-grid"],
     "optionNames": ["autoGridFromTrimmed"],
     "profile": "full",
@@ -562,7 +562,7 @@
     ]
   },
   {
-    "id": "generated-pixel-art-1x",
+    "id": "preserve-native-pixel-art",
     "featureIds": ["PRF-001"],
     "profile": "smoke",
     "inputKind": "pixel-art-1x",
@@ -600,7 +600,7 @@
     ]
   },
   {
-    "id": "generated-nearest-2x",
+    "id": "restore-nearest-2x-to-8x8",
     "featureIds": ["PRF-001", "auto-grid"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -645,7 +645,7 @@
     ]
   },
   {
-    "id": "generated-nearest-3x",
+    "id": "restore-nearest-3x-to-8x8",
     "featureIds": ["PRF-001", "auto-grid"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -686,7 +686,7 @@
     ]
   },
   {
-    "id": "generated-nearest-4x",
+    "id": "restore-nearest-4x-to-8x8",
     "featureIds": ["PRF-001", "auto-grid"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -727,7 +727,7 @@
     ]
   },
   {
-    "id": "generated-nearest-8x",
+    "id": "restore-nearest-8x-to-8x8",
     "featureIds": ["PRF-001", "auto-grid"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -768,7 +768,7 @@
     ]
   },
   {
-    "id": "generated-nearest-16x",
+    "id": "restore-nearest-16x-to-8x8",
     "featureIds": ["PRF-001", "auto-grid"],
     "profile": "full",
     "inputKind": "scaled-pixel-art",
@@ -809,7 +809,7 @@
     ]
   },
   {
-    "id": "generated-nearest-32x",
+    "id": "restore-nearest-32x-to-8x8",
     "featureIds": ["PRF-001", "auto-grid"],
     "profile": "full",
     "inputKind": "scaled-pixel-art",
@@ -850,7 +850,7 @@
     ]
   },
   {
-    "id": "generated-nearest-1-5x",
+    "id": "restore-nearest-1-5x-to-8x8",
     "featureIds": ["PRF-001", "non-integer-scale"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
@@ -895,7 +895,7 @@
     ]
   },
   {
-    "id": "generated-nearest-2-5x",
+    "id": "restore-nearest-2-5x-to-8x8",
     "featureIds": ["PRF-001", "non-integer-scale"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
@@ -940,7 +940,7 @@
     ]
   },
   {
-    "id": "generated-nearest-3-2x",
+    "id": "restore-nearest-3-2x-to-8x8",
     "featureIds": ["PRF-001", "non-integer-scale"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
@@ -985,7 +985,7 @@
     ]
   },
   {
-    "id": "generated-bilinear",
+    "id": "restore-bilinear-to-8x8",
     "featureIds": ["PRF-001", "interpolation"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
@@ -1036,7 +1036,7 @@
     ]
   },
   {
-    "id": "generated-bicubic-equivalent",
+    "id": "restore-bicubic-to-8x8",
     "featureIds": ["PRF-001", "interpolation"],
     "profile": "full",
     "inputKind": "interpolated-pixel-art",
@@ -1081,7 +1081,7 @@
     ]
   },
   {
-    "id": "generated-light-blur",
+    "id": "restore-gaussian-blur-to-8x8",
     "featureIds": ["PRF-001", "blur-recovery"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
@@ -1126,7 +1126,7 @@
     ]
   },
   {
-    "id": "generated-rgb-noise",
+    "id": "restore-rgb-noise-to-8x8",
     "featureIds": ["PRF-001", "noise-recovery"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
@@ -1171,7 +1171,7 @@
     ]
   },
   {
-    "id": "generated-alpha-edge-blur",
+    "id": "restore-alpha-edge-blur-to-8x8",
     "featureIds": ["PRF-001", "alpha-boundary"],
     "profile": "full",
     "inputKind": "interpolated-pixel-art",
@@ -1217,7 +1217,7 @@
     ]
   },
   {
-    "id": "generated-crop-shifts",
+    "id": "restore-crop-shifts-to-8x8",
     "featureIds": ["PRF-001", "grid-phase"],
     "profile": "full",
     "inputKind": "cropped-pixel-art",
@@ -1286,7 +1286,7 @@
     ]
   },
   {
-    "id": "generated-padding-white",
+    "id": "remove-white-padding-to-8x8",
     "featureIds": ["PRF-001", "background-removal"],
     "profile": "smoke",
     "inputKind": "padded-pixel-art",
@@ -1333,7 +1333,7 @@
     ]
   },
   {
-    "id": "generated-padding-black",
+    "id": "remove-black-padding-to-8x8",
     "featureIds": ["PRF-001", "background-removal"],
     "profile": "smoke",
     "inputKind": "padded-pixel-art",
@@ -1380,7 +1380,7 @@
     ]
   },
   {
-    "id": "generated-padding-solid",
+    "id": "remove-solid-padding-to-8x8",
     "featureIds": ["PRF-001", "background-removal"],
     "profile": "full",
     "inputKind": "padded-pixel-art",
@@ -1427,7 +1427,7 @@
     ]
   },
   {
-    "id": "generated-padding-gradient",
+    "id": "remove-gradient-padding-to-8x8",
     "featureIds": ["PRF-001", "background-removal"],
     "profile": "full",
     "inputKind": "padded-pixel-art",
@@ -1474,7 +1474,7 @@
     ]
   },
   {
-    "id": "generated-anisotropic",
+    "id": "restore-anisotropic-scale-to-8x8",
     "featureIds": ["PRF-001", "anisotropic-grid"],
     "profile": "full",
     "inputKind": "scaled-pixel-art",
@@ -1515,7 +1515,7 @@
     ]
   },
   {
-    "id": "generated-continuous-tone",
+    "id": "preserve-continuous-tone",
     "featureIds": ["PRF-001", "continuous-tone"],
     "profile": "smoke",
     "inputKind": "continuous-tone",
