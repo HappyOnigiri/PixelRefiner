@@ -47,6 +47,20 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(searchIndex).toBeGreaterThan(qualityGroupIndex);
 		expect(html).toContain('id="active-change-label"');
 		expect(html).toContain('id="visible-count"');
+		expect(html.match(/class="case-description"/g)).toHaveLength(
+			selectedCases.length,
+		);
+		const paletteCaseId = "legacy-game-boy-palette";
+		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
+		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
+		const paletteCaseEnd = html.indexOf("</article>", paletteCaseIdIndex);
+		const paletteCase = html.slice(paletteCaseStart, paletteCaseEnd);
+		expect(paletteCase).toContain(
+			"Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
+		);
+		expect(paletteCase).toContain(
+			"\u30b2\u30fc\u30e0\u30dc\u30fc\u30a4\u30dd\u30b1\u30c3\u30c8\u306e4\u8272\u30d1\u30ec\u30c3\u30c8",
+		);
 		const compactCaseId = "legacy-resize-remove-background";
 		const compactCaseIdIndex = html.indexOf(compactCaseId);
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
@@ -70,8 +84,10 @@ describe.skipIf(!enabled)("quality report", () => {
 			"utf8",
 		);
 		expect(compactDetail).toContain('href="../../index.html"');
+		expect(compactDetail).toContain(".back-link:hover{border-color:#c2b4ff");
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
+		expect(compactDetail).toContain('class="case-description"');
 		for (const imageKey of [
 			"input",
 			"groundTruth",
