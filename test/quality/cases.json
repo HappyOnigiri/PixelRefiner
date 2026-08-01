@@ -585,7 +585,7 @@
       "small components",
       "determinism"
     ],
-    "expectation": { "exact": true, "minSmallComponentRetention": 1 },
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_reference.png",

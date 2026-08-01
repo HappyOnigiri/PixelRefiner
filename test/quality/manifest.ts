@@ -2,13 +2,39 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { QualityImageCase } from "./types";
 
+export type QualityProfile = QualityImageCase["profile"];
+
 export const QUALITY_ROOT = path.resolve("test/quality");
 export const FIXTURE_ROOT = path.resolve("test/fixtures");
 export const MANIFEST_PATH = path.join(QUALITY_ROOT, "cases.json");
 const CHECKED_IN_BASELINE_ROOT = path.join(QUALITY_ROOT, "baseline");
+const SAFE_CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const loadCases = (): QualityImageCase[] =>
 	JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as QualityImageCase[];
+
+export const qualityProfileFromEnvironment = (): QualityProfile => {
+	const profile = process.env.QUALITY_PROFILE ?? "full";
+	if (profile !== "smoke" && profile !== "full") {
+		throw new Error(`Unsupported quality profile: ${profile}`);
+	}
+	return profile;
+};
+
+export const selectCasesForProfile = (
+	cases: QualityImageCase[],
+	profile: QualityProfile = qualityProfileFromEnvironment(),
+): QualityImageCase[] =>
+	cases.filter(
+		(qualityCase) => profile === "full" || qualityCase.profile === "smoke",
+	);
+
+export const qualityCaseDirectory = (caseId: string): string => {
+	if (!SAFE_CASE_ID.test(caseId)) {
+		throw new Error(`Unsafe quality case ID: ${caseId}`);
+	}
+	return `cases/${caseId}`;
+};
 
 const REQUIRED_DEGRADATIONS = [
 	"nearest-2x",
@@ -49,6 +75,11 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		if (ids.has(qualityCase.id))
 			errors.push(`Duplicate case ID: ${qualityCase.id}`);
 		ids.add(qualityCase.id);
+		if (!SAFE_CASE_ID.test(qualityCase.id)) {
+			errors.push(
+				`${qualityCase.id}: case ID must contain lowercase letters, numbers, and single hyphens only`,
+			);
+		}
 		if (/^(legacy|generated)-/.test(qualityCase.id)) {
 			errors.push(
 				`${qualityCase.id}: case ID must describe behavior, not provenance`,
@@ -62,9 +93,14 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		}
 		const expectation = qualityCase.expectation;
 		if (expectation.exact) {
-			if (expectation.maxMeanRgbaError !== undefined) {
+			if (
+				expectation.maxMeanRgbaError !== undefined ||
+				expectation.minEdgeF1 !== undefined ||
+				expectation.minBackgroundMaskIou !== undefined ||
+				expectation.minSmallComponentRetention !== undefined
+			) {
 				errors.push(
-					`${qualityCase.id}: exact cases must not use an error allowance`,
+					`${qualityCase.id}: exact cases must not use metric allowances`,
 				);
 			}
 		} else {

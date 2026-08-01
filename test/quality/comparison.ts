@@ -19,18 +19,26 @@ export const QUALITY_METRIC_RULES = [
 export const compareMetrics = (
 	current: QualityMetrics,
 	baseline: QualityBaselineCase | null,
+	currentStatus?: QualityBaselineCase["status"],
 ): { regressed: string[]; improved: string[] } => {
 	if (!baseline) return { regressed: [], improved: [] };
 	const regressed: string[] = [];
 	const improved: string[] = [];
 	for (const rule of QUALITY_METRIC_RULES) {
 		const delta = current[rule.key] - baseline[rule.key];
+		if (!Number.isFinite(delta)) {
+			regressed.push(rule.key);
+			continue;
+		}
 		const signedDelta = rule.direction === "higher" ? delta : -delta;
 		if (signedDelta < -rule.tolerance) regressed.push(rule.key);
 		else if (signedDelta > rule.tolerance) improved.push(rule.key);
 	}
 	if (!baseline.catastrophicFailure && current.catastrophicFailure) {
 		regressed.push("catastrophicFailure");
+	}
+	if (baseline.status === "passed" && currentStatus === "failed") {
+		regressed.push("status");
 	}
 	return { regressed, improved };
 };
@@ -117,8 +125,8 @@ export const classifyChange = (
 	improved: string[],
 ): QualityChangeStatus => {
 	if (!hasBaseline) return "new";
-	if (!imageChanged) return "unchanged";
 	if (regressed.length > 0) return "regressed";
+	if (!imageChanged) return "unchanged";
 	if (improved.length > 0) return "improved";
 	return "changed";
 };

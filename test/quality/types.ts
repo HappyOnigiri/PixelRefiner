@@ -2,6 +2,7 @@ import type { ProcessOptions } from "../../src/core/processor";
 
 export const QUALITY_REPORT_VERSION = "2";
 export const QUALITY_BENCHMARK_VERSION = "1";
+export const QUALITY_BASELINE_VERSION = 2;
 
 export type QualityChangeStatus =
 	| "improved"

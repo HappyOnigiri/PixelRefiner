@@ -16,7 +16,11 @@ export const runQualityReportClient = (): void => {
 		navigator.language ??
 		"en"
 	).toLowerCase();
-	let locale = preferredLanguage.startsWith("ja") ? "ja" : "en";
+	let locale = preferredLanguage.startsWith("ja")
+		? "ja"
+		: preferredLanguage.startsWith("zh")
+			? "zh-CN"
+			: "en";
 	let messages = translations[locale];
 
 	const translate = (key: string): string | undefined => {

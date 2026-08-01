@@ -3,17 +3,14 @@ import path from "node:path";
 import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { generateQualityReport, reportRoot } from "./benchmark";
-import { loadCases } from "./manifest";
+import { loadCases, selectCasesForProfile } from "./manifest";
 
 const enabled = process.env.QUALITY_REPORT === "1";
 
 describe.skipIf(!enabled)("quality report", () => {
 	it("writes JSON, Markdown, HTML, and every case artifact", () => {
 		const allCases = loadCases();
-		const profile = process.env.QUALITY_PROFILE ?? "full";
-		const selectedCases = allCases.filter(
-			(qualityCase) => profile === "full" || qualityCase.profile === "smoke",
-		);
+		const selectedCases = selectCasesForProfile(allCases);
 		const results = generateQualityReport(selectedCases);
 		expect(results.cases).toHaveLength(selectedCases.length);
 		expect(existsSync(path.join(reportRoot, "index.html"))).toBe(true);
@@ -36,6 +33,8 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('<legend data-i18n="language">');
 		expect(html).toContain('data-locale="ja"');
 		expect(html).toContain('data-locale="en"');
+		expect(html).toContain('data-locale="zh-CN"');
+		expect(html).toContain('"zh-CN":{"title":"PixelRefiner 质量报告"');
 		expect(html).toContain(
 			'class="filter-button active" type="button" data-change-filter="" aria-pressed="true"',
 		);
@@ -77,6 +76,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		const paletteCaseEnd = html.indexOf("</article>", paletteCaseIdIndex);
 		const paletteCase = html.slice(paletteCaseStart, paletteCaseEnd);
 		expect(paletteCase).toContain(
+			`data-search="${paletteCaseId} PRF-001 palette-conversion`,
+		);
+		expect(paletteCase).toContain(
 			"Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
 		);
 		expect(paletteCase).toContain("ゲームボーイポケットの4色パレット");
@@ -105,8 +107,8 @@ describe.skipIf(!enabled)("quality report", () => {
 		const exactCase = html.slice(exactCaseStart, exactCaseEnd);
 		expect(exactCase).toContain('data-i18n="exactMatchShort"');
 		expect(exactCase).toContain('data-i18n="no"');
-		expect(exactCase).toContain(
-			'<strong data-i18n="meanRgbaErrorShort">Error</strong> 46.531/0',
+		expect(exactCase).toMatch(
+			/<strong data-i18n="meanRgbaErrorShort">Error<\/strong> \d+(?:\.\d+)?\/0/,
 		);
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),

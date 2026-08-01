@@ -102,52 +102,94 @@ export const backgroundMaskIou = (
 	return union === 0 ? 1 : intersection / union;
 };
 
-const componentSizes = (image: RawImage): number[] => {
-	const visited = new Uint8Array(image.width * image.height);
-	const queue = new Int32Array(image.width * image.height);
-	const sizes: number[] = [];
+const smallComponentMatches = (
+	actual: RawImage,
+	expected: RawImage,
+): { expected: number; retained: number } => {
+	const visited = new Uint8Array(expected.width * expected.height);
+	const queue = new Int32Array(expected.width * expected.height);
+	let expectedCount = 0;
+	let retainedCount = 0;
 	for (let start = 0; start < visited.length; start += 1) {
-		if (visited[start] || !isOpaque(image, start)) continue;
+		if (visited[start] || !isOpaque(expected, start)) continue;
 		let read = 0;
 		let write = 1;
 		let size = 0;
+		let overlapsActual = false;
 		queue[0] = start;
 		visited[start] = 1;
 		while (read < write) {
 			const current = queue[read];
 			read += 1;
 			size += 1;
-			const x = current % image.width;
-			const y = Math.floor(current / image.width);
-			const neighbors = [
-				x > 0 ? current - 1 : -1,
-				x + 1 < image.width ? current + 1 : -1,
-				y > 0 ? current - image.width : -1,
-				y + 1 < image.height ? current + image.width : -1,
-			];
-			for (let i = 0; i < neighbors.length; i += 1) {
-				const next = neighbors[i];
-				if (next < 0 || visited[next] || !isOpaque(image, next)) continue;
-				visited[next] = 1;
-				queue[write] = next;
-				write += 1;
+			if (isOpaque(actual, current)) overlapsActual = true;
+			const x = current % expected.width;
+			const y = Math.floor(current / expected.width);
+			if (x > 0) {
+				const next = current - 1;
+				if (!visited[next] && isOpaque(expected, next)) {
+					visited[next] = 1;
+					queue[write] = next;
+					write += 1;
+				}
+			}
+			if (x + 1 < expected.width) {
+				const next = current + 1;
+				if (!visited[next] && isOpaque(expected, next)) {
+					visited[next] = 1;
+					queue[write] = next;
+					write += 1;
+				}
+			}
+			if (y > 0) {
+				const next = current - expected.width;
+				if (!visited[next] && isOpaque(expected, next)) {
+					visited[next] = 1;
+					queue[write] = next;
+					write += 1;
+				}
+			}
+			if (y + 1 < expected.height) {
+				const next = current + expected.width;
+				if (!visited[next] && isOpaque(expected, next)) {
+					visited[next] = 1;
+					queue[write] = next;
+					write += 1;
+				}
 			}
 		}
-		sizes.push(size);
+		if (size <= 3) {
+			expectedCount += 1;
+			if (overlapsActual) retainedCount += 1;
+		}
 	}
-	return sizes;
+	return { expected: expectedCount, retained: retainedCount };
 };
 
 export const smallComponentRetention = (
 	actual: RawImage,
 	expected: RawImage,
 ): number => {
-	const expectedSmall = componentSizes(expected).filter(
-		(size) => size <= 3,
-	).length;
-	if (expectedSmall === 0) return 1;
-	const actualSmall = componentSizes(actual).filter((size) => size <= 3).length;
-	return Math.min(1, actualSmall / expectedSmall);
+	if (actual.width !== expected.width || actual.height !== expected.height)
+		return 0;
+	const matches = smallComponentMatches(actual, expected);
+	return matches.expected === 0 ? 1 : matches.retained / matches.expected;
+};
+
+export const topGridCandidates = (grid: PixelGrid): PixelGrid[] => {
+	const candidates = [grid, ...(grid.candidates ?? [])].sort(
+		(left, right) => left.score - right.score,
+	);
+	const selected: PixelGrid[] = [];
+	const seenSizes = new Set<string>();
+	for (const candidate of candidates) {
+		const size = `${String(candidate.outW)}x${String(candidate.outH)}`;
+		if (seenSizes.has(size)) continue;
+		seenSizes.add(size);
+		selected.push(candidate);
+		if (selected.length === 3) break;
+	}
+	return selected;
 };
 
 export const isCatastrophicFailure = (
@@ -183,13 +225,10 @@ export const calculateMetrics = (
 	repeat: RawImage,
 	runtimeMs: number,
 ): QualityMetrics => {
-	const candidates = [grid, ...(grid.candidates ?? [])];
-	const top3SizeCorrect = candidates
-		.slice(0, 3)
-		.some(
-			(candidate) =>
-				candidate.outW === expected.width && candidate.outH === expected.height,
-		);
+	const top3SizeCorrect = topGridCandidates(grid).some(
+		(candidate) =>
+			candidate.outW === expected.width && candidate.outH === expected.height,
+	);
 	return {
 		outputWidth: actual.width,
 		outputHeight: actual.height,
@@ -219,16 +258,30 @@ export const createDiffImage = (
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
 			const outputIndex = (y * width + x) * 4;
-			for (let channel = 0; channel < 4; channel += 1) {
+			const actualIndex =
+				x < actual.width && y < actual.height ? (y * actual.width + x) * 4 : -1;
+			const expectedIndex =
+				x < expected.width && y < expected.height
+					? (y * expected.width + x) * 4
+					: -1;
+			const actualAlpha = actualIndex < 0 ? 0 : actual.data[actualIndex + 3];
+			const expectedAlpha =
+				expectedIndex < 0 ? 0 : expected.data[expectedIndex + 3];
+			const alphaDifference = Math.abs(actualAlpha - expectedAlpha);
+			for (let channel = 0; channel < 3; channel += 1) {
 				const actualValue =
-					x < actual.width && y < actual.height
-						? actual.data[(y * actual.width + x) * 4 + channel]
-						: 0;
+					actualIndex < 0 || actualAlpha === 0
+						? 0
+						: actual.data[actualIndex + channel];
 				const expectedValue =
-					x < expected.width && y < expected.height
-						? expected.data[(y * expected.width + x) * 4 + channel]
-						: 0;
-				data[outputIndex + channel] = Math.abs(actualValue - expectedValue);
+					expectedIndex < 0 || expectedAlpha === 0
+						? 0
+						: expected.data[expectedIndex + channel];
+				// [Intended] Encode alpha differences as visible intensity while keeping the PNG opaque.
+				data[outputIndex + channel] = Math.max(
+					Math.abs(actualValue - expectedValue),
+					alphaDifference,
+				);
 			}
 			data[outputIndex + 3] = 255;
 		}

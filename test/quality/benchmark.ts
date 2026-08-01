@@ -5,10 +5,12 @@ import { processImage } from "../../src/core/processor";
 import { baselineImagePath, loadBaseline } from "./baseline";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
 import { imagesEqual, readPng, writePng } from "./image";
+import { qualityCaseDirectory } from "./manifest";
 import {
 	calculateMetrics,
 	createBackgroundMaskImage,
 	createDiffImage,
+	topGridCandidates,
 } from "./metrics";
 import { runQualityReportClient } from "./report/client";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./report/styles";
@@ -122,6 +124,7 @@ export const runQualityCase = (
 		metrics,
 		imagesEqual(currentRun.result, expected),
 	);
+	const status = failed.length === 0 ? "passed" : "failed";
 	const baseline = loadBaseline();
 	const baselineMetrics =
 		baseline.cases.find((baselineCase) => baselineCase.id === qualityCase.id) ??
@@ -131,14 +134,14 @@ export const runQualityCase = (
 		? readPng(storedBaselinePath)
 		: null;
 	const imageComparison = compareImages(currentRun.result, baselineImage);
-	const metricComparison = compareMetrics(metrics, baselineMetrics);
+	const metricComparison = compareMetrics(metrics, baselineMetrics, status);
 	const changeStatus = classifyChange(
 		baselineImage !== null,
 		imageComparison.changed,
 		metricComparison.regressed,
 		metricComparison.improved,
 	);
-	const caseDirectory = `cases/${qualityCase.id}`;
+	const caseDirectory = qualityCaseDirectory(qualityCase.id);
 	const files = {
 		groundTruth: `${caseDirectory}/ground-truth.png`,
 		input: `${caseDirectory}/input.png`,
@@ -178,7 +181,7 @@ export const runQualityCase = (
 		featureIds: qualityCase.featureIds,
 		inputKind: qualityCase.inputKind,
 		degradationPatterns: qualityCase.degradationPatterns,
-		status: failed.length === 0 ? "passed" : "failed",
+		status,
 		changeStatus,
 		failedAssertions: failed,
 		regressedMetrics: metricComparison.regressed,
@@ -191,13 +194,11 @@ export const runQualityCase = (
 			qualityCase.options.enableGridDetection === false ? "preserve" : "refine",
 		confidence: null,
 		warnings: failed,
-		gridCandidates: [currentRun.grid, ...(currentRun.grid.candidates ?? [])]
-			.slice(0, 3)
-			.map((candidate) => ({
-				width: candidate.outW ?? null,
-				height: candidate.outH ?? null,
-				score: candidate.score,
-			})),
+		gridCandidates: topGridCandidates(currentRun.grid).map((candidate) => ({
+			width: candidate.outW ?? null,
+			height: candidate.outH ?? null,
+			score: candidate.score,
+		})),
 		expectation: qualityCase.expectation,
 		options: qualityCase.options,
 		metrics,
@@ -217,7 +218,7 @@ export const writeQualityBaselineImage = (
 
 const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 	const count = cases.length;
-	const sum = (select: (result: QualityCaseResult) => number): number => {
+	const average = (select: (result: QualityCaseResult) => number): number => {
 		let total = 0;
 		for (const result of cases) total += select(result);
 		return count === 0 ? 0 : total / count;
@@ -240,14 +241,16 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 				result.changeStatus === "regressed" ||
 				(result.changeStatus === "new" && result.status === "failed"),
 		).length,
-		top1SizeAccuracy: sum((result) => Number(result.metrics.sizeCorrect)),
-		top3SizeAccuracy: sum((result) => Number(result.metrics.top3SizeCorrect)),
-		byteIdentityRate: sum((result) => Number(result.metrics.byteIdentical)),
-		catastrophicFailureRate: sum((result) =>
+		top1SizeAccuracy: average((result) => Number(result.metrics.sizeCorrect)),
+		top3SizeAccuracy: average((result) =>
+			Number(result.metrics.top3SizeCorrect),
+		),
+		byteIdentityRate: average((result) => Number(result.metrics.byteIdentical)),
+		catastrophicFailureRate: average((result) =>
 			Number(result.metrics.catastrophicFailure),
 		),
-		meanRgbaError: sum((result) => result.metrics.meanRgbaError),
-		meanRuntimeMs: sum((result) => result.metrics.runtimeMs),
+		meanRgbaError: average((result) => result.metrics.meanRgbaError),
+		meanRuntimeMs: average((result) => result.metrics.runtimeMs),
 		approxPeakBytes: Math.max(
 			0,
 			...cases.map((result) => result.metrics.approxPeakBytes),
@@ -422,6 +425,85 @@ const REPORT_TRANSLATIONS = {
 			"output-size": "出力サイズ",
 		},
 	},
+	"zh-CN": {
+		title: "PixelRefiner 质量报告",
+		groundTruth: "预期结果",
+		input: "输入",
+		baseline: "基准结果",
+		result: "处理结果",
+		groundTruthDifference: "与预期结果的差异",
+		baselineDifference: "与基准结果的差异",
+		backgroundMask: "背景蒙版",
+		inputKind: "输入类型",
+		route: "处理路径",
+		confidence: "置信度",
+		notAvailable: "不可用",
+		warnings: "警告",
+		none: "无",
+		topCandidates: "候选前三名",
+		metrics: "指标",
+		options: "处理设置",
+		filterCases: "筛选用例",
+		language: "显示语言",
+		allStatuses: "全部",
+		passed: "通过",
+		failed: "未达到目标",
+		preserve: "保留",
+		refine: "优化",
+		workflow: "工作流",
+		changed: "与基础分支不同",
+		improved: "优于基础分支",
+		regressed: "劣于基础分支",
+		unchanged: "与基础分支相同",
+		new: "基础分支中没有的新用例",
+		changedCases: "有差异的用例",
+		allChanges: "全部",
+		qualityStatus: "质量状态",
+		changeStatus: "变更状态",
+		reportDetails: "报告信息",
+		pullRequest: "拉取请求",
+		headCommit: "HEAD",
+		baseCommit: "PR 基础提交",
+		baselineCommit: "比较基准",
+		generatedAt: "生成时间",
+		displayConditions: "显示条件",
+		casesShown: "个用例",
+		changedPixels: "变更像素",
+		comparison: "指标比较",
+		metric: "指标",
+		target: "目标",
+		current: "当前",
+		delta: "变化量",
+		verdict: "判定",
+		outputSize: "输出尺寸",
+		meanRgbaError: "RGBA 平均误差",
+		meanRgbaErrorShort: "误差",
+		processingTime: "时间",
+		exactMatch: "完全匹配",
+		exactMatchShort: "匹配",
+		yes: "是",
+		no: "否",
+		edgeF1: "边缘 F1",
+		backgroundMaskIou: "背景蒙版 IoU",
+		smallComponentRetention: "小组件保留率",
+		diagnostics: "所有图像和处理设置",
+		details: "详情",
+		backToReport: "返回报告",
+		noRegression: "未发现新的质量下降",
+		hasRegression: "检测到质量下降",
+		assertions: {
+			"exact-image-match": "图像完全匹配",
+			"mean-rgba-error": "RGBA 平均误差",
+			"edge-f1": "边缘保留",
+			"background-mask-iou": "背景蒙版",
+			"small-component-retention": "小组件保留",
+			"expected-width": "预期宽度",
+			"expected-height": "预期高度",
+			"deterministic-output": "输出可重复性",
+			"catastrophic-failure": "灾难性失败",
+			"output-size": "输出尺寸",
+		},
+	},
 } as const;
 
 const renderClientScript = (): string =>
@@ -532,10 +614,11 @@ const renderReportSidebar = (results: QualityResults): string => {
 	<div class="filter-panel">
 		<fieldset class="filter-group">
 			<legend data-i18n="language">Language</legend>
-			<div class="locale-row">
-				<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
-				<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
-			</div>
+				<div class="locale-row">
+					<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
+					<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
+					<button class="locale-button" type="button" data-locale="zh-CN" aria-pressed="false">简体中文</button>
+				</div>
 		</fieldset>
 		<fieldset class="filter-group">
 			<legend data-i18n="changeStatus">Change status</legend>
@@ -601,6 +684,8 @@ const renderHtml = (results: QualityResults): string => {
 				`${result.metrics.runtimeMs.toFixed(2)}ms</small>`,
 			].join("");
 			const searchable = [
+				result.id,
+				...result.featureIds,
 				result.status,
 				result.changeStatus,
 				result.inputKind,
@@ -619,7 +704,7 @@ const renderHtml = (results: QualityResults): string => {
 					)
 					.map(
 						([key, label, source]) =>
-							`<figure><figcaption data-i18n="${key}">${label}</figcaption><div class="image-stage"><img src="${source}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></div></figure>`,
+							`<figure><figcaption data-i18n="${key}">${label}</figcaption><div class="image-stage"><img src="${escapeHtml(source)}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></div></figure>`,
 					)
 					.join("");
 			const primaryImages = renderImages([
@@ -634,7 +719,7 @@ const renderHtml = (results: QualityResults): string => {
 				${qualityMeasurement}
 			</h2>
 			<p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
-			<div class="images primary">${primaryImages}</div><p><a class="detail-link" href="cases/${encodeURIComponent(result.id)}/index.html" data-i18n="details">Details</a></p>
+			<div class="images primary">${primaryImages}</div><p><a class="detail-link" href="${escapeHtml(path.posix.dirname(result.files.result))}/index.html" data-i18n="details">Details</a></p>
 		</article>`;
 		})
 		.join("\n");

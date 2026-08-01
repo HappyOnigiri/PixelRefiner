@@ -19,12 +19,12 @@ generating a report. The report includes JSON and Markdown summaries plus
 ground truth, input, approved baseline, current, ground-truth difference,
 baseline difference, and background-mask images for every selected case.
 
-The HTML report initially shows only cases whose decoded output dimensions or
-RGBA pixels differ from the stored baseline. A difference is a review target,
-not automatically a regression: metric changes classify it as improved,
-regressed, or changed without a measurable quality change. Known expectation
-failures that are unchanged remain visible through the status filter but do not
-fail the regression gate.
+The HTML report initially shows every case. Use the change-status, quality-status,
+and text filters to narrow the list to review targets. A difference is not
+automatically a regression: metric changes classify it as improved, regressed,
+or changed without a measurable quality change. Known expectation failures that
+are unchanged remain visible through the status filter but do not fail the
+regression gate.
 
 ## Adding a fixture
 

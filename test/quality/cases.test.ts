@@ -1,17 +1,25 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { baselineFile, baselineRoot, loadBaseline } from "./baseline";
+import {
+	assertBaselineUpdateIsSafe,
+	baselineFile,
+	baselineRoot,
+	loadBaseline,
+} from "./baseline";
 import { runQualityCase, writeQualityBaselineImage } from "./benchmark";
 import { compareMetrics } from "./comparison";
-import { loadCases, validateManifest } from "./manifest";
-import type { QualityBaseline } from "./types";
+import {
+	loadCases,
+	qualityProfileFromEnvironment,
+	selectCasesForProfile,
+	validateManifest,
+} from "./manifest";
+import { QUALITY_BASELINE_VERSION, type QualityBaseline } from "./types";
 
 const allCases = loadCases();
-const profile = process.env.QUALITY_PROFILE ?? "smoke";
-const selectedCases = allCases.filter(
-	(qualityCase) => profile === "full" || qualityCase.profile === "smoke",
-);
+const profile = qualityProfileFromEnvironment();
+const selectedCases = selectCasesForProfile(allCases, profile);
 const resultCache = new Map<string, ReturnType<typeof runQualityCase>>();
 const getResult = (
 	qualityCase: (typeof selectedCases)[number],
@@ -37,16 +45,13 @@ describe("quality case manifest", () => {
 			expect(result.failedAssertions).not.toContain("output-size");
 			expect(result.failedAssertions).not.toContain("expected-width");
 			expect(result.failedAssertions).not.toContain("expected-height");
-			expect(result.status).toBe(
-				result.failedAssertions.length === 0 ? "passed" : "failed",
-			);
 		},
 		15_000,
 	);
 
 	it("does not regress the stored quality baseline", () => {
 		const current: QualityBaseline = {
-			version: 2,
+			version: QUALITY_BASELINE_VERSION,
 			commit: process.env.QUALITY_HEAD_SHA ?? "working-tree",
 			cases: selectedCases.map((qualityCase) => {
 				const result = getResult(qualityCase);
@@ -68,6 +73,7 @@ describe("quality case manifest", () => {
 			}),
 		};
 		if (process.env.UPDATE_QUALITY_BASELINE === "1") {
+			assertBaselineUpdateIsSafe(profile);
 			writeFileSync(baselineFile(), `${JSON.stringify(current, null, 2)}\n`);
 			rmSync(baselineRoot(), { recursive: true, force: true });
 			mkdirSync(baselineRoot(), { recursive: true });
@@ -96,7 +102,9 @@ describe("quality case manifest", () => {
 			const result = resultCache.get(currentCase.id);
 			expect(result).toBeDefined();
 			if (!result) continue;
-			expect(compareMetrics(result.metrics, expected).regressed).toEqual([]);
+			expect(
+				compareMetrics(result.metrics, expected, currentCase.status).regressed,
+			).toEqual([]);
 		}
 	}, 60_000);
 });

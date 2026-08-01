@@ -67,6 +67,7 @@ describe("quality comparison", () => {
 			classifyChange(true, true, comparison.regressed, comparison.improved),
 		).toBe("regressed");
 		expect(classifyChange(true, true, [], [])).toBe("changed");
+		expect(classifyChange(true, false, ["status"], [])).toBe("regressed");
 		expect(classifyChange(false, true, [], [])).toBe("new");
 	});
 
@@ -79,6 +80,19 @@ describe("quality comparison", () => {
 			compareMetrics({ ...metrics, meanRgbaError: 10.000002 }, baseline)
 				.regressed,
 		).toEqual(["meanRgbaError"]);
+	});
+
+	it("treats missing baseline metrics and passed-to-failed transitions as regressions", () => {
+		const incompleteBaseline = {
+			...baseline,
+			edgeF1: undefined,
+		} as unknown as QualityBaselineCase;
+		expect(compareMetrics(metrics, incompleteBaseline).regressed).toContain(
+			"edgeF1",
+		);
+		expect(compareMetrics(metrics, baseline, "failed").regressed).toContain(
+			"status",
+		);
 	});
 
 	it("ignores invisible RGB differences in fully transparent pixels", () => {

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { QualityBaseline } from "./types";
+import { QUALITY_BASELINE_VERSION, type QualityBaseline } from "./types";
 
 const DEFAULT_BASELINE_ROOT = path.resolve("test/quality/baseline");
 const DEFAULT_BASELINE_FILE = path.resolve("test/quality/baseline.json");
@@ -64,11 +64,34 @@ export const baselineImagePath = (caseId: string): string => {
 	);
 };
 
+export const assertBaselineUpdateIsSafe = (profile: string): void => {
+	if (profile !== "full") {
+		throw new Error("Quality baseline updates require the full profile");
+	}
+	if (
+		process.env.QUALITY_BASELINE_ROOT !== undefined ||
+		process.env.QUALITY_BASELINE_FILE !== undefined
+	) {
+		throw new Error(
+			"Quality baseline updates cannot use QUALITY_BASELINE_ROOT or QUALITY_BASELINE_FILE",
+		);
+	}
+};
+
 export const loadBaseline = (): QualityBaseline => {
 	const file = baselineFile();
 	if (!existsSync(file))
-		return { version: 2, commit: "unavailable", cases: [] };
+		return {
+			version: QUALITY_BASELINE_VERSION,
+			commit: "unavailable",
+			cases: [],
+		};
 	const baseline = JSON.parse(readFileSync(file, "utf8")) as QualityBaseline;
+	if (baseline.version !== QUALITY_BASELINE_VERSION) {
+		throw new Error(
+			`Unsupported quality baseline version: ${String(baseline.version)}`,
+		);
+	}
 	return {
 		...baseline,
 		cases: baseline.cases.map((qualityCase) => ({
