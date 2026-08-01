@@ -35,6 +35,11 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(html).toContain('grid-template-areas:"main sidebar"');
 		expect(html).toContain("if(event.target===dialog)dialog.close()");
+		expect(html).toContain('class="image-stage"');
+		expect(html).toContain(
+			"scale=Math.min(stage.clientWidth/image.naturalWidth,stage.clientHeight/image.naturalHeight)",
+		);
+		expect(html).not.toContain(".images img{width:100%;height:220px");
 		expect(html).toContain('data-change-filter=""');
 		expect(html).toContain('data-change-filter="regressed"');
 		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
@@ -88,6 +93,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
 		expect(compactDetail).toContain('class="case-description"');
+		expect(compactDetail).toContain('class="image-stage dialog-stage"');
 		for (const imageKey of [
 			"input",
 			"groundTruth",
