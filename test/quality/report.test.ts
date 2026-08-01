@@ -25,6 +25,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		const html = readFileSync(path.join(reportRoot, "index.html"), "utf8");
 		expect(html).toContain("navigator.languages");
 		expect(html).toContain('data-i18n="title"');
+		expect(html).toContain(
+			'<div class="report-layout"><aside class="sidebar">',
+		);
+		expect(html).not.toContain("<header");
 		expect(html).not.toContain("<select");
 		expect(html).toContain(
 			'class="filter-button active" type="button" data-change-filter="changed" aria-pressed="true"',
@@ -78,7 +82,11 @@ describe.skipIf(!enabled)("quality report", () => {
 			expect(html).toContain(
 				`href="${results.metadata.repositoryUrl}/commit/${encodeURIComponent(commit)}"`,
 			);
+			expect(html).toContain(`<code>${commit.slice(0, 7)}</code>`);
 		}
+		expect(html).toContain(
+			`<time datetime="${results.metadata.generatedAt}">${results.metadata.generatedAt}</time>`,
+		);
 		for (const qualityCase of selectedCases) {
 			expect(
 				existsSync(
