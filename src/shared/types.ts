@@ -6,6 +6,8 @@ export type RawImage = {
 
 export type Pixel = [number, number, number, number] | Uint8ClampedArray;
 
+export type Axis = "x" | "y";
+
 export type PixelGrid = {
 	cellW: number;
 	cellH: number;
@@ -21,9 +23,8 @@ export type PixelGrid = {
 	scoreX?: number;
 	scoreY?: number;
 	candidates?: PixelGrid[];
+	detectionFailedAxes?: Axis[];
 };
-
-export type Axis = "x" | "y";
 
 export interface RGB {
 	r: number; // 0-255
@@ -63,3 +64,70 @@ export interface Palette {
 	name: string;
 	colors: RGB[];
 }
+
+export type ProcessingRoute = "refine" | "convert" | "preserve";
+
+export type InputClassification =
+	| "native-pixel"
+	| "scaled-pixel"
+	| "soft-pixel"
+	| "continuous"
+	| "uncertain";
+
+export type ProcessingWarningCode =
+	| "LOW_GRID_CONFIDENCE"
+	| "BACKGROUND_UNCERTAIN"
+	| "CONTENT_LOSS_RISK"
+	| "ONE_AXIS_DETECTION_FAILED"
+	| "EXTREME_OUTPUT_SIZE"
+	| "NO_CONTENT"
+	| "FALLBACK_TO_PRESERVE";
+
+export type GridCandidateSubscores = {
+	periodicity: number;
+	edgeAlignment: number;
+	reconstruction: number;
+	complexity: number;
+	coverage: number;
+	axisAgreement: number;
+};
+
+export type GridCandidateReport = {
+	grid: PixelGrid;
+	angle?: number;
+	outW: number;
+	outH: number;
+	cropX: number;
+	cropY: number;
+	cropW: number;
+	cropH: number;
+	method: string;
+	totalScore: number;
+	/** A relative 0-1 comparison indicator, not a calibrated probability. */
+	confidence: number;
+	subscores?: Partial<GridCandidateSubscores>;
+};
+
+export type ProcessingAnalysis = {
+	classification?: InputClassification;
+	route: ProcessingRoute;
+	/** A relative 0-1 comparison indicator, not a calibrated probability. */
+	confidence: number;
+	warnings: ProcessingWarningCode[];
+	gridCandidates: GridCandidateReport[];
+	selectedCandidateIndex?: number;
+	foregroundRatioBefore?: number;
+	foregroundRatioAfter?: number;
+	contentLossRatio?: number;
+};
+
+export type ProcessResult = {
+	result: RawImage;
+	grid: PixelGrid;
+	extractedPalette: RGB[];
+	/** Original image normalized to the output geometry for comparison. */
+	compareBefore: RawImage;
+	/** Sanitized input normalized to the output geometry for comparison. */
+	compareBeforeSanitized: RawImage;
+	analysis: ProcessingAnalysis;
+};

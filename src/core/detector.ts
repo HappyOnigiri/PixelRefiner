@@ -598,8 +598,12 @@ export const detectGrid = (
 			cropH: fOutH * fCellH,
 			outW: fOutW,
 			outH: fOutH,
-			scoreX: fallbackX.score,
-			scoreY: fallbackY.score,
+			scoreX: finalX?.score,
+			scoreY: finalY?.score,
+			detectionFailedAxes: [
+				...(finalX ? [] : (["x"] as const)),
+				...(finalY ? [] : (["y"] as const)),
+			],
 		};
 	}
 

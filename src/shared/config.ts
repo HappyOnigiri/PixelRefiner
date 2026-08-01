@@ -30,6 +30,13 @@ export const PROCESS_RANGES = {
 	outlineColor: { r: 255, g: 255, b: 255 }, // Default white
 } as const satisfies Record<string, IntRange | RGB>;
 
+export const PROCESS_ANALYSIS_THRESHOLDS = {
+	lowGridConfidence: 0.35,
+	contentLossRatio: 0.5,
+	gridScoreScale: 16,
+	extremeOutputDimension: 4096,
+} as const;
+
 export const RETRO_PALETTES: Record<
 	string,
 	{ name: string; colors: string[] }

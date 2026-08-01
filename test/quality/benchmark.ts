@@ -10,7 +10,6 @@ import {
 	calculateMetrics,
 	createBackgroundMaskImage,
 	createDiffImage,
-	topGridCandidates,
 } from "./metrics";
 import { runQualityReportClient } from "./report/client";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./report/styles";
@@ -189,15 +188,14 @@ export const runQualityCase = (
 		changedPixelCount: imageComparison.changedPixelCount,
 		changedPixelRate: imageComparison.changedPixelRate,
 		diffBoundingBox: imageComparison.diffBoundingBox,
-		classification: qualityCase.inputKind,
-		route:
-			qualityCase.options.enableGridDetection === false ? "preserve" : "refine",
-		confidence: null,
-		warnings: failed,
-		gridCandidates: topGridCandidates(currentRun.grid).map((candidate) => ({
-			width: candidate.outW ?? null,
-			height: candidate.outH ?? null,
-			score: candidate.score,
+		classification: currentRun.analysis.classification ?? qualityCase.inputKind,
+		route: currentRun.analysis.route,
+		confidence: currentRun.analysis.confidence,
+		warnings: currentRun.analysis.warnings,
+		gridCandidates: currentRun.analysis.gridCandidates.map((candidate) => ({
+			width: candidate.outW,
+			height: candidate.outH,
+			score: candidate.totalScore,
 		})),
 		expectation: qualityCase.expectation,
 		options: qualityCase.options,

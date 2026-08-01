@@ -21,6 +21,7 @@ import { ImageComparer } from "./compare";
 import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { PresetManager } from "./presets";
+import { translateProcessingWarnings } from "./processing-warnings";
 import { ResultViewer } from "./result-viewer";
 import { ImageSession } from "./session";
 
@@ -299,6 +300,24 @@ const showInfo = (message: string) => {
 			{ once: true },
 		);
 	}, 3000);
+};
+
+const showWarning = (message: string) => {
+	const toast = document.createElement("div");
+	toast.className = "warning-toast";
+	toast.setAttribute("role", "status");
+	const text = document.createElement("span");
+	text.textContent = message;
+	toast.appendChild(text);
+	document.body.appendChild(toast);
+
+	requestAnimationFrame(() => toast.classList.add("show"));
+	setTimeout(() => {
+		toast.classList.remove("show");
+		toast.addEventListener("transitionend", () => toast.remove(), {
+			once: true,
+		});
+	}, 5000);
 };
 
 const STORAGE_KEY = "pixel-refiner-display-settings";
@@ -987,6 +1006,7 @@ export const initApp = (): void => {
 				extractedPalette,
 				compareBefore,
 				compareBeforeSanitized,
+				analysis,
 			} = await processor.process(currentImage, {
 				detectionQuantStep,
 				forcePixelsW,
@@ -1097,6 +1117,9 @@ export const initApp = (): void => {
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
+			if (analysis.warnings.length > 0) {
+				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
+			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // Handled by ResultViewer
 
 			// If background removal method is corner-based, reflect extracted color in UI

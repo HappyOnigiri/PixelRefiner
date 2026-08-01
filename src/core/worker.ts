@@ -1,6 +1,6 @@
 import { expose } from "comlink";
-import type { RawImage } from "../shared/types";
-import type { ProcessOptions, ProcessResult } from "./processor";
+import type { ProcessResult, RawImage } from "../shared/types";
+import type { ProcessOptions } from "./processor";
 import { processImage } from "./processor";
 
 export type ProcessorWorker = {
