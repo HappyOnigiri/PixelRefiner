@@ -52,9 +52,18 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(searchIndex).toBeGreaterThan(qualityGroupIndex);
 		expect(html).toContain('id="active-change-label"');
 		expect(html).toContain('id="visible-count"');
+		expect(html).toContain("unchanged from base branch");
+		expect(html).toContain("base branch\u3068\u5dee\u5206\u306a\u3057");
 		expect(html.match(/class="case-description"/g)).toHaveLength(
 			selectedCases.length,
 		);
+		expect(html.match(/class="quality-measurement"/g)).toHaveLength(
+			selectedCases.length,
+		);
+		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
+			selectedCases.length,
+		);
+		expect(html).toContain("\u51e6\u7406\u6642\u9593");
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -83,6 +92,16 @@ describe.skipIf(!enabled)("quality report", () => {
 		const reviewCase = html.slice(reviewCaseStart, reviewCaseEnd);
 		expect(reviewCase).toContain(
 			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
+		);
+		const exactCaseId = "restore-nearest-2x-to-8x8";
+		const exactCaseIdIndex = html.indexOf(exactCaseId);
+		const exactCaseStart = html.lastIndexOf("<article", exactCaseIdIndex);
+		const exactCaseEnd = html.indexOf("</article>", exactCaseIdIndex);
+		const exactCase = html.slice(exactCaseStart, exactCaseEnd);
+		expect(exactCase).toContain('data-i18n="exactMatch"');
+		expect(exactCase).toContain('data-i18n="no"');
+		expect(exactCase).toContain(
+			'<strong data-i18n="meanRgbaError">Mean RGBA error</strong>: 46.531 / = 0',
 		);
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),

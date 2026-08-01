@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../../src/shared/types";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
+import { meanRgbaError } from "./metrics";
 import type { QualityBaselineCase, QualityMetrics } from "./types";
 
 const image = (pixels: number[]): RawImage => ({
@@ -67,5 +68,22 @@ describe("quality comparison", () => {
 		).toBe("regressed");
 		expect(classifyChange(true, true, [], [])).toBe("changed");
 		expect(classifyChange(false, true, [], [])).toBe("new");
+	});
+
+	it("allows only serialization-level metric differences", () => {
+		expect(
+			compareMetrics({ ...metrics, meanRgbaError: 10.0000005 }, baseline)
+				.regressed,
+		).toEqual([]);
+		expect(
+			compareMetrics({ ...metrics, meanRgbaError: 10.000002 }, baseline)
+				.regressed,
+		).toEqual(["meanRgbaError"]);
+	});
+
+	it("ignores invisible RGB differences in fully transparent pixels", () => {
+		const transparentBlack = image([0, 0, 0, 0, 10, 10, 10, 255]);
+		const transparentWhite = image([255, 255, 255, 0, 10, 10, 10, 255]);
+		expect(meanRgbaError(transparentBlack, transparentWhite)).toBe(0);
 	});
 });

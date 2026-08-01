@@ -60,6 +60,25 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		if (qualityCase.assertions.length === 0) {
 			errors.push(`${qualityCase.id}: assertions must not be empty`);
 		}
+		const expectation = qualityCase.expectation;
+		if (expectation.exact) {
+			if (expectation.maxMeanRgbaError !== undefined) {
+				errors.push(
+					`${qualityCase.id}: exact cases must not use an error allowance`,
+				);
+			}
+		} else {
+			for (const [metric, target] of [
+				["maxMeanRgbaError", expectation.maxMeanRgbaError],
+				["minEdgeF1", expectation.minEdgeF1],
+				["minBackgroundMaskIou", expectation.minBackgroundMaskIou],
+				["minSmallComponentRetention", expectation.minSmallComponentRetention],
+			] as const) {
+				if (target === undefined) {
+					errors.push(`${qualityCase.id}: non-exact case requires ${metric}`);
+				}
+			}
+		}
 		for (const pattern of qualityCase.degradationPatterns)
 			degradations.add(pattern);
 		for (const file of [qualityCase.input, qualityCase.expected]) {

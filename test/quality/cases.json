@@ -615,9 +615,9 @@
     },
     "input": "test/fixtures/quality_nearest_2x.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "output size", "determinism"],
+    "assertions": ["exact image", "output size", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 60,
+      "exact": true,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -660,8 +660,8 @@
     },
     "input": "test/fixtures/quality_nearest_3x.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "determinism"],
-    "expectation": { "maxMeanRgbaError": 60 },
+    "assertions": ["exact image", "determinism"],
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_nearest_3x.png",
@@ -701,8 +701,8 @@
     },
     "input": "test/fixtures/quality_nearest_4x.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "determinism"],
-    "expectation": { "maxMeanRgbaError": 60 },
+    "assertions": ["exact image", "determinism"],
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_nearest_4x.png",
@@ -742,8 +742,8 @@
     },
     "input": "test/fixtures/quality_nearest_8x.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "determinism"],
-    "expectation": { "maxMeanRgbaError": 60 },
+    "assertions": ["exact image", "determinism"],
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_nearest_8x.png",
@@ -783,8 +783,8 @@
     },
     "input": "test/fixtures/quality_nearest_16x.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "determinism"],
-    "expectation": { "maxMeanRgbaError": 60 },
+    "assertions": ["exact image", "determinism"],
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_nearest_16x.png",
@@ -824,8 +824,8 @@
     },
     "input": "test/fixtures/quality_nearest_32x.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "determinism"],
-    "expectation": { "maxMeanRgbaError": 60 },
+    "assertions": ["exact image", "determinism"],
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_nearest_32x.png",
@@ -867,7 +867,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "bounded error", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 60,
+      "maxMeanRgbaError": 25,
+      "minEdgeF1": 0.8,
+      "minBackgroundMaskIou": 0.8,
+      "minSmallComponentRetention": 1,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -912,7 +915,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "bounded error", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 60,
+      "maxMeanRgbaError": 25,
+      "minEdgeF1": 0.8,
+      "minBackgroundMaskIou": 0.8,
+      "minSmallComponentRetention": 1,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -957,7 +963,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "bounded error", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 60,
+      "maxMeanRgbaError": 25,
+      "minEdgeF1": 0.8,
+      "minBackgroundMaskIou": 0.8,
+      "minSmallComponentRetention": 1,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1007,8 +1016,10 @@
       "determinism"
     ],
     "expectation": {
-      "maxMeanRgbaError": 55,
-      "minEdgeF1": 0.25,
+      "maxMeanRgbaError": 35,
+      "minEdgeF1": 0.6,
+      "minBackgroundMaskIou": 0.7,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1053,7 +1064,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "bounded error", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 70,
+      "maxMeanRgbaError": 35,
+      "minEdgeF1": 0.6,
+      "minBackgroundMaskIou": 0.7,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1098,7 +1112,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "bounded error", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 75,
+      "maxMeanRgbaError": 45,
+      "minEdgeF1": 0.5,
+      "minBackgroundMaskIou": 0.6,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1143,7 +1160,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "bounded error", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 60,
+      "maxMeanRgbaError": 30,
+      "minEdgeF1": 0.7,
+      "minBackgroundMaskIou": 0.8,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1188,8 +1208,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "alpha mask IoU", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 70,
-      "minBackgroundMaskIou": 0.25,
+      "maxMeanRgbaError": 40,
+      "minEdgeF1": 0.5,
+      "minBackgroundMaskIou": 0.7,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1238,7 +1260,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "catastrophic failure guard", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 100,
+      "maxMeanRgbaError": 45,
+      "minEdgeF1": 0.5,
+      "minBackgroundMaskIou": 0.6,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1305,7 +1330,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "background mask", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 100,
+      "maxMeanRgbaError": 20,
+      "minEdgeF1": 0.9,
+      "minBackgroundMaskIou": 0.9,
+      "minSmallComponentRetention": 1,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1352,7 +1380,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "catastrophic failure guard", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 130,
+      "maxMeanRgbaError": 20,
+      "minEdgeF1": 0.9,
+      "minBackgroundMaskIou": 0.9,
+      "minSmallComponentRetention": 1,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1399,7 +1430,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "catastrophic failure guard", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 130,
+      "maxMeanRgbaError": 20,
+      "minEdgeF1": 0.9,
+      "minBackgroundMaskIou": 0.9,
+      "minSmallComponentRetention": 1,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1446,7 +1480,10 @@
     "expected": "test/fixtures/quality_reference.png",
     "assertions": ["output size", "catastrophic failure guard", "determinism"],
     "expectation": {
-      "maxMeanRgbaError": 160,
+      "maxMeanRgbaError": 35,
+      "minEdgeF1": 0.7,
+      "minBackgroundMaskIou": 0.8,
+      "minSmallComponentRetention": 0.5,
       "expectedWidth": 8,
       "expectedHeight": 8
     },
@@ -1489,8 +1526,8 @@
     },
     "input": "test/fixtures/quality_anisotropic.png",
     "expected": "test/fixtures/quality_reference.png",
-    "assertions": ["baseline error", "independent axis scale", "determinism"],
-    "expectation": { "maxMeanRgbaError": 60 },
+    "assertions": ["exact image", "independent axis scale", "determinism"],
+    "expectation": { "exact": true },
     "assets": [
       {
         "file": "test/fixtures/quality_anisotropic.png",

@@ -6,13 +6,13 @@ import type {
 } from "./types";
 
 export const QUALITY_METRIC_RULES = [
-	{ key: "meanRgbaError", direction: "lower", tolerance: 0.01 },
-	{ key: "edgeF1", direction: "higher", tolerance: 0.001 },
-	{ key: "backgroundMaskIou", direction: "higher", tolerance: 0.001 },
+	{ key: "meanRgbaError", direction: "lower", tolerance: 0.000001 },
+	{ key: "edgeF1", direction: "higher", tolerance: 0.000001 },
+	{ key: "backgroundMaskIou", direction: "higher", tolerance: 0.000001 },
 	{
 		key: "smallComponentRetention",
 		direction: "higher",
-		tolerance: 0.001,
+		tolerance: 0.000001,
 	},
 ] as const;
 

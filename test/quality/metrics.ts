@@ -30,10 +30,15 @@ export const meanRgbaError = (actual: RawImage, expected: RawImage): number => {
 			const actualIndex = comparableIndex(actual, expected, x, y);
 			const expectedIndex = (y * expected.width + x) * 4;
 			for (let channel = 0; channel < 4; channel += 1) {
-				total += Math.abs(
-					actual.data[actualIndex + channel] -
-						expected.data[expectedIndex + channel],
-				);
+				const actualValue =
+					channel < 3 && actual.data[actualIndex + 3] === 0
+						? 0
+						: actual.data[actualIndex + channel];
+				const expectedValue =
+					channel < 3 && expected.data[expectedIndex + 3] === 0
+						? 0
+						: expected.data[expectedIndex + channel];
+				total += Math.abs(actualValue - expectedValue);
 			}
 		}
 	}

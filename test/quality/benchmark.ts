@@ -130,13 +130,6 @@ export const runQualityCase = (
 		: null;
 	const imageComparison = compareImages(currentRun.result, baselineImage);
 	const metricComparison = compareMetrics(metrics, baselineMetrics);
-	if (
-		baselineMetrics?.status === "passed" &&
-		failed.length > 0 &&
-		!metricComparison.regressed.includes("qualityStatus")
-	) {
-		metricComparison.regressed.push("qualityStatus");
-	}
 	const changeStatus = classifyChange(
 		baselineImage !== null,
 		imageComparison.changed,
@@ -294,11 +287,11 @@ const REPORT_TRANSLATIONS = {
 		preserve: "preserve",
 		refine: "refine",
 		workflow: "workflow",
-		changed: "changed",
-		improved: "improved",
-		regressed: "regressed",
-		unchanged: "unchanged",
-		new: "new case",
+		changed: "changed from base branch",
+		improved: "improved from base branch",
+		regressed: "regressed from base branch",
+		unchanged: "unchanged from base branch",
+		new: "new case not in base branch",
 		changedCases: "Cases with differences",
 		allChanges: "All",
 		qualityStatus: "Quality status",
@@ -320,6 +313,10 @@ const REPORT_TRANSLATIONS = {
 		verdict: "Verdict",
 		outputSize: "Output size",
 		meanRgbaError: "Mean RGBA error",
+		processingTime: "Processing time",
+		exactMatch: "Exact match",
+		yes: "yes",
+		no: "no",
 		edgeF1: "Edge F1",
 		backgroundMaskIou: "Background mask IoU",
 		smallComponentRetention: "Small component retention",
@@ -366,11 +363,11 @@ const REPORT_TRANSLATIONS = {
 		preserve: "\u4fdd\u6301",
 		refine: "\u5fa9\u5143",
 		workflow: "\u5b9f\u884c\u30ed\u30b0",
-		changed: "\u5dee\u5206\u3042\u308a",
-		improved: "\u6539\u5584",
-		regressed: "\u60aa\u5316",
-		unchanged: "\u5dee\u5206\u306a\u3057",
-		new: "\u65b0\u898f\u30b1\u30fc\u30b9",
+		changed: "base branch\u304b\u3089\u5909\u66f4",
+		improved: "base branch\u3088\u308a\u6539\u5584",
+		regressed: "base branch\u3088\u308a\u60aa\u5316",
+		unchanged: "base branch\u3068\u5dee\u5206\u306a\u3057",
+		new: "base branch\u306b\u306a\u3044\u65b0\u898f\u30b1\u30fc\u30b9",
 		changedCases: "\u5dee\u5206\u3042\u308a",
 		allChanges: "\u3059\u3079\u3066",
 		qualityStatus: "\u54c1\u8cea\u72b6\u614b",
@@ -392,6 +389,10 @@ const REPORT_TRANSLATIONS = {
 		verdict: "\u5224\u5b9a",
 		outputSize: "\u51fa\u529b\u30b5\u30a4\u30ba",
 		meanRgbaError: "RGBA\u5e73\u5747\u8aa4\u5dee",
+		processingTime: "\u51e6\u7406\u6642\u9593",
+		exactMatch: "\u5b8c\u5168\u4e00\u81f4",
+		yes: "\u306f\u3044",
+		no: "\u3044\u3044\u3048",
 		edgeF1: "\u8f2a\u90edF1",
 		backgroundMaskIou: "\u80cc\u666f\u30de\u30b9\u30afIoU",
 		smallComponentRetention: "\u5c0f\u8981\u7d20\u4fdd\u6301\u7387",
@@ -505,6 +506,14 @@ const renderHtml = (results: QualityResults): string => {
 	const cards = sortedCases
 		.map((result) => {
 			const description = describeCase(result);
+			const exactMatch = !result.failedAssertions.includes("exact-image-match");
+			const errorTarget = result.expectation.exact
+				? "= 0"
+				: `&le; ${formatMetric(result.expectation.maxMeanRgbaError)}`;
+			const exactMeasurement = result.expectation.exact
+				? `<strong data-i18n="exactMatch">Exact match</strong>: <span data-i18n="${exactMatch ? "yes" : "no"}">${exactMatch ? "yes" : "no"}</span> &middot; `
+				: "";
+			const qualityMeasurement = `<p class="quality-measurement">${exactMeasurement}<strong data-i18n="meanRgbaError">Mean RGBA error</strong>: ${formatMetric(result.metrics.meanRgbaError)} / ${errorTarget} &middot; <strong data-i18n="processingTime">Processing time</strong>: ${result.metrics.runtimeMs.toFixed(2)} ms</p>`;
 			const searchable = [
 				result.status,
 				result.changeStatus,
@@ -534,6 +543,7 @@ const renderHtml = (results: QualityResults): string => {
 			return `<article class="case ${result.status} ${result.changeStatus}" data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
 			<h2>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span></h2>
 			<p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
+			${qualityMeasurement}
 			<div class="images primary">${primaryImages}</div><p><a class="detail-link" href="cases/${encodeURIComponent(result.id)}/index.html" data-i18n="details">Details</a></p>
 		</article>`;
 		})

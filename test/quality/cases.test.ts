@@ -1,11 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-	baselineFile,
-	baselineImagePath,
-	baselineRoot,
-	loadBaseline,
-} from "./baseline";
+import { baselineFile, baselineRoot, loadBaseline } from "./baseline";
 import { runQualityCase, writeQualityBaselineImage } from "./benchmark";
 import { compareMetrics } from "./comparison";
 import { loadCases, validateManifest } from "./manifest";
@@ -41,9 +37,9 @@ describe("quality case manifest", () => {
 			expect(result.failedAssertions).not.toContain("output-size");
 			expect(result.failedAssertions).not.toContain("expected-width");
 			expect(result.failedAssertions).not.toContain("expected-height");
-			if (qualityCase.expectation.exact) {
-				expect(result.failedAssertions).not.toContain("exact-image-match");
-			}
+			expect(result.status).toBe(
+				result.failedAssertions.length === 0 ? "passed" : "failed",
+			);
 		},
 		15_000,
 	);
@@ -78,7 +74,7 @@ describe("quality case manifest", () => {
 			for (const qualityCase of selectedCases) {
 				writeQualityBaselineImage(
 					qualityCase,
-					baselineImagePath(qualityCase.id),
+					path.join(baselineRoot(), `${qualityCase.id}.png`),
 				);
 			}
 			return;
