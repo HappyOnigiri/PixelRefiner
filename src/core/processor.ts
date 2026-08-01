@@ -10,6 +10,7 @@ import type {
 	BackgroundRemovalScope,
 	Connectivity,
 	DitherMode,
+	GridCandidateReport,
 	OutlineStyle,
 	PixelData,
 	PixelGrid,
@@ -25,6 +26,7 @@ export type { ProcessResult } from "../shared/types";
 
 import { type DetectOptions, detectGrid } from "./detector";
 import { floodFillTransparent } from "./floodfill";
+import { rankGridCandidates } from "./grid-candidates";
 import { applyOutline } from "./outline";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
 
@@ -378,28 +380,28 @@ const createProcessingAnalysis = (
 	route: ProcessingRoute,
 	method: string,
 	alphaThreshold: number,
+	rankedCandidates?: GridCandidateReport[],
 ): ProcessingAnalysis => {
-	const selected = toCandidateReport(grid, source, route, method);
-	const gridCandidates = [selected];
-	if (grid.candidates) {
-		for (const candidate of grid.candidates) {
-			const report = toCandidateReport(candidate, source, route, method);
-			const isSelected =
-				report.outW === selected.outW &&
-				report.outH === selected.outH &&
-				report.totalScore === selected.totalScore;
-			if (!isSelected) gridCandidates.push(report);
-		}
-	}
-	const runnerUp = gridCandidates[1];
-	const ambiguousCandidates =
-		runnerUp !== undefined &&
-		Math.abs(selected.totalScore - runnerUp.totalScore) /
-			(Math.abs(selected.totalScore) + 1) <=
-			PROCESS_ANALYSIS_THRESHOLDS.ambiguousCandidateScoreRatio;
-	if (ambiguousCandidates) {
-		selected.confidence = Math.min(selected.confidence, 0.1);
-	}
+	const fallbackSelected = toCandidateReport(grid, source, route, method);
+	const gridCandidates = rankedCandidates ?? [fallbackSelected];
+	const selectedCandidateIndex = rankedCandidates
+		? gridCandidates.findIndex(
+				(candidate) =>
+					candidate.grid.cellW === grid.cellW &&
+					candidate.grid.cellH === grid.cellH &&
+					candidate.grid.offsetX === grid.offsetX &&
+					candidate.grid.offsetY === grid.offsetY,
+			)
+		: 0;
+	const selected =
+		selectedCandidateIndex >= 0
+			? gridCandidates[selectedCandidateIndex]
+			: fallbackSelected;
+	const selectionConfirmed =
+		route !== "refine" ||
+		(selectedCandidateIndex >= 0 &&
+			selected.confidence >=
+				PROCESS_ANALYSIS_THRESHOLDS.gridCandidateConfidenceThreshold);
 
 	const before = foregroundRatio(comparisonBefore, alphaThreshold);
 	const after = foregroundRatio(result, alphaThreshold);
@@ -407,15 +409,13 @@ const createProcessingAnalysis = (
 		before === 0 ? 0 : clampUnit((before - after) / before);
 	const warnings: ProcessingWarningCode[] = [];
 	if (before === 0) warnings.push("NO_CONTENT");
-	// [Intended] Confidence remains diagnostic until PRF-100 calibrates scores
-	// across the different grid-detection methods.
 	if (grid.detectionFailedAxes?.length === 1) {
 		warnings.push("ONE_AXIS_DETECTION_FAILED");
 	}
 	const gridSafety = getGridSafety(grid, source);
 	if (
 		gridSafety.lowConfidence ||
-		ambiguousCandidates ||
+		!selectionConfirmed ||
 		(grid.detectionFailedAxes?.length ?? 0) > 0
 	) {
 		warnings.push("LOW_GRID_CONFIDENCE");
@@ -436,7 +436,11 @@ const createProcessingAnalysis = (
 		confidence: selected.confidence,
 		warnings,
 		gridCandidates,
-		selectedCandidateIndex: 0,
+		// [Intended] PRF-100 withholds automatic confirmation at low confidence.
+		// The legacy output remains available until PRF-300 owns route selection.
+		selectedCandidateIndex: selectionConfirmed
+			? Math.max(0, selectedCandidateIndex)
+			: undefined,
 		foregroundRatioBefore: before,
 		foregroundRatioAfter: after,
 		contentLossRatio,
@@ -2373,6 +2377,7 @@ export const processImage = (
 			grid,
 		});
 	}
+	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
 
 	const downsampleStart = performance.now();
 	// [Intended] Candidate diagnostics stay in the detector's shared coordinate
@@ -2635,6 +2640,7 @@ export const processImage = (
 		"refine",
 		gridMethod,
 		trimAlphaThreshold,
+		rankedGridCandidates,
 	);
 	log("Processing analysis", analysis);
 	return {
