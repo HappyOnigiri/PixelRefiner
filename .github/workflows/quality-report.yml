@@ -64,7 +64,7 @@ jobs:
       pull-requests: write
       id-token: write
     environment:
-      name: github-pages
+      name: quality-reports
       url: ${{ steps.deploy-pages.outputs.page_url }}
     env:
       PR_NUMBER: ${{ github.event.pull_request.number }}
