@@ -159,7 +159,7 @@ jobs:
           existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | head -n 1)"
           if [ -z "$existing" ]; then
             gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "${marker}
-          Quality report: ${report_url}"
+          Quality report (available while this PR is open): ${report_url}"
           fi
 
   cleanup:
