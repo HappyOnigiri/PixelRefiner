@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { generateQualityReport, reportRoot } from "./benchmark";
 import { loadCases } from "./manifest";
@@ -23,6 +24,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		) as { cases: unknown[] };
 		expect(serialized.cases).toHaveLength(selectedCases.length);
 		const html = readFileSync(path.join(reportRoot, "index.html"), "utf8");
+		const clientScript = html.match(/<script>([\s\S]+)<\/script>/)?.[1];
+		if (clientScript === undefined) throw new Error("Client script not found");
+		expect(() => new Script(clientScript)).not.toThrow();
 		expect(html).toContain("navigator.languages");
 		expect(html).toContain('data-i18n="title"');
 		expect(html).toContain(
@@ -30,14 +34,17 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(html).not.toContain("<header");
 		expect(html).not.toContain("<select");
+		expect(html).toContain('<legend data-i18n="language">');
+		expect(html).toContain('data-locale="ja"');
+		expect(html).toContain('data-locale="en"');
 		expect(html).toContain(
 			'class="filter-button active" type="button" data-change-filter="" aria-pressed="true"',
 		);
-		expect(html).toContain('grid-template-areas:"main sidebar"');
-		expect(html).toContain("if(event.target===dialog)dialog.close()");
+		expect(html).toContain('grid-template-areas: "main sidebar"');
+		expect(html).toContain("event.target === dialog");
 		expect(html).toContain('class="image-stage"');
 		expect(html).toContain(
-			"scale=Math.min(stage.clientWidth/image.naturalWidth,stage.clientHeight/image.naturalHeight)",
+			"Math.min(stage.clientWidth / image.naturalWidth, stage.clientHeight / image.naturalHeight)",
 		);
 		expect(html).not.toContain(".images img{width:100%;height:220px");
 		expect(html).toContain('data-change-filter=""');
@@ -60,7 +67,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/class="case-metrics"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		expect(html).toContain(".case-metrics{font-size:.62rem");
+		expect(html).toContain(".case-metrics { font-size: .62rem");
 		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
 			selectedCases.length,
 		);
@@ -109,7 +116,7 @@ describe.skipIf(!enabled)("quality report", () => {
 			"utf8",
 		);
 		expect(compactDetail).toContain('href="../../index.html"');
-		expect(compactDetail).toContain(".back-link:hover{border-color:#c2b4ff");
+		expect(compactDetail).toContain(".back-link:hover { border-color: #c2b4ff");
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
 		expect(compactDetail).toContain('class="case-description"');

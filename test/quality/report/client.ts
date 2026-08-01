@@ -1,0 +1,213 @@
+interface TranslationTree {
+	[key: string]: string | TranslationTree;
+}
+
+declare global {
+	interface Window {
+		__QUALITY_REPORT_TRANSLATIONS__: Record<string, TranslationTree>;
+	}
+}
+
+// [Intended] This self-contained function is serialized into each static report.
+export const runQualityReportClient = (): void => {
+	const translations = window.__QUALITY_REPORT_TRANSLATIONS__;
+	const preferredLanguage = (
+		navigator.languages?.[0] ??
+		navigator.language ??
+		"en"
+	).toLowerCase();
+	let locale = preferredLanguage.startsWith("ja") ? "ja" : "en";
+	let messages = translations[locale];
+
+	const translate = (key: string): string | undefined => {
+		let value: string | Record<string, unknown> | undefined = messages;
+		for (const part of key.split(".")) {
+			if (typeof value !== "object" || value === null) return undefined;
+			value = value[part] as string | Record<string, unknown> | undefined;
+		}
+		return typeof value === "string" ? value : undefined;
+	};
+
+	const applyTranslations = (): void => {
+		document.documentElement.lang = locale;
+		for (const element of document.querySelectorAll<HTMLElement>(
+			"[data-i18n]",
+		)) {
+			element.textContent =
+				translate(element.dataset.i18n ?? "") ?? element.textContent;
+		}
+		for (const element of document.querySelectorAll<HTMLImageElement>(
+			"[data-i18n-alt]",
+		)) {
+			element.alt = translate(element.dataset.i18nAlt ?? "") ?? element.alt;
+		}
+		for (const element of document.querySelectorAll<HTMLInputElement>(
+			"[data-i18n-placeholder]",
+		)) {
+			element.placeholder =
+				translate(element.dataset.i18nPlaceholder ?? "") ?? element.placeholder;
+		}
+		for (const element of document.querySelectorAll<HTMLElement>(
+			"[data-description-en]",
+		)) {
+			element.textContent =
+				locale === "ja"
+					? (element.dataset.descriptionJa ?? element.textContent)
+					: (element.dataset.descriptionEn ?? element.textContent);
+		}
+	};
+
+	const localeButtons = [
+		...document.querySelectorAll<HTMLButtonElement>("[data-locale]"),
+	];
+	let refreshFilter = (): void => {};
+	const setLocale = (nextLocale: string): void => {
+		if (!(nextLocale in translations)) return;
+		locale = nextLocale;
+		messages = translations[locale];
+		applyTranslations();
+		for (const button of localeButtons) {
+			const active = button.dataset.locale === locale;
+			button.classList.toggle("active", active);
+			button.setAttribute("aria-pressed", String(active));
+		}
+		refreshFilter();
+	};
+	for (const button of localeButtons) {
+		button.addEventListener("click", () =>
+			setLocale(button.dataset.locale ?? "en"),
+		);
+	}
+	setLocale(locale);
+
+	const fitImage = (image: HTMLImageElement): void => {
+		if (!image.naturalWidth || !image.naturalHeight) return;
+		const stage = image.parentElement;
+		if (!stage) return;
+		const scale = Math.min(
+			stage.clientWidth / image.naturalWidth,
+			stage.clientHeight / image.naturalHeight,
+		);
+		image.style.width = `${image.naturalWidth * scale}px`;
+		image.style.height = `${image.naturalHeight * scale}px`;
+	};
+	const reportImages = [
+		...document.querySelectorAll<HTMLImageElement>(".images img"),
+	];
+	for (const image of reportImages) {
+		image.addEventListener("load", () => fitImage(image));
+		if (image.complete) fitImage(image);
+	}
+	window.addEventListener("resize", () => {
+		for (const image of reportImages) fitImage(image);
+	});
+
+	const search = document.querySelector<HTMLInputElement>("#search");
+	if (search) {
+		const changeButtons = [
+			...document.querySelectorAll<HTMLButtonElement>("[data-change-filter]"),
+		];
+		const statusButtons = [
+			...document.querySelectorAll<HTMLButtonElement>("[data-status-filter]"),
+		];
+		const cards = [...document.querySelectorAll<HTMLElement>(".case")];
+		const changeLabel = document.querySelector<HTMLElement>(
+			"#active-change-label",
+		);
+		const statusLabel = document.querySelector<HTMLElement>(
+			"#active-status-label",
+		);
+		const visibleCount = document.querySelector<HTMLElement>("#visible-count");
+		let activeChange = "";
+		let activeStatus = "";
+
+		const updateButtons = (
+			buttons: HTMLButtonElement[],
+			attribute: "changeFilter" | "statusFilter",
+			value: string,
+		): void => {
+			for (const button of buttons) {
+				const active = button.dataset[attribute] === value;
+				button.classList.toggle("active", active);
+				button.setAttribute("aria-pressed", String(active));
+			}
+		};
+		const selectedLabel = (
+			buttons: HTMLButtonElement[],
+			attribute: "changeFilter" | "statusFilter",
+			value: string,
+		): string =>
+			buttons
+				.find((button) => button.dataset[attribute] === value)
+				?.querySelector<HTMLElement>("[data-i18n]")?.textContent ?? "";
+
+		refreshFilter = (): void => {
+			const text = search.value.toLowerCase();
+			let visible = 0;
+			for (const card of cards) {
+				const changeMatches =
+					!activeChange ||
+					(activeChange === "changed"
+						? card.dataset.change !== "unchanged"
+						: card.dataset.change === activeChange);
+				card.hidden = !(
+					(card.dataset.search ?? "").toLowerCase().includes(text) &&
+					(!activeStatus || card.dataset.status === activeStatus) &&
+					changeMatches
+				);
+				if (!card.hidden) visible += 1;
+			}
+			if (changeLabel) {
+				changeLabel.textContent = selectedLabel(
+					changeButtons,
+					"changeFilter",
+					activeChange,
+				);
+			}
+			if (statusLabel) {
+				statusLabel.textContent = selectedLabel(
+					statusButtons,
+					"statusFilter",
+					activeStatus,
+				);
+			}
+			if (visibleCount) visibleCount.textContent = String(visible);
+		};
+		search.addEventListener("input", refreshFilter);
+		for (const button of changeButtons) {
+			button.addEventListener("click", () => {
+				activeChange = button.dataset.changeFilter ?? "";
+				updateButtons(changeButtons, "changeFilter", activeChange);
+				refreshFilter();
+			});
+		}
+		for (const button of statusButtons) {
+			button.addEventListener("click", () => {
+				activeStatus = button.dataset.statusFilter ?? "";
+				updateButtons(statusButtons, "statusFilter", activeStatus);
+				refreshFilter();
+			});
+		}
+		refreshFilter();
+	}
+
+	const dialog = document.querySelector<HTMLDialogElement>("#image-dialog");
+	const dialogImage = dialog?.querySelector<HTMLImageElement>("img");
+	if (dialog && dialogImage) {
+		dialogImage.addEventListener("load", () => fitImage(dialogImage));
+		for (const source of reportImages) {
+			source.addEventListener("click", () => {
+				dialogImage.src = source.src;
+				dialogImage.alt = source.alt;
+				dialog.showModal();
+				requestAnimationFrame(() => fitImage(dialogImage));
+			});
+		}
+		dialog.addEventListener("click", (event) => {
+			if (event.target === dialog) dialog.close();
+		});
+		document
+			.querySelector<HTMLButtonElement>("#dialog-close")
+			?.addEventListener("click", () => dialog.close());
+	}
+};
