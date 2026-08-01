@@ -86,7 +86,6 @@ html-fix-diff:
 	pnpm dlx prettier@latest --write $$files
 
 setup:
-	curl -fsSL https://raw.githubusercontent.com/HappyOnigiri/ShareSettings/main/SyncRule/run.sh | bash
 	corepack enable
 	COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack prepare pnpm --activate
 	COREPACK_ENABLE_DOWNLOAD_PROMPT=0 pnpm install --frozen-lockfile
