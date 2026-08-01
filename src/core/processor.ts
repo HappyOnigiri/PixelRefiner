@@ -7,6 +7,7 @@ import {
 } from "./background-removal";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { detectGrid } from "./detector";
+import { rankGridCandidates } from "./grid-candidates";
 import {
 	cloneImage,
 	cropRawImage,
@@ -271,6 +272,7 @@ export const processImage = (
 			grid,
 		});
 	}
+	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
 
 	const downsampleStart = performance.now();
 	// [Intended] Candidate diagnostics stay in the detector's shared coordinate
@@ -533,6 +535,7 @@ export const processImage = (
 		"refine",
 		gridMethod,
 		trimAlphaThreshold,
+		rankedGridCandidates,
 	);
 	log("Processing analysis", analysis);
 	return {

@@ -1658,6 +1658,52 @@
     ]
   },
   {
+    "id": "withhold-ambiguous-axis-grid",
+    "featureIds": ["PRF-100"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["one-axis-periodicity"],
+    "options": {
+      "autoGridFromTrimmed": false,
+      "backgroundMask": false,
+      "bgRemovalScope": "off",
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_ambiguous_axis_grid.png",
+    "expected": "test/fixtures/quality_ambiguous_axis_grid-expect.png",
+    "assertions": [
+      "multiple ranked candidates",
+      "preserve fallback candidate",
+      "low-confidence selection withheld",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_ambiguous_axis_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_ambiguous_axis_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
     "id": "preserve-continuous-tone",
     "featureIds": ["PRF-001", "PRF-002", "continuous-tone"],
     "profile": "smoke",

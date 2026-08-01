@@ -154,12 +154,12 @@ export const runQualityCase = (
 			currentRun.analysis.selectedCandidateIndex ?? 0
 		];
 	const rankedCandidates = [...currentRun.analysis.gridCandidates].sort(
-		(left, right) => left.totalScore - right.totalScore,
+		(left, right) => right.totalScore - left.totalScore,
 	);
 	let topCandidates = rankedCandidates.slice(0, 3);
 	if (selectedCandidate && !topCandidates.includes(selectedCandidate)) {
 		topCandidates = [...topCandidates.slice(0, 2), selectedCandidate].sort(
-			(left, right) => left.totalScore - right.totalScore,
+			(left, right) => right.totalScore - left.totalScore,
 		);
 	}
 	if (writeArtifacts) {
@@ -203,10 +203,13 @@ export const runQualityCase = (
 		route: currentRun.analysis.route,
 		confidence: currentRun.analysis.confidence,
 		warnings: currentRun.analysis.warnings,
+		expectedWidth: expected.width,
+		expectedHeight: expected.height,
 		gridCandidates: topCandidates.map((candidate) => ({
 			width: candidate.outW,
 			height: candidate.outH,
 			score: candidate.totalScore,
+			confidence: candidate.confidence,
 		})),
 		expectation: qualityCase.expectation,
 		options: qualityCase.options,
@@ -232,6 +235,38 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		for (const result of cases) total += select(result);
 		return count === 0 ? 0 : total / count;
 	};
+	const confidenceSamples = cases.flatMap((result) =>
+		result.gridCandidates.map((candidate) => ({
+			confidence: candidate.confidence,
+			correct: Number(
+				candidate.width === result.expectedWidth &&
+					candidate.height === result.expectedHeight,
+			),
+		})),
+	);
+	const sampleCount = confidenceSamples.length;
+	let confidenceTotal = 0;
+	let correctnessTotal = 0;
+	for (const sample of confidenceSamples) {
+		confidenceTotal += sample.confidence;
+		correctnessTotal += sample.correct;
+	}
+	const meanConfidence = sampleCount === 0 ? 0 : confidenceTotal / sampleCount;
+	const meanCorrectness =
+		sampleCount === 0 ? 0 : correctnessTotal / sampleCount;
+	let covariance = 0;
+	let confidenceVariance = 0;
+	let correctnessVariance = 0;
+	for (const sample of confidenceSamples) {
+		const confidenceDelta = sample.confidence - meanConfidence;
+		const correctnessDelta = sample.correct - meanCorrectness;
+		covariance += confidenceDelta * correctnessDelta;
+		confidenceVariance += confidenceDelta * confidenceDelta;
+		correctnessVariance += correctnessDelta * correctnessDelta;
+	}
+	const correlationDenominator = Math.sqrt(
+		confidenceVariance * correctnessVariance,
+	);
 	return {
 		caseCount: count,
 		passed: cases.filter((result) => result.status === "passed").length,
@@ -254,6 +289,8 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		top3SizeAccuracy: average((result) =>
 			Number(result.metrics.top3SizeCorrect),
 		),
+		confidenceCorrectnessCorrelation:
+			correlationDenominator === 0 ? null : covariance / correlationDenominator,
 		byteIdentityRate: average((result) => Number(result.metrics.byteIdentical)),
 		catastrophicFailureRate: average((result) =>
 			Number(result.metrics.catastrophicFailure),

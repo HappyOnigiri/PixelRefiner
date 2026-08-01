@@ -512,6 +512,11 @@ export const renderMarkdown = (results: QualityResults): string => {
 - Improved: ${summary.improved}
 - Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%
 - Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%
+- Confidence/correctness correlation: ${
+		summary.confidenceCorrectnessCorrelation === null
+			? "n/a"
+			: summary.confidenceCorrectnessCorrelation.toFixed(3)
+	}
 - Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(
 		1,
 	)}%

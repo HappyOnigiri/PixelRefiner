@@ -77,6 +77,23 @@ const createOpaqueGrid = (): RawImage => {
 	return { width, height, data };
 };
 
+const createAmbiguousAxisGrid = (scale: number): RawImage => {
+	const width = 8 * scale;
+	const height = 8 * scale;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const value = Math.floor(x / scale) % 2 === 0 ? 32 : 224;
+			const target = (y * width + x) * 4;
+			data[target] = value;
+			data[target + 1] = value;
+			data[target + 2] = value;
+			data[target + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
 		const reference = createReferenceSprite();
@@ -151,6 +168,14 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 
 		const gradient = createContinuousGradient();
 		writePng(fixturePath("quality_continuous_tone.png"), gradient);
+		writePng(
+			fixturePath("quality_ambiguous_axis_grid.png"),
+			createAmbiguousAxisGrid(4),
+		);
+		writePng(
+			fixturePath("quality_ambiguous_axis_grid-expect.png"),
+			createAmbiguousAxisGrid(1),
+		);
 
 		const quantizationInput = createQuantizationInput();
 		writePng(

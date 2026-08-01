@@ -40,8 +40,26 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	minSafeOutputArea: 4,
 	maxCellAspectRatio: 8,
 	maxAxisScoreDifferenceRatio: 0.9,
-	ambiguousCandidateScoreRatio: 0.05,
+	gridCandidateConfidenceThreshold: 0.3,
+	gridCandidateSampleLimit: 65536,
+	gridCandidateReconstructionScale: 48,
+	legacyPreserveCandidateScore: 1_000_000,
 } as const;
+
+export const GRID_CANDIDATE_SCORE_WEIGHTS = {
+	periodicity: 0.2,
+	edgeAlignment: 0.08,
+	reconstruction: 0.22,
+	complexity: 0.08,
+	coverage: 0.08,
+	axisAgreement: 0.14,
+	methodAgreement: 0.05,
+	stability: 0.08,
+	harmonic: 0.04,
+	outputSize: 0.03,
+} as const;
+
+export const GRID_CANDIDATE_CELL_SCALES = [0.5, 2] as const;
 
 export const RETRO_PALETTES: Record<
 	string,

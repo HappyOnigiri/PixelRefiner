@@ -121,10 +121,13 @@ export type QualityCaseResult = {
 	route: string;
 	confidence: number | null;
 	warnings: string[];
+	expectedWidth: number;
+	expectedHeight: number;
 	gridCandidates: Array<{
 		width: number | null;
 		height: number | null;
 		score: number;
+		confidence: number;
 	}>;
 	expectation: QualityExpectation;
 	options: ProcessOptions;
@@ -155,6 +158,7 @@ export type QualityResults = {
 		blockingFailures: number;
 		top1SizeAccuracy: number;
 		top3SizeAccuracy: number;
+		confidenceCorrectnessCorrelation: number | null;
 		byteIdentityRate: number;
 		catastrophicFailureRate: number;
 		meanRgbaError: number;

@@ -90,6 +90,10 @@ export type GridCandidateSubscores = {
 	complexity: number;
 	coverage: number;
 	axisAgreement: number;
+	methodAgreement: number;
+	stability: number;
+	harmonic: number;
+	outputSize: number;
 };
 
 export type GridCandidateReport = {
