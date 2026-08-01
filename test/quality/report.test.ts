@@ -29,9 +29,8 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(() => new Script(clientScript)).not.toThrow();
 		expect(html).toContain("navigator.languages");
 		expect(html).toContain('data-i18n="title"');
-		expect(html).toContain(
-			'<div class="report-layout"><aside class="sidebar">',
-		);
+		expect(html).toContain('<div class="report-layout">');
+		expect(html).toContain('<aside class="sidebar">');
 		expect(html).not.toContain("<header");
 		expect(html).not.toContain("<select");
 		expect(html).toContain('<legend data-i18n="language">');

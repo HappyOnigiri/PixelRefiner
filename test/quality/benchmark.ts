@@ -495,6 +495,81 @@ const describeCase = (
 	};
 };
 
+const renderImageDialog = (): string => `
+<dialog id="image-dialog">
+	<button id="dialog-close">&times;</button>
+	<div class="image-stage dialog-stage"><img alt=""></div>
+</dialog>`;
+
+const renderReportSidebar = (results: QualityResults): string => {
+	const repositoryUrl = escapeHtml(results.metadata.repositoryUrl);
+	const commitUrl = (commit: string): string =>
+		`${repositoryUrl}/commit/${encodeURIComponent(commit)}`;
+	const shortCommit = (commit: string): string =>
+		escapeHtml(commit.slice(0, 7));
+	const verdictKey =
+		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
+	return `<aside class="sidebar">
+	<h1 data-i18n="title">PixelRefiner quality report</h1>
+	<p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p>
+	<section class="report-meta" aria-labelledby="report-meta-title">
+		<h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2>
+		<dl>
+			<dt data-i18n="pullRequest">Pull request</dt>
+			<dd><a href="${repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}">#${escapeHtml(results.metadata.prNumber)}</a></dd>
+			<dt data-i18n="headCommit">Head</dt>
+			<dd><a href="${commitUrl(results.metadata.headCommit)}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd>
+			<dt data-i18n="baseCommit">PR base</dt>
+			<dd><a href="${commitUrl(results.metadata.baseCommit)}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd>
+			<dt data-i18n="baselineCommit">Baseline snapshot</dt>
+			<dd><a href="${commitUrl(results.metadata.baselineCommit)}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd>
+			<dt data-i18n="generatedAt">Generated</dt>
+			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd>
+			<dt data-i18n="workflow">Workflow</dt>
+			<dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd>
+		</dl>
+	</section>
+	<div class="filter-panel">
+		<fieldset class="filter-group">
+			<legend data-i18n="language">Language</legend>
+			<div class="locale-row">
+				<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
+				<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
+			<legend data-i18n="changeStatus">Change status</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button>
+				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button>
+				<button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button>
+				<button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button>
+				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
+			<legend data-i18n="qualityStatus">Quality status</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button>
+				<button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button>
+				<button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button>
+			</div>
+		</fieldset>
+		<label class="search-row" for="search">
+			<span data-i18n="filterCases">Filter cases</span>
+			<input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases">
+		</label>
+		<p class="filter-summary" aria-live="polite">
+			<span data-i18n="displayConditions">Showing</span>:
+			<strong id="active-change-label"></strong> &times;
+			<strong id="active-status-label"></strong> &mdash;
+			<strong id="visible-count">0</strong> / ${results.summary.caseCount}
+			<span data-i18n="casesShown">cases</span>
+		</p>
+	</div>
+</aside>`;
+};
+
 const renderHtml = (results: QualityResults): string => {
 	const changeOrder = {
 		regressed: 0,
@@ -517,7 +592,14 @@ const renderHtml = (results: QualityResults): string => {
 			const exactMeasurement = result.expectation.exact
 				? `<strong data-i18n="exactMatchShort">Exact</strong> <span data-i18n="${exactMatch ? "yes" : "no"}">${exactMatch ? "yes" : "no"}</span> &middot; `
 				: "";
-			const qualityMeasurement = `<small class="case-metrics">${exactMeasurement}<strong data-i18n="meanRgbaErrorShort">Error</strong> ${formatMetric(result.metrics.meanRgbaError)}/${errorTarget} &middot; <strong data-i18n="processingTime">Time</strong> ${result.metrics.runtimeMs.toFixed(2)}ms</small>`;
+			const qualityMeasurement = [
+				'<small class="case-metrics">',
+				exactMeasurement,
+				'<strong data-i18n="meanRgbaErrorShort">Error</strong> ',
+				`${formatMetric(result.metrics.meanRgbaError)}/${errorTarget}`,
+				' &middot; <strong data-i18n="processingTime">Time</strong> ',
+				`${result.metrics.runtimeMs.toFixed(2)}ms</small>`,
+			].join("");
 			const searchable = [
 				result.status,
 				result.changeStatus,
@@ -545,25 +627,35 @@ const renderHtml = (results: QualityResults): string => {
 				["result", "Result", result.files.result],
 			]);
 			return `<article class="case ${result.status} ${result.changeStatus}" data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
-			<h2>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span> ${qualityMeasurement}</h2>
+			<h2>
+				${escapeHtml(result.id)}
+				<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
+				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
+				${qualityMeasurement}
+			</h2>
 			<p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
 			<div class="images primary">${primaryImages}</div><p><a class="detail-link" href="cases/${encodeURIComponent(result.id)}/index.html" data-i18n="details">Details</a></p>
 		</article>`;
 		})
 		.join("\n");
-	const repositoryUrl = escapeHtml(results.metadata.repositoryUrl);
-	const prUrl = `${repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}`;
-	const headCommitUrl = `${repositoryUrl}/commit/${encodeURIComponent(results.metadata.headCommit)}`;
-	const baseCommitUrl = `${repositoryUrl}/commit/${encodeURIComponent(results.metadata.baseCommit)}`;
-	const baselineCommitUrl = `${repositoryUrl}/commit/${encodeURIComponent(results.metadata.baselineCommit)}`;
-	const shortCommit = (commit: string): string =>
-		escapeHtml(commit.slice(0, 7));
-	const verdictKey =
-		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
-	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title data-i18n="title">PixelRefiner quality report</title><style>
-${INDEX_REPORT_STYLES}</style></head><body>
-	<div class="report-layout"><aside class="sidebar"><h1 data-i18n="title">PixelRefiner quality report</h1><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><section class="report-meta" aria-labelledby="report-meta-title"><h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2><dl><dt data-i18n="pullRequest">Pull request</dt><dd><a href="${prUrl}">#${escapeHtml(results.metadata.prNumber)}</a></dd><dt data-i18n="headCommit">Head</dt><dd><a href="${headCommitUrl}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd><dt data-i18n="baseCommit">PR base</dt><dd><a href="${baseCommitUrl}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd><dt data-i18n="baselineCommit">Baseline snapshot</dt><dd><a href="${baselineCommitUrl}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd><dt data-i18n="generatedAt">Generated</dt><dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd><dt data-i18n="workflow">Workflow</dt><dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd></dl></section><div class="filter-panel"><fieldset class="filter-group"><legend data-i18n="language">Language</legend><div class="locale-row"><button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button><button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="changeStatus">Change status</legend><div class="filter-row"><button class="filter-button active" type="button" data-change-filter="" aria-pressed="true"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button><button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="qualityStatus">Quality status</legend><div class="filter-row"><button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button><button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button><button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button></div></fieldset><label class="search-row" for="search"><span data-i18n="filterCases">Filter cases</span><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"></label><p class="filter-summary" aria-live="polite"><span data-i18n="displayConditions">Showing</span>: <strong id="active-change-label"></strong> &times; <strong id="active-status-label"></strong> &mdash; <strong id="visible-count">0</strong> / ${results.summary.caseCount} <span data-i18n="casesShown">cases</span></p></div></aside>
-	<main class="report-main">${cards}</main></div><dialog id="image-dialog"><button id="dialog-close">&times;</button><div class="image-stage dialog-stage"><img alt=""></div></dialog><script>${renderClientScript()}</script></body></html>`;
+	return `<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title data-i18n="title">PixelRefiner quality report</title>
+	<style>
+${INDEX_REPORT_STYLES}	</style>
+</head>
+<body>
+	<div class="report-layout">
+${renderReportSidebar(results)}
+		<main class="report-main">${cards}</main>
+	</div>
+${renderImageDialog()}
+	<script>${renderClientScript()}</script>
+</body>
+</html>`;
 };
 
 const renderCaseDetailHtml = (result: QualityCaseResult): string => {
@@ -613,7 +705,14 @@ const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 				? "-"
 				: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
 		const state = metricState(key);
-		return `<tr class="${state}"><th data-i18n="${key}">${key}</th><td>${escapeHtml(target)}</td><td>${formatMetric(baseline)}</td><td>${formatMetric(current)}</td><td>${deltaText}</td><td data-i18n="${state}">${state}</td></tr>`;
+		return `<tr class="${state}">
+			<th data-i18n="${key}">${key}</th>
+			<td>${escapeHtml(target)}</td>
+			<td>${formatMetric(baseline)}</td>
+			<td>${formatMetric(current)}</td>
+			<td>${deltaText}</td>
+			<td data-i18n="${state}">${state}</td>
+		</tr>`;
 	};
 	const baselineMetrics = result.baselineMetrics;
 	const expectedSize =
@@ -622,11 +721,49 @@ const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 			? `${result.expectation.expectedWidth}x${result.expectation.expectedHeight}`
 			: "correct";
 	const sizeState = result.metrics.sizeCorrect ? "passed" : "failed";
-	const metricRows = `<tr class="${sizeState}"><th data-i18n="outputSize">Output size</th><td>${expectedSize}</td><td>${baselineMetrics ? `${baselineMetrics.outputWidth}x${baselineMetrics.outputHeight}` : "-"}</td><td>${result.metrics.outputWidth}x${result.metrics.outputHeight}</td><td>-</td><td data-i18n="${sizeState}">${sizeState}</td></tr>
-	${metricRow("meanRgbaError", result.metrics.meanRgbaError, baselineMetrics?.meanRgbaError, result.expectation.maxMeanRgbaError === undefined ? "-" : `<= ${result.expectation.maxMeanRgbaError}`)}
-	${metricRow("edgeF1", result.metrics.edgeF1, baselineMetrics?.edgeF1, result.expectation.minEdgeF1 === undefined ? "-" : `>= ${result.expectation.minEdgeF1}`)}
-	${metricRow("backgroundMaskIou", result.metrics.backgroundMaskIou, baselineMetrics?.backgroundMaskIou, result.expectation.minBackgroundMaskIou === undefined ? "-" : `>= ${result.expectation.minBackgroundMaskIou}`)}
-	${metricRow("smallComponentRetention", result.metrics.smallComponentRetention, baselineMetrics?.smallComponentRetention, result.expectation.minSmallComponentRetention === undefined ? "-" : `>= ${result.expectation.minSmallComponentRetention}`)}`;
+	const sizeRow = `<tr class="${sizeState}">
+		<th data-i18n="outputSize">Output size</th>
+		<td>${expectedSize}</td>
+		<td>${baselineMetrics ? `${baselineMetrics.outputWidth}x${baselineMetrics.outputHeight}` : "-"}</td>
+		<td>${result.metrics.outputWidth}x${result.metrics.outputHeight}</td>
+		<td>-</td>
+		<td data-i18n="${sizeState}">${sizeState}</td>
+	</tr>`;
+	const metricRows = [
+		sizeRow,
+		metricRow(
+			"meanRgbaError",
+			result.metrics.meanRgbaError,
+			baselineMetrics?.meanRgbaError,
+			result.expectation.maxMeanRgbaError === undefined
+				? "-"
+				: `<= ${result.expectation.maxMeanRgbaError}`,
+		),
+		metricRow(
+			"edgeF1",
+			result.metrics.edgeF1,
+			baselineMetrics?.edgeF1,
+			result.expectation.minEdgeF1 === undefined
+				? "-"
+				: `>= ${result.expectation.minEdgeF1}`,
+		),
+		metricRow(
+			"backgroundMaskIou",
+			result.metrics.backgroundMaskIou,
+			baselineMetrics?.backgroundMaskIou,
+			result.expectation.minBackgroundMaskIou === undefined
+				? "-"
+				: `>= ${result.expectation.minBackgroundMaskIou}`,
+		),
+		metricRow(
+			"smallComponentRetention",
+			result.metrics.smallComponentRetention,
+			baselineMetrics?.smallComponentRetention,
+			result.expectation.minSmallComponentRetention === undefined
+				? "-"
+				: `>= ${result.expectation.minSmallComponentRetention}`,
+		),
+	].join("\n");
 	const changedPixels =
 		result.changedPixelCount === null
 			? "-"
@@ -634,20 +771,98 @@ const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const tags = result.degradationPatterns
 		.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
 		.join(" ");
-	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(result.id)} - PixelRefiner quality report</title><style>
-${DETAIL_REPORT_STYLES}</style></head><body>
-	<a class="back-link" href="../../index.html" data-i18n="backToReport">Back to report</a><main><h1>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span></h1><p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p><p>${tags}</p><p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p><section><h2 data-i18n="diagnostics">All images and settings</h2><div class="images">${allImages}</div></section><section><h2 data-i18n="comparison">Metric comparison</h2><div class="table-scroll"><table><thead><tr><th data-i18n="metric">Metric</th><th data-i18n="target">Target</th><th data-i18n="baseline">Baseline</th><th data-i18n="current">Current</th><th data-i18n="delta">Delta</th><th data-i18n="verdict">Verdict</th></tr></thead><tbody>${metricRows}</tbody></table></div></section><section><h2 data-i18n="options">Options</h2><dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl></section></main><dialog id="image-dialog"><button id="dialog-close">&times;</button><div class="image-stage dialog-stage"><img alt=""></div></dialog><script>${renderClientScript()}</script></body></html>`;
+	return `<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>${escapeHtml(result.id)} - PixelRefiner quality report</title>
+	<style>
+${DETAIL_REPORT_STYLES}	</style>
+</head>
+<body>
+	<a class="back-link" href="../../index.html" data-i18n="backToReport">Back to report</a>
+	<main>
+		<h1>
+			${escapeHtml(result.id)}
+			<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
+			<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
+		</h1>
+		<p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
+		<p>${tags}</p>
+		<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
+		<section>
+			<h2 data-i18n="diagnostics">All images and settings</h2>
+			<div class="images">${allImages}</div>
+		</section>
+		<section>
+			<h2 data-i18n="comparison">Metric comparison</h2>
+			<div class="table-scroll">
+				<table>
+					<thead>
+						<tr>
+							<th data-i18n="metric">Metric</th>
+							<th data-i18n="target">Target</th>
+							<th data-i18n="baseline">Baseline</th>
+							<th data-i18n="current">Current</th>
+							<th data-i18n="delta">Delta</th>
+							<th data-i18n="verdict">Verdict</th>
+						</tr>
+					</thead>
+					<tbody>${metricRows}</tbody>
+				</table>
+			</div>
+		</section>
+		<section>
+			<h2 data-i18n="options">Options</h2>
+			<dl>
+				<dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd>
+				<dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd>
+				<dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd>
+				<dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd>
+				<dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd>
+				<dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd>
+			</dl>
+		</section>
+	</main>
+${renderImageDialog()}
+	<script>${renderClientScript()}</script>
+</body>
+</html>`;
 };
 
 const renderMarkdown = (results: QualityResults): string => {
 	const summary = results.summary;
 	const rows = results.cases
-		.map(
-			(result) =>
-				`|${result.id}|${result.status}|${result.metrics.outputWidth}x${result.metrics.outputHeight}|${result.metrics.meanRgbaError.toFixed(3)}|${result.metrics.edgeF1.toFixed(3)}|${result.metrics.runtimeMs.toFixed(2)}|`,
+		.map((result) =>
+			[
+				`|${result.id}`,
+				`|${result.status}`,
+				`|${result.metrics.outputWidth}x${result.metrics.outputHeight}`,
+				`|${result.metrics.meanRgbaError.toFixed(3)}`,
+				`|${result.metrics.edgeF1.toFixed(3)}`,
+				`|${result.metrics.runtimeMs.toFixed(2)}|`,
+			].join(""),
 		)
 		.join("\n");
-	return `# PixelRefiner quality report\n\n- Cases: ${summary.caseCount}\n- Passed: ${summary.passed}\n- Failed: ${summary.failed}\n- Changed: ${summary.changed}\n- Regressed: ${summary.regressed}\n- Improved: ${summary.improved}\n- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%\n- Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%\n- Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(1)}%\n\n|Case|Status|Output|Mean RGBA error|Edge F1|Runtime (ms)|\n|---|---|---:|---:|---:|---:|\n${rows}\n`;
+	return `# PixelRefiner quality report
+
+- Cases: ${summary.caseCount}
+- Passed: ${summary.passed}
+- Failed: ${summary.failed}
+- Changed: ${summary.changed}
+- Regressed: ${summary.regressed}
+- Improved: ${summary.improved}
+- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%
+- Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%
+- Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(
+		1,
+	)}%
+
+|Case|Status|Output|Mean RGBA error|Edge F1|Runtime (ms)|
+|---|---|---:|---:|---:|---:|
+${rows}
+`;
 };
 
 export const generateQualityReport = (
