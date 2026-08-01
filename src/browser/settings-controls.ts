@@ -478,7 +478,6 @@ export const setupSettingsControls = ({
 		}
 	});
 
-	// Grid Update Logic (Handled by ResultViewer now)
 	return {
 		updateRgbInputs,
 		updateProcessButtonVisibility,

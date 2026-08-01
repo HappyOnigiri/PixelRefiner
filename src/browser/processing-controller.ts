@@ -46,7 +46,6 @@ export const createRunProcessing = ({
 	const compareBeforeCanvas = document.createElement("canvas");
 	const compareAfterCanvas = document.createElement("canvas");
 	const compareBeforeSanitizedCanvas = document.createElement("canvas");
-	const isGridManuallyToggled = false;
 
 	return async () => {
 		const images = imageSession.getImages();
@@ -217,15 +216,12 @@ export const createRunProcessing = ({
 			modalResultViewer.updateImage(resultImage, effectiveGrid);
 			mainResultViewer.setLoading(false);
 
-			// Turn OFF grid by default if exceeds 256px (if not manually enabled)
-			if (!isGridManuallyToggled) {
-				if (resultImage.width > 256 || resultImage.height > 256) {
-					if (els.gridOutputCheck.checked) {
-						els.gridOutputCheck.checked = false;
-						// Clear grid
-						mainResultViewer.setGrid(false);
-						modalResultViewer.setGrid(false);
-					}
+			// Turn off the grid for large results to avoid an overly dense overlay.
+			if (resultImage.width > 256 || resultImage.height > 256) {
+				if (els.gridOutputCheck.checked) {
+					els.gridOutputCheck.checked = false;
+					mainResultViewer.setGrid(false);
+					modalResultViewer.setGrid(false);
 				}
 			}
 
@@ -296,6 +292,4 @@ export const createRunProcessing = ({
 			els.processButton.disabled = false;
 		}
 	};
-
-	// Eyedropper state
 };

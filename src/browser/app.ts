@@ -77,14 +77,6 @@ export const initApp = (): void => {
 				// Restore result if available, or original
 				// const displayImage = item.result || item.original; // Unused
 
-				// Reset viewers
-				// Note: We might want to persist grid/zoom state or reset it?
-				// Current logic: isGridManuallyToggled controls grid auto-off.
-				// Let's reset isGridManuallyToggled when switching images?
-				// Maybe not, if user wants to keep grid on.
-				// But original logic reset it on loadFile.
-				// For now, let's keep grid state as is, but maybe re-evaluate auto-grid if new image.
-
 				// Update Viewers
 				drawRawImageToCanvas(item.original, els.originalCanvas);
 
