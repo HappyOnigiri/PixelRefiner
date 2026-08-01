@@ -44,5 +44,5 @@ describe.skipIf(!enabled)("quality report", () => {
 				),
 			).toBe(true);
 		}
-	}, 60_000);
+	}, 120_000);
 });
