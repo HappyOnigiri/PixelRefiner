@@ -89,6 +89,7 @@ def main():
         ("Type Check", ["make", "type-check"]),
         ("Custom Rules", ["make", "check-ts-rules"]),
         ("TS Line Length", ["make", "check-ts-line-length"]),
+        ("File Line Count", ["make", "check-file-line-count"]),
         ("Tests", ["make", "test"]),
     ]
 
