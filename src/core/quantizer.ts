@@ -462,6 +462,7 @@ export class OklabKMeans {
 	private initializeCentroids(uniqueColors: WeightedColor[]): Oklab[] {
 		const centroids = new Array<Oklab>(this.maxColors);
 		const usedColors = new Uint8Array(uniqueColors.length);
+		const minDistances = new Float64Array(uniqueColors.length);
 		let firstIndex = 0;
 		for (let i = 1; i < uniqueColors.length; i++) {
 			const candidate = uniqueColors[i];
@@ -477,6 +478,9 @@ export class OklabKMeans {
 
 		centroids[0] = { ...uniqueColors[firstIndex].lab };
 		usedColors[firstIndex] = 1;
+		for (let i = 0; i < uniqueColors.length; i++) {
+			minDistances[i] = this.colorDistanceSq(uniqueColors[i].lab, centroids[0]);
+		}
 		for (
 			let centroidIndex = 1;
 			centroidIndex < this.maxColors;
@@ -487,14 +491,7 @@ export class OklabKMeans {
 			for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
 				if (usedColors[colorIndex] !== 0) continue;
 				const color = uniqueColors[colorIndex];
-				let minDist = Number.MAX_VALUE;
-				for (let i = 0; i < centroidIndex; i++) {
-					minDist = Math.min(
-						minDist,
-						this.colorDistanceSq(color.lab, centroids[i]),
-					);
-				}
-				const score = minDist * color.count;
+				const score = minDistances[colorIndex] * color.count;
 				if (
 					score > bestScore ||
 					(score === bestScore &&
@@ -507,6 +504,17 @@ export class OklabKMeans {
 			}
 			centroids[centroidIndex] = { ...uniqueColors[bestIndex].lab };
 			usedColors[bestIndex] = 1;
+			// [Intended] Cache nearest distances so seeding stays O(colors * centroids).
+			for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
+				if (usedColors[colorIndex] !== 0) continue;
+				const distance = this.colorDistanceSq(
+					uniqueColors[colorIndex].lab,
+					centroids[centroidIndex],
+				);
+				if (distance < minDistances[colorIndex]) {
+					minDistances[colorIndex] = distance;
+				}
+			}
 		}
 		return centroids;
 	}
