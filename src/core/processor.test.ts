@@ -422,6 +422,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
+		// [Policy] Grid detection can exceed Vitest's 5s default under shared CI runner load.
 		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid } = processImage(img, {
 				detectionQuantStep: 64,
@@ -453,7 +454,7 @@ describe("processImage", () => {
 			expect(grid.outH).toBe(61);
 
 			expectSameImage(result, expected, getExpectPath("auto_grid_detection"));
-		});
+		}, 15_000);
 	});
 
 	describe("inner_background_removal", () => {
