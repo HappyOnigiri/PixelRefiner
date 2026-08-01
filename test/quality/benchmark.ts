@@ -300,7 +300,7 @@ const REPORT_TRANSLATIONS = {
 		unchanged: "unchanged",
 		new: "new case",
 		changedCases: "Cases with differences",
-		allChanges: "All changes",
+		allChanges: "All",
 		qualityStatus: "Quality status",
 		changeStatus: "Change status",
 		changedPixels: "Changed pixels",
@@ -315,7 +315,7 @@ const REPORT_TRANSLATIONS = {
 		edgeF1: "Edge F1",
 		backgroundMaskIou: "Background mask IoU",
 		smallComponentRetention: "Small component retention",
-		diagnostics: "Diagnostics and settings",
+		diagnostics: "All images and settings",
 		noRegression: "No new quality regression",
 		hasRegression: "Quality regression detected",
 		assertions: {
@@ -362,7 +362,7 @@ const REPORT_TRANSLATIONS = {
 		unchanged: "\u5dee\u5206\u306a\u3057",
 		new: "\u65b0\u898f\u30b1\u30fc\u30b9",
 		changedCases: "\u5dee\u5206\u3042\u308a",
-		allChanges: "\u3059\u3079\u3066\u306e\u5909\u5316",
+		allChanges: "\u3059\u3079\u3066",
 		qualityStatus: "\u54c1\u8cea\u72b6\u614b",
 		changeStatus: "\u5909\u5316\u72b6\u614b",
 		changedPixels: "\u5909\u66f4\u753b\u7d20",
@@ -377,7 +377,8 @@ const REPORT_TRANSLATIONS = {
 		edgeF1: "\u8f2a\u90edF1",
 		backgroundMaskIou: "\u80cc\u666f\u30de\u30b9\u30afIoU",
 		smallComponentRetention: "\u5c0f\u8981\u7d20\u4fdd\u6301\u7387",
-		diagnostics: "\u8a3a\u65ad\u753b\u50cf\u3068\u51e6\u7406\u8a2d\u5b9a",
+		diagnostics:
+			"\u3059\u3079\u3066\u306e\u753b\u50cf\u3068\u51e6\u7406\u8a2d\u5b9a",
 		noRegression:
 			"\u65b0\u305f\u306a\u54c1\u8cea\u60aa\u5316\u306f\u3042\u308a\u307e\u305b\u3093",
 		hasRegression:
@@ -414,6 +415,8 @@ const renderHtml = (results: QualityResults): string => {
 	);
 	const cards = sortedCases
 		.map((result) => {
+			const compact =
+				result.status === "passed" && result.changeStatus === "unchanged";
 			const searchable = [
 				result.status,
 				result.changeStatus,
@@ -434,13 +437,19 @@ const renderHtml = (results: QualityResults): string => {
 							`<figure><figcaption data-i18n="${key}">${label}</figcaption><img src="${source}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></figure>`,
 					)
 					.join("");
-			const primaryImages = renderImages([
+			const primaryImages = renderImages(
+				compact
+					? [["result", "Result", result.files.result]]
+					: [
+							["baseline", "Baseline", result.files.baseline],
+							["result", "Result", result.files.result],
+						],
+			);
+			const allImages = renderImages([
 				["input", "Input", result.files.input],
 				["groundTruth", "Ground truth", result.files.groundTruth],
 				["baseline", "Baseline", result.files.baseline],
 				["result", "Result", result.files.result],
-			]);
-			const diagnosticImages = renderImages([
 				["groundTruthDifference", "Ground-truth difference", result.files.diff],
 				[
 					"baselineDifference",
@@ -496,12 +505,14 @@ const renderHtml = (results: QualityResults): string => {
 			const tags = result.degradationPatterns
 				.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
 				.join(" ");
+			const reviewDetails = compact
+				? ""
+				: `<p>${tags}</p><p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
+			<details><summary data-i18n="comparison">Metric comparison</summary><div class="table-scroll"><table><thead><tr><th data-i18n="metric">Metric</th><th data-i18n="target">Target</th><th data-i18n="baseline">Baseline</th><th data-i18n="current">Current</th><th data-i18n="delta">Delta</th><th data-i18n="verdict">Verdict</th></tr></thead><tbody>${metricRows}</tbody></table></div></details>
+			<details><summary data-i18n="diagnostics">All images and settings</summary><div class="images">${allImages}</div><dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl></details>`;
 			return `<article class="case ${result.status} ${result.changeStatus}" data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
 			<h2>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span></h2>
-			<p>${tags}</p><div class="images primary">${primaryImages}</div>
-			<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
-			<h3 data-i18n="comparison">Metric comparison</h3><div class="table-scroll"><table><thead><tr><th data-i18n="metric">Metric</th><th data-i18n="target">Target</th><th data-i18n="baseline">Baseline</th><th data-i18n="current">Current</th><th data-i18n="delta">Delta</th><th data-i18n="verdict">Verdict</th></tr></thead><tbody>${metricRows}</tbody></table></div>
-			<details><summary data-i18n="diagnostics">Diagnostics and settings</summary><div class="images">${diagnosticImages}</div><dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl></details>
+			<div class="images primary">${primaryImages}</div>${reviewDetails}
 		</article>`;
 		})
 		.join("\n");
@@ -514,9 +525,9 @@ const renderHtml = (results: QualityResults): string => {
 	const verdictKey =
 		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title data-i18n="title">PixelRefiner quality report</title><style>
-	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1500px;padding:24px}a{color:#b9a7ff}header{position:sticky;top:0;background:#15131af2;padding:12px 0;z-index:2;border-bottom:1px solid #494151}input,select{padding:8px;margin:4px;background:#25212d;color:inherit;border:1px solid #635a70}.summary{display:flex;gap:8px;flex-wrap:wrap}.summary button{padding:10px;background:#25212d;color:inherit;border:1px solid #635a70;border-radius:6px}.verdict{font-size:1.2rem;font-weight:700}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:16px 0}.case.failed,.case.regressed{border-color:#ff6b6b}.badge,.tag{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.75em;background:#393241}.badge.regressed,.badge.failed{background:#7a2930}.badge.improved,.badge.passed{background:#236044}.badge.changed,.badge.new{background:#725b20}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;cursor:zoom-in;image-rendering:pixelated;background:repeating-conic-gradient(#777 0 25%,#aaa 0 50%) 50%/16px 16px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:7px;text-align:right;border-bottom:1px solid #494151}th:first-child{text-align:left}tr.regressed{color:#ff8f8f}tr.improved{color:#85e6a9}details{margin-top:16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}dialog{width:min(90vw,1000px);background:#15131a;border:1px solid #635a70}dialog img{width:100%;max-height:85vh;object-fit:contain;image-rendering:pixelated}</style></head><body>
-	<header><h1 data-i18n="title">PixelRefiner quality report</h1><p><a href="${prUrl}">PR ${escapeHtml(results.metadata.prNumber)}</a> &middot; head <a href="${headCommitUrl}">${escapeHtml(results.metadata.headCommit)}</a> &middot; base <a href="${baseCommitUrl}">${escapeHtml(results.metadata.baseCommit)}</a> &middot; baseline <a href="${baselineCommitUrl}">${escapeHtml(results.metadata.baselineCommit)}</a> &middot; ${escapeHtml(results.metadata.generatedAt)} &middot; <a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></p><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><div class="summary"><button data-change-filter="changed"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button data-change-filter="regressed"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button data-change-filter="improved"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button data-change-filter="unchanged"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button><span><span data-i18n="passed">passed</span>: ${results.summary.passed} / <span data-i18n="failed">failed</span>: ${results.summary.failed}</span></div><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"><select id="status"><option value="" data-i18n="allStatuses">All statuses</option><option value="passed" data-i18n="passed">passed</option><option value="failed" data-i18n="failed">failed</option></select><select id="change"><option value="changed" selected data-i18n="changedCases">Cases with differences</option><option value="" data-i18n="allChanges">All changes</option><option value="regressed" data-i18n="regressed">regressed</option><option value="improved" data-i18n="improved">improved</option><option value="new" data-i18n="new">new</option><option value="unchanged" data-i18n="unchanged">unchanged</option></select></header>
-	<main>${cards}</main><dialog id="image-dialog"><button id="dialog-close">&times;</button><img alt=""></dialog><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),s=document.querySelector('#status'),c=document.querySelector('#change'),cards=[...document.querySelectorAll('.case')];function filter(){const text=q.value.toLowerCase(),status=s.value,change=c.value;for(const card of cards){const changeMatches=!change||(change==='changed'?card.dataset.change!=='unchanged':card.dataset.change===change);card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!status||card.dataset.status===status)&&changeMatches)}}q.addEventListener('input',filter);s.addEventListener('change',filter);c.addEventListener('change',filter);for(const button of document.querySelectorAll('[data-change-filter]')){button.addEventListener('click',()=>{c.value=button.dataset.changeFilter;filter()})}const dialog=document.querySelector('#image-dialog'),dialogImage=dialog.querySelector('img');for(const source of document.querySelectorAll('.images img')){source.addEventListener('click',()=>{dialogImage.src=source.src;dialogImage.alt=source.alt;dialog.showModal()})}document.querySelector('#dialog-close').addEventListener('click',()=>dialog.close());filter();</script></body></html>`;
+	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1500px;padding:24px}a{color:#b9a7ff}header{position:sticky;top:0;background:#15131af2;padding:12px 0;z-index:2;border-bottom:1px solid #494151}input{padding:8px;margin:4px;background:#25212d;color:inherit;border:1px solid #635a70}.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.summary,.status-filters{display:flex;gap:8px;flex-wrap:wrap}.filter-button{padding:10px;background:#25212d;color:inherit;border:1px solid #635a70;border-radius:6px;cursor:pointer;transition:transform .12s,border-color .12s,background .12s}.filter-button:hover{transform:translateY(-1px);border-color:#c2b4ff}.filter-button.active{border-color:#fff;box-shadow:0 0 0 2px #ffffff22}.filter-button.active[data-change-filter=""]{background:#59458a}.filter-button.active[data-change-filter="changed"]{background:#725b20}.filter-button.active[data-change-filter="regressed"],.filter-button.active[data-status-filter="failed"]{background:#7a2930}.filter-button.active[data-change-filter="improved"],.filter-button.active[data-status-filter="passed"]{background:#236044}.filter-button.active[data-change-filter="unchanged"],.filter-button.active[data-status-filter=""]{background:#48536b}.verdict{font-size:1.2rem;font-weight:700}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:16px 0}.case.failed,.case.regressed{border-color:#ff6b6b}.badge,.tag{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.75em;background:#393241}.badge.regressed,.badge.failed{background:#7a2930}.badge.improved,.badge.passed{background:#236044}.badge.changed,.badge.new{background:#725b20}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;cursor:zoom-in;image-rendering:pixelated;background:repeating-conic-gradient(#777 0 25%,#aaa 0 50%) 50%/16px 16px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:7px;text-align:right;border-bottom:1px solid #494151}th:first-child{text-align:left}tr.regressed{color:#ff8f8f}tr.improved{color:#85e6a9}details{margin-top:16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}dialog{width:min(90vw,1000px);background:#15131a;border:1px solid #635a70}dialog img{width:100%;max-height:85vh;object-fit:contain;image-rendering:pixelated}</style></head><body>
+	<header><h1 data-i18n="title">PixelRefiner quality report</h1><p><a href="${prUrl}">PR ${escapeHtml(results.metadata.prNumber)}</a> &middot; head <a href="${headCommitUrl}">${escapeHtml(results.metadata.headCommit)}</a> &middot; base <a href="${baseCommitUrl}">${escapeHtml(results.metadata.baseCommit)}</a> &middot; baseline <a href="${baselineCommitUrl}">${escapeHtml(results.metadata.baselineCommit)}</a> &middot; ${escapeHtml(results.metadata.generatedAt)} &middot; <a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></p><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><div class="filters"><div class="summary"><button class="filter-button" type="button" data-change-filter="" aria-pressed="false"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button><button class="filter-button active" type="button" data-change-filter="changed" aria-pressed="true"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button></div><div class="status-filters"><button class="filter-button active" type="button" data-status-filter="" aria-pressed="true" data-i18n="allStatuses">All statuses</button><button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button><button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">failed</span>: ${results.summary.failed}</button></div><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"></div></header>
+	<main>${cards}</main><dialog id="image-dialog"><button id="dialog-close">&times;</button><img alt=""></dialog><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),changeButtons=[...document.querySelectorAll('[data-change-filter]')],statusButtons=[...document.querySelectorAll('[data-status-filter]')],cards=[...document.querySelectorAll('.case')];let activeChange='changed',activeStatus='';function updateButtons(buttons,attribute,value){for(const button of buttons){const active=button.dataset[attribute]===value;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))}}function filter(){const text=q.value.toLowerCase();for(const card of cards){const changeMatches=!activeChange||(activeChange==='changed'?card.dataset.change!=='unchanged':card.dataset.change===activeChange);card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!activeStatus||card.dataset.status===activeStatus)&&changeMatches)}}q.addEventListener('input',filter);for(const button of changeButtons){button.addEventListener('click',()=>{activeChange=button.dataset.changeFilter;updateButtons(changeButtons,'changeFilter',activeChange);filter()})}for(const button of statusButtons){button.addEventListener('click',()=>{activeStatus=button.dataset.statusFilter;updateButtons(statusButtons,'statusFilter',activeStatus);filter()})}const dialog=document.querySelector('#image-dialog'),dialogImage=dialog.querySelector('img');for(const source of document.querySelectorAll('.images img')){source.addEventListener('click',()=>{dialogImage.src=source.src;dialogImage.alt=source.alt;dialog.showModal()})}document.querySelector('#dialog-close').addEventListener('click',()=>dialog.close());filter();</script></body></html>`;
 };
 
 const renderMarkdown = (results: QualityResults): string => {
