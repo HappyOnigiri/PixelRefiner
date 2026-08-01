@@ -88,6 +88,7 @@ def main():
         ("HTML Check", ["make", "html-check-diff"]),
         ("Type Check", ["make", "type-check"]),
         ("Custom Rules", ["make", "check-ts-rules"]),
+        ("TS Line Length", ["make", "check-ts-line-length"]),
         ("Tests", ["make", "test"]),
     ]
 

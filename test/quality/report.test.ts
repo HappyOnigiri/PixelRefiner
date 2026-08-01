@@ -99,10 +99,14 @@ describe.skipIf(!enabled)("quality report", () => {
 			deterministicCaseEnd,
 		);
 		expect(deterministicCase).toContain(
-			"Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering.",
+			"Keep the image at its original 32 x 32 pixel dimensions and preserve " +
+				"fully transparent pixels while reducing its 947 opaque input colors " +
+				"to an automatically selected eight-color palette with full-strength Ordered dithering.",
 		);
 		expect(deterministicCase).toContain(
-			"画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、強度100%のOrderedディザリングを適用します。",
+			"画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、" +
+				"947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、" +
+				"強度100%のOrderedディザリングを適用します。",
 		);
 		const compactCaseId = "remove-background-trim-auto-grid";
 		const compactCaseIdIndex = html.indexOf(compactCaseId);

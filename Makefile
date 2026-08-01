@@ -1,4 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules setup
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-ts-line-length setup
 
 # Run repomix to bundle files into tmp/repomix/ folder
 repomix:
@@ -28,6 +28,9 @@ type-check:
 
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
+
+check-ts-line-length:
+	python3 scripts/check_ts_line_length.py
 
 ts-check-diff:
 	@files="$$( ( \

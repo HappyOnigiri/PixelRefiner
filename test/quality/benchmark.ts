@@ -521,8 +521,14 @@ const describeCase = (
 	const options = result.options;
 	if (result.id === "convert-deterministic-auto-palette") {
 		return {
-			en: "Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering.",
-			ja: "画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、強度100%のOrderedディザリングを適用します。",
+			en:
+				"Keep the image at its original 32 x 32 pixel dimensions and preserve " +
+				"fully transparent pixels while reducing its 947 opaque input colors " +
+				"to an automatically selected eight-color palette with full-strength Ordered dithering.",
+			ja:
+				"画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、" +
+				"947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、" +
+				"強度100%のOrderedディザリングを適用します。",
 		};
 	}
 	if (options.reduceColorMode === "gb_pocket") {
@@ -584,11 +590,15 @@ const describeCase = (
 		return target
 			? {
 					en: `Resize the input image to ${target} pixels without background removal, transparent-margin trimming, or pixel-grid restoration.`,
-					ja: `背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、入力画像を${target}ピクセルへ変換します。`,
+					ja:
+						"背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、" +
+						`入力画像を${target}ピクセルへ変換します。`,
 				}
 			: {
 					en: "Output the input image at its current dimensions without background removal, transparent-margin trimming, or pixel-grid restoration.",
-					ja: "背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、入力画像を現在の寸法のまま出力します。",
+					ja:
+						"背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、" +
+						"入力画像を現在の寸法のまま出力します。",
 				};
 	}
 	return {
@@ -620,11 +630,14 @@ const renderReportSidebar = (results: QualityResults): string => {
 			<dt data-i18n="pullRequest">Pull request</dt>
 			<dd><a href="${repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}">#${escapeHtml(results.metadata.prNumber)}</a></dd>
 			<dt data-i18n="headCommit">Head</dt>
-			<dd><a href="${commitUrl(results.metadata.headCommit)}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd>
+			<dd><a href="${commitUrl(results.metadata.headCommit)}"
+				title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd>
 			<dt data-i18n="baseCommit">PR base</dt>
-			<dd><a href="${commitUrl(results.metadata.baseCommit)}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd>
+			<dd><a href="${commitUrl(results.metadata.baseCommit)}"
+				title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd>
 			<dt data-i18n="baselineCommit">Baseline snapshot</dt>
-			<dd><a href="${commitUrl(results.metadata.baselineCommit)}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd>
+			<dd><a href="${commitUrl(results.metadata.baselineCommit)}"
+				title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd>
 			<dt data-i18n="generatedAt">Generated</dt>
 			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd>
 			<dt data-i18n="workflow">Workflow</dt>
@@ -643,19 +656,33 @@ const renderReportSidebar = (results: QualityResults): string => {
 		<fieldset class="filter-group">
 			<legend data-i18n="changeStatus">Change status</legend>
 			<div class="filter-row">
-				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button>
-				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button>
-				<button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button>
-				<button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button>
-				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button>
+				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true">
+					<span data-i18n="allChanges">All</span>: ${results.summary.caseCount}
+				</button>
+				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
+					<span data-i18n="changed">changed</span>: ${results.summary.changed}
+				</button>
+				<button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false">
+					<span data-i18n="regressed">regressed</span>: ${results.summary.regressed}
+				</button>
+				<button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false">
+					<span data-i18n="improved">improved</span>: ${results.summary.improved}
+				</button>
+				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false">
+					<span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}
+				</button>
 			</div>
 		</fieldset>
 		<fieldset class="filter-group">
 			<legend data-i18n="qualityStatus">Quality status</legend>
 			<div class="filter-row">
 				<button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button>
-				<button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button>
-				<button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button>
+				<button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false">
+					<span data-i18n="passed">passed</span>: ${results.summary.passed}
+				</button>
+				<button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false">
+					<span data-i18n="failed">target unmet</span>: ${results.summary.failed}
+				</button>
 			</div>
 		</fieldset>
 		<label class="search-row" for="search">
@@ -693,7 +720,9 @@ const renderHtml = (results: QualityResults): string => {
 				? "0"
 				: `&le;${formatMetric(result.expectation.maxMeanRgbaError)}`;
 			const exactMeasurement = result.expectation.exact
-				? `<strong data-i18n="exactMatchShort">Exact</strong> <span data-i18n="${exactMatch ? "yes" : "no"}">${exactMatch ? "yes" : "no"}</span> &middot; `
+				? '<strong data-i18n="exactMatchShort">Exact</strong> ' +
+					`<span data-i18n="${exactMatch ? "yes" : "no"}">` +
+					`${exactMatch ? "yes" : "no"}</span> &middot; `
 				: "";
 			const qualityMeasurement = [
 				'<small class="case-metrics">',
@@ -724,22 +753,27 @@ const renderHtml = (results: QualityResults): string => {
 					)
 					.map(
 						([key, label, source]) =>
-							`<figure><figcaption data-i18n="${key}">${label}</figcaption><div class="image-stage"><img src="${escapeHtml(source)}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></div></figure>`,
+							`<figure><figcaption data-i18n="${key}">${label}</figcaption>` +
+							`<div class="image-stage"><img src="${escapeHtml(source)}" alt="${label}" ` +
+							`data-i18n-alt="${key}" loading="lazy"></div></figure>`,
 					)
 					.join("");
 			const primaryImages = renderImages([
 				["input", "Input", result.files.input],
 				["result", "Result", result.files.result],
 			]);
-			return `<article class="case ${result.status} ${result.changeStatus}" data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
+			return `<article class="case ${result.status} ${result.changeStatus}"
+			data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
 			<h2>
 				${escapeHtml(result.id)}
 				<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
 				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 				${qualityMeasurement}
 			</h2>
-			<p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
-			<div class="images primary">${primaryImages}</div><p><a class="detail-link" href="${escapeHtml(path.posix.dirname(result.files.result))}/index.html" data-i18n="details">Details</a></p>
+			<p class="case-description" data-description-en="${escapeHtml(description.en)}"
+				data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
+			<div class="images primary">${primaryImages}</div><p><a class="detail-link"
+				href="${escapeHtml(path.posix.dirname(result.files.result))}/index.html" data-i18n="details">Details</a></p>
 		</article>`;
 		})
 		.join("\n");
@@ -772,7 +806,11 @@ const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 			.filter((image): image is [string, string, string] => image[2] !== null)
 			.map(([key, label, source]) => {
 				const fileName = escapeHtml(path.posix.basename(source));
-				return `<figure><figcaption data-i18n="${key}">${label}</figcaption><div class="image-stage"><img src="${fileName}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></div></figure>`;
+				return (
+					`<figure><figcaption data-i18n="${key}">${label}</figcaption>` +
+					`<div class="image-stage"><img src="${fileName}" alt="${label}" ` +
+					`data-i18n-alt="${key}" loading="lazy"></div></figure>`
+				);
 			})
 			.join("");
 	const allImages = renderImages([
@@ -893,7 +931,8 @@ ${DETAIL_REPORT_STYLES}	</style>
 			<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
 			<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 		</h1>
-		<p class="case-description" data-description-en="${escapeHtml(description.en)}" data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
+		<p class="case-description" data-description-en="${escapeHtml(description.en)}"
+			data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
 		<p>${tags}</p>
 		<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
 		<section>
