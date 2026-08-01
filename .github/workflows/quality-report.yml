@@ -85,6 +85,7 @@ jobs:
     concurrency:
       group: quality-pages
       cancel-in-progress: false
+      queue: max
     permissions:
       contents: write
       pages: write
@@ -170,6 +171,7 @@ jobs:
     concurrency:
       group: quality-pages
       cancel-in-progress: false
+      queue: max
     permissions:
       contents: write
       pages: write
