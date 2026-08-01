@@ -1,0 +1,86 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import type { QualityImageCase } from "./types";
+
+export const QUALITY_ROOT = path.resolve("test/quality");
+export const FIXTURE_ROOT = path.resolve("test/fixtures");
+export const MANIFEST_PATH = path.join(QUALITY_ROOT, "cases.json");
+
+export const loadCases = (): QualityImageCase[] =>
+	JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as QualityImageCase[];
+
+const REQUIRED_DEGRADATIONS = [
+	"nearest-2x",
+	"nearest-3x",
+	"nearest-4x",
+	"nearest-8x",
+	"nearest-16x",
+	"nearest-32x",
+	"nearest-1.5x",
+	"nearest-2.5x",
+	"nearest-3.2x",
+	"bilinear",
+	"bicubic-equivalent",
+	"gaussian-blur-light",
+	"rgb-noise",
+	"alpha-edge-blur",
+	"crop-shift-1px",
+	"crop-shift-2px",
+	"crop-shift-3px",
+	"padding",
+	"background-white",
+	"background-black",
+	"background-solid",
+	"background-gradient",
+	"anisotropic-scale",
+	"disconnected-small-component",
+	"low-color-subject",
+	"pixel-art-1x",
+	"continuous-tone",
+] as const;
+
+export const validateManifest = (cases: QualityImageCase[]): string[] => {
+	const errors: string[] = [];
+	const ids = new Set<string>();
+	const referencedFiles = new Set<string>();
+	const degradations = new Set<string>();
+	for (const qualityCase of cases) {
+		if (ids.has(qualityCase.id))
+			errors.push(`Duplicate case ID: ${qualityCase.id}`);
+		ids.add(qualityCase.id);
+		if (qualityCase.featureIds.length === 0) {
+			errors.push(`${qualityCase.id}: featureIds must not be empty`);
+		}
+		if (qualityCase.assertions.length === 0) {
+			errors.push(`${qualityCase.id}: assertions must not be empty`);
+		}
+		for (const pattern of qualityCase.degradationPatterns)
+			degradations.add(pattern);
+		for (const file of [qualityCase.input, qualityCase.expected]) {
+			referencedFiles.add(file);
+			if (!qualityCase.assets.some((asset) => asset.file === file)) {
+				errors.push(`${qualityCase.id}: missing provenance for ${file}`);
+			}
+		}
+		for (const asset of qualityCase.assets) {
+			referencedFiles.add(asset.file);
+			if (!asset.modificationAllowed || !asset.redistributionAllowed) {
+				errors.push(
+					`${qualityCase.id}: unusable asset terms for ${asset.file}`,
+				);
+			}
+		}
+	}
+	for (const pattern of REQUIRED_DEGRADATIONS) {
+		if (!degradations.has(pattern))
+			errors.push(`Missing degradation: ${pattern}`);
+	}
+	for (const fileName of readdirSync(FIXTURE_ROOT)) {
+		if (!fileName.endsWith(".png")) continue;
+		const relativePath = `test/fixtures/${fileName}`;
+		if (!referencedFiles.has(relativePath)) {
+			errors.push(`Unregistered fixture: ${relativePath}`);
+		}
+	}
+	return errors;
+};

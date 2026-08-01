@@ -13,7 +13,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:quality": "QUALITY_PROFILE=smoke vitest run test/quality/cases.test.ts",
+    "test:quality:full": "QUALITY_PROFILE=full vitest run test/quality/cases.test.ts",
+    "test:quality:update": "UPDATE_QUALITY_BASELINE=1 QUALITY_PROFILE=full vitest run test/quality/cases.test.ts",
+    "test:quality:report": "QUALITY_REPORT=1 QUALITY_PROFILE=full vitest run test/quality/report.test.ts --reporter=default --reporter=./test/quality/quality-reporter.ts"
   },
   "devDependencies": {
     "@types/jszip": "^3.4.0",

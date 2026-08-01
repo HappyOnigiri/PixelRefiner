@@ -1,0 +1,138 @@
+name: Quality Report
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-report-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      gate-outcome: ${{ steps.quality-gate.outcome }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate comparison report
+        run: pnpm test:quality:report
+        env:
+          QUALITY_PR_NUMBER: ${{ github.event.pull_request.number }}
+          QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+      - name: Run quality gate
+        id: quality-gate
+        continue-on-error: true
+        run: pnpm test:quality
+
+      - name: Upload comparison report
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-report-pr-${{ github.event.pull_request.number }}
+          path: tmp/quality-report/latest
+          if-no-files-found: error
+
+  publish:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: quality-pages
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pages: write
+      pull-requests: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REPORT_URL: https://happyonigiri.github.io/PixelRefiner/quality/pr-${{ github.event.pull_request.number }}/
+    steps:
+      - name: Download comparison report
+        uses: actions/download-artifact@v8
+        with:
+          name: quality-report-pr-${{ github.event.pull_request.number }}
+          path: report
+
+      - name: Preserve reports and publish this PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init site-repo
+          cd site-repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git checkout -b gh-pages FETCH_HEAD
+          else
+            git checkout --orphan gh-pages
+          fi
+          touch .nojekyll
+          report_path="quality/pr-${PR_NUMBER}"
+          rm -rf "$report_path"
+          mkdir -p "$report_path"
+          cp -R ../report/. "$report_path/"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: publish quality report for PR ${PR_NUMBER}"
+            git push origin gh-pages
+          fi
+
+      - name: Build the complete Pages directory
+        run: |
+          mkdir site
+          rsync -a --exclude=.git site-repo/ site/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
+          enablement: true
+
+      - name: Package the complete Pages site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v5
+
+      - name: Add report link once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          marker='<!-- pixel-refiner-quality-report -->'
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | head -n 1)"
+          if [ -z "$existing" ]; then
+            gh pr comment "$PR_NUMBER" --body "${marker}
+          Quality report: ${REPORT_URL}"
+          fi
+
+      - name: Fail after publishing when the quality gate failed
+        if: needs.build.outputs.gate-outcome != 'success'
+        run: exit 1
