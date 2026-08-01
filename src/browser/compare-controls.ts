@@ -1,6 +1,7 @@
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import type { ImageComparer } from "./compare";
+import { readDisplaySettings } from "./display-settings";
 import type { ModalController } from "./modal-controller";
 
 type CompareControlsOptions = {
@@ -8,7 +9,6 @@ type CompareControlsOptions = {
 	processingState: ProcessingState;
 	comparer: ImageComparer;
 	compareModalController: ModalController;
-	storageKey: string;
 };
 
 export const setupCompareControls = ({
@@ -16,17 +16,14 @@ export const setupCompareControls = ({
 	processingState,
 	comparer,
 	compareModalController,
-	storageKey,
 }: CompareControlsOptions): { openCompareModal: () => void } => {
 	const openCompareModal = () => {
 		compareModalController.open();
 
-		// Sync background color (from mainResultViewer or saved settings)
-		// Simply retrieve from localStorage
+		// Sync background color from the saved display settings.
 		try {
-			const saved = localStorage.getItem(storageKey);
-			if (saved) {
-				const settings = JSON.parse(saved) as { bgType?: string };
+			const settings = readDisplaySettings();
+			if (settings) {
 				const bgType = settings.bgType || "checkered";
 
 				const compareContainer = els.compareContainer.querySelector(

@@ -8,6 +8,11 @@ import { getElements } from "./app-elements";
 import { createProcessingState } from "./app-state";
 import { ImageComparer } from "./compare";
 import { setupCompareControls } from "./compare-controls";
+import {
+	readDisplaySettings,
+	type SavedDisplaySettings,
+	writeDisplaySettings,
+} from "./display-settings";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { createModalControllerFactory } from "./modal-controller";
@@ -18,15 +23,6 @@ import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
 import { ImageSession } from "./session";
 import { setupSettingsControls } from "./settings-controls";
-
-const STORAGE_KEY = "pixel-refiner-display-settings";
-
-type SavedSettings = {
-	zoomOutput?: boolean;
-	gridOutput?: boolean;
-	bgType?: string;
-	autoProcess?: boolean;
-};
 
 export const initApp = (): void => {
 	const els = getElements();
@@ -195,20 +191,19 @@ export const initApp = (): void => {
 	const processingState = createProcessingState();
 
 	const saveSettings = () => {
-		const settings: SavedSettings = {
+		const settings: SavedDisplaySettings = {
 			zoomOutput: els.zoomOutputCheck.checked,
 			gridOutput: els.gridOutputCheck.checked,
 			bgType: mainResultViewer.getBackgroundType(),
 			autoProcess: els.autoProcessToggle.checked,
 		};
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+		writeDisplaySettings(settings);
 	};
 
 	const loadSettings = () => {
-		const saved = localStorage.getItem(STORAGE_KEY);
-		if (!saved) return;
 		try {
-			const settings = JSON.parse(saved) as SavedSettings;
+			const settings = readDisplaySettings();
+			if (!settings) return;
 			if (settings.zoomOutput !== undefined)
 				els.zoomOutputCheck.checked = settings.zoomOutput;
 			if (settings.gridOutput !== undefined)
@@ -537,7 +532,6 @@ export const initApp = (): void => {
 		processingState,
 		comparer,
 		compareModalController,
-		storageKey: STORAGE_KEY,
 	});
 	setupResultActions({
 		els,
