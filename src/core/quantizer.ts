@@ -18,6 +18,17 @@ const ORDERED_MATRIX = [
 	1, 9, 3, 11, 13, 5, 15, 7, 4, 12, 2, 10, 16, 8, 14, 6,
 ].map((v) => (v - 1 + 0.5) / 16);
 
+type WeightedColor = {
+	key: number;
+	lab: Oklab;
+	count: number;
+};
+
+type FittedPalette = {
+	rgb: RGB[];
+	labs: Oklab[];
+};
+
 function getDitherMatrix(mode: DitherMode): number[] {
 	switch (mode) {
 		case "bayer-2x2":
@@ -44,114 +55,38 @@ export class OklabKMeans {
 	 * K-means clustering to reduce colors
 	 */
 	quantize(pixels: PixelData[]): PixelData[] {
-		// 1. Pre-processing: Extract unique opaque colors to speed up K-means
-		const opaquePixels = pixels.filter((p) => p.alpha > 0);
-		if (opaquePixels.length === 0 || this.maxColors >= opaquePixels.length) {
+		const { colors: uniqueColors, opaqueCount } =
+			this.collectUniqueColors(pixels);
+		if (opaqueCount === 0 || this.maxColors >= opaqueCount) {
 			return pixels;
 		}
-
-		// Use a Map to count occurrences of each color for weighted centroids
-		const colorMap = new Map<number, { lab: Oklab; count: number }>();
-		for (const p of opaquePixels) {
-			const key = (p.r << 16) | (p.g << 8) | p.b;
-			const entry = colorMap.get(key);
-			if (entry) {
-				entry.count++;
-			} else {
-				colorMap.set(key, { lab: rgbToOklab(p), count: 1 });
-			}
-		}
-
-		const uniqueColors = Array.from(colorMap.values());
 		if (uniqueColors.length <= this.maxColors) {
 			return pixels;
 		}
 
-		// 2. Initialization: Randomly pick maxColors as initial centroids
-		let centroids: Oklab[] = this.initializeCentroids(uniqueColors);
-
-		// 3. Main Loop
-		for (let iter = 0; iter < this.maxIterations; iter++) {
-			const clusters: {
-				sumL: number;
-				suma: number;
-				sumb: number;
-				count: number;
-			}[] = Array.from({ length: this.maxColors }, () => ({
-				sumL: 0,
-				suma: 0,
-				sumb: 0,
-				count: 0,
-			}));
-
-			// Assignment
-			for (const color of uniqueColors) {
-				let minDist = Number.MAX_VALUE;
-				let bestCluster = 0;
-
-				for (let i = 0; i < centroids.length; i++) {
-					const dist = this.colorDistanceSq(color.lab, centroids[i]);
-					if (dist < minDist) {
-						minDist = dist;
-						bestCluster = i;
-					}
-				}
-
-				const cluster = clusters[bestCluster];
-				cluster.sumL += color.lab.L * color.count;
-				cluster.suma += color.lab.a * color.count;
-				cluster.sumb += color.lab.b * color.count;
-				cluster.count += color.count;
-			}
-
-			// Update
-			let maxMovement = 0;
-			const newCentroids: Oklab[] = [];
-			for (let i = 0; i < centroids.length; i++) {
-				const cluster = clusters[i];
-				if (cluster.count > 0) {
-					const nextCentroid = {
-						L: cluster.sumL / cluster.count,
-						a: cluster.suma / cluster.count,
-						b: cluster.sumb / cluster.count,
-					};
-					const movement = this.colorDistanceSq(centroids[i], nextCentroid);
-					maxMovement = Math.max(maxMovement, movement);
-					newCentroids.push(nextCentroid);
-				} else {
-					// If a cluster is empty, re-initialize it with a random color
-					newCentroids.push(
-						uniqueColors[Math.floor(Math.random() * uniqueColors.length)].lab,
-					);
-				}
-			}
-
-			centroids = newCentroids;
-			if (maxMovement < this.tolerance * this.tolerance) break;
-		}
-
-		// 4. Mapping: Replace each pixel with the nearest centroid
-		const palette = centroids.map((lab) => oklabToRgb(lab));
+		const centroids = this.fitCentroids(uniqueColors);
+		const fittedPalette = this.buildUniquePalette(centroids);
 		const centroidRgbMap = new Map<number, number>(); // unique color key -> palette index
 
-		for (const [key, entry] of colorMap.entries()) {
+		for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
+			const color = uniqueColors[colorIndex];
 			let minDist = Number.MAX_VALUE;
 			let bestIdx = 0;
-			for (let i = 0; i < centroids.length; i++) {
-				const dist = this.colorDistanceSq(entry.lab, centroids[i]);
+			for (let i = 0; i < fittedPalette.labs.length; i++) {
+				const dist = this.colorDistanceSq(color.lab, fittedPalette.labs[i]);
 				if (dist < minDist) {
 					minDist = dist;
 					bestIdx = i;
 				}
 			}
-			centroidRgbMap.set(key, bestIdx);
+			centroidRgbMap.set(color.key, bestIdx);
 		}
 
 		return pixels.map((p) => {
 			if (p.alpha === 0) return p;
 			const key = (p.r << 16) | (p.g << 8) | p.b;
 			const paletteIdx = centroidRgbMap.get(key) ?? 0;
-			const rgb = palette[paletteIdx];
+			const rgb = fittedPalette.rgb[paletteIdx];
 			return { ...rgb, alpha: p.alpha };
 		});
 	}
@@ -184,78 +119,20 @@ export class OklabKMeans {
 		mode: DitherMode,
 		strength = 1.0,
 	): PixelData[] {
-		// 1. Get palette via K-means (using existing quantize logic to find centroids)
-		const opaquePixels = pixels.filter((p) => p.alpha > 0);
-		if (opaquePixels.length === 0 || this.maxColors >= opaquePixels.length) {
+		const { colors: uniqueColors, opaqueCount } =
+			this.collectUniqueColors(pixels);
+		if (opaqueCount === 0 || this.maxColors >= opaqueCount) {
 			return pixels;
 		}
-
-		const colorMap = new Map<number, { lab: Oklab; count: number }>();
-		for (const p of opaquePixels) {
-			const key = (p.r << 16) | (p.g << 8) | p.b;
-			const entry = colorMap.get(key);
-			if (entry) {
-				entry.count++;
-			} else {
-				colorMap.set(key, { lab: rgbToOklab(p), count: 1 });
-			}
-		}
-
-		const uniqueColors = Array.from(colorMap.values());
 		if (uniqueColors.length <= this.maxColors) {
 			return pixels;
 		}
 
-		let centroids: Oklab[] = this.initializeCentroids(uniqueColors);
-		// Run K-means (simplified version of quantize loop to get centroids)
-		for (let iter = 0; iter < this.maxIterations; iter++) {
-			const clusters = Array.from({ length: this.maxColors }, () => ({
-				sumL: 0,
-				suma: 0,
-				sumb: 0,
-				count: 0,
-			}));
-			for (const color of uniqueColors) {
-				let minDist = Number.MAX_VALUE;
-				let bestCluster = 0;
-				for (let i = 0; i < centroids.length; i++) {
-					const dist = this.colorDistanceSq(color.lab, centroids[i]);
-					if (dist < minDist) {
-						minDist = dist;
-						bestCluster = i;
-					}
-				}
-				const cluster = clusters[bestCluster];
-				cluster.sumL += color.lab.L * color.count;
-				cluster.suma += color.lab.a * color.count;
-				cluster.sumb += color.lab.b * color.count;
-				cluster.count += color.count;
-			}
-			let maxMovement = 0;
-			const newCentroids: Oklab[] = [];
-			for (let i = 0; i < centroids.length; i++) {
-				const cluster = clusters[i];
-				if (cluster.count > 0) {
-					const nextCentroid = {
-						L: cluster.sumL / cluster.count,
-						a: cluster.suma / cluster.count,
-						b: cluster.sumb / cluster.count,
-					};
-					const movement = this.colorDistanceSq(centroids[i], nextCentroid);
-					maxMovement = Math.max(maxMovement, movement);
-					newCentroids.push(nextCentroid);
-				} else {
-					newCentroids.push(
-						uniqueColors[Math.floor(Math.random() * uniqueColors.length)].lab,
-					);
-				}
-			}
-			centroids = newCentroids;
-			if (maxMovement < this.tolerance * this.tolerance) break;
-		}
-
-		const palette = centroids.map((lab) => oklabToRgb(lab));
-		const paletteLabs = centroids;
+		const fittedPalette = this.buildUniquePalette(
+			this.fitCentroids(uniqueColors),
+		);
+		const palette = fittedPalette.rgb;
+		const paletteLabs = fittedPalette.labs;
 
 		if (mode === "none" || strength <= 0) {
 			return this.quantizeWithPalette(pixels, palette, paletteLabs);
@@ -474,24 +351,236 @@ export class OklabKMeans {
 		p.b = Math.max(0, Math.min(255, p.b + errB * weight));
 	}
 
-	private initializeCentroids(
-		uniqueColors: { lab: Oklab; count: number }[],
-	): Oklab[] {
-		const centroids: Oklab[] = [];
-		const usedIndices = new Set<number>();
-
-		// Simple random initialization
-		while (
-			centroids.length < this.maxColors &&
-			usedIndices.size < uniqueColors.length
-		) {
-			const idx = Math.floor(Math.random() * uniqueColors.length);
-			if (!usedIndices.has(idx)) {
-				usedIndices.add(idx);
-				centroids.push(uniqueColors[idx].lab);
+	private collectUniqueColors(pixels: PixelData[]): {
+		colors: WeightedColor[];
+		opaqueCount: number;
+	} {
+		const colorMap = new Map<number, WeightedColor>();
+		let opaqueCount = 0;
+		for (let i = 0; i < pixels.length; i++) {
+			const pixel = pixels[i];
+			if (pixel.alpha === 0) continue;
+			opaqueCount++;
+			const key = (pixel.r << 16) | (pixel.g << 8) | pixel.b;
+			const entry = colorMap.get(key);
+			if (entry) {
+				entry.count++;
+			} else {
+				colorMap.set(key, {
+					key,
+					lab: rgbToOklab(pixel),
+					count: 1,
+				});
 			}
 		}
+
+		const colors = Array.from(colorMap.values());
+		// [Intended] Stable RGB order also fixes floating-point accumulation order.
+		colors.sort((left, right) => left.key - right.key);
+		return { colors, opaqueCount };
+	}
+
+	private fitCentroids(uniqueColors: WeightedColor[]): Oklab[] {
+		let centroids = this.initializeCentroids(uniqueColors);
+		const sumL = new Float64Array(this.maxColors);
+		const suma = new Float64Array(this.maxColors);
+		const sumb = new Float64Array(this.maxColors);
+		const counts = new Float64Array(this.maxColors);
+		let newCentroids = Array.from({ length: this.maxColors }, () => ({
+			L: 0,
+			a: 0,
+			b: 0,
+		}));
+		const usedColors = new Uint8Array(uniqueColors.length);
+
+		for (let iter = 0; iter < this.maxIterations; iter++) {
+			sumL.fill(0);
+			suma.fill(0);
+			sumb.fill(0);
+			counts.fill(0);
+
+			for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
+				const color = uniqueColors[colorIndex];
+				let minDist = Number.MAX_VALUE;
+				let bestCluster = 0;
+				for (let i = 0; i < centroids.length; i++) {
+					const dist = this.colorDistanceSq(color.lab, centroids[i]);
+					if (dist < minDist) {
+						minDist = dist;
+						bestCluster = i;
+					}
+				}
+				sumL[bestCluster] += color.lab.L * color.count;
+				suma[bestCluster] += color.lab.a * color.count;
+				sumb[bestCluster] += color.lab.b * color.count;
+				counts[bestCluster] += color.count;
+			}
+
+			let maxMovement = 0;
+			usedColors.fill(0);
+			for (let i = 0; i < centroids.length; i++) {
+				if (counts[i] === 0) continue;
+				const nextCentroid = newCentroids[i];
+				nextCentroid.L = sumL[i] / counts[i];
+				nextCentroid.a = suma[i] / counts[i];
+				nextCentroid.b = sumb[i] / counts[i];
+				maxMovement = Math.max(
+					maxMovement,
+					this.colorDistanceSq(centroids[i], nextCentroid),
+				);
+				this.markMatchingColor(uniqueColors, nextCentroid, usedColors);
+			}
+
+			for (let i = 0; i < centroids.length; i++) {
+				if (counts[i] !== 0) continue;
+				const colorIndex = this.selectFarthestColor(
+					uniqueColors,
+					centroids,
+					usedColors,
+				);
+				usedColors[colorIndex] = 1;
+				const selectedLab = uniqueColors[colorIndex].lab;
+				const nextCentroid = newCentroids[i];
+				nextCentroid.L = selectedLab.L;
+				nextCentroid.a = selectedLab.a;
+				nextCentroid.b = selectedLab.b;
+				maxMovement = Math.max(
+					maxMovement,
+					this.colorDistanceSq(centroids[i], nextCentroid),
+				);
+			}
+
+			const previousCentroids = centroids;
+			centroids = newCentroids;
+			newCentroids = previousCentroids;
+			if (maxMovement < this.tolerance * this.tolerance) break;
+		}
+
 		return centroids;
+	}
+
+	private initializeCentroids(uniqueColors: WeightedColor[]): Oklab[] {
+		const centroids = new Array<Oklab>(this.maxColors);
+		const usedColors = new Uint8Array(uniqueColors.length);
+		let firstIndex = 0;
+		for (let i = 1; i < uniqueColors.length; i++) {
+			const candidate = uniqueColors[i];
+			const current = uniqueColors[firstIndex];
+			if (
+				candidate.count > current.count ||
+				(candidate.count === current.count &&
+					this.compareColorTie(candidate, current) < 0)
+			) {
+				firstIndex = i;
+			}
+		}
+
+		centroids[0] = { ...uniqueColors[firstIndex].lab };
+		usedColors[firstIndex] = 1;
+		for (
+			let centroidIndex = 1;
+			centroidIndex < this.maxColors;
+			centroidIndex++
+		) {
+			let bestIndex = -1;
+			let bestScore = -1;
+			for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
+				if (usedColors[colorIndex] !== 0) continue;
+				const color = uniqueColors[colorIndex];
+				let minDist = Number.MAX_VALUE;
+				for (let i = 0; i < centroidIndex; i++) {
+					minDist = Math.min(
+						minDist,
+						this.colorDistanceSq(color.lab, centroids[i]),
+					);
+				}
+				const score = minDist * color.count;
+				if (
+					score > bestScore ||
+					(score === bestScore &&
+						(bestIndex < 0 ||
+							this.compareColorTie(color, uniqueColors[bestIndex]) < 0))
+				) {
+					bestScore = score;
+					bestIndex = colorIndex;
+				}
+			}
+			centroids[centroidIndex] = { ...uniqueColors[bestIndex].lab };
+			usedColors[bestIndex] = 1;
+		}
+		return centroids;
+	}
+
+	private selectFarthestColor(
+		uniqueColors: WeightedColor[],
+		centroids: Oklab[],
+		usedColors: Uint8Array,
+	): number {
+		let bestIndex = -1;
+		let bestDistance = -1;
+		for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
+			if (usedColors[colorIndex] !== 0) continue;
+			const color = uniqueColors[colorIndex];
+			let minDist = Number.MAX_VALUE;
+			for (let i = 0; i < centroids.length; i++) {
+				minDist = Math.min(
+					minDist,
+					this.colorDistanceSq(color.lab, centroids[i]),
+				);
+			}
+			if (
+				minDist > bestDistance ||
+				(minDist === bestDistance &&
+					(bestIndex < 0 ||
+						this.compareColorTie(color, uniqueColors[bestIndex]) < 0))
+			) {
+				bestDistance = minDist;
+				bestIndex = colorIndex;
+			}
+		}
+		return bestIndex;
+	}
+
+	private markMatchingColor(
+		uniqueColors: WeightedColor[],
+		centroid: Oklab,
+		usedColors: Uint8Array,
+	): void {
+		for (let i = 0; i < uniqueColors.length; i++) {
+			const lab = uniqueColors[i].lab;
+			if (
+				lab.L === centroid.L &&
+				lab.a === centroid.a &&
+				lab.b === centroid.b
+			) {
+				usedColors[i] = 1;
+				return;
+			}
+		}
+	}
+
+	private buildUniquePalette(centroids: Oklab[]): FittedPalette {
+		const rgb: RGB[] = [];
+		const labs: Oklab[] = [];
+		const usedRgb = new Set<number>();
+		for (let i = 0; i < centroids.length; i++) {
+			const color = oklabToRgb(centroids[i]);
+			const key = (color.r << 16) | (color.g << 8) | color.b;
+			if (usedRgb.has(key)) continue;
+			usedRgb.add(key);
+			rgb.push(color);
+			labs.push(centroids[i]);
+		}
+		return { rgb, labs };
+	}
+
+	private compareColorTie(left: WeightedColor, right: WeightedColor): number {
+		return (
+			left.lab.L - right.lab.L ||
+			left.lab.a - right.lab.a ||
+			left.lab.b - right.lab.b ||
+			left.key - right.key
+		);
 	}
 
 	private colorDistanceSq(c1: Oklab, c2: Oklab): number {

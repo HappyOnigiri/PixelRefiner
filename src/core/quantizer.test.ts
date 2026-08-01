@@ -12,6 +12,80 @@ const px = (r: number, g: number, b: number, a = 255): PixelData => ({
 
 describe("quantizer.ts", () => {
 	describe("OklabKMeans", () => {
+		const deterministicInput = Array.from({ length: 64 }, (_, index) =>
+			px(
+				(index * 47) % 256,
+				(index * 83 + 29) % 256,
+				(index * 131 + 71) % 256,
+				index % 7 === 0 ? 0 : 255,
+			),
+		);
+
+		it.each([
+			["none", 0],
+			["floyd-steinberg", 1],
+			["bayer-4x4", 1],
+			["ordered", 1],
+		] as const)(
+			"returns identical RGBA bytes and palette order over 20 %s runs",
+			(mode, strength) => {
+				const runs = Array.from({ length: 20 }, () =>
+					new OklabKMeans(8).applyDithering(
+						deterministicInput,
+						8,
+						8,
+						mode,
+						strength,
+					),
+				);
+				const rgba = (pixels: PixelData[]) =>
+					pixels.flatMap((pixel) => [pixel.r, pixel.g, pixel.b, pixel.alpha]);
+				const paletteOrder = (pixels: PixelData[]) => [
+					...new Set(
+						pixels
+							.filter((pixel) => pixel.alpha > 0)
+							.map((pixel) => `${pixel.r},${pixel.g},${pixel.b}`),
+					),
+				];
+
+				expect(paletteOrder(runs[0])).toHaveLength(8);
+				for (let i = 1; i < runs.length; i++) {
+					expect(rgba(runs[i])).toEqual(rgba(runs[0]));
+					expect(paletteOrder(runs[i])).toEqual(paletteOrder(runs[0]));
+				}
+			},
+		);
+
+		it("does not depend on Math.random for initialization or recovery", () => {
+			const originalRandom = Math.random;
+			Math.random = () => {
+				throw new Error("randomness is not allowed");
+			};
+			try {
+				expect(() =>
+					new OklabKMeans(8).quantize(deterministicInput),
+				).not.toThrow();
+			} finally {
+				Math.random = originalRandom;
+			}
+		});
+
+		it("keeps each image stable when batch order changes", () => {
+			const inputs = [
+				deterministicInput,
+				deterministicInput.map((pixel, index) => ({
+					...pixel,
+					r: (pixel.r + index * 11) % 256,
+				})),
+			];
+			const process = (input: PixelData[]) =>
+				new OklabKMeans(6).applyDithering(input, 8, 8, "floyd-steinberg", 1);
+			const forward = inputs.map(process);
+			const reversed = [...inputs].reverse().map(process).reverse();
+
+			expect(reversed).toEqual(forward);
+		});
+
 		it("should reduce colors to specified count", () => {
 			const q = new OklabKMeans(2);
 			const input = [

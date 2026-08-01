@@ -58,6 +58,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "convert-deterministic-auto-palette",
+      "status": "passed",
+      "outputWidth": 32,
+      "outputHeight": 32,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "convert-game-boy-pocket-palette",
       "status": "passed",
       "outputWidth": 512,
