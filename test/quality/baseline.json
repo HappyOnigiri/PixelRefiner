@@ -1,9 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "commit": "a801d4ba6b357b33bed5a2f83770c3c833606672",
   "cases": [
     {
       "id": "legacy-resize-remove-background",
+      "status": "passed",
+      "outputWidth": 22,
+      "outputHeight": 22,
       "meanRgbaError": 1.358471,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -12,6 +15,9 @@
     },
     {
       "id": "legacy-resize-trimming",
+      "status": "passed",
+      "outputWidth": 46,
+      "outputHeight": 13,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -20,6 +26,9 @@
     },
     {
       "id": "legacy-auto-grid",
+      "status": "passed",
+      "outputWidth": 88,
+      "outputHeight": 61,
       "meanRgbaError": 35.629192,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -28,6 +37,9 @@
     },
     {
       "id": "legacy-inner-background",
+      "status": "passed",
+      "outputWidth": 22,
+      "outputHeight": 21,
       "meanRgbaError": 16.219156,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -36,6 +48,9 @@
     },
     {
       "id": "legacy-no-trimming",
+      "status": "passed",
+      "outputWidth": 119,
+      "outputHeight": 65,
       "meanRgbaError": 78.106981,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -44,6 +59,9 @@
     },
     {
       "id": "legacy-game-boy-palette",
+      "status": "passed",
+      "outputWidth": 512,
+      "outputHeight": 512,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -52,6 +70,9 @@
     },
     {
       "id": "legacy-floyd-steinberg",
+      "status": "passed",
+      "outputWidth": 330,
+      "outputHeight": 325,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -60,6 +81,9 @@
     },
     {
       "id": "legacy-keep-aspect-ratio",
+      "status": "passed",
+      "outputWidth": 108,
+      "outputHeight": 61,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -68,6 +92,9 @@
     },
     {
       "id": "legacy-make-square-wide",
+      "status": "passed",
+      "outputWidth": 10,
+      "outputHeight": 10,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -76,6 +103,9 @@
     },
     {
       "id": "legacy-make-square-tall",
+      "status": "passed",
+      "outputWidth": 10,
+      "outputHeight": 10,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -84,6 +114,9 @@
     },
     {
       "id": "legacy-high-resolution",
+      "status": "passed",
+      "outputWidth": 177,
+      "outputHeight": 206,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -92,6 +125,9 @@
     },
     {
       "id": "generated-pixel-art-1x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -100,6 +136,9 @@
     },
     {
       "id": "generated-nearest-2x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 46.53125,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
@@ -108,6 +147,9 @@
     },
     {
       "id": "generated-nearest-3x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 46.53125,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
@@ -116,6 +158,9 @@
     },
     {
       "id": "generated-nearest-4x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
@@ -124,6 +169,9 @@
     },
     {
       "id": "generated-nearest-8x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
@@ -132,6 +180,9 @@
     },
     {
       "id": "generated-nearest-16x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
@@ -140,6 +191,9 @@
     },
     {
       "id": "generated-nearest-32x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
@@ -148,6 +202,9 @@
     },
     {
       "id": "generated-nearest-1-5x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 56.21875,
       "edgeF1": 0.322581,
       "backgroundMaskIou": 0.2,
@@ -156,6 +213,9 @@
     },
     {
       "id": "generated-nearest-2-5x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 49,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
@@ -164,6 +224,9 @@
     },
     {
       "id": "generated-nearest-3-2x",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 56.429688,
       "edgeF1": 0.344828,
       "backgroundMaskIou": 0.166667,
@@ -172,6 +235,9 @@
     },
     {
       "id": "generated-bilinear",
+      "status": "failed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 49.707031,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
@@ -180,6 +246,9 @@
     },
     {
       "id": "generated-bicubic-equivalent",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 49.703125,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
@@ -188,6 +257,9 @@
     },
     {
       "id": "generated-light-blur",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 56.523438,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
@@ -196,6 +268,9 @@
     },
     {
       "id": "generated-rgb-noise",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 54.855469,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
@@ -204,6 +279,9 @@
     },
     {
       "id": "generated-alpha-edge-blur",
+      "status": "failed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 57.253906,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
@@ -212,6 +290,9 @@
     },
     {
       "id": "generated-crop-shifts",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 54.6875,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
@@ -220,6 +301,9 @@
     },
     {
       "id": "generated-padding-white",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 53.789063,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -228,6 +312,9 @@
     },
     {
       "id": "generated-padding-black",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -236,6 +323,9 @@
     },
     {
       "id": "generated-padding-solid",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 20.25,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -244,6 +334,9 @@
     },
     {
       "id": "generated-padding-gradient",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 109.46875,
       "edgeF1": 0.176471,
       "backgroundMaskIou": 0.115385,
@@ -252,6 +345,9 @@
     },
     {
       "id": "generated-anisotropic",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
       "meanRgbaError": 46.53125,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
@@ -260,6 +356,9 @@
     },
     {
       "id": "generated-continuous-tone",
+      "status": "passed",
+      "outputWidth": 48,
+      "outputHeight": 32,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

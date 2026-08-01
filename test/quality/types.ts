@@ -1,7 +1,14 @@
 import type { ProcessOptions } from "../../src/core/processor";
 
-export const QUALITY_REPORT_VERSION = "1";
+export const QUALITY_REPORT_VERSION = "2";
 export const QUALITY_BENCHMARK_VERSION = "1";
+
+export type QualityChangeStatus =
+	| "improved"
+	| "regressed"
+	| "changed"
+	| "unchanged"
+	| "new";
 
 export type FixtureAssetProvenance = {
 	file: string;
@@ -54,6 +61,7 @@ export type QualityMetadata = {
 	workflowRunUrl: string;
 	benchmarkVersion: string;
 	reportVersion: string;
+	baselineCommit: string;
 };
 
 export type QualityMetrics = {
@@ -72,13 +80,42 @@ export type QualityMetrics = {
 	approxPeakBytes: number;
 };
 
+export type QualityBaselineCase = {
+	id: string;
+	status: "passed" | "failed";
+	outputWidth: number;
+	outputHeight: number;
+	meanRgbaError: number;
+	edgeF1: number;
+	backgroundMaskIou: number;
+	smallComponentRetention: number;
+	catastrophicFailure: boolean;
+};
+
+export type QualityBaseline = {
+	version: number;
+	commit: string;
+	cases: QualityBaselineCase[];
+};
+
 export type QualityCaseResult = {
 	id: string;
 	featureIds: string[];
 	inputKind: string;
 	degradationPatterns: string[];
 	status: "passed" | "failed";
+	changeStatus: QualityChangeStatus;
 	failedAssertions: string[];
+	regressedMetrics: string[];
+	improvedMetrics: string[];
+	changedPixelCount: number | null;
+	changedPixelRate: number | null;
+	diffBoundingBox: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	} | null;
 	classification: string;
 	route: string;
 	confidence: number | null;
@@ -88,16 +125,17 @@ export type QualityCaseResult = {
 		height: number | null;
 		score: number;
 	}>;
+	expectation: QualityExpectation;
 	options: ProcessOptions;
 	metrics: QualityMetrics;
-	legacyMetrics: QualityMetrics;
+	baselineMetrics: QualityBaselineCase | null;
 	files: {
 		groundTruth: string;
 		input: string;
-		legacy: string;
+		baseline: string | null;
 		result: string;
 		diff: string;
-		legacyDiff: string;
+		baselineDiff: string | null;
 		backgroundMask: string;
 	};
 };
@@ -108,6 +146,12 @@ export type QualityResults = {
 		caseCount: number;
 		passed: number;
 		failed: number;
+		changed: number;
+		improved: number;
+		regressed: number;
+		unchanged: number;
+		newCases: number;
+		blockingFailures: number;
 		top1SizeAccuracy: number;
 		top3SizeAccuracy: number;
 		byteIdentityRate: number;

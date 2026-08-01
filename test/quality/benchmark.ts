@@ -1,7 +1,9 @@
-import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { processImage } from "../../src/core/processor";
+import { baselineImagePath, loadBaseline } from "./baseline";
+import { classifyChange, compareImages, compareMetrics } from "./comparison";
 import { imagesEqual, readPng, writePng } from "./image";
 import {
 	calculateMetrics,
@@ -14,6 +16,7 @@ import type {
 	QualityMetadata,
 	QualityResults,
 } from "./types";
+import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
 
@@ -22,6 +25,7 @@ const metadataFromEnvironment = (): QualityMetadata => {
 		process.env.GITHUB_REPOSITORY ?? "HappyOnigiri/PixelRefiner";
 	const server = process.env.GITHUB_SERVER_URL ?? "https://github.com";
 	const runId = process.env.GITHUB_RUN_ID ?? "";
+	const baseline = loadBaseline();
 	return {
 		repositoryUrl: `${server}/${repository}`,
 		prNumber: process.env.QUALITY_PR_NUMBER ?? "local",
@@ -31,8 +35,9 @@ const metadataFromEnvironment = (): QualityMetadata => {
 		generatedAt: new Date().toISOString(),
 		workflowRunUrl:
 			runId === "" ? "local" : `${server}/${repository}/actions/runs/${runId}`,
-		benchmarkVersion: "1",
-		reportVersion: "1",
+		benchmarkVersion: QUALITY_BENCHMARK_VERSION,
+		reportVersion: QUALITY_REPORT_VERSION,
+		baselineCommit: baseline.commit,
 	};
 };
 
@@ -69,6 +74,7 @@ const failedAssertions = (
 	) {
 		failed.push("small-component-retention");
 	}
+	if (!result.sizeCorrect) failed.push("output-size");
 	if (
 		expectation.expectedWidth !== undefined &&
 		result.outputWidth !== expectation.expectedWidth
@@ -96,9 +102,6 @@ export const runQualityCase = (
 	const expected = readPng(expectedPath);
 	const options = { ...qualityCase.options, debug: false };
 
-	const legacyStart = performance.now();
-	const legacyRun = processImage(input, options);
-	const legacyRuntime = performance.now() - legacyStart;
 	const start = performance.now();
 	const currentRun = processImage(input, options);
 	const runtime = performance.now() - start;
@@ -112,27 +115,43 @@ export const runQualityCase = (
 		repeatRun.result,
 		runtime,
 	);
-	const legacyMetrics = calculateMetrics(
-		legacyRun.result,
-		input,
-		expected,
-		legacyRun.grid,
-		currentRun.result,
-		legacyRuntime,
-	);
 	const failed = failedAssertions(
 		qualityCase,
 		metrics,
 		imagesEqual(currentRun.result, expected),
 	);
+	const baseline = loadBaseline();
+	const baselineMetrics =
+		baseline.cases.find((baselineCase) => baselineCase.id === qualityCase.id) ??
+		null;
+	const storedBaselinePath = baselineImagePath(qualityCase.id);
+	const baselineImage = existsSync(storedBaselinePath)
+		? readPng(storedBaselinePath)
+		: null;
+	const imageComparison = compareImages(currentRun.result, baselineImage);
+	const metricComparison = compareMetrics(metrics, baselineMetrics);
+	if (
+		baselineMetrics?.status === "passed" &&
+		failed.length > 0 &&
+		!metricComparison.regressed.includes("qualityStatus")
+	) {
+		metricComparison.regressed.push("qualityStatus");
+	}
+	const changeStatus = classifyChange(
+		baselineImage !== null,
+		imageComparison.changed,
+		metricComparison.regressed,
+		metricComparison.improved,
+	);
 	const caseDirectory = `cases/${qualityCase.id}`;
 	const files = {
 		groundTruth: `${caseDirectory}/ground-truth.png`,
 		input: `${caseDirectory}/input.png`,
-		legacy: `${caseDirectory}/legacy.png`,
+		baseline: baselineImage === null ? null : `${caseDirectory}/baseline.png`,
 		result: `${caseDirectory}/result.png`,
 		diff: `${caseDirectory}/diff.png`,
-		legacyDiff: `${caseDirectory}/legacy-diff.png`,
+		baselineDiff:
+			baselineImage === null ? null : `${caseDirectory}/baseline-diff.png`,
 		backgroundMask: `${caseDirectory}/background-mask.png`,
 	};
 	if (writeArtifacts) {
@@ -140,16 +159,20 @@ export const runQualityCase = (
 		mkdirSync(outputDirectory, { recursive: true });
 		cpSync(expectedPath, path.join(REPORT_ROOT, files.groundTruth));
 		cpSync(inputPath, path.join(REPORT_ROOT, files.input));
-		writePng(path.join(REPORT_ROOT, files.legacy), legacyRun.result);
+		if (files.baseline && baselineImage) {
+			writePng(path.join(REPORT_ROOT, files.baseline), baselineImage);
+		}
 		writePng(path.join(REPORT_ROOT, files.result), currentRun.result);
 		writePng(
 			path.join(REPORT_ROOT, files.diff),
 			createDiffImage(currentRun.result, expected),
 		);
-		writePng(
-			path.join(REPORT_ROOT, files.legacyDiff),
-			createDiffImage(currentRun.result, legacyRun.result),
-		);
+		if (files.baselineDiff && baselineImage) {
+			writePng(
+				path.join(REPORT_ROOT, files.baselineDiff),
+				createDiffImage(currentRun.result, baselineImage),
+			);
+		}
 		writePng(
 			path.join(REPORT_ROOT, files.backgroundMask),
 			createBackgroundMaskImage(currentRun.result),
@@ -161,7 +184,13 @@ export const runQualityCase = (
 		inputKind: qualityCase.inputKind,
 		degradationPatterns: qualityCase.degradationPatterns,
 		status: failed.length === 0 ? "passed" : "failed",
+		changeStatus,
 		failedAssertions: failed,
+		regressedMetrics: metricComparison.regressed,
+		improvedMetrics: metricComparison.improved,
+		changedPixelCount: imageComparison.changedPixelCount,
+		changedPixelRate: imageComparison.changedPixelRate,
+		diffBoundingBox: imageComparison.diffBoundingBox,
 		classification: qualityCase.inputKind,
 		route:
 			qualityCase.options.enableGridDetection === false ? "preserve" : "refine",
@@ -174,11 +203,21 @@ export const runQualityCase = (
 				height: candidate.outH ?? null,
 				score: candidate.score,
 			})),
+		expectation: qualityCase.expectation,
 		options: qualityCase.options,
 		metrics,
-		legacyMetrics,
+		baselineMetrics,
 		files,
 	};
+};
+
+export const writeQualityBaselineImage = (
+	qualityCase: QualityImageCase,
+	outputPath: string,
+): void => {
+	const input = readPng(path.resolve(qualityCase.input));
+	const options = { ...qualityCase.options, debug: false };
+	writePng(outputPath, processImage(input, options).result);
 };
 
 const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
@@ -192,6 +231,20 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		caseCount: count,
 		passed: cases.filter((result) => result.status === "passed").length,
 		failed: cases.filter((result) => result.status === "failed").length,
+		changed: cases.filter((result) => result.changeStatus !== "unchanged")
+			.length,
+		improved: cases.filter((result) => result.changeStatus === "improved")
+			.length,
+		regressed: cases.filter((result) => result.changeStatus === "regressed")
+			.length,
+		unchanged: cases.filter((result) => result.changeStatus === "unchanged")
+			.length,
+		newCases: cases.filter((result) => result.changeStatus === "new").length,
+		blockingFailures: cases.filter(
+			(result) =>
+				result.changeStatus === "regressed" ||
+				(result.changeStatus === "new" && result.status === "failed"),
+		).length,
 		top1SizeAccuracy: sum((result) => Number(result.metrics.sizeCorrect)),
 		top3SizeAccuracy: sum((result) => Number(result.metrics.top3SizeCorrect)),
 		byteIdentityRate: sum((result) => Number(result.metrics.byteIdentical)),
@@ -220,10 +273,10 @@ const REPORT_TRANSLATIONS = {
 		title: "PixelRefiner quality report",
 		groundTruth: "Ground truth",
 		input: "Input",
-		legacy: "Legacy",
+		baseline: "Baseline",
 		result: "Result",
 		groundTruthDifference: "Ground-truth difference",
-		legacyDifference: "Legacy difference",
+		baselineDifference: "Baseline difference",
 		backgroundMask: "Background mask",
 		inputKind: "Input kind",
 		route: "Route",
@@ -241,6 +294,30 @@ const REPORT_TRANSLATIONS = {
 		preserve: "preserve",
 		refine: "refine",
 		workflow: "workflow",
+		changed: "changed",
+		improved: "improved",
+		regressed: "regressed",
+		unchanged: "unchanged",
+		new: "new case",
+		changedCases: "Cases with differences",
+		allChanges: "All changes",
+		qualityStatus: "Quality status",
+		changeStatus: "Change status",
+		changedPixels: "Changed pixels",
+		comparison: "Metric comparison",
+		metric: "Metric",
+		target: "Target",
+		current: "Current",
+		delta: "Delta",
+		verdict: "Verdict",
+		outputSize: "Output size",
+		meanRgbaError: "Mean RGBA error",
+		edgeF1: "Edge F1",
+		backgroundMaskIou: "Background mask IoU",
+		smallComponentRetention: "Small component retention",
+		diagnostics: "Diagnostics and settings",
+		noRegression: "No new quality regression",
+		hasRegression: "Quality regression detected",
 		assertions: {
 			"exact-image-match": "exact image match",
 			"mean-rgba-error": "mean RGBA error",
@@ -251,16 +328,17 @@ const REPORT_TRANSLATIONS = {
 			"expected-height": "expected height",
 			"deterministic-output": "deterministic output",
 			"catastrophic-failure": "catastrophic failure",
+			"output-size": "output size",
 		},
 	},
 	ja: {
 		title: "\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8",
 		groundTruth: "\u671f\u5f85\u7d50\u679c",
 		input: "\u5165\u529b",
-		legacy: "\u5f93\u6765\u7d50\u679c",
+		baseline: "\u57fa\u6e96\u7d50\u679c",
 		result: "\u51e6\u7406\u7d50\u679c",
 		groundTruthDifference: "\u671f\u5f85\u7d50\u679c\u3068\u306e\u5dee\u5206",
-		legacyDifference: "\u5f93\u6765\u7d50\u679c\u3068\u306e\u5dee\u5206",
+		baselineDifference: "\u57fa\u6e96\u7d50\u679c\u3068\u306e\u5dee\u5206",
 		backgroundMask: "\u80cc\u666f\u30de\u30b9\u30af",
 		inputKind: "\u5165\u529b\u7a2e\u5225",
 		route: "\u51e6\u7406\u30eb\u30fc\u30c8",
@@ -278,6 +356,32 @@ const REPORT_TRANSLATIONS = {
 		preserve: "\u4fdd\u6301",
 		refine: "\u5fa9\u5143",
 		workflow: "\u5b9f\u884c\u30ed\u30b0",
+		changed: "\u5dee\u5206\u3042\u308a",
+		improved: "\u6539\u5584",
+		regressed: "\u60aa\u5316",
+		unchanged: "\u5dee\u5206\u306a\u3057",
+		new: "\u65b0\u898f\u30b1\u30fc\u30b9",
+		changedCases: "\u5dee\u5206\u3042\u308a",
+		allChanges: "\u3059\u3079\u3066\u306e\u5909\u5316",
+		qualityStatus: "\u54c1\u8cea\u72b6\u614b",
+		changeStatus: "\u5909\u5316\u72b6\u614b",
+		changedPixels: "\u5909\u66f4\u753b\u7d20",
+		comparison: "\u6307\u6a19\u306e\u6bd4\u8f03",
+		metric: "\u6307\u6a19",
+		target: "\u5408\u683c\u6761\u4ef6",
+		current: "\u4eca\u56de",
+		delta: "\u5909\u5316\u91cf",
+		verdict: "\u5224\u5b9a",
+		outputSize: "\u51fa\u529b\u30b5\u30a4\u30ba",
+		meanRgbaError: "RGBA\u5e73\u5747\u8aa4\u5dee",
+		edgeF1: "\u8f2a\u90edF1",
+		backgroundMaskIou: "\u80cc\u666f\u30de\u30b9\u30afIoU",
+		smallComponentRetention: "\u5c0f\u8981\u7d20\u4fdd\u6301\u7387",
+		diagnostics: "\u8a3a\u65ad\u753b\u50cf\u3068\u51e6\u7406\u8a2d\u5b9a",
+		noRegression:
+			"\u65b0\u305f\u306a\u54c1\u8cea\u60aa\u5316\u306f\u3042\u308a\u307e\u305b\u3093",
+		hasRegression:
+			"\u54c1\u8cea\u306e\u60aa\u5316\u3092\u691c\u51fa\u3057\u307e\u3057\u305f",
 		assertions: {
 			"exact-image-match": "\u753b\u50cf\u306e\u5b8c\u5168\u4e00\u81f4",
 			"mean-rgba-error": "RGBA\u5e73\u5747\u8aa4\u5dee",
@@ -288,34 +392,63 @@ const REPORT_TRANSLATIONS = {
 			"expected-height": "\u671f\u5f85\u3059\u308b\u9ad8\u3055",
 			"deterministic-output": "\u51fa\u529b\u306e\u518d\u73fe\u6027",
 			"catastrophic-failure": "\u81f4\u547d\u7684\u306a\u5931\u6557",
+			"output-size": "\u51fa\u529b\u30b5\u30a4\u30ba",
 		},
 	},
 } as const;
 
+const formatMetric = (value: number | undefined): string =>
+	value === undefined ? "-" : Number(value.toFixed(3)).toString();
+
 const renderHtml = (results: QualityResults): string => {
-	const cards = results.cases
+	const changeOrder = {
+		regressed: 0,
+		new: 1,
+		changed: 2,
+		improved: 3,
+		unchanged: 4,
+	};
+	const sortedCases = [...results.cases].sort(
+		(left, right) =>
+			changeOrder[left.changeStatus] - changeOrder[right.changeStatus],
+	);
+	const cards = sortedCases
 		.map((result) => {
 			const searchable = [
 				result.status,
+				result.changeStatus,
 				result.inputKind,
 				result.route,
 				...result.warnings,
 				...result.degradationPatterns,
 			].join(" ");
-			const images = [
-				["groundTruth", "Ground truth", result.files.groundTruth],
+			const renderImages = (
+				images: Array<[string, string, string | null]>,
+			): string =>
+				images
+					.filter(
+						(image): image is [string, string, string] => image[2] !== null,
+					)
+					.map(
+						([key, label, source]) =>
+							`<figure><figcaption data-i18n="${key}">${label}</figcaption><img src="${source}" alt="${label}" data-i18n-alt="${key}" loading="lazy"></figure>`,
+					)
+					.join("");
+			const primaryImages = renderImages([
 				["input", "Input", result.files.input],
-				["legacy", "Legacy", result.files.legacy],
+				["groundTruth", "Ground truth", result.files.groundTruth],
+				["baseline", "Baseline", result.files.baseline],
 				["result", "Result", result.files.result],
+			]);
+			const diagnosticImages = renderImages([
 				["groundTruthDifference", "Ground-truth difference", result.files.diff],
-				["legacyDifference", "Legacy difference", result.files.legacyDiff],
+				[
+					"baselineDifference",
+					"Baseline difference",
+					result.files.baselineDiff,
+				],
 				["backgroundMask", "Background mask", result.files.backgroundMask],
-			]
-				.map(
-					([key, label, source]) =>
-						`<figure><figcaption data-i18n="${key}">${label}</figcaption><img src="${source}" alt="${label}" data-i18n-alt="${key}"></figure>`,
-				)
-				.join("");
+			]);
 			const warnings =
 				result.warnings.length === 0
 					? '<span data-i18n="none">none</span>'
@@ -325,10 +458,50 @@ const renderHtml = (results: QualityResults): string => {
 									`<span data-i18n="assertions.${escapeHtml(warning)}">${escapeHtml(warning)}</span>`,
 							)
 							.join(", ");
-			return `<article class="case ${result.status}" data-search="${escapeHtml(searchable)}">
-			<h2>${escapeHtml(result.id)} <span data-i18n="${result.status}">${result.status}</span></h2>
-			<div class="images">${images}</div>
-			<dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="confidence">Confidence</dt><dd data-i18n="notAvailable">not available</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl>
+			const metricState = (key: string): string => {
+				if (result.regressedMetrics.includes(key)) return "regressed";
+				if (result.improvedMetrics.includes(key)) return "improved";
+				return "unchanged";
+			};
+			const metricRow = (
+				key: string,
+				current: number,
+				baseline: number | undefined,
+				target: string,
+			): string => {
+				const delta = baseline === undefined ? undefined : current - baseline;
+				const deltaText =
+					delta === undefined
+						? "-"
+						: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
+				const state = metricState(key);
+				return `<tr class="${state}"><th data-i18n="${key}">${key}</th><td>${escapeHtml(target)}</td><td>${formatMetric(baseline)}</td><td>${formatMetric(current)}</td><td>${deltaText}</td><td data-i18n="${state}">${state}</td></tr>`;
+			};
+			const baselineMetrics = result.baselineMetrics;
+			const expectedSize =
+				result.expectation.expectedWidth !== undefined &&
+				result.expectation.expectedHeight !== undefined
+					? `${result.expectation.expectedWidth}x${result.expectation.expectedHeight}`
+					: "correct";
+			const sizeState = result.metrics.sizeCorrect ? "passed" : "failed";
+			const metricRows = `<tr class="${sizeState}"><th data-i18n="outputSize">Output size</th><td>${expectedSize}</td><td>${baselineMetrics ? `${baselineMetrics.outputWidth}x${baselineMetrics.outputHeight}` : "-"}</td><td>${result.metrics.outputWidth}x${result.metrics.outputHeight}</td><td>-</td><td data-i18n="${sizeState}">${sizeState}</td></tr>
+			${metricRow("meanRgbaError", result.metrics.meanRgbaError, baselineMetrics?.meanRgbaError, result.expectation.maxMeanRgbaError === undefined ? "-" : `<= ${result.expectation.maxMeanRgbaError}`)}
+			${metricRow("edgeF1", result.metrics.edgeF1, baselineMetrics?.edgeF1, result.expectation.minEdgeF1 === undefined ? "-" : `>= ${result.expectation.minEdgeF1}`)}
+			${metricRow("backgroundMaskIou", result.metrics.backgroundMaskIou, baselineMetrics?.backgroundMaskIou, result.expectation.minBackgroundMaskIou === undefined ? "-" : `>= ${result.expectation.minBackgroundMaskIou}`)}
+			${metricRow("smallComponentRetention", result.metrics.smallComponentRetention, baselineMetrics?.smallComponentRetention, result.expectation.minSmallComponentRetention === undefined ? "-" : `>= ${result.expectation.minSmallComponentRetention}`)}`;
+			const changedPixels =
+				result.changedPixelCount === null
+					? "-"
+					: `${result.changedPixelCount} (${((result.changedPixelRate ?? 0) * 100).toFixed(2)}%)`;
+			const tags = result.degradationPatterns
+				.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
+				.join(" ");
+			return `<article class="case ${result.status} ${result.changeStatus}" data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
+			<h2>${escapeHtml(result.id)} <span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span> <span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span></h2>
+			<p>${tags}</p><div class="images primary">${primaryImages}</div>
+			<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
+			<h3 data-i18n="comparison">Metric comparison</h3><div class="table-scroll"><table><thead><tr><th data-i18n="metric">Metric</th><th data-i18n="target">Target</th><th data-i18n="baseline">Baseline</th><th data-i18n="current">Current</th><th data-i18n="delta">Delta</th><th data-i18n="verdict">Verdict</th></tr></thead><tbody>${metricRows}</tbody></table></div>
+			<details><summary data-i18n="diagnostics">Diagnostics and settings</summary><div class="images">${diagnosticImages}</div><dl><dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd><dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd><dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd><dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd><dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd><dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd></dl></details>
 		</article>`;
 		})
 		.join("\n");
@@ -337,10 +510,13 @@ const renderHtml = (results: QualityResults): string => {
 	const prUrl = `${repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}`;
 	const headCommitUrl = `${repositoryUrl}/commit/${encodeURIComponent(results.metadata.headCommit)}`;
 	const baseCommitUrl = `${repositoryUrl}/commit/${encodeURIComponent(results.metadata.baseCommit)}`;
+	const baselineCommitUrl = `${repositoryUrl}/commit/${encodeURIComponent(results.metadata.baselineCommit)}`;
+	const verdictKey =
+		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title data-i18n="title">PixelRefiner quality report</title><style>
-	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1500px;padding:24px}header{position:sticky;top:0;background:#15131ae8;padding:12px 0;z-index:2}input,select{padding:8px;margin-right:8px;background:#25212d;color:inherit;border:1px solid #635a70}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:16px 0}.case.failed{border-color:#ff6b6b}.case h2 span{font-size:.7em}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;image-rendering:pixelated;background:repeating-conic-gradient(#bbb 0 25%,#eee 0 50%) 50%/16px 16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}</style></head><body>
-	<header><h1 data-i18n="title">PixelRefiner quality report</h1><p><a href="${prUrl}">PR ${escapeHtml(results.metadata.prNumber)}</a> &middot; head <a href="${headCommitUrl}">${escapeHtml(results.metadata.headCommit)}</a> &middot; base <a href="${baseCommitUrl}">${escapeHtml(results.metadata.baseCommit)}</a> &middot; ${escapeHtml(results.metadata.generatedAt)} &middot; <a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a> &middot; benchmark v${results.metadata.benchmarkVersion} &middot; report v${results.metadata.reportVersion}</p><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"><select id="status"><option value="" data-i18n="allStatuses">All statuses</option><option value="passed" data-i18n="passed">passed</option><option value="failed" data-i18n="failed">failed</option></select></header>
-	<main>${cards}</main><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),s=document.querySelector('#status'),cards=[...document.querySelectorAll('.case')];function filter(){const text=q.value.toLowerCase(),status=s.value;for(const card of cards){card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!status||card.classList.contains(status)))}}q.addEventListener('input',filter);s.addEventListener('change',filter);</script></body></html>`;
+	:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#15131a;color:#f4efff}body{margin:0 auto;max-width:1500px;padding:24px}a{color:#b9a7ff}header{position:sticky;top:0;background:#15131af2;padding:12px 0;z-index:2;border-bottom:1px solid #494151}input,select{padding:8px;margin:4px;background:#25212d;color:inherit;border:1px solid #635a70}.summary{display:flex;gap:8px;flex-wrap:wrap}.summary button{padding:10px;background:#25212d;color:inherit;border:1px solid #635a70;border-radius:6px}.verdict{font-size:1.2rem;font-weight:700}.case{border:1px solid #494151;border-radius:8px;padding:16px;margin:16px 0}.case.failed,.case.regressed{border-color:#ff6b6b}.badge,.tag{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.75em;background:#393241}.badge.regressed,.badge.failed{background:#7a2930}.badge.improved,.badge.passed{background:#236044}.badge.changed,.badge.new{background:#725b20}.images{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.images figure{margin:0}.images img{width:100%;height:220px;object-fit:contain;cursor:zoom-in;image-rendering:pixelated;background:repeating-conic-gradient(#777 0 25%,#aaa 0 50%) 50%/16px 16px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:7px;text-align:right;border-bottom:1px solid #494151}th:first-child{text-align:left}tr.regressed{color:#ff8f8f}tr.improved{color:#85e6a9}details{margin-top:16px}dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px}dd{margin:0;overflow-wrap:anywhere}code{font-size:.8em}dialog{width:min(90vw,1000px);background:#15131a;border:1px solid #635a70}dialog img{width:100%;max-height:85vh;object-fit:contain;image-rendering:pixelated}</style></head><body>
+	<header><h1 data-i18n="title">PixelRefiner quality report</h1><p><a href="${prUrl}">PR ${escapeHtml(results.metadata.prNumber)}</a> &middot; head <a href="${headCommitUrl}">${escapeHtml(results.metadata.headCommit)}</a> &middot; base <a href="${baseCommitUrl}">${escapeHtml(results.metadata.baseCommit)}</a> &middot; baseline <a href="${baselineCommitUrl}">${escapeHtml(results.metadata.baselineCommit)}</a> &middot; ${escapeHtml(results.metadata.generatedAt)} &middot; <a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></p><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><div class="summary"><button data-change-filter="changed"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button data-change-filter="regressed"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button data-change-filter="improved"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button data-change-filter="unchanged"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button><span><span data-i18n="passed">passed</span>: ${results.summary.passed} / <span data-i18n="failed">failed</span>: ${results.summary.failed}</span></div><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"><select id="status"><option value="" data-i18n="allStatuses">All statuses</option><option value="passed" data-i18n="passed">passed</option><option value="failed" data-i18n="failed">failed</option></select><select id="change"><option value="changed" selected data-i18n="changedCases">Cases with differences</option><option value="" data-i18n="allChanges">All changes</option><option value="regressed" data-i18n="regressed">regressed</option><option value="improved" data-i18n="improved">improved</option><option value="new" data-i18n="new">new</option><option value="unchanged" data-i18n="unchanged">unchanged</option></select></header>
+	<main>${cards}</main><dialog id="image-dialog"><button id="dialog-close">&times;</button><img alt=""></dialog><script>const translations=${translations};const preferredLanguage=(navigator.languages?.[0]??navigator.language??'en').toLowerCase();const locale=preferredLanguage.startsWith('ja')?'ja':'en';const messages=translations[locale];document.documentElement.lang=locale;const translate=(key)=>key.split('.').reduce((value,part)=>value?.[part],messages);for(const element of document.querySelectorAll('[data-i18n]')){element.textContent=translate(element.dataset.i18n)??element.textContent}for(const element of document.querySelectorAll('[data-i18n-alt]')){element.alt=translate(element.dataset.i18nAlt)??element.alt}for(const element of document.querySelectorAll('[data-i18n-placeholder]')){element.placeholder=translate(element.dataset.i18nPlaceholder)??element.placeholder}const q=document.querySelector('#search'),s=document.querySelector('#status'),c=document.querySelector('#change'),cards=[...document.querySelectorAll('.case')];function filter(){const text=q.value.toLowerCase(),status=s.value,change=c.value;for(const card of cards){const changeMatches=!change||(change==='changed'?card.dataset.change!=='unchanged':card.dataset.change===change);card.hidden=!(card.dataset.search.toLowerCase().includes(text)&&(!status||card.dataset.status===status)&&changeMatches)}}q.addEventListener('input',filter);s.addEventListener('change',filter);c.addEventListener('change',filter);for(const button of document.querySelectorAll('[data-change-filter]')){button.addEventListener('click',()=>{c.value=button.dataset.changeFilter;filter()})}const dialog=document.querySelector('#image-dialog'),dialogImage=dialog.querySelector('img');for(const source of document.querySelectorAll('.images img')){source.addEventListener('click',()=>{dialogImage.src=source.src;dialogImage.alt=source.alt;dialog.showModal()})}document.querySelector('#dialog-close').addEventListener('click',()=>dialog.close());filter();</script></body></html>`;
 };
 
 const renderMarkdown = (results: QualityResults): string => {
@@ -351,7 +527,7 @@ const renderMarkdown = (results: QualityResults): string => {
 				`|${result.id}|${result.status}|${result.metrics.outputWidth}x${result.metrics.outputHeight}|${result.metrics.meanRgbaError.toFixed(3)}|${result.metrics.edgeF1.toFixed(3)}|${result.metrics.runtimeMs.toFixed(2)}|`,
 		)
 		.join("\n");
-	return `# PixelRefiner quality report\n\n- Cases: ${summary.caseCount}\n- Passed: ${summary.passed}\n- Failed: ${summary.failed}\n- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%\n- Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%\n- Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(1)}%\n\n|Case|Status|Output|Mean RGBA error|Edge F1|Runtime (ms)|\n|---|---|---:|---:|---:|---:|\n${rows}\n`;
+	return `# PixelRefiner quality report\n\n- Cases: ${summary.caseCount}\n- Passed: ${summary.passed}\n- Failed: ${summary.failed}\n- Changed: ${summary.changed}\n- Regressed: ${summary.regressed}\n- Improved: ${summary.improved}\n- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%\n- Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%\n- Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(1)}%\n\n|Case|Status|Output|Mean RGBA error|Edge F1|Runtime (ms)|\n|---|---|---:|---:|---:|---:|\n${rows}\n`;
 };
 
 export const generateQualityReport = (

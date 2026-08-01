@@ -1,10 +1,11 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { QualityImageCase } from "./types";
 
 export const QUALITY_ROOT = path.resolve("test/quality");
 export const FIXTURE_ROOT = path.resolve("test/fixtures");
 export const MANIFEST_PATH = path.join(QUALITY_ROOT, "cases.json");
+const CHECKED_IN_BASELINE_ROOT = path.join(QUALITY_ROOT, "baseline");
 
 export const loadCases = (): QualityImageCase[] =>
 	JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as QualityImageCase[];
@@ -80,6 +81,21 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		const relativePath = `test/fixtures/${fileName}`;
 		if (!referencedFiles.has(relativePath)) {
 			errors.push(`Unregistered fixture: ${relativePath}`);
+		}
+	}
+	if (!existsSync(CHECKED_IN_BASELINE_ROOT)) {
+		errors.push("Missing checked-in quality baseline directory");
+	} else {
+		const baselineIds = new Set(
+			readdirSync(CHECKED_IN_BASELINE_ROOT)
+				.filter((fileName) => fileName.endsWith(".png"))
+				.map((fileName) => fileName.slice(0, -4)),
+		);
+		for (const id of ids) {
+			if (!baselineIds.has(id)) errors.push(`Missing baseline image: ${id}`);
+		}
+		for (const id of baselineIds) {
+			if (!ids.has(id)) errors.push(`Unregistered baseline image: ${id}`);
 		}
 	}
 	return errors;

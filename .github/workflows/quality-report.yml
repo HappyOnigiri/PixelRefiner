@@ -20,6 +20,26 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Check out the PR base quality baseline
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: quality-base
+          persist-credentials: false
+          sparse-checkout: |
+            test/quality/baseline
+            test/quality/baseline.json
+          sparse-checkout-cone-mode: false
+
+      - name: Use the PR base quality baseline when available
+        run: |
+          baseline_root="$GITHUB_WORKSPACE/quality-base/test/quality/baseline"
+          baseline_file="$GITHUB_WORKSPACE/quality-base/test/quality/baseline.json"
+          if [ -d "$baseline_root" ] && [ -f "$baseline_file" ]; then
+            echo "QUALITY_BASELINE_ROOT=$baseline_root" >> "$GITHUB_ENV"
+            echo "QUALITY_BASELINE_FILE=$baseline_file" >> "$GITHUB_ENV"
+          fi
+
       - uses: pnpm/action-setup@v6
         with:
           run_install: false

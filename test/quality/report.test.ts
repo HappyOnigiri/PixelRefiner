@@ -25,6 +25,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		const html = readFileSync(path.join(reportRoot, "index.html"), "utf8");
 		expect(html).toContain("navigator.languages");
 		expect(html).toContain('data-i18n="title"');
+		expect(html).toContain(
+			'<option value="changed" selected data-i18n="changedCases">',
+		);
+		expect(html).toContain('data-change-filter="regressed"');
 		expect(html).toContain("\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8");
 		expect(html).toContain(
 			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
@@ -32,6 +36,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		for (const commit of [
 			results.metadata.headCommit,
 			results.metadata.baseCommit,
+			results.metadata.baselineCommit,
 		]) {
 			expect(html).toContain(
 				`href="${results.metadata.repositoryUrl}/commit/${encodeURIComponent(commit)}"`,
@@ -43,6 +48,14 @@ describe.skipIf(!enabled)("quality report", () => {
 					path.join(reportRoot, "cases", qualityCase.id, "result.png"),
 				),
 			).toBe(true);
+			const result = results.cases.find(
+				(caseResult) => caseResult.id === qualityCase.id,
+			);
+			if (result?.files.baseline) {
+				expect(existsSync(path.join(reportRoot, result.files.baseline))).toBe(
+					true,
+				);
+			}
 		}
 	}, 120_000);
 });
