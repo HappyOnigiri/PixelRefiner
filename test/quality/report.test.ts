@@ -59,6 +59,8 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('id="visible-count"');
 		expect(html).toContain("unchanged from base branch");
 		expect(html).toContain("base branchと差分なし");
+		expect(html).not.toContain("Preserve the image.");
+		expect(html).not.toContain("画像を保持します。");
 		expect(html.match(/class="case-description"/g)).toHaveLength(
 			selectedCases.length,
 		);
@@ -82,6 +84,26 @@ describe.skipIf(!enabled)("quality report", () => {
 			"Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
 		);
 		expect(paletteCase).toContain("ゲームボーイポケットの4色パレット");
+		const deterministicCaseId = "convert-deterministic-auto-palette";
+		const deterministicCaseIdIndex = html.indexOf(deterministicCaseId);
+		const deterministicCaseStart = html.lastIndexOf(
+			"<article",
+			deterministicCaseIdIndex,
+		);
+		const deterministicCaseEnd = html.indexOf(
+			"</article>",
+			deterministicCaseIdIndex,
+		);
+		const deterministicCase = html.slice(
+			deterministicCaseStart,
+			deterministicCaseEnd,
+		);
+		expect(deterministicCase).toContain(
+			"Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering.",
+		);
+		expect(deterministicCase).toContain(
+			"画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、強度100%のOrderedディザリングを適用します。",
+		);
 		const compactCaseId = "remove-background-trim-auto-grid";
 		const compactCaseIdIndex = html.indexOf(compactCaseId);
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);

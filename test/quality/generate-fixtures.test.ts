@@ -1,6 +1,7 @@
 import path from "node:path";
 import { describe, it } from "vitest";
 import { processImage } from "../../src/core/processor";
+import type { RawImage } from "../../src/shared/types";
 import {
 	addDeterministicNoise,
 	addPadding,
@@ -16,6 +17,22 @@ import { readPng, writePng } from "./image";
 const enabled = process.env.UPDATE_QUALITY_FIXTURES === "1";
 const fixturePath = (name: string): string =>
 	path.resolve("test/fixtures", name);
+
+const createQuantizationInput = (): RawImage => {
+	const width = 32;
+	const height = 32;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y++) {
+		for (let x = 0; x < width; x++) {
+			const offset = (y * width + x) * 4;
+			data[offset] = (x * 37 + y * 11) % 256;
+			data[offset + 1] = (x * 17 + y * 53 + 29) % 256;
+			data[offset + 2] = (x * 71 + y * 23 + 83) % 256;
+			data[offset + 3] = (x + y) % 13 === 0 ? 0 : 255;
+		}
+	}
+	return { width, height, data };
+};
 
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
@@ -85,6 +102,28 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 
 		const gradient = createContinuousGradient();
 		writePng(fixturePath("quality_continuous_tone.png"), gradient);
+
+		const quantizationInput = createQuantizationInput();
+		writePng(
+			fixturePath("quality_deterministic_quantization.png"),
+			quantizationInput,
+		);
+		const { result: quantizationExpected } = processImage(quantizationInput, {
+			reduceColors: true,
+			reduceColorMode: "auto",
+			colorCount: 8,
+			ditherMode: "ordered",
+			ditherStrength: 100,
+			enableGridDetection: false,
+			bgExtractionMethod: "none",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		});
+		writePng(
+			fixturePath("quality_deterministic_quantization-expect.png"),
+			quantizationExpected,
+		);
 
 		for (const name of ["wide_red", "tall_red"]) {
 			const input = readPng(fixturePath(`${name}.png`));

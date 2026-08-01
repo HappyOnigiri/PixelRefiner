@@ -267,6 +267,60 @@
     ]
   },
   {
+    "id": "convert-deterministic-auto-palette",
+    "featureIds": ["PRF-010", "color-quantization"],
+    "optionNames": [
+      "reduceColorMode",
+      "colorCount",
+      "ditherMode",
+      "ditherStrength"
+    ],
+    "profile": "smoke",
+    "inputKind": "synthetic-many-color",
+    "degradationPatterns": [],
+    "options": {
+      "reduceColors": true,
+      "reduceColorMode": "auto",
+      "colorCount": 8,
+      "ditherMode": "ordered",
+      "ditherStrength": 100,
+      "enableGridDetection": false,
+      "bgExtractionMethod": "none",
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_deterministic_quantization.png",
+    "expected": "test/fixtures/quality_deterministic_quantization-expect.png",
+    "assertions": [
+      "exact image",
+      "eight-color auto palette",
+      "ordered dithering",
+      "determinism with transparency"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_deterministic_quantization.png",
+        "sourceType": "generated-code",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      },
+      {
+        "file": "test/fixtures/quality_deterministic_quantization-expect.png",
+        "sourceType": "generated-code",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
     "id": "convert-game-boy-pocket-palette",
     "featureIds": ["PRF-001", "palette-conversion"],
     "optionNames": ["reduceColorMode", "ditherStrength"],
