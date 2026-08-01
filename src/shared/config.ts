@@ -31,7 +31,6 @@ export const PROCESS_RANGES = {
 } as const satisfies Record<string, IntRange | RGB>;
 
 export const PROCESS_ANALYSIS_THRESHOLDS = {
-	lowGridConfidence: 0.35,
 	contentLossRatio: 0.5,
 	gridScoreScale: 16,
 	extremeOutputDimension: 4096,

@@ -352,12 +352,8 @@ const createProcessingAnalysis = (
 		before === 0 ? 0 : clampUnit((before - after) / before);
 	const warnings: ProcessingWarningCode[] = [];
 	if (before === 0) warnings.push("NO_CONTENT");
-	if (
-		route === "refine" &&
-		selected.confidence < PROCESS_ANALYSIS_THRESHOLDS.lowGridConfidence
-	) {
-		warnings.push("LOW_GRID_CONFIDENCE");
-	}
+	// [Intended] Confidence remains diagnostic until PRF-100 calibrates scores
+	// across the different grid-detection methods.
 	if (grid.detectionFailedAxes?.length === 1) {
 		warnings.push("ONE_AXIS_DETECTION_FAILED");
 	}
