@@ -512,10 +512,19 @@ const renderClientScript = (): string =>
 const formatMetric = (value: number | undefined): string =>
 	value === undefined ? "-" : Number(value.toFixed(3)).toString();
 
+// [Policy] A case description must stand on its own: name the input characteristic,
+// the processing being exercised, and what must remain unchanged. Avoid vague text
+// such as "preserve the image" when adding an image test.
 const describeCase = (
 	result: QualityCaseResult,
 ): { en: string; ja: string } => {
 	const options = result.options;
+	if (result.id === "convert-deterministic-auto-palette") {
+		return {
+			en: "Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering.",
+			ja: "画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、強度100%のOrderedディザリングを適用します。",
+		};
+	}
 	if (options.reduceColorMode === "gb_pocket") {
 		return {
 			en: "Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
@@ -571,9 +580,20 @@ const describeCase = (
 		stepsEn.push("restore the detected pixel grid");
 		stepsJa.push("検出したピクセルグリッドの復元");
 	}
+	if (stepsEn.length === 0) {
+		return target
+			? {
+					en: `Resize the input image to ${target} pixels without background removal, transparent-margin trimming, or pixel-grid restoration.`,
+					ja: `背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、入力画像を${target}ピクセルへ変換します。`,
+				}
+			: {
+					en: "Output the input image at its current dimensions without background removal, transparent-margin trimming, or pixel-grid restoration.",
+					ja: "背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、入力画像を現在の寸法のまま出力します。",
+				};
+	}
 	return {
-		en: `${stepsEn.length > 0 ? stepsEn.join(", ") : "Preserve the image"}${target ? `, then resize it to ${target} pixels` : ""}.`,
-		ja: `${stepsJa.length > 0 ? stepsJa.join("、") : "画像を保持"}${target ? `後、${target}ピクセルへ変換` : ""}します。`,
+		en: `${stepsEn.join(", ")}${target ? `, then resize it to ${target} pixels` : ""}.`,
+		ja: `${stepsJa.join("、")}${target ? `後、${target}ピクセルへ変換` : ""}します。`,
 	};
 };
 

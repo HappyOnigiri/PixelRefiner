@@ -32,8 +32,13 @@ regression gate.
 2. Add one case to [`cases.json`](./cases.json). Record a unique case and feature
    ID, all processing options, assertions, profile, input kind, degradation
    pattern, and provenance for every referenced asset.
-3. Run `pnpm test:quality:full` and `pnpm test:quality:report`.
-4. Inspect the report visually. If the current baseline should intentionally change, run `pnpm test:quality:update` and review both `baseline.json` and the PNG files under `test/quality/baseline/`.
+3. Add or update the case text in `describeCase` in
+   [`benchmark.ts`](./benchmark.ts). The description must make the test intent
+   understandable on its own: identify the relevant input characteristics, the
+   processing under test, and exactly what the output must preserve. Do not use
+   vague phrases such as "preserve the image."
+4. Run `pnpm test:quality:full` and `pnpm test:quality:report`.
+5. Inspect the report visually. If the current baseline should intentionally change, run `pnpm test:quality:update` and review both `baseline.json` and the PNG files under `test/quality/baseline/`.
 
 Manifest validation fails for duplicate case IDs, missing required degradation
 patterns, missing provenance, fixture files that no case references, or assets
