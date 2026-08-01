@@ -26,6 +26,12 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain("navigator.languages");
 		expect(html).toContain('data-i18n="title"');
 		expect(html).toContain("\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8");
+		expect(html).toContain(
+			'href="https://github.com/HappyOnigiri/PixelRefiner/pull/local"',
+		);
+		expect(html).toContain(
+			'href="https://github.com/HappyOnigiri/PixelRefiner/commit/local"',
+		);
 		for (const qualityCase of selectedCases) {
 			expect(
 				existsSync(

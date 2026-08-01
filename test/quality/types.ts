@@ -46,6 +46,7 @@ export type QualityImageCase = {
 };
 
 export type QualityMetadata = {
+	repositoryUrl: string;
 	prNumber: string;
 	headCommit: string;
 	baseCommit: string;
