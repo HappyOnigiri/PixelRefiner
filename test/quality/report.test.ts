@@ -57,13 +57,14 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/class="case-description"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		expect(html.match(/class="quality-measurement"/g)).toHaveLength(
+		expect(html.match(/class="case-metrics"/g)).toHaveLength(
 			selectedCases.length,
 		);
+		expect(html).toContain(".case-metrics{font-size:.62rem");
 		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		expect(html).toContain("\u51e6\u7406\u6642\u9593");
+		expect(html).toContain('processingTime":"\u6642\u9593"');
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -98,10 +99,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		const exactCaseStart = html.lastIndexOf("<article", exactCaseIdIndex);
 		const exactCaseEnd = html.indexOf("</article>", exactCaseIdIndex);
 		const exactCase = html.slice(exactCaseStart, exactCaseEnd);
-		expect(exactCase).toContain('data-i18n="exactMatch"');
+		expect(exactCase).toContain('data-i18n="exactMatchShort"');
 		expect(exactCase).toContain('data-i18n="no"');
 		expect(exactCase).toContain(
-			'<strong data-i18n="meanRgbaError">Mean RGBA error</strong>: 46.531 / = 0',
+			'<strong data-i18n="meanRgbaErrorShort">Error</strong> 46.531/0',
 		);
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),
