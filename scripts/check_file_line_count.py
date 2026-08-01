@@ -8,6 +8,10 @@ from pathlib import Path
 WARNING_LINE_LIMIT = 600
 HARD_LINE_LIMIT = 1000
 
+# [Policy] Translation resources keep all locales together so key additions and
+# translation changes can be reviewed as one synchronized unit.
+EXCLUDED_FILES = {Path("src/browser/i18n.ts")}
+
 
 @dataclass(frozen=True)
 class Violation:
@@ -112,6 +116,8 @@ def main() -> int:
         return 1
 
     for path in paths:
+        if path in EXCLUDED_FILES:
+            continue
         try:
             violation = classify_file(path)
         except (OSError, UnicodeError) as error:
