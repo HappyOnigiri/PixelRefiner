@@ -64,7 +64,7 @@ describe("detector.ts (helpers)", () => {
 			expect(segments[1].runs[0].length).toBe(2);
 		});
 
-		it("should smooth out single pixel noise if it matches neighbors", () => {
+		it("merges matching runs after smoothing single-pixel noise", () => {
 			// [W, W, K, W, W, W] -> K is single pixel noise between Ws
 			// The smoothing logic requires runs.length >= 3.
 			// [W, W], [K], [W, W, W] are 3 runs.
@@ -74,19 +74,9 @@ describe("detector.ts (helpers)", () => {
 			expect(segments.length).toBe(1);
 			const runs = segments[0].runs;
 
-			// If smoothing works, it should be one single run of White
-			// But wait, the current implementation might result in [W, W+1+W] -> [W, W]
-			// Let's check the logic again.
-			// Run 0: W, len 2
-			// Run 1: K, len 1 -> prev=W, next=W -> smoothed.push(last.start, last.length+1, last.color)
-			// Run 2: W, len 3 -> smoothed.push(run)
-			// Result: [ {len: 3, color: W}, {len: 3, color: W} ]
-			// They are NOT merged into one run in the smoothing loop.
-			expect(runs.length).toBe(2);
-			expect(runs[0].length).toBe(3);
-			expect(runs[1].length).toBe(3);
+			expect(runs.length).toBe(1);
+			expect(runs[0].length).toBe(6);
 			expect(runs[0].color).toEqual([192, 192, 192]);
-			expect(runs[1].color).toEqual([192, 192, 192]);
 		});
 	});
 
@@ -108,8 +98,80 @@ describe("detector.ts (helpers)", () => {
 			const data = new Uint8ClampedArray(width * height * 4).fill(255);
 			const img: RawImage = { width, height, data };
 
-			// Should not throw error
+			const grid = detectGrid(img);
+			expect(grid.outW).toBe(width);
+			expect(grid.outH).toBe(height);
+			expect(grid.detectionFailedAxes).toEqual(["x", "y"]);
+		});
+
+		it.each([
+			[1, 32],
+			[32, 1],
+		])("handles a %ix%i thin image", (width, height) => {
+			const img: RawImage = {
+				width,
+				height,
+				data: new Uint8ClampedArray(width * height * 4),
+			};
 			expect(() => detectGrid(img)).not.toThrow();
+		});
+
+		it("ignores RGB garbage in fully transparent pixels", () => {
+			const createImage = (withGarbage: boolean): RawImage => {
+				const width = 32;
+				const height = 32;
+				const data = new Uint8ClampedArray(width * height * 4);
+				for (let y = 0; y < height; y += 1) {
+					for (let x = 0; x < width; x += 1) {
+						const index = (y * width + x) * 4;
+						const inSubject = x >= 8 && x < 24 && y >= 8 && y < 24;
+						if (inSubject) {
+							const value = (Math.floor(x / 4) + Math.floor(y / 4)) % 2;
+							data[index] = value * 255;
+							data[index + 1] = value * 255;
+							data[index + 2] = value * 255;
+							data[index + 3] = 255;
+						} else if (withGarbage) {
+							data[index] = (x * 31 + y * 17) % 256;
+							data[index + 1] = (x * 13 + y * 47) % 256;
+							data[index + 2] = (x * 59 + y * 7) % 256;
+						}
+					}
+				}
+				return { width, height, data };
+			};
+			const clean = detectGrid(createImage(false));
+			const garbage = detectGrid(createImage(true));
+
+			expect(garbage).toEqual(clean);
+		});
+
+		it("uses the configured background mask tolerance", () => {
+			const width = 32;
+			const height = 32;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const index = (y * width + x) * 4;
+					const foreground = x >= 8 && x < 24 && y >= 8 && y < 24;
+					const value = foreground ? ((x + y) % 2) * 255 : 64 + ((x + y) % 7);
+					data[index] = value;
+					data[index + 1] = value;
+					data[index + 2] = value;
+					data[index + 3] = 255;
+				}
+			}
+			const img: RawImage = { width, height, data };
+			const exact = detectGrid(img, {
+				detectionQuantStep: 1,
+				backgroundMaskTolerance: 0,
+			});
+			const tolerant = detectGrid(img, {
+				detectionQuantStep: 1,
+				backgroundMaskTolerance: 8,
+			});
+
+			expect(tolerant).not.toEqual(exact);
 		});
 	});
 

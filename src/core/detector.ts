@@ -1,3 +1,4 @@
+import { PROCESS_RANGES } from "../shared/config";
 import type { Pixel, PixelGrid, RawImage } from "../shared/types";
 import { computeMedian, computePercentile } from "./math";
 import { extractStrip, posterize } from "./ops";
@@ -16,6 +17,21 @@ const colorEq = (
 	a: [number, number, number],
 	b: [number, number, number],
 ): boolean => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+
+const mergeAdjacentRuns = (runs: Run[]): Run[] => {
+	if (runs.length < 2) return runs;
+	const merged: Run[] = [runs[0]];
+	for (let i = 1; i < runs.length; i += 1) {
+		const run = runs[i];
+		const previous = merged[merged.length - 1];
+		if (colorEq(previous.color, run.color)) {
+			previous.length += run.length;
+			continue;
+		}
+		merged.push(run);
+	}
+	return merged;
+};
 
 export const getRunLengths = (
 	strip: Pixel[],
@@ -102,7 +118,10 @@ export const getRunLengths = (
 				}
 				smoothed.push(run);
 			}
-			segments.push({ start: segStart, runs: smoothed });
+			segments.push({
+				start: segStart,
+				runs: mergeAdjacentRuns(smoothed),
+			});
 		} else {
 			segments.push({ start: segStart, runs });
 		}
@@ -131,7 +150,8 @@ export type DetectOptions = {
 	 */
 	backgroundMask?: boolean;
 	/**
-	 * Tolerance for background mask (absolute difference for each RGB channel). If not specified, it is automatically estimated from the four corners.
+	 * Tolerance for background mask (absolute difference for each RGB channel).
+	 * Default: 0
 	 */
 	backgroundMaskTolerance?: number;
 	/**
@@ -157,49 +177,78 @@ export const detectGrid = (
 		data: new Uint8ClampedArray(src.data),
 	});
 
-	const dominantBackground = (
-		src: RawImage,
-	): {
-		bgKeySet: Set<string>;
-		bgKeys: string[];
+	type BackgroundInfo = {
+		colors: Array<readonly [number, number, number]>;
 		coveredRatio: number;
-	} => {
-		const counts = new Map<string, number>();
+	};
+
+	const dominantBackground = (src: RawImage): BackgroundInfo => {
+		const counts = new Map<number, number>();
 		const totalPx = src.width * src.height;
+		let transparentCount = 0;
 		for (let i = 0; i < src.data.length; i += 4) {
+			if (src.data[i + 3] === 0) {
+				transparentCount += 1;
+				continue;
+			}
 			const r = src.data[i];
 			const g = src.data[i + 1];
 			const b = src.data[i + 2];
-			const key = `${r},${g},${b}`;
+			const key = (r << 16) | (g << 8) | b;
 			counts.set(key, (counts.get(key) ?? 0) + 1);
 		}
-		const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+		const sorted = Array.from(counts.entries()).sort(
+			(a, b) => b[1] - a[1] || a[0] - b[0],
+		);
 
 		const coverTarget = 0.7;
 		const maxColors = 8;
-		let covered = 0;
-		const bgKeys: string[] = [];
+		let covered = transparentCount;
+		const colors: Array<readonly [number, number, number]> = [];
 		for (const [k, c] of sorted) {
-			bgKeys.push(k);
+			if (totalPx > 0 && covered / totalPx >= coverTarget) break;
+			colors.push([(k >> 16) & 0xff, (k >> 8) & 0xff, k & 0xff]);
 			covered += c;
-			if (bgKeys.length >= maxColors) break;
+			if (colors.length >= maxColors) break;
 			if (covered / totalPx >= coverTarget) break;
 		}
 		return {
-			bgKeySet: new Set(bgKeys),
-			bgKeys,
-			coveredRatio: covered / totalPx,
+			colors,
+			coveredRatio: totalPx === 0 ? 0 : covered / totalPx,
 		};
 	};
 
-	const maskBackgroundByKeys = (
+	const isBackgroundPixel = (
+		data: Uint8ClampedArray,
+		index: number,
+		background: BackgroundInfo,
+		tolerance: number,
+	): boolean => {
+		if (data[index + 3] < 16) return true;
+		const r = data[index];
+		const g = data[index + 1];
+		const b = data[index + 2];
+		for (let i = 0; i < background.colors.length; i += 1) {
+			const color = background.colors[i];
+			if (
+				Math.abs(r - color[0]) <= tolerance &&
+				Math.abs(g - color[1]) <= tolerance &&
+				Math.abs(b - color[2]) <= tolerance
+			) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	const maskBackground = (
 		src: RawImage,
-		bgKeySet: Set<string>,
+		background: BackgroundInfo,
+		tolerance: number,
 	): RawImage => {
 		const out = cloneImage(src);
 		for (let i = 0; i < out.data.length; i += 4) {
-			const key = `${out.data[i]},${out.data[i + 1]},${out.data[i + 2]}`;
-			if (bgKeySet.has(key)) {
+			if (isBackgroundPixel(out.data, i, background, tolerance)) {
 				out.data[i + 3] = 0;
 			}
 		}
@@ -251,12 +300,24 @@ export const detectGrid = (
 
 	const stripCount = options.detectionStrips ?? 12;
 	const shouldMaskBackground = options.backgroundMask ?? true;
+	const backgroundMaskTolerance = Math.min(
+		PROCESS_RANGES.backgroundMaskTolerance.max,
+		Math.max(
+			PROCESS_RANGES.backgroundMaskTolerance.min,
+			Math.trunc(
+				options.backgroundMaskTolerance ??
+					PROCESS_RANGES.backgroundMaskTolerance.default,
+			),
+		),
+	);
 
 	// If there is no assumed grid, select "dense" lines for detection.
 	// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
 	// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
 	const bgInfo = shouldMaskBackground ? dominantBackground(det) : null;
-	const detForPick = bgInfo ? maskBackgroundByKeys(det, bgInfo.bgKeySet) : det;
+	const detForPick = bgInfo
+		? maskBackground(det, bgInfo, backgroundMaskTolerance)
+		: det;
 	const detForDetect = det;
 
 	if (options.debug && bgInfo) {
@@ -264,9 +325,10 @@ export const detectGrid = (
 		console.log("[detectGrid]", options.debugLabel ?? "", {
 			backgroundMask: {
 				mode: "dominantColors",
-				bgKeys: bgInfo.bgKeys.slice(0, 5),
-				bgColorCount: bgInfo.bgKeys.length,
+				colors: bgInfo.colors.slice(0, 5),
+				bgColorCount: bgInfo.colors.length,
 				coveredRatio: bgInfo.coveredRatio,
+				tolerance: backgroundMaskTolerance,
 			},
 		});
 	}
@@ -318,7 +380,7 @@ export const detectGrid = (
 	const buildScanlineBoundaryData = (
 		axis: "x" | "y",
 		lines: number[],
-		bgKeySet: Set<string>,
+		background: BackgroundInfo,
 	): BoundaryData => {
 		const len = axis === "x" ? w : h;
 		const runLengths: number[] = [];
@@ -336,8 +398,14 @@ export const detectGrid = (
 					// x is fixed, y moves
 					idx = (pos * w + line) * 4;
 				}
-				const key = `${detForDetect.data[idx]},${detForDetect.data[idx + 1]},${detForDetect.data[idx + 2]}`;
-				return bgKeySet.has(key) ? 0 : 1;
+				return isBackgroundPixel(
+					detForDetect.data,
+					idx,
+					background,
+					backgroundMaskTolerance,
+				)
+					? 0
+					: 1;
 			};
 
 			let cur: 0 | 1 = isFgAt(0);
@@ -533,7 +601,7 @@ export const detectGrid = (
 	});
 	const estX = bgInfo
 		? (estimateFromBoundaryData(
-				buildScanlineBoundaryData("x", ys, bgInfo.bgKeySet),
+				buildScanlineBoundaryData("x", ys, bgInfo),
 				w,
 				expMinX,
 				expMaxX,
@@ -562,7 +630,7 @@ export const detectGrid = (
 	});
 	const estY = bgInfo
 		? (estimateFromBoundaryData(
-				buildScanlineBoundaryData("y", xs, bgInfo.bgKeySet),
+				buildScanlineBoundaryData("y", xs, bgInfo),
 				h,
 				expMinY,
 				expMaxY,
@@ -575,36 +643,65 @@ export const detectGrid = (
 	const finalY = estY;
 
 	if (!finalX || !finalY) {
-		// Fallback for detection failure
-		const fallbackX = finalX ?? { cellSize: w, offset: 0, score: 0 };
-		const fallbackY = finalY ?? { cellSize: h, offset: 0, score: 0 };
-
-		const fCellW = Math.max(1, Math.round(fallbackX.cellSize));
-		const fCellH = Math.max(1, Math.round(fallbackY.cellSize));
-		const fOffsetX = ((fallbackX.offset % fCellW) + fCellW) % fCellW;
-		const fOffsetY = ((fallbackY.offset % fCellH) + fCellH) % fCellH;
-		const fOutW = Math.max(1, Math.floor((w - fOffsetX) / fCellW));
-		const fOutH = Math.max(1, Math.floor((h - fOffsetY) / fCellH));
-
-		return {
-			cellW: fCellW,
-			cellH: fCellH,
-			offsetX: fOffsetX,
-			offsetY: fOffsetY,
-			score: (fallbackX.score + fallbackY.score) / 2,
-			cropX: fOffsetX,
-			cropY: fOffsetY,
-			cropW: fOutW * fCellW,
-			cropH: fOutH * fCellH,
-			outW: fOutW,
-			outH: fOutH,
-			scoreX: finalX?.score,
-			scoreY: finalY?.score,
-			detectionFailedAxes: [
-				...(finalX ? [] : (["x"] as const)),
-				...(finalY ? [] : (["y"] as const)),
-			],
+		const failedAxes = [
+			...(finalX ? [] : (["x"] as const)),
+			...(finalY ? [] : (["y"] as const)),
+		];
+		const createFallbackGrid = (
+			cellW: number,
+			cellH: number,
+			offsetX: number,
+			offsetY: number,
+		): PixelGrid => {
+			const safeCellW = Math.max(1, Math.min(w, Math.round(cellW)));
+			const safeCellH = Math.max(1, Math.min(h, Math.round(cellH)));
+			const safeOffsetX = ((offsetX % safeCellW) + safeCellW) % safeCellW;
+			const safeOffsetY = ((offsetY % safeCellH) + safeCellH) % safeCellH;
+			const outW = Math.max(1, Math.floor((w - safeOffsetX) / safeCellW));
+			const outH = Math.max(1, Math.floor((h - safeOffsetY) / safeCellH));
+			return {
+				cellW: safeCellW,
+				cellH: safeCellH,
+				offsetX: safeOffsetX,
+				offsetY: safeOffsetY,
+				score: finalX?.score ?? finalY?.score ?? 0,
+				cropX: safeOffsetX,
+				cropY: safeOffsetY,
+				cropW: outW * safeCellW,
+				cropH: outH * safeCellH,
+				outW,
+				outH,
+				scoreX: finalX?.score,
+				scoreY: finalY?.score,
+				detectionFailedAxes: failedAxes,
+			};
 		};
+
+		if (!finalX && !finalY) {
+			// [Intended] A total detection failure preserves the source instead of
+			// collapsing an arbitrary image into a single logical pixel.
+			return createFallbackGrid(1, 1, 0, 0);
+		}
+
+		const detectedCell = Math.round((finalX ?? finalY)?.cellSize ?? 1);
+		const missingLength = finalX ? h : w;
+		const maxInferredCell = Math.max(1, Math.floor(missingLength / 2));
+		const inferredCell = Math.max(1, Math.min(detectedCell, maxInferredCell));
+		const selected = createFallbackGrid(
+			finalX?.cellSize ?? inferredCell,
+			finalY?.cellSize ?? inferredCell,
+			finalX?.offset ?? 0,
+			finalY?.offset ?? 0,
+		);
+		const partial = createFallbackGrid(
+			finalX?.cellSize ?? 1,
+			finalY?.cellSize ?? 1,
+			finalX?.offset ?? 0,
+			finalY?.offset ?? 0,
+		);
+		const preserve = createFallbackGrid(1, 1, 0, 0);
+		selected.candidates = [partial, preserve];
+		return selected;
 	}
 
 	const cellW = Math.max(1, Math.round(finalX.cellSize));

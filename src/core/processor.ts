@@ -282,12 +282,58 @@ const getAxisAgreement = (grid: PixelGrid): number => {
 	return clampUnit(1 - Math.abs(grid.scoreX - grid.scoreY) / denominator);
 };
 
-const getGridConfidence = (grid: PixelGrid, route: ProcessingRoute): number => {
+type GridSafety = {
+	extremeOutput: boolean;
+	lowConfidence: boolean;
+	confidenceFactor: number;
+};
+
+const getGridSafety = (grid: PixelGrid, source: RawImage): GridSafety => {
+	const outW =
+		grid.outW ??
+		Math.max(1, Math.floor((source.width - grid.offsetX) / grid.cellW));
+	const outH =
+		grid.outH ??
+		Math.max(1, Math.floor((source.height - grid.offsetY) / grid.cellH));
+	const sourceArea = source.width * source.height;
+	const outputArea = outW * outH;
+	const degenerateOutput = outW <= 1 || outH <= 1;
+	const tinyOutput =
+		sourceArea >= PROCESS_ANALYSIS_THRESHOLDS.minLargeInputArea &&
+		outputArea <= PROCESS_ANALYSIS_THRESHOLDS.minSafeOutputArea;
+	const minCell = Math.max(1, Math.min(grid.cellW, grid.cellH));
+	const cellAspectRatio = Math.max(grid.cellW, grid.cellH) / minCell;
+	const unusualCellAspect =
+		cellAspectRatio > PROCESS_ANALYSIS_THRESHOLDS.maxCellAspectRatio;
+	let divergentAxisScores = false;
+	if (grid.scoreX !== undefined && grid.scoreY !== undefined) {
+		const scoreScale = Math.abs(grid.scoreX) + Math.abs(grid.scoreY) + 1;
+		divergentAxisScores =
+			Math.abs(grid.scoreX - grid.scoreY) / scoreScale >
+			PROCESS_ANALYSIS_THRESHOLDS.maxAxisScoreDifferenceRatio;
+	}
+	const extremeOutput = degenerateOutput || tinyOutput || unusualCellAspect;
+	const lowConfidence = extremeOutput || divergentAxisScores;
+	return {
+		extremeOutput,
+		lowConfidence,
+		confidenceFactor: lowConfidence ? 0.1 : 1,
+	};
+};
+
+const getGridConfidence = (
+	grid: PixelGrid,
+	route: ProcessingRoute,
+	source: RawImage,
+): number => {
 	if (route !== "refine") return 1;
 	const scoreConfidence =
 		1 /
 		(1 + Math.max(0, grid.score) / PROCESS_ANALYSIS_THRESHOLDS.gridScoreScale);
-	return clampUnit(scoreConfidence * getAxisAgreement(grid));
+	const safety = getGridSafety(grid, source);
+	return clampUnit(
+		scoreConfidence * getAxisAgreement(grid) * safety.confidenceFactor,
+	);
 };
 
 const toCandidateReport = (
@@ -319,7 +365,7 @@ const toCandidateReport = (
 		cropH,
 		method,
 		totalScore: grid.score,
-		confidence: getGridConfidence(grid, route),
+		confidence: getGridConfidence(grid, route, source),
 		subscores: { axisAgreement },
 	};
 };
@@ -345,6 +391,15 @@ const createProcessingAnalysis = (
 			if (!isSelected) gridCandidates.push(report);
 		}
 	}
+	const runnerUp = gridCandidates[1];
+	const ambiguousCandidates =
+		runnerUp !== undefined &&
+		Math.abs(selected.totalScore - runnerUp.totalScore) /
+			(Math.abs(selected.totalScore) + 1) <=
+			PROCESS_ANALYSIS_THRESHOLDS.ambiguousCandidateScoreRatio;
+	if (ambiguousCandidates) {
+		selected.confidence = Math.min(selected.confidence, 0.1);
+	}
 
 	const before = foregroundRatio(comparisonBefore, alphaThreshold);
 	const after = foregroundRatio(result, alphaThreshold);
@@ -357,10 +412,19 @@ const createProcessingAnalysis = (
 	if (grid.detectionFailedAxes?.length === 1) {
 		warnings.push("ONE_AXIS_DETECTION_FAILED");
 	}
+	const gridSafety = getGridSafety(grid, source);
+	if (
+		gridSafety.lowConfidence ||
+		ambiguousCandidates ||
+		(grid.detectionFailedAxes?.length ?? 0) > 0
+	) {
+		warnings.push("LOW_GRID_CONFIDENCE");
+	}
 	if (contentLossRatio > PROCESS_ANALYSIS_THRESHOLDS.contentLossRatio) {
 		warnings.push("CONTENT_LOSS_RISK");
 	}
 	if (
+		gridSafety.extremeOutput ||
 		result.width > PROCESS_ANALYSIS_THRESHOLDS.extremeOutputDimension ||
 		result.height > PROCESS_ANALYSIS_THRESHOLDS.extremeOutputDimension
 	) {
@@ -556,6 +620,11 @@ const normalizeProcessOptions = (
 		detectionQuantStep: clampInt(
 			raw.detectionQuantStep ?? PROCESS_RANGES.detectionQuantStep.default,
 			PROCESS_RANGES.detectionQuantStep,
+		),
+		backgroundMaskTolerance: clampInt(
+			raw.backgroundMaskTolerance ??
+				PROCESS_RANGES.backgroundMaskTolerance.default,
+			PROCESS_RANGES.backgroundMaskTolerance,
 		),
 	};
 

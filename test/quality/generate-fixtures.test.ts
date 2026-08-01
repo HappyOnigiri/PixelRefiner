@@ -34,6 +34,49 @@ const createQuantizationInput = (): RawImage => {
 	return { width, height, data };
 };
 
+const addTransparentRgbPadding = (
+	image: RawImage,
+	padding: number,
+): RawImage => {
+	const width = image.width + padding * 2;
+	const height = image.height + padding * 2;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const target = (y * width + x) * 4;
+			data[target] = (x * 31 + y * 17) % 256;
+			data[target + 1] = (x * 13 + y * 47) % 256;
+			data[target + 2] = (x * 59 + y * 7) % 256;
+		}
+	}
+	for (let y = 0; y < image.height; y += 1) {
+		const sourceStart = y * image.width * 4;
+		const targetStart = ((y + padding) * width + padding) * 4;
+		data.set(
+			image.data.subarray(sourceStart, sourceStart + image.width * 4),
+			targetStart,
+		);
+	}
+	return { width, height, data };
+};
+
+const createOpaqueGrid = (): RawImage => {
+	const width = 8;
+	const height = 8;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const target = (y * width + x) * 4;
+			const value = (x + y) % 2 === 0 ? 32 : 224;
+			data[target] = value;
+			data[target + 1] = (value + x * 16) % 256;
+			data[target + 2] = (value + y * 16) % 256;
+			data[target + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
 		const reference = createReferenceSprite();
@@ -57,6 +100,12 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		}
 
 		const nearest4x = resizeNearest(reference, 4);
+		const opaqueGrid = createOpaqueGrid();
+		writePng(fixturePath("quality_transparent_rgb_expected.png"), opaqueGrid);
+		writePng(
+			fixturePath("quality_transparent_rgb_padding.png"),
+			addTransparentRgbPadding(resizeNearest(opaqueGrid, 4), 8),
+		);
 		writePng(fixturePath("quality_bilinear.png"), resizeBilinear(reference, 4));
 		writePng(
 			fixturePath("quality_bicubic_equivalent.png"),

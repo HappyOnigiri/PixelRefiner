@@ -93,7 +93,41 @@ describe("processing analysis", () => {
 		});
 
 		expect(processed.grid.detectionFailedAxes).toEqual(["y"]);
+		expect(processed.grid.outW).toBeGreaterThan(1);
+		expect(processed.grid.outH).toBeGreaterThan(1);
+		expect(processed.analysis.gridCandidates.length).toBeGreaterThan(1);
 		expect(processed.analysis.warnings).toContain("ONE_AXIS_DETECTION_FAILED");
+		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(processed.analysis.confidence).toBe(0);
+	});
+
+	it("warns when grid detection cannot produce a reliable result", () => {
+		const processed = processImage(solidImage(64, 64, [40, 80, 120, 255]), {
+			autoGridFromTrimmed: false,
+			backgroundMask: false,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		});
+
+		expect(processed.grid.outW).toBe(64);
+		expect(processed.grid.outH).toBe(64);
+		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+	});
+
+	it("warns when an unavoidable thin output has an extreme dimension", () => {
+		const processed = processImage(solidImage(64, 1, [40, 80, 120, 255]), {
+			autoGridFromTrimmed: false,
+			backgroundMask: false,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		});
+
+		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(processed.analysis.warnings).toContain("EXTREME_OUTPUT_SIZE");
 	});
 
 	it("warns about content loss and empty input", () => {

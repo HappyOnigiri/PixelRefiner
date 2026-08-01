@@ -366,6 +366,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "restore-transparent-rgb-padding-to-8x8",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "preserve-continuous-tone",
       "status": "passed",
       "outputWidth": 48,
