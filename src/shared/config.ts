@@ -9,6 +9,8 @@ export type IntRange = {
 export const PROCESS_RANGES = {
 	// detector: posterize step
 	detectionQuantStep: { min: 1, max: 128, default: 64 } as const,
+	// detector: per-channel tolerance for dominant background colors
+	backgroundMaskTolerance: { min: 0, max: 255, default: 0 } as const,
 	// processor: downsample median window
 	sampleWindow: { min: 1, max: 9, default: 3 } as const,
 	// flood fill tolerance (per channel)
@@ -34,6 +36,11 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	contentLossRatio: 0.5,
 	gridScoreScale: 16,
 	extremeOutputDimension: 4096,
+	minLargeInputArea: 4096,
+	minSafeOutputArea: 4,
+	maxCellAspectRatio: 8,
+	maxAxisScoreDifferenceRatio: 0.9,
+	ambiguousCandidateScoreRatio: 0.05,
 } as const;
 
 export const RETRO_PALETTES: Record<

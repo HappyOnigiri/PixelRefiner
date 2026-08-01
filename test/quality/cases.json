@@ -566,7 +566,7 @@
   },
   {
     "id": "restore-high-resolution-pixel-grid",
-    "featureIds": ["PRF-001", "high-resolution-grid"],
+    "featureIds": ["PRF-001", "PRF-020", "high-resolution-grid"],
     "optionNames": ["autoGridFromTrimmed"],
     "profile": "full",
     "inputKind": "scaled-pixel-art",
@@ -1602,6 +1602,58 @@
         "redistributionAllowed": true,
         "commercialUseAllowed": true,
         "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-transparent-rgb-padding-to-8x8",
+    "featureIds": ["PRF-020", "auto-grid", "alpha-background"],
+    "optionNames": ["backgroundMask", "backgroundMaskTolerance"],
+    "profile": "full",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["transparent-rgb-garbage"],
+    "options": {
+      "autoGridFromTrimmed": false,
+      "backgroundMask": true,
+      "backgroundMaskTolerance": 0,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality_transparent_rgb_padding.png",
+    "expected": "test/fixtures/quality_transparent_rgb_expected.png",
+    "assertions": [
+      "exact image",
+      "transparent RGB independence",
+      "determinism"
+    ],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_transparent_rgb_padding.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_transparent_rgb_expected.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
       }
     ]
   },
