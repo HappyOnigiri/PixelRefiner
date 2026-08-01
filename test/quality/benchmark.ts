@@ -344,85 +344,82 @@ const REPORT_TRANSLATIONS = {
 		},
 	},
 	ja: {
-		title: "\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8",
-		groundTruth: "\u671f\u5f85\u7d50\u679c",
-		input: "\u5165\u529b",
-		baseline: "\u57fa\u6e96\u7d50\u679c",
-		result: "\u51e6\u7406\u7d50\u679c",
-		groundTruthDifference: "\u671f\u5f85\u7d50\u679c\u3068\u306e\u5dee\u5206",
-		baselineDifference: "\u57fa\u6e96\u7d50\u679c\u3068\u306e\u5dee\u5206",
-		backgroundMask: "\u80cc\u666f\u30de\u30b9\u30af",
-		inputKind: "\u5165\u529b\u7a2e\u5225",
-		route: "\u51e6\u7406\u30eb\u30fc\u30c8",
-		confidence: "\u4fe1\u983c\u5ea6",
-		notAvailable: "\u53d6\u5f97\u4e0d\u53ef",
-		warnings: "\u8b66\u544a",
-		none: "\u306a\u3057",
-		topCandidates: "\u4e0a\u4f4d\u5019\u88dc",
-		metrics: "\u8a55\u4fa1\u6307\u6a19",
-		options: "\u51e6\u7406\u8a2d\u5b9a",
-		filterCases: "\u30b1\u30fc\u30b9\u3092\u7d5e\u308a\u8fbc\u3080",
-		language: "\u8868\u793a\u8a00\u8a9e",
-		allStatuses: "\u3059\u3079\u3066",
-		passed: "\u5408\u683c",
-		failed: "\u76ee\u6a19\u672a\u9054",
-		preserve: "\u4fdd\u6301",
-		refine: "\u5fa9\u5143",
-		workflow: "\u5b9f\u884c\u30ed\u30b0",
-		changed: "base branch\u304b\u3089\u5909\u66f4",
-		improved: "base branch\u3088\u308a\u6539\u5584",
-		regressed: "base branch\u3088\u308a\u60aa\u5316",
-		unchanged: "base branch\u3068\u5dee\u5206\u306a\u3057",
-		new: "base branch\u306b\u306a\u3044\u65b0\u898f\u30b1\u30fc\u30b9",
-		changedCases: "\u5dee\u5206\u3042\u308a",
-		allChanges: "\u3059\u3079\u3066",
-		qualityStatus: "\u54c1\u8cea\u72b6\u614b",
-		changeStatus: "\u5909\u5316\u72b6\u614b",
-		reportDetails: "\u30ec\u30dd\u30fc\u30c8\u60c5\u5831",
-		pullRequest: "\u30d7\u30eb\u30ea\u30af\u30a8\u30b9\u30c8",
+		title: "品質レポート",
+		groundTruth: "期待結果",
+		input: "入力",
+		baseline: "基準結果",
+		result: "処理結果",
+		groundTruthDifference: "期待結果との差分",
+		baselineDifference: "基準結果との差分",
+		backgroundMask: "背景マスク",
+		inputKind: "入力種別",
+		route: "処理ルート",
+		confidence: "信頼度",
+		notAvailable: "取得不可",
+		warnings: "警告",
+		none: "なし",
+		topCandidates: "上位候補",
+		metrics: "評価指標",
+		options: "処理設定",
+		filterCases: "ケースを絞り込む",
+		language: "表示言語",
+		allStatuses: "すべて",
+		passed: "合格",
+		failed: "目標未達",
+		preserve: "保持",
+		refine: "復元",
+		workflow: "実行ログ",
+		changed: "base branchから変更",
+		improved: "base branchより改善",
+		regressed: "base branchより悪化",
+		unchanged: "base branchと差分なし",
+		new: "base branchにない新規ケース",
+		changedCases: "差分あり",
+		allChanges: "すべて",
+		qualityStatus: "品質状態",
+		changeStatus: "変化状態",
+		reportDetails: "レポート情報",
+		pullRequest: "プルリクエスト",
 		headCommit: "HEAD",
-		baseCommit: "PR\u306e\u30d9\u30fc\u30b9",
-		baselineCommit: "\u6bd4\u8f03\u57fa\u6e96",
-		generatedAt: "\u751f\u6210\u65e5\u6642",
-		displayConditions: "\u8868\u793a\u6761\u4ef6",
-		casesShown: "\u4ef6",
-		changedPixels: "\u5909\u66f4\u753b\u7d20",
-		comparison: "\u6307\u6a19\u306e\u6bd4\u8f03",
-		metric: "\u6307\u6a19",
-		target: "\u5408\u683c\u6761\u4ef6",
-		current: "\u4eca\u56de",
-		delta: "\u5909\u5316\u91cf",
-		verdict: "\u5224\u5b9a",
-		outputSize: "\u51fa\u529b\u30b5\u30a4\u30ba",
-		meanRgbaError: "RGBA\u5e73\u5747\u8aa4\u5dee",
-		meanRgbaErrorShort: "\u8aa4\u5dee",
-		processingTime: "\u6642\u9593",
-		exactMatch: "\u5b8c\u5168\u4e00\u81f4",
-		exactMatchShort: "\u4e00\u81f4",
-		yes: "\u306f\u3044",
-		no: "\u3044\u3044\u3048",
-		edgeF1: "\u8f2a\u90edF1",
-		backgroundMaskIou: "\u80cc\u666f\u30de\u30b9\u30afIoU",
-		smallComponentRetention: "\u5c0f\u8981\u7d20\u4fdd\u6301\u7387",
-		diagnostics:
-			"\u3059\u3079\u3066\u306e\u753b\u50cf\u3068\u51e6\u7406\u8a2d\u5b9a",
-		details: "\u8a73\u7d30",
-		backToReport: "\u30ec\u30dd\u30fc\u30c8\u306b\u623b\u308b",
-		noRegression:
-			"\u65b0\u305f\u306a\u54c1\u8cea\u60aa\u5316\u306f\u3042\u308a\u307e\u305b\u3093",
-		hasRegression:
-			"\u54c1\u8cea\u306e\u60aa\u5316\u3092\u691c\u51fa\u3057\u307e\u3057\u305f",
+		baseCommit: "PRのベース",
+		baselineCommit: "比較基準",
+		generatedAt: "生成日時",
+		displayConditions: "表示条件",
+		casesShown: "件",
+		changedPixels: "変更画素",
+		comparison: "指標の比較",
+		metric: "指標",
+		target: "合格条件",
+		current: "今回",
+		delta: "変化量",
+		verdict: "判定",
+		outputSize: "出力サイズ",
+		meanRgbaError: "RGBA平均誤差",
+		meanRgbaErrorShort: "誤差",
+		processingTime: "時間",
+		exactMatch: "完全一致",
+		exactMatchShort: "一致",
+		yes: "はい",
+		no: "いいえ",
+		edgeF1: "輪郭F1",
+		backgroundMaskIou: "背景マスクIoU",
+		smallComponentRetention: "小要素保持率",
+		diagnostics: "すべての画像と処理設定",
+		details: "詳細",
+		backToReport: "レポートに戻る",
+		noRegression: "新たな品質悪化はありません",
+		hasRegression: "品質の悪化を検出しました",
 		assertions: {
-			"exact-image-match": "\u753b\u50cf\u306e\u5b8c\u5168\u4e00\u81f4",
-			"mean-rgba-error": "RGBA\u5e73\u5747\u8aa4\u5dee",
-			"edge-f1": "\u8f2a\u90ed\u306e\u4fdd\u6301",
-			"background-mask-iou": "\u80cc\u666f\u30de\u30b9\u30af",
-			"small-component-retention": "\u5c0f\u8981\u7d20\u306e\u4fdd\u6301",
-			"expected-width": "\u671f\u5f85\u3059\u308b\u5e45",
-			"expected-height": "\u671f\u5f85\u3059\u308b\u9ad8\u3055",
-			"deterministic-output": "\u51fa\u529b\u306e\u518d\u73fe\u6027",
-			"catastrophic-failure": "\u81f4\u547d\u7684\u306a\u5931\u6557",
-			"output-size": "\u51fa\u529b\u30b5\u30a4\u30ba",
+			"exact-image-match": "画像の完全一致",
+			"mean-rgba-error": "RGBA平均誤差",
+			"edge-f1": "輪郭の保持",
+			"background-mask-iou": "背景マスク",
+			"small-component-retention": "小要素の保持",
+			"expected-width": "期待する幅",
+			"expected-height": "期待する高さ",
+			"deterministic-output": "出力の再現性",
+			"catastrophic-failure": "致命的な失敗",
+			"output-size": "出力サイズ",
 		},
 	},
 } as const;
@@ -440,31 +437,31 @@ const describeCase = (
 	if (options.reduceColorMode === "gb_pocket") {
 		return {
 			en: "Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
-			ja: "\u9023\u7d9a\u968e\u8abf\u753b\u50cf\u3092\u30c7\u30a3\u30b6\u30ea\u30f3\u30b0\u306a\u3057\u3067\u30b2\u30fc\u30e0\u30dc\u30fc\u30a4\u30dd\u30b1\u30c3\u30c8\u306e4\u8272\u30d1\u30ec\u30c3\u30c8\u3078\u5909\u63db\u3057\u307e\u3059\u3002",
+			ja: "連続階調画像をディザリングなしでゲームボーイポケットの4色パレットへ変換します。",
 		};
 	}
 	if (options.ditherMode === "floyd-steinberg") {
 		return {
 			en: "Convert the image to monochrome using full-strength Floyd-Steinberg dithering.",
-			ja: "Floyd-Steinberg\u30c7\u30a3\u30b6\u30ea\u30f3\u30b0\u3092\u5f37\u5ea6100%\u3067\u9069\u7528\u3057\u3001\u753b\u50cf\u3092\u30e2\u30ce\u30af\u30ed\u3078\u5909\u63db\u3057\u307e\u3059\u3002",
+			ja: "Floyd-Steinbergディザリングを強度100%で適用し、画像をモノクロへ変換します。",
 		};
 	}
 	if (options.makeSquare) {
 		return {
 			en: "Pad the image to a square canvas without trimming or background removal.",
-			ja: "\u753b\u50cf\u3092\u30c8\u30ea\u30df\u30f3\u30b0\u3084\u80cc\u666f\u9664\u53bb\u306a\u3057\u3067\u6b63\u65b9\u5f62\u30ad\u30e3\u30f3\u30d0\u30b9\u3078\u62e1\u5f35\u3057\u307e\u3059\u3002",
+			ja: "画像をトリミングや背景除去なしで正方形キャンバスへ拡張します。",
 		};
 	}
 	if (result.degradationPatterns.includes("continuous-tone")) {
 		return {
 			en: "Preserve a continuous-tone image without grid detection or downsampling.",
-			ja: "\u9023\u7d9a\u968e\u8abf\u753b\u50cf\u3092\u30b0\u30ea\u30c3\u30c9\u691c\u51fa\u3084\u7e2e\u5c0f\u51e6\u7406\u306a\u3057\u3067\u4fdd\u6301\u3057\u307e\u3059\u3002",
+			ja: "連続階調画像をグリッド検出や縮小処理なしで保持します。",
 		};
 	}
 	if (result.degradationPatterns.includes("pixel-art-1x")) {
 		return {
 			en: "Preserve native-resolution pixel art, including small disconnected components and its limited palette.",
-			ja: "\u5c0f\u3055\u306a\u5206\u96e2\u30d1\u30fc\u30c4\u3084\u5c11\u8272\u30d1\u30ec\u30c3\u30c8\u3092\u542b\u3080\u7b49\u500d\u306e\u30c9\u30c3\u30c8\u7d75\u3092\u305d\u306e\u307e\u307e\u4fdd\u6301\u3057\u307e\u3059\u3002",
+			ja: "小さな分離パーツや少色パレットを含む等倍のドット絵をそのまま保持します。",
 		};
 	}
 	const target =
@@ -475,30 +472,26 @@ const describeCase = (
 		const patterns = result.degradationPatterns.join(", ");
 		return {
 			en: `Correct ${patterns}${target ? ` and restore the image to ${target} pixels` : ""}.`,
-			ja: `${patterns}\u306e\u52a3\u5316\u3092\u88dc\u6b63\u3057${target ? `\u3001${target}\u30d4\u30af\u30bb\u30eb\u3078\u5fa9\u5143` : ""}\u3057\u307e\u3059\u3002`,
+			ja: `${patterns}の劣化を補正し${target ? `、${target}ピクセルへ復元` : ""}します。`,
 		};
 	}
 	const stepsEn: string[] = [];
 	const stepsJa: string[] = [];
 	if (options.preRemoveBackground || options.postRemoveBackground) {
 		stepsEn.push("remove the background");
-		stepsJa.push("\u80cc\u666f\u9664\u53bb");
+		stepsJa.push("背景除去");
 	}
 	if (options.trimToContent) {
 		stepsEn.push("trim transparent margins");
-		stepsJa.push(
-			"\u900f\u660e\u4f59\u767d\u306e\u30c8\u30ea\u30df\u30f3\u30b0",
-		);
+		stepsJa.push("透明余白のトリミング");
 	}
 	if (options.autoGridFromTrimmed || options.enableGridDetection !== false) {
 		stepsEn.push("restore the detected pixel grid");
-		stepsJa.push(
-			"\u691c\u51fa\u3057\u305f\u30d4\u30af\u30bb\u30eb\u30b0\u30ea\u30c3\u30c9\u306e\u5fa9\u5143",
-		);
+		stepsJa.push("検出したピクセルグリッドの復元");
 	}
 	return {
 		en: `${stepsEn.length > 0 ? stepsEn.join(", ") : "Preserve the image"}${target ? `, then resize it to ${target} pixels` : ""}.`,
-		ja: `${stepsJa.length > 0 ? stepsJa.join("\u3001") : "\u753b\u50cf\u3092\u4fdd\u6301"}${target ? `\u5f8c\u3001${target}\u30d4\u30af\u30bb\u30eb\u3078\u5909\u63db` : ""}\u3057\u307e\u3059\u3002`,
+		ja: `${stepsJa.length > 0 ? stepsJa.join("、") : "画像を保持"}${target ? `後、${target}ピクセルへ変換` : ""}します。`,
 	};
 };
 
@@ -569,7 +562,7 @@ const renderHtml = (results: QualityResults): string => {
 		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title data-i18n="title">PixelRefiner quality report</title><style>
 ${INDEX_REPORT_STYLES}</style></head><body>
-	<div class="report-layout"><aside class="sidebar"><h1 data-i18n="title">PixelRefiner quality report</h1><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><section class="report-meta" aria-labelledby="report-meta-title"><h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2><dl><dt data-i18n="pullRequest">Pull request</dt><dd><a href="${prUrl}">#${escapeHtml(results.metadata.prNumber)}</a></dd><dt data-i18n="headCommit">Head</dt><dd><a href="${headCommitUrl}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd><dt data-i18n="baseCommit">PR base</dt><dd><a href="${baseCommitUrl}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd><dt data-i18n="baselineCommit">Baseline snapshot</dt><dd><a href="${baselineCommitUrl}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd><dt data-i18n="generatedAt">Generated</dt><dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd><dt data-i18n="workflow">Workflow</dt><dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd></dl></section><div class="filter-panel"><fieldset class="filter-group"><legend data-i18n="language">Language</legend><div class="locale-row"><button class="locale-button" type="button" data-locale="ja" aria-pressed="false">&#26085;&#26412;&#35486;</button><button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="changeStatus">Change status</legend><div class="filter-row"><button class="filter-button active" type="button" data-change-filter="" aria-pressed="true"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button><button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="qualityStatus">Quality status</legend><div class="filter-row"><button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button><button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button><button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button></div></fieldset><label class="search-row" for="search"><span data-i18n="filterCases">Filter cases</span><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"></label><p class="filter-summary" aria-live="polite"><span data-i18n="displayConditions">Showing</span>: <strong id="active-change-label"></strong> &times; <strong id="active-status-label"></strong> &mdash; <strong id="visible-count">0</strong> / ${results.summary.caseCount} <span data-i18n="casesShown">cases</span></p></div></aside>
+	<div class="report-layout"><aside class="sidebar"><h1 data-i18n="title">PixelRefiner quality report</h1><p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p><section class="report-meta" aria-labelledby="report-meta-title"><h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2><dl><dt data-i18n="pullRequest">Pull request</dt><dd><a href="${prUrl}">#${escapeHtml(results.metadata.prNumber)}</a></dd><dt data-i18n="headCommit">Head</dt><dd><a href="${headCommitUrl}" title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd><dt data-i18n="baseCommit">PR base</dt><dd><a href="${baseCommitUrl}" title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd><dt data-i18n="baselineCommit">Baseline snapshot</dt><dd><a href="${baselineCommitUrl}" title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd><dt data-i18n="generatedAt">Generated</dt><dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd><dt data-i18n="workflow">Workflow</dt><dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd></dl></section><div class="filter-panel"><fieldset class="filter-group"><legend data-i18n="language">Language</legend><div class="locale-row"><button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button><button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="changeStatus">Change status</legend><div class="filter-row"><button class="filter-button active" type="button" data-change-filter="" aria-pressed="true"><span data-i18n="allChanges">All</span>: ${results.summary.caseCount}</button><button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false"><span data-i18n="changed">changed</span>: ${results.summary.changed}</button><button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false"><span data-i18n="regressed">regressed</span>: ${results.summary.regressed}</button><button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false"><span data-i18n="improved">improved</span>: ${results.summary.improved}</button><button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false"><span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}</button></div></fieldset><fieldset class="filter-group"><legend data-i18n="qualityStatus">Quality status</legend><div class="filter-row"><button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button><button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false"><span data-i18n="passed">passed</span>: ${results.summary.passed}</button><button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false"><span data-i18n="failed">target unmet</span>: ${results.summary.failed}</button></div></fieldset><label class="search-row" for="search"><span data-i18n="filterCases">Filter cases</span><input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases"></label><p class="filter-summary" aria-live="polite"><span data-i18n="displayConditions">Showing</span>: <strong id="active-change-label"></strong> &times; <strong id="active-status-label"></strong> &mdash; <strong id="visible-count">0</strong> / ${results.summary.caseCount} <span data-i18n="casesShown">cases</span></p></div></aside>
 	<main class="report-main">${cards}</main></div><dialog id="image-dialog"><button id="dialog-close">&times;</button><div class="image-stage dialog-stage"><img alt=""></div></dialog><script>${renderClientScript()}</script></body></html>`;
 };
 

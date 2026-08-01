@@ -18,4 +18,3 @@ When adding or changing `data-i18n` or `data-i18n-attr` attributes, register the
 ## Verification
 
 - Run `make ci` after changes.
-- When asked to commit, use an English Conventional Commit message.

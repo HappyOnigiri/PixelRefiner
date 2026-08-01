@@ -60,7 +60,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('id="active-change-label"');
 		expect(html).toContain('id="visible-count"');
 		expect(html).toContain("unchanged from base branch");
-		expect(html).toContain("base branch\u3068\u5dee\u5206\u306a\u3057");
+		expect(html).toContain("base branchと差分なし");
 		expect(html.match(/class="case-description"/g)).toHaveLength(
 			selectedCases.length,
 		);
@@ -71,7 +71,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		expect(html).toContain('processingTime":"\u6642\u9593"');
+		expect(html).toContain('processingTime":"時間"');
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -80,9 +80,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(paletteCase).toContain(
 			"Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
 		);
-		expect(paletteCase).toContain(
-			"\u30b2\u30fc\u30e0\u30dc\u30fc\u30a4\u30dd\u30b1\u30c3\u30c8\u306e4\u8272\u30d1\u30ec\u30c3\u30c8",
-		);
+		expect(paletteCase).toContain("ゲームボーイポケットの4色パレット");
 		const compactCaseId = "remove-background-trim-auto-grid";
 		const compactCaseIdIndex = html.indexOf(compactCaseId);
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
@@ -132,7 +130,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		]) {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
-		expect(html).toContain("\u54c1\u8cea\u30ec\u30dd\u30fc\u30c8");
+		expect(html).toContain("品質レポート");
 		expect(html).toContain(
 			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
 		);

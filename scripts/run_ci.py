@@ -88,7 +88,6 @@ def main():
         ("HTML Check", ["make", "html-check-diff"]),
         ("Type Check", ["make", "type-check"]),
         ("Custom Rules", ["make", "check-ts-rules"]),
-        ("Non-ASCII Check", ["make", "check-non-ascii"]),
         ("Tests", ["make", "test"]),
     ]
 
