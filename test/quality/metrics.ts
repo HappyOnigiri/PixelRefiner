@@ -177,11 +177,13 @@ export const smallComponentRetention = (
 };
 
 export const topGridCandidates = (grid: PixelGrid): PixelGrid[] => {
-	const candidates = [grid, ...(grid.candidates ?? [])].sort(
+	const candidates = [...(grid.candidates ?? [])].sort(
 		(left, right) => left.score - right.score,
 	);
-	const selected: PixelGrid[] = [];
-	const seenSizes = new Set<string>();
+	const selected: PixelGrid[] = [grid];
+	const seenSizes = new Set<string>([
+		`${String(grid.outW)}x${String(grid.outH)}`,
+	]);
 	for (const candidate of candidates) {
 		const size = `${String(candidate.outW)}x${String(candidate.outH)}`;
 		if (seenSizes.has(size)) continue;

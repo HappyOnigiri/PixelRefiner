@@ -75,7 +75,7 @@ describe("quality metrics", () => {
 	});
 
 	it("selects three unique grid sizes in score order", () => {
-		const best = grid(8, 8, 0.1);
+		const best = grid(8, 8, 0.5);
 		best.candidates = [
 			grid(4, 4, 0.4),
 			grid(8, 8, 0.1),

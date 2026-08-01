@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "commit": "a801d4ba6b357b33bed5a2f83770c3c833606672",
+  "version": 3,
+  "commit": "000acc0a434ec2d771bbcadafc8c2b32aef2478d",
   "cases": [
     {
       "id": "remove-background-trim-auto-grid",
@@ -142,7 +142,7 @@
       "meanRgbaError": 46.53125,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -153,7 +153,7 @@
       "meanRgbaError": 46.53125,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -164,7 +164,7 @@
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -175,7 +175,7 @@
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -186,7 +186,7 @@
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -197,7 +197,7 @@
       "meanRgbaError": 48.421875,
       "edgeF1": 0.4,
       "backgroundMaskIou": 0.222222,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -208,7 +208,7 @@
       "meanRgbaError": 56.21875,
       "edgeF1": 0.322581,
       "backgroundMaskIou": 0.2,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 0.5,
       "catastrophicFailure": false
     },
     {
@@ -219,7 +219,7 @@
       "meanRgbaError": 49,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -230,7 +230,7 @@
       "meanRgbaError": 56.429688,
       "edgeF1": 0.344828,
       "backgroundMaskIou": 0.166667,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -241,7 +241,7 @@
       "meanRgbaError": 49.707031,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -252,7 +252,7 @@
       "meanRgbaError": 49.703125,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -263,7 +263,7 @@
       "meanRgbaError": 56.523438,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -274,7 +274,7 @@
       "meanRgbaError": 54.855469,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -285,7 +285,7 @@
       "meanRgbaError": 57.253906,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -296,7 +296,7 @@
       "meanRgbaError": 54.6875,
       "edgeF1": 0,
       "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -340,7 +340,7 @@
       "meanRgbaError": 97.6875,
       "edgeF1": 0.176471,
       "backgroundMaskIou": 0.115385,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
@@ -351,7 +351,7 @@
       "meanRgbaError": 46.53125,
       "edgeF1": 0.375,
       "backgroundMaskIou": 0.157895,
-      "smallComponentRetention": 0,
+      "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
     {
