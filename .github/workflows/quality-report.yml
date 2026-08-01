@@ -1,0 +1,227 @@
+name: Quality Report
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-report-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check out the PR base quality baseline
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: quality-base
+          persist-credentials: false
+          sparse-checkout: |
+            test/quality/baseline
+            test/quality/baseline.json
+          sparse-checkout-cone-mode: false
+
+      - name: Use the PR base quality baseline when available
+        run: |
+          baseline_root="$GITHUB_WORKSPACE/quality-base/test/quality/baseline"
+          baseline_file="$GITHUB_WORKSPACE/quality-base/test/quality/baseline.json"
+          if [ -d "$baseline_root" ] && [ -f "$baseline_file" ]; then
+            echo "QUALITY_BASELINE_ROOT=$baseline_root" >> "$GITHUB_ENV"
+            echo "QUALITY_BASELINE_FILE=$baseline_file" >> "$GITHUB_ENV"
+          fi
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate comparison report
+        run: pnpm test:quality:report
+        env:
+          QUALITY_PR_NUMBER: ${{ github.event.pull_request.number }}
+          QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
+      - name: Run quality gate
+        id: quality-gate
+        continue-on-error: true
+        run: pnpm test:quality:full
+
+      - name: Upload comparison report
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-report-pr-${{ github.event.pull_request.number }}
+          path: tmp/quality-report/latest
+          if-no-files-found: error
+
+      - name: Fail when the quality gate failed
+        if: steps.quality-gate.outcome != 'success'
+        run: exit 1
+
+  publish:
+    if: >-
+      always() &&
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.build.result != 'cancelled'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: quality-pages
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: write
+      pages: write
+      pull-requests: write
+      id-token: write
+    environment:
+      name: quality-reports
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Download comparison report
+        uses: actions/download-artifact@v8
+        with:
+          name: quality-report-pr-${{ github.event.pull_request.number }}
+          path: report
+
+      - name: Preserve reports and publish this PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init site-repo
+          cd site-repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git checkout -b gh-pages FETCH_HEAD
+          else
+            git checkout --orphan gh-pages
+          fi
+          touch .nojekyll
+          report_path="quality/pr-${PR_NUMBER}"
+          rm -rf "$report_path"
+          mkdir -p "$report_path"
+          cp -R ../report/. "$report_path/"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          # [Policy] Keep gh-pages as one snapshot commit so report images do not accumulate in history.
+          git checkout --orphan fresh-gh-pages
+          git add -A
+          git commit -m "docs: publish quality report for PR ${PR_NUMBER}"
+          git push --force origin HEAD:gh-pages
+
+      - name: Build the complete Pages directory
+        run: |
+          mkdir site
+          rsync -a --exclude=.git site-repo/ site/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
+          enablement: true
+
+      - name: Package the complete Pages site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v5
+
+      - name: Add report link once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PAGE_URL: ${{ steps.deploy-pages.outputs.page_url }}
+        run: |
+          marker='<!-- pixel-refiner-quality-report -->'
+          report_url="${PAGE_URL%/}/quality/pr-${PR_NUMBER}/"
+          existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | head -n 1)"
+          if [ -z "$existing" ]; then
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "${marker}
+          Quality report: ${report_url}"
+          fi
+
+  cleanup:
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: quality-pages
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: quality-reports
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Remove the closed PR report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init site-repo
+          cd site-repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git checkout -b gh-pages FETCH_HEAD
+          else
+            git checkout --orphan gh-pages
+          fi
+          touch .nojekyll
+          report_path="quality/pr-${PR_NUMBER}"
+          rm -rf "$report_path"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          # [Policy] Keep gh-pages as one snapshot commit so closed reports and old images are collectible.
+          git checkout --orphan fresh-gh-pages
+          git add -A
+          git commit --allow-empty -m "docs: remove quality report for PR ${PR_NUMBER}"
+          git push --force origin HEAD:gh-pages
+
+      - name: Build the complete Pages directory
+        run: |
+          mkdir site
+          rsync -a --exclude=.git site-repo/ site/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
+          enablement: true
+
+      - name: Package the complete Pages site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v5
