@@ -31,6 +31,16 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(html).toContain('data-change-filter=""');
 		expect(html).toContain('data-change-filter="regressed"');
+		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
+		const qualityGroupIndex = html.indexOf(
+			'<legend data-i18n="qualityStatus">',
+		);
+		const searchIndex = html.indexOf('class="search-row"');
+		expect(changeGroupIndex).toBeGreaterThan(-1);
+		expect(qualityGroupIndex).toBeGreaterThan(changeGroupIndex);
+		expect(searchIndex).toBeGreaterThan(qualityGroupIndex);
+		expect(html).toContain('id="active-change-label"');
+		expect(html).toContain('id="visible-count"');
 		const compactCaseId = "legacy-resize-remove-background";
 		const compactCaseIdIndex = html.indexOf(compactCaseId);
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
