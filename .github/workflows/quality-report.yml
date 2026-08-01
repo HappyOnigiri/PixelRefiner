@@ -2,7 +2,7 @@ name: Quality Report
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review, closed]
+    types: [opened, reopened, synchronize, closed]
 
 permissions:
   contents: read
