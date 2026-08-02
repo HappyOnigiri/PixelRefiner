@@ -1,4 +1,9 @@
-import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
+import type {
+	BackgroundDiagnostic,
+	PixelGrid,
+	ProcessResult,
+	RawImage,
+} from "../shared/types";
 import type { BackgroundModel } from "./background";
 import {
 	removeBackground,
@@ -26,10 +31,7 @@ type SimpleRouteContext = {
 	trimAlphaThreshold: number;
 	startTime: number;
 	log: (...args: unknown[]) => void;
-	backgroundDiagnostic?: {
-		confidence: number;
-		contentLossRisk: boolean;
-	};
+	backgroundDiagnostic?: BackgroundDiagnostic;
 	backgroundModel?: BackgroundModel;
 };
 
@@ -150,6 +152,7 @@ export const processForcedRoute = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				backgroundDiagnostic,
 			)
 		: down2;
 	log(

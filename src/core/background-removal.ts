@@ -125,17 +125,22 @@ export const removeBackground = (
 		| "bottom-right"
 		| "rgb",
 	automaticModel?: BackgroundModel,
+	// [Intended] 自動除去のロールバックは呼び出し側の診断へ集約する必要があるため、
+	// 戻り値を画像のままにして、この出力引数へ書き戻す。
+	outcome?: { removalRolledBack: boolean },
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 	if (bgRemovalScope === "off") return cloneImage(img);
 	if (method === "auto") {
-		return removeAutomaticBackground(
+		const automatic = removeAutomaticBackground(
 			img,
 			tolerance,
 			bgRemovalScope,
 			bgConnectivity,
 			automaticModel,
-		).image;
+		);
+		if (outcome && automatic.rolledBack) outcome.removalRolledBack = true;
+		return automatic.image;
 	}
 
 	// 4/8 連結性が有効なのは selected / outer のみ。

@@ -82,7 +82,7 @@ export const processImage = (
 		o.bgRemovalScope !== "off"
 			? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
 			: [];
-	const { automaticBackground, backgroundDiagnostic } =
+	const { automaticBackground, backgroundModel, backgroundDiagnostic } =
 		prepareAutomaticBackground(img, o);
 	log(
 		`Background targets extracted in ${(performance.now() - bgTargetsStart).toFixed(2)}ms`,
@@ -95,6 +95,10 @@ export const processImage = (
 		working = cloneImage(img);
 	} else if (automaticBackground) {
 		working = automaticBackground.image;
+	} else if (o.bgExtractionMethod === "auto") {
+		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
+		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
+		working = cloneImage(img);
 	} else if (o.bgRemovalScope === "outer") {
 		working = removeBackground(
 			img,
@@ -110,7 +114,7 @@ export const processImage = (
 			o.backgroundTolerance,
 			o.bgConnectivity,
 			bgTargets,
-			o.bgExtractionMethod as Exclude<typeof o.bgExtractionMethod, "auto">,
+			o.bgExtractionMethod,
 		);
 	} else if (o.bgRemovalScope === "all") {
 		working = removeBackgroundByFloodFillLegacy(
@@ -118,7 +122,7 @@ export const processImage = (
 			o.backgroundTolerance,
 			"4",
 			bgTargets,
-			o.bgExtractionMethod as Exclude<typeof o.bgExtractionMethod, "auto">,
+			o.bgExtractionMethod,
 		);
 	} else {
 		working = cloneImage(img);
@@ -144,7 +148,7 @@ export const processImage = (
 		startTime,
 		log,
 		backgroundDiagnostic,
-		backgroundModel: automaticBackground?.model,
+		backgroundModel,
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return forcedResult;
@@ -168,7 +172,7 @@ export const processImage = (
 					o.bgConnectivity,
 					bgTargets,
 					o.bgExtractionMethod,
-					automaticBackground?.model,
+					backgroundModel,
 				)
 			: null;
 	if (maskedForDebugOrAuto) {
@@ -342,7 +346,7 @@ export const processImage = (
 			o.bgConnectivity,
 			bgTargets,
 			o.bgExtractionMethod,
-			automaticBackground?.model,
+			backgroundModel,
 		);
 		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
@@ -395,7 +399,8 @@ export const processImage = (
 				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
-				automaticBackground?.model,
+				backgroundModel,
+				backgroundDiagnostic,
 			)
 		: trimmed;
 	log(

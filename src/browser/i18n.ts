@@ -191,6 +191,8 @@ const resources = {
 		"warning.low_grid_confidence":
 			"グリッド判定の信頼度が低いため、結果を確認してください。",
 		"warning.background_uncertain": "背景の判定が不確かです。",
+		"warning.background_removal_skipped":
+			"背景が消えすぎると判定したため、背景の透過を中止しました。",
 		"warning.content_loss_risk":
 			"処理によって内容が大きく失われた可能性があります。",
 		"warning.one_axis_detection_failed":
@@ -399,6 +401,8 @@ const resources = {
 		"info.grid_updated": "网格尺寸已更新为 {w}x{h}",
 		"warning.low_grid_confidence": "网格判断可信度较低，请检查结果。",
 		"warning.background_uncertain": "背景判断存在不确定性。",
+		"warning.background_removal_skipped":
+			"检测到背景可能被过度移除，已中止背景透明化。",
 		"warning.content_loss_risk": "处理可能导致大量内容丢失。",
 		"warning.one_axis_detection_failed": "无法检测一个方向的网格。",
 		"warning.extreme_output_size": "输出尺寸非常大。",
@@ -605,6 +609,8 @@ const resources = {
 		"warning.low_grid_confidence":
 			"Grid confidence is low. Please check the result.",
 		"warning.background_uncertain": "The background detection is uncertain.",
+		"warning.background_removal_skipped":
+			"Background removal was skipped because too much would have been removed.",
 		"warning.content_loss_risk":
 			"Processing may have removed a large amount of content.",
 		"warning.one_axis_detection_failed":
