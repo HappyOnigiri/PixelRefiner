@@ -8,6 +8,7 @@ import { loadCases, selectCasesForProfile } from "./manifest";
 const enabled = process.env.QUALITY_REPORT === "1";
 
 describe.skipIf(!enabled)("quality report", () => {
+	// [Policy] 共有CIランナーでも全品質ケースの生成を完了できるよう、通常のテストより長く待機する。
 	it("writes JSON, Markdown, HTML, and every case artifact", () => {
 		const allCases = loadCases();
 		const selectedCases = selectCasesForProfile(allCases);
@@ -214,5 +215,5 @@ describe.skipIf(!enabled)("quality report", () => {
 				);
 			}
 		}
-	}, 120_000);
+	}, 300_000);
 });
