@@ -432,6 +432,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "restore-thin-features-and-alpha-coverage",
+      "status": "passed",
+      "outputWidth": 6,
+      "outputHeight": 6,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "preserve-continuous-tone",
       "status": "passed",
       "outputWidth": 48,

@@ -65,6 +65,7 @@ describe("processImage", () => {
 				bgRemovalScope: "selected",
 				backgroundTolerance: 0,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: false,
@@ -120,6 +121,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: true,
@@ -176,6 +178,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 64,
 
@@ -245,6 +248,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 
@@ -303,6 +307,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 96,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 
@@ -342,6 +347,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 96,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 
@@ -394,6 +400,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 32,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: false, // 自動トリミングを OFF にする
 				trimAlphaThreshold: 16,
 

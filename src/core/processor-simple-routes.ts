@@ -12,7 +12,10 @@ import {
 	padRawImage,
 } from "./image-operations";
 import { createProcessingAnalysis } from "./processing-analysis";
-import type { NormalizedProcessOptions } from "./processor-options";
+import {
+	getDownsampleOptions,
+	type NormalizedProcessOptions,
+} from "./processor-options";
 
 type SimpleRouteContext = {
 	img: RawImage;
@@ -110,12 +113,13 @@ export const processForcedRoute = (
 	// 2. ダウンサンプリング / 補正
 	const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
 	const downsampleStart = performance.now();
-	const down2 = downsample(cropped, g, sw);
+	const down2 = downsample(cropped, g, getDownsampleOptions(o, sw));
 	log(
 		`Downsampling (forced) done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
 	);
 	o.debugHook?.("05-downsampled", down2, {
 		sampleWindow: sw,
+		cellSamplingMode: o.cellSamplingMode,
 		forced: true,
 	});
 
@@ -163,9 +167,13 @@ export const processForcedRoute = (
 		forcedTrimmedGridForOriginal,
 	);
 
-	// 補正済み比較: パイプラインと同じダウンサンプリング（中央値サンプリング）を使用する。
+	// 補正済み比較: パイプラインと同じセルサンプリングを使用する。
 	const croppedOriginal = cropRawImage(img, b.x, b.y, b.w, b.h);
-	let compareBeforeSanitized = downsample(croppedOriginal, g, sw);
+	let compareBeforeSanitized = downsample(
+		croppedOriginal,
+		g,
+		getDownsampleOptions(o, sw),
+	);
 
 	let finalGridForForce = g;
 	if (o.makeSquare) {

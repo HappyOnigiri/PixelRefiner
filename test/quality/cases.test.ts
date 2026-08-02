@@ -107,6 +107,7 @@ describe("quality case manifest", () => {
 			if (!result) continue;
 			expect(
 				compareMetrics(result.metrics, expected, currentCase.status).regressed,
+				`${currentCase.id} regressed against the stored quality baseline`,
 			).toEqual([]);
 		}
 	}, 60_000);

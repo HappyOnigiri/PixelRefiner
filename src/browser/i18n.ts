@@ -63,7 +63,7 @@ const resources = {
 		"setting.grid_detection": "グリッド検出",
 		"setting.grid_mode": "グリッド検出モード",
 		"setting.quant_step": "減色段階",
-		"setting.sample_window": "サンプル対象範囲",
+		"setting.sample_window": "グリッド探索のサンプル範囲",
 		"setting.force_width": "強制幅 (px)",
 		"setting.force_height": "強制高さ (px)",
 		"setting.fast_mode": "高速モード",
@@ -111,7 +111,7 @@ const resources = {
 		"tooltip.help.quant_step":
 			"グリッド検出用の減色レベルを設定します。\n\n【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。\n【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.sample_window":
-			"各ドットの色を決める際の参照範囲（ピクセル数）です。\n\n【大】ノイズが除去され色が安定しますが、細部のディテールが失われやすくなります。\n【小】元画像を忠実に再現しますが、位置ズレやノイズの影響を強く受けます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+			"Auto・Hintでグリッドサイズ候補を比較する際の参照範囲（ピクセル数）です。\n\n【大】グリッド検出がノイズに強くなりますが、細かな境界を見落とす可能性があります。\n【小】細かな境界を捉えやすくなりますが、位置ズレやノイズの影響を強く受けます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.force_width":
 			"指定ピクセル（横）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.force_height":
@@ -272,7 +272,7 @@ const resources = {
 		"setting.grid_detection": "网格检测",
 		"setting.grid_mode": "网格检测模式",
 		"setting.quant_step": "量化步长",
-		"setting.sample_window": "采样范围",
+		"setting.sample_window": "网格搜索采样范围",
 		"setting.force_width": "强制宽度 (px)",
 		"setting.force_height": "强制高度 (px)",
 		"setting.fast_mode": "快速模式",
@@ -319,7 +319,7 @@ const resources = {
 		"tooltip.help.quant_step":
 			"设置网格检测使用的减色级别。\n\n高：颜色会被归并，更抗噪，但细微色差可能丢失。\n低：能捕捉更细的颜色边界，但更容易误判噪点。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.sample_window":
-			"决定每个像素块颜色时参考的范围（像素数）。\n\n高：噪点更容易被去除，颜色更稳定，但细节更容易丢失。\n低：更忠实于原图，但更容易受错位和噪点影响。\n\n范围：{min} 到 {max} (默认：{default})",
+			"在自动和提示模式下比较网格尺寸候选项时使用的参考范围（像素数）。\n\n高：网格检测更能抵抗噪点，但可能忽略细微边界。\n低：更容易捕捉细微边界，但更容易受错位和噪点影响。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.force_width":
 			"指定像素宽度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该宽度。\n\n范围：1 到 1024 (默认：自动)",
 		"tooltip.help.force_height":
@@ -475,7 +475,7 @@ const resources = {
 		"setting.grid_detection": "Grid Detection",
 		"setting.grid_mode": "Grid Detection Mode",
 		"setting.quant_step": "Quantization Step",
-		"setting.sample_window": "Sample Window",
+		"setting.sample_window": "Grid Sampling Window",
 		"setting.force_width": "Force Width (px)",
 		"setting.force_height": "Force Height (px)",
 		"setting.fast_mode": "Fast Mode",
@@ -523,7 +523,7 @@ const resources = {
 		"tooltip.help.quant_step":
 			"Sets the color reduction level for grid detection.\n\nHigh: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.\nLow: Picks up fine color boundaries, but increases the risk of false noise detection.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.sample_window":
-			"The reference range (in pixels) used when determining the color of each dot.\n\nHigh: Noise is removed and colors become stable, but fine details may be lost.\nLow: Faithfully reproduces the original image, but is more affected by misalignment and noise.\n\nRange: {min} to {max} (Default: {default})",
+			"The reference range (in pixels) used to compare grid-size candidates in Auto and Hint modes.\n\nHigh: Grid detection is more resistant to noise, but fine boundaries may be overlooked.\nLow: Grid detection follows fine boundaries, but is more affected by misalignment and noise.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.force_width":
 			"Specified pixel width.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.force_height":

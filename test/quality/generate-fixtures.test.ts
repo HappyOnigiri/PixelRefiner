@@ -132,6 +132,70 @@ const createEnsembleSignalGrid = (
 	return { width, height, data };
 };
 
+const createCellSamplingFixtures = (): {
+	input: RawImage;
+	expected: RawImage;
+} => {
+	const logicalWidth = 6;
+	const logicalHeight = 6;
+	const scale = 4;
+	const input = new Uint8ClampedArray(
+		logicalWidth * scale * logicalHeight * scale * 4,
+	);
+	const expected = new Uint8ClampedArray(logicalWidth * logicalHeight * 4);
+	const background = [16, 20, 32, 255] as const;
+	for (let logicalY = 0; logicalY < logicalHeight; logicalY += 1) {
+		for (let logicalX = 0; logicalX < logicalWidth; logicalX += 1) {
+			const boundary = logicalX === 0 || logicalX === logicalWidth - 1;
+			const line = logicalY === 2 && logicalX >= 1 && logicalX <= 4;
+			const highlight =
+				(logicalX === 2 && logicalY === 3) ||
+				(logicalX === 3 && logicalY === 4);
+			const expectedOffset = (logicalY * logicalWidth + logicalX) * 4;
+			const feature = line
+				? ([248, 184, 48, 255] as const)
+				: highlight
+					? ([80, 224, 248, 255] as const)
+					: background;
+			expected[expectedOffset] = boundary ? 224 : feature[0];
+			expected[expectedOffset + 1] = boundary ? 64 : feature[1];
+			expected[expectedOffset + 2] = boundary ? 48 : feature[2];
+			expected[expectedOffset + 3] = boundary ? 64 : feature[3];
+
+			for (let localY = 0; localY < scale; localY += 1) {
+				for (let localX = 0; localX < scale; localX += 1) {
+					const x = logicalX * scale + localX;
+					const y = logicalY * scale + localY;
+					const inputOffset = (y * logicalWidth * scale + x) * 4;
+					const onFeature =
+						(line && localY === 1) ||
+						(highlight && localX === localY) ||
+						(boundary && localY === 1);
+					const color = onFeature ? feature : background;
+					input[inputOffset] = boundary && onFeature ? 224 : color[0];
+					input[inputOffset + 1] = boundary && onFeature ? 64 : color[1];
+					input[inputOffset + 2] = boundary && onFeature ? 48 : color[2];
+					input[inputOffset + 3] = boundary ? (onFeature ? 255 : 0) : 255;
+					if (boundary && !onFeature) {
+						// [Intended] 完全透明画素のRGBが復元色へ混入しないことも同時に検証する。
+						input[inputOffset] = 32;
+						input[inputOffset + 1] = 240;
+						input[inputOffset + 2] = 96;
+					}
+				}
+			}
+		}
+	}
+	return {
+		input: {
+			width: logicalWidth * scale,
+			height: logicalHeight * scale,
+			data: input,
+		},
+		expected: { width: logicalWidth, height: logicalHeight, data: expected },
+	};
+};
+
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
 		const reference = createReferenceSprite();
@@ -229,6 +293,15 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 				createEnsembleSignalGrid(1, mode),
 			);
 		}
+		const cellSampling = createCellSamplingFixtures();
+		writePng(
+			fixturePath("quality_prf130_cell_sampling.png"),
+			cellSampling.input,
+		);
+		writePng(
+			fixturePath("quality_prf130_cell_sampling-expect.png"),
+			cellSampling.expected,
+		);
 
 		const quantizationInput = createQuantizationInput();
 		writePng(

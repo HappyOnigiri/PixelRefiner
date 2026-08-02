@@ -23,6 +23,7 @@ import {
 import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
 import {
+	getDownsampleOptions,
 	normalizeProcessOptions,
 	type ProcessOptions,
 } from "./processor-options";
@@ -34,6 +35,11 @@ import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
 export type { ProcessResult } from "../shared/types";
 export { _removeSmallFloatingComponentsInPlace } from "./background-removal";
+export type {
+	CellSampler,
+	CellSamplerOptions,
+	CellSamplingMode,
+} from "./cell-sampler";
 export { searchPhaseAwareGrid } from "./grid-search";
 export {
 	downsample,
@@ -292,18 +298,19 @@ export const processImage = (
 	// [Intended] 選択した出力グリッドは後でトリミングまたはパディングされる場合がある一方で、
 	// 候補診断は検出器で共有する座標空間に保つ。
 	const diagnosticGrid = grid;
-	const down = downsample(working, grid, o.sampleWindow);
+	const down = downsample(working, grid, getDownsampleOptions(o));
 	log(
 		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
 	);
 	o.debugHook?.("05-downsampled", down, {
 		sampleWindow: o.sampleWindow,
+		cellSamplingMode: o.cellSamplingMode,
 	});
 
 	// 「処理前」比較: 元画像をリサイズするだけ（補正なし）。
 	let compareBefore = cropRawImageNearestFromGrid(img, grid);
-	// 「処理前（補正済み）」比較: 同じグリッドを使い、元画像をダウンサンプリング（中央値サンプリング）する。
-	let compareBeforeSanitized = downsample(img, grid, o.sampleWindow);
+	// 「処理前（補正済み）」比較: 同じグリッドとセルサンプリングで元画像をダウンサンプリングする。
+	let compareBeforeSanitized = downsample(img, grid, getDownsampleOptions(o));
 
 	let trimmed = down;
 	let trimmedGrid = grid;
