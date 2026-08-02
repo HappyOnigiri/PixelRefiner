@@ -94,6 +94,44 @@ const createAmbiguousAxisGrid = (scale: number): RawImage => {
 	return { width, height, data };
 };
 
+const createEnsembleSignalGrid = (
+	scale: number,
+	mode: "alpha" | "diagonal" | "harmonic",
+): RawImage => {
+	const logicalSize = 8;
+	const width = logicalSize * scale;
+	const height = logicalSize * scale;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		const logicalY = Math.floor(y / scale);
+		for (let x = 0; x < width; x += 1) {
+			const logicalX = Math.floor(x / scale);
+			const target = (y * width + x) * 4;
+			let value = 128;
+			let alpha = 255;
+			if (mode === "alpha") {
+				alpha = (logicalX + logicalY) % 2 === 0 ? 96 : 224;
+			} else if (mode === "diagonal") {
+				value =
+					Math.abs(logicalX - logicalY) <= 1 || (logicalX + logicalY) % 5 === 0
+						? 220
+						: 40;
+			} else {
+				value =
+					(Math.floor(logicalX / 2) + Math.floor(logicalY / 2)) % 2 === 0
+						? 48
+						: 208;
+				if ((logicalX + logicalY * 2) % 3 === 0) value += 48;
+			}
+			data[target] = value;
+			data[target + 1] = mode === "diagonal" ? (value + 24) % 256 : value;
+			data[target + 2] = mode === "diagonal" ? (value + 48) % 256 : value;
+			data[target + 3] = alpha;
+		}
+	}
+	return { width, height, data };
+};
+
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
 		const reference = createReferenceSprite();
@@ -180,6 +218,16 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 			fixturePath("quality_ambiguous_axis_grid-expect.png"),
 			createAmbiguousAxisGrid(1),
 		);
+		for (const mode of ["alpha", "diagonal", "harmonic"] as const) {
+			writePng(
+				fixturePath(`quality_prf120_${mode}_grid.png`),
+				createEnsembleSignalGrid(4, mode),
+			);
+			writePng(
+				fixturePath(`quality_prf120_${mode}_grid-expect.png`),
+				createEnsembleSignalGrid(1, mode),
+			);
+		}
 
 		const quantizationInput = createQuantizationInput();
 		writePng(

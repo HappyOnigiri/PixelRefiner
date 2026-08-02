@@ -1,5 +1,24 @@
-import { GRID_SEARCH_LIMITS } from "../shared/config";
-import type { Axis, PixelGrid, RawImage } from "../shared/types";
+import { GRID_SEARCH_LIMITS, GRID_SIGNAL_DEFAULTS } from "../shared/config";
+import type {
+	GridSignalOptions,
+	GridSignalScores,
+	PixelGrid,
+	RawImage,
+} from "../shared/types";
+import { applyHarmonicPenalties } from "./grid-signals/harmonics";
+import {
+	type AxisSignalProfile,
+	type AxisSignalScores,
+	combineSignalProfiles,
+	createAxisSignalProfile,
+	createLinearLuminance,
+	gridAlignmentScore,
+	scoreAxisSignals,
+} from "./grid-signals/profiles";
+import {
+	perceptualReconstructionError,
+	reconstructionScore,
+} from "./grid-signals/reconstruction";
 
 export type PhaseAwareGridEstimate = PixelGrid & {
 	outW: number;
@@ -21,6 +40,7 @@ type AxisCandidate = {
 	cell: number;
 	phase: number;
 	score: number;
+	signals: AxisSignalScores;
 };
 
 const PHASE_EPSILON = 1e-6;
@@ -73,52 +93,6 @@ export const resolveGridEstimate = (
 		scoreX: estimate.scoreX,
 		scoreY: estimate.scoreY,
 	};
-};
-
-const axisLength = (image: RawImage, axis: Axis): number =>
-	axis === "x" ? image.width : image.height;
-
-const createEdgeProfile = (
-	image: RawImage,
-	mask: RawImage,
-	axis: Axis,
-	orthogonalStride: number,
-): Float64Array => {
-	const length = axisLength(image, axis);
-	const orthogonalLength = axis === "x" ? image.height : image.width;
-	const edges = new Float64Array(length + 1);
-	const data = image.data;
-	const maskData = mask.data;
-	for (let position = 1; position < length; position += 1) {
-		let difference = 0;
-		let samples = 0;
-		for (
-			let orthogonal = 0;
-			orthogonal < orthogonalLength;
-			orthogonal += orthogonalStride
-		) {
-			const beforePixel =
-				axis === "x"
-					? orthogonal * image.width + position - 1
-					: (position - 1) * image.width + orthogonal;
-			const afterPixel = beforePixel + (axis === "x" ? 1 : image.width);
-			if (
-				maskData[beforePixel * 4 + 3] < 16 &&
-				maskData[afterPixel * 4 + 3] < 16
-			)
-				continue;
-			const before = beforePixel * 4;
-			const after = afterPixel * 4;
-			difference +=
-				Math.abs(data[before] - data[after]) +
-				Math.abs(data[before + 1] - data[after + 1]) +
-				Math.abs(data[before + 2] - data[after + 2]) +
-				Math.abs(data[before + 3] - data[after + 3]);
-			samples += 1;
-		}
-		edges[position] = samples === 0 ? 0 : difference / (samples * 4 * 255);
-	}
-	return edges;
 };
 
 const strongestTransitions = (edges: Float64Array): number[] => {
@@ -175,56 +149,6 @@ const createCellCandidates = (
 	return values;
 };
 
-const edgeAt = (edges: Float64Array, position: number): number => {
-	const center = Math.round(position);
-	let value = 0;
-	for (let delta = -1; delta <= 1; delta += 1) {
-		const index = center + delta;
-		if (index > 0 && index < edges.length - 1) {
-			const distance = Math.abs(position - index);
-			value = Math.max(value, edges[index] * Math.max(0, 1 - distance));
-		}
-	}
-	return value;
-};
-
-const scoreAxisCandidate = (
-	edges: Float64Array,
-	cell: number,
-	phase: number,
-): number => {
-	let totalEdge = 0;
-	let alignedEdge = 0;
-	let maxEdge = 0;
-	for (let position = 1; position < edges.length - 1; position += 1) {
-		const edge = edges[position];
-		totalEdge += edge;
-		maxEdge = Math.max(maxEdge, edge);
-		const remainder = normalizeGridPhase(position - phase, cell);
-		const distance = Math.min(remainder, cell - remainder);
-		// [Intended] 最近傍スケーリングでは分数境界が隣接するいずれかの元ピクセル上に置かれるため、
-		// 半ピクセルまでのサブピクセルオフセットは完全に一致する。
-		if (distance <= 0.625) alignedEdge += edge;
-	}
-	let predictedEvidence = 0;
-	let predictedCount = 0;
-	for (
-		let boundary = phase === 0 ? cell : phase;
-		boundary < edges.length - 1;
-		boundary += cell
-	) {
-		predictedEvidence += edgeAt(edges, boundary);
-		predictedCount += 1;
-	}
-	const recall = totalEdge === 0 ? 0 : alignedEdge / totalEdge;
-	const precision =
-		predictedCount === 0 || maxEdge === 0
-			? 0
-			: predictedEvidence / (predictedCount * maxEdge);
-	const complexity = Math.min(1, Math.log2(Math.max(1, cell)) / 6);
-	return recall * 0.62 + precision * 0.33 + complexity * 0.05;
-};
-
 const createPhaseCandidates = (
 	cell: number,
 	transitions: number[],
@@ -245,6 +169,8 @@ const createPhaseCandidates = (
 
 const findAxisCandidates = (
 	edges: Float64Array,
+	profile: AxisSignalProfile,
+	options: GridSignalOptions,
 	length: number,
 	maxCell: number,
 ): AxisCandidate[] => {
@@ -258,10 +184,22 @@ const findAxisCandidates = (
 		let zeroPhase: AxisCandidate | null = null;
 		for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex += 1) {
 			const phase = phases[phaseIndex];
+			const signals = scoreAxisSignals(
+				profile,
+				edges,
+				cell,
+				phase,
+				options,
+				normalizeGridPhase,
+			);
 			const candidate = {
 				cell,
 				phase,
-				score: scoreAxisCandidate(edges, cell, phase),
+				score:
+					gridAlignmentScore(edges, cell, phase, normalizeGridPhase) * 0.75 +
+					signals.autocorrelation * 0.15 +
+					signals.localPhaseStability * 0.1,
+				signals,
 			};
 			if (
 				!best ||
@@ -306,24 +244,57 @@ const findAxisCandidates = (
 		let best: AxisCandidate | null = null;
 		for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex += 1) {
 			const phase = phases[phaseIndex];
+			const signals = scoreAxisSignals(
+				profile,
+				edges,
+				cell,
+				phase,
+				options,
+				normalizeGridPhase,
+			);
 			const candidate = {
 				cell,
 				phase,
-				score: scoreAxisCandidate(edges, cell, phase),
+				score:
+					gridAlignmentScore(edges, cell, phase, normalizeGridPhase) * 0.75 +
+					signals.autocorrelation * 0.15 +
+					signals.localPhaseStability * 0.1,
+				signals,
 			};
 			if (!best || candidate.score > best.score) best = candidate;
 		}
 		if (best) selected.push(best);
 		if (best?.phase !== 0) {
+			const signals = scoreAxisSignals(
+				profile,
+				edges,
+				cell,
+				0,
+				options,
+				normalizeGridPhase,
+			);
 			selected.push({
 				cell,
 				phase: 0,
-				score: scoreAxisCandidate(edges, cell, 0),
+				score:
+					gridAlignmentScore(edges, cell, 0, normalizeGridPhase) * 0.75 +
+					signals.autocorrelation * 0.15 +
+					signals.localPhaseStability * 0.1,
+				signals,
 			});
 		}
 		if (selected.length >= GRID_SEARCH_LIMITS.axisCandidateLimit) break;
 	}
-	return selected;
+	const unique: AxisCandidate[] = [];
+	const seen = new Set<string>();
+	for (let index = 0; index < selected.length; index += 1) {
+		const candidate = selected[index];
+		const key = `${candidate.cell}:${candidate.phase}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		unique.push(candidate);
+	}
+	return unique;
 };
 
 const localCropStart = (phase: number, cell: number): number =>
@@ -342,80 +313,66 @@ const outputLength = (
 		),
 	);
 
-const reconstructionError = (
-	image: RawImage,
-	mask: RawImage,
-	x: AxisCandidate,
-	y: AxisCandidate,
-	pixelStride: number,
-): number => {
-	const cropX = localCropStart(x.phase, x.cell);
-	const cropY = localCropStart(y.phase, y.cell);
-	const data = image.data;
-	const maskData = mask.data;
-	let error = 0;
-	let samples = 0;
-	for (let sourceY = 0; sourceY < image.height; sourceY += pixelStride) {
-		const cellY = Math.floor((sourceY - cropY) / y.cell);
-		const centerY = Math.min(
-			image.height - 1,
-			Math.max(0, Math.floor(cropY + (cellY + 0.5) * y.cell)),
-		);
-		for (let sourceX = 0; sourceX < image.width; sourceX += pixelStride) {
-			const pixel = sourceY * image.width + sourceX;
-			if (maskData[pixel * 4 + 3] < 16) continue;
-			const cellX = Math.floor((sourceX - cropX) / x.cell);
-			const centerX = Math.min(
-				image.width - 1,
-				Math.max(0, Math.floor(cropX + (cellX + 0.5) * x.cell)),
-			);
-			const source = pixel * 4;
-			const center = (centerY * image.width + centerX) * 4;
-			error +=
-				Math.abs(data[source] - data[center]) +
-				Math.abs(data[source + 1] - data[center + 1]) +
-				Math.abs(data[source + 2] - data[center + 2]) +
-				Math.abs(data[source + 3] - data[center + 3]);
-			samples += 1;
-		}
-	}
-	return samples === 0 ? Number.POSITIVE_INFINITY : error / (samples * 4);
-};
-
 const pairScore = (
 	image: RawImage,
 	mask: RawImage,
 	x: AxisCandidate,
 	y: AxisCandidate,
 	pixelStride: number,
+	options: GridSignalOptions,
+	knownReconstruction?: number,
 ): number => {
-	const outW = outputLength(
-		image.width,
-		localCropStart(x.phase, x.cell),
-		x.cell,
-	);
-	const outH = outputLength(
-		image.height,
-		localCropStart(y.phase, y.cell),
-		y.cell,
-	);
+	const cropX = localCropStart(x.phase, x.cell);
+	const cropY = localCropStart(y.phase, y.cell);
+	const outW = outputLength(image.width, cropX, x.cell);
+	const outH = outputLength(image.height, cropY, y.cell);
+	const reconstruction =
+		knownReconstruction ??
+		(options.reconstruction
+			? perceptualReconstructionError(
+					image,
+					mask,
+					cropX,
+					cropY,
+					x.cell,
+					y.cell,
+					pixelStride,
+				)
+			: 0);
 	return (
-		reconstructionError(image, mask, x, y, pixelStride) +
-		2 * Math.sqrt(outW * outH) -
-		(x.score + y.score) * 8
+		reconstruction * 255 + 2 * Math.sqrt(outW * outH) - (x.score + y.score) * 12
 	);
 };
+
+const meanAxisSignal = (
+	x: AxisCandidate,
+	y: AxisCandidate,
+	key: keyof AxisSignalScores,
+): number => (x.signals[key] + y.signals[key]) / 2;
 
 const toEstimate = (
 	image: RawImage,
 	x: AxisCandidate,
 	y: AxisCandidate,
 	score: number,
+	reconstruction: number,
+	options: GridSignalOptions,
 ): PhaseAwareGridEstimate => {
 	const cropX = localCropStart(x.phase, x.cell);
 	const cropY = localCropStart(y.phase, y.cell);
 	const outW = outputLength(image.width, cropX, x.cell);
 	const outH = outputLength(image.height, cropY, y.cell);
+	const signalScores: GridSignalScores = {
+		colorBoundary: meanAxisSignal(x, y, "colorBoundary"),
+		luminanceGradient: meanAxisSignal(x, y, "luminanceGradient"),
+		alphaGradient: meanAxisSignal(x, y, "alphaGradient"),
+		autocorrelation: meanAxisSignal(x, y, "autocorrelation"),
+		reconstruction: options.reconstruction
+			? reconstructionScore(reconstruction)
+			: 0,
+		localPhaseStability: meanAxisSignal(x, y, "localPhaseStability"),
+		methodAgreement: meanAxisSignal(x, y, "methodAgreement"),
+	};
 	return {
 		cellW: x.cell,
 		cellH: y.cell,
@@ -430,14 +387,20 @@ const toEstimate = (
 		score,
 		scoreX: x.score,
 		scoreY: y.score,
+		signalScores,
 	};
 };
 
 export const searchPhaseAwareGrid = (
 	image: RawImage,
 	mask: RawImage,
+	signalOptions: Partial<GridSignalOptions> = {},
 ): PhaseAwareGridEstimate | null => {
 	if (image.width === 0 || image.height === 0) return null;
+	const options: GridSignalOptions = {
+		...GRID_SIGNAL_DEFAULTS,
+		...signalOptions,
+	};
 	const orthogonalStride = Math.max(
 		1,
 		Math.ceil(
@@ -446,19 +409,57 @@ export const searchPhaseAwareGrid = (
 		),
 	);
 	const maxCell = Math.max(1, Math.min(image.width, image.height));
-	const xEdges = createEdgeProfile(image, mask, "x", orthogonalStride);
-	const yEdges = createEdgeProfile(image, mask, "y", orthogonalStride);
-	const xCandidates = findAxisCandidates(xEdges, image.width, maxCell);
-	const yCandidates = findAxisCandidates(yEdges, image.height, maxCell);
+	const luminance = createLinearLuminance(image);
+	const xProfile = createAxisSignalProfile(
+		image,
+		mask,
+		"x",
+		orthogonalStride,
+		luminance,
+	);
+	const yProfile = createAxisSignalProfile(
+		image,
+		mask,
+		"y",
+		orthogonalStride,
+		luminance,
+	);
+	const xEdges = combineSignalProfiles(xProfile, options);
+	const yEdges = combineSignalProfiles(yProfile, options);
+	const xCandidates = findAxisCandidates(
+		xEdges,
+		xProfile,
+		options,
+		image.width,
+		maxCell,
+	);
+	const yCandidates = findAxisCandidates(
+		yEdges,
+		yProfile,
+		options,
+		image.height,
+		maxCell,
+	);
 	if (xCandidates.length === 0 || yCandidates.length === 0) return null;
 
-	const pairs: Array<{ x: AxisCandidate; y: AxisCandidate; score: number }> =
-		[];
+	const pairs: Array<{
+		x: AxisCandidate;
+		y: AxisCandidate;
+		score: number;
+		reconstruction: number;
+		harmonicPenalty: boolean;
+	}> = [];
 	for (let yIndex = 0; yIndex < yCandidates.length; yIndex += 1) {
 		for (let xIndex = 0; xIndex < xCandidates.length; xIndex += 1) {
 			const x = xCandidates[xIndex];
 			const y = yCandidates[yIndex];
-			pairs.push({ x, y, score: x.score + y.score });
+			pairs.push({
+				x,
+				y,
+				score: x.score + y.score,
+				reconstruction: 0,
+				harmonicPenalty: false,
+			});
 		}
 	}
 	pairs.sort(
@@ -472,8 +473,28 @@ export const searchPhaseAwareGrid = (
 	const coarseStride = Math.max(1, orthogonalStride * 2);
 	for (let index = 0; index < pairs.length; index += 1) {
 		const pair = pairs[index];
-		pair.score = pairScore(image, mask, pair.x, pair.y, coarseStride);
+		pair.reconstruction = options.reconstruction
+			? perceptualReconstructionError(
+					image,
+					mask,
+					localCropStart(pair.x.phase, pair.x.cell),
+					localCropStart(pair.y.phase, pair.y.cell),
+					pair.x.cell,
+					pair.y.cell,
+					coarseStride,
+				)
+			: 0;
+		pair.score = pairScore(
+			image,
+			mask,
+			pair.x,
+			pair.y,
+			coarseStride,
+			options,
+			pair.reconstruction,
+		);
 	}
+	applyHarmonicPenalties(pairs);
 	pairs.sort(
 		(left, right) =>
 			left.score - right.score ||
@@ -486,10 +507,39 @@ export const searchPhaseAwareGrid = (
 		pairs.length,
 		GRID_SEARCH_LIMITS.fullResolutionCandidateLimit,
 	);
+	const fullResolutionStride = Math.max(
+		1,
+		Math.ceil(
+			Math.sqrt(
+				(image.width * image.height) /
+					GRID_SEARCH_LIMITS.fullResolutionSampleLimit,
+			),
+		),
+	);
 	for (let index = 0; index < pairs.length; index += 1) {
 		const pair = pairs[index];
-		pair.score = pairScore(image, mask, pair.x, pair.y, 1);
+		pair.reconstruction = options.reconstruction
+			? perceptualReconstructionError(
+					image,
+					mask,
+					localCropStart(pair.x.phase, pair.x.cell),
+					localCropStart(pair.y.phase, pair.y.cell),
+					pair.x.cell,
+					pair.y.cell,
+					fullResolutionStride,
+				)
+			: 0;
+		pair.score = pairScore(
+			image,
+			mask,
+			pair.x,
+			pair.y,
+			fullResolutionStride,
+			options,
+			pair.reconstruction,
+		);
 	}
+	applyHarmonicPenalties(pairs);
 	pairs.sort(
 		(left, right) =>
 			left.score - right.score ||
@@ -498,7 +548,7 @@ export const searchPhaseAwareGrid = (
 			left.y.phase - right.y.phase,
 	);
 	const estimates = pairs.map((pair) =>
-		toEstimate(image, pair.x, pair.y, pair.score),
+		toEstimate(image, pair.x, pair.y, pair.score, pair.reconstruction, options),
 	);
 	if (estimates.length === 0) return null;
 	return { ...estimates[0], candidates: estimates.slice(1) };

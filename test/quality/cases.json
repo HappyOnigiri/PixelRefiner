@@ -1754,6 +1754,160 @@
     ]
   },
   {
+    "id": "restore-alpha-only-grid-to-8x8",
+    "featureIds": ["PRF-120"],
+    "optionNames": ["gridSignals"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["weak-color-boundaries", "alpha-periodicity"],
+    "options": {
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "gridSignals": {
+        "colorBoundary": true,
+        "luminanceAlphaGradient": true,
+        "autocorrelation": true,
+        "reconstruction": true,
+        "localPhaseStability": true
+      },
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf120_alpha_grid.png",
+    "expected": "test/fixtures/quality_prf120_alpha_grid-expect.png",
+    "assertions": [
+      "alpha gradient signal",
+      "weak RGB boundary grid",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf120_alpha_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_prf120_alpha_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "restore-diagonal-grid-to-8x8",
+    "featureIds": ["PRF-120"],
+    "optionNames": ["gridSignals"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["diagonal-dominant"],
+    "options": {
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "gridSignals": {
+        "colorBoundary": true,
+        "luminanceAlphaGradient": true,
+        "autocorrelation": true,
+        "reconstruction": true,
+        "localPhaseStability": true
+      },
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf120_diagonal_grid.png",
+    "expected": "test/fixtures/quality_prf120_diagonal_grid-expect.png",
+    "assertions": ["top-3 grid size", "diagonal edge recovery", "determinism"],
+    "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf120_diagonal_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_prf120_diagonal_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "prefer-base-grid-over-doubled-period",
+    "featureIds": ["PRF-120"],
+    "optionNames": ["gridSignals"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["same-color-runs", "doubled-period"],
+    "options": {
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "gridSignals": {
+        "colorBoundary": true,
+        "luminanceAlphaGradient": true,
+        "autocorrelation": true,
+        "reconstruction": true,
+        "localPhaseStability": true
+      },
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf120_harmonic_grid.png",
+    "expected": "test/fixtures/quality_prf120_harmonic_grid-expect.png",
+    "assertions": ["base period selected", "doubled-period rejection", "determinism"],
+    "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf120_harmonic_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_prf120_harmonic_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
     "id": "preserve-continuous-tone",
     "featureIds": ["PRF-001", "PRF-002", "continuous-tone"],
     "profile": "smoke",

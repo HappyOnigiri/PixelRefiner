@@ -1,6 +1,7 @@
 import {
 	clampInt,
 	clampOptionalInt,
+	GRID_SIGNAL_DEFAULTS,
 	PROCESS_DEFAULTS,
 	PROCESS_RANGES,
 } from "../shared/config";
@@ -8,6 +9,7 @@ import type {
 	BackgroundRemovalScope,
 	Connectivity,
 	DitherMode,
+	GridSignalOptions,
 	OutlineStyle,
 	RawImage,
 	RGB,
@@ -15,6 +17,8 @@ import type {
 import type { DetectOptions } from "./detector";
 
 export type ProcessOptions = DetectOptions & {
+	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
+	gridSignals?: Partial<GridSignalOptions>;
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
@@ -159,6 +163,7 @@ export const normalizeProcessOptions = (
 	trimAlphaThreshold: number;
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
+	gridSignals: GridSignalOptions;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
 	keepAspectRatio: boolean;
@@ -238,6 +243,10 @@ export const normalizeProcessOptions = (
 		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
 		raw.fastAutoGridFromTrimmed ?? PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
+	const gridSignals = {
+		...GRID_SIGNAL_DEFAULTS,
+		...raw.gridSignals,
+	};
 	const makeSquare = raw.makeSquare ?? PROCESS_DEFAULTS.makeSquare;
 	const keepAspectRatio =
 		raw.keepAspectRatio ?? PROCESS_DEFAULTS.keepAspectRatio;
@@ -282,6 +291,7 @@ export const normalizeProcessOptions = (
 		trimAlphaThreshold,
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
+		gridSignals,
 		enableGridDetection,
 		makeSquare,
 		keepAspectRatio,

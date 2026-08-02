@@ -66,6 +66,45 @@ const addTransparentPadding = (
 	return { width, height, data };
 };
 
+const createSignalGrid = (
+	logicalWidth: number,
+	logicalHeight: number,
+	cell: number,
+	mode: "alpha" | "diagonal" | "harmonic",
+): RawImage => {
+	const width = logicalWidth * cell;
+	const height = logicalHeight * cell;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		const logicalY = Math.floor(y / cell);
+		for (let x = 0; x < width; x += 1) {
+			const logicalX = Math.floor(x / cell);
+			const target = (y * width + x) * 4;
+			let value = 128;
+			let alpha = 255;
+			if (mode === "alpha") {
+				alpha = (logicalX + logicalY) % 2 === 0 ? 96 : 224;
+			} else if (mode === "diagonal") {
+				value =
+					Math.abs(logicalX - logicalY) <= 1 || (logicalX + logicalY) % 5 === 0
+						? 220
+						: 40;
+			} else {
+				value =
+					(Math.floor(logicalX / 2) + Math.floor(logicalY / 2)) % 2 === 0
+						? 48
+						: 208;
+				if ((logicalX + logicalY * 2) % 3 === 0) value += 48;
+			}
+			data[target] = value;
+			data[target + 1] = mode === "diagonal" ? (value + 24) % 256 : value;
+			data[target + 2] = mode === "diagonal" ? (value + 48) % 256 : value;
+			data[target + 3] = alpha;
+		}
+	}
+	return { width, height, data };
+};
+
 describe("phase-aware grid search", () => {
 	it("detects independent axis scales and crop phase", () => {
 		const image = createScaledGrid(8, 7, 4, 3, 3, 2);
@@ -161,5 +200,72 @@ describe("phase-aware grid search", () => {
 		expect(searchPhaseAwareGrid(image, image)).toEqual(
 			searchPhaseAwareGrid(image, image),
 		);
+	});
+
+	it("detects an alpha-only grid when RGB boundaries are absent", () => {
+		const image = createSignalGrid(8, 8, 4, "alpha");
+		expect(candidateSizes(image)).toContainEqual([8, 8]);
+		const estimate = searchPhaseAwareGrid(image, image);
+		expect(estimate?.signalScores?.alphaGradient).toBeGreaterThan(0.5);
+		expect(estimate?.signalScores?.colorBoundary).toBe(0);
+	});
+
+	it("keeps a diagonal-dominant grid in the top three", () => {
+		const image = createSignalGrid(8, 8, 4, "diagonal");
+		expect(candidateSizes(image)).toContainEqual([8, 8]);
+	});
+
+	it("prefers the base period over a strong doubled harmonic", () => {
+		const image = createSignalGrid(8, 8, 4, "harmonic");
+		expect(candidateSizes(image)[0]).toEqual([8, 8]);
+	});
+
+	it("can disable every ensemble signal independently", () => {
+		const image = createSignalGrid(8, 8, 4, "alpha");
+		const optionKeys = [
+			"colorBoundary",
+			"luminanceAlphaGradient",
+			"autocorrelation",
+			"reconstruction",
+			"localPhaseStability",
+		] as const;
+		for (const key of optionKeys) {
+			const estimate = searchPhaseAwareGrid(image, image, { [key]: false });
+			expect(estimate).not.toBeNull();
+			if (!estimate?.signalScores) continue;
+			if (key === "luminanceAlphaGradient") {
+				expect(estimate.signalScores.luminanceGradient).toBe(0);
+				expect(estimate.signalScores.alphaGradient).toBe(0);
+			} else if (key === "localPhaseStability") {
+				expect(estimate.signalScores.localPhaseStability).toBe(0);
+			} else {
+				expect(estimate.signalScores[key]).toBe(0);
+			}
+		}
+	});
+
+	it("publishes ensemble subscores in processing diagnostics", () => {
+		const image = createSignalGrid(8, 8, 4, "diagonal");
+		const { analysis } = processImage(image, {
+			autoGridFromTrimmed: true,
+			fastAutoGridFromTrimmed: true,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+			sampleWindow: 1,
+		});
+		const candidate = analysis.gridCandidates.find(
+			(report) => report.outW === 8 && report.outH === 8,
+		);
+		expect(candidate?.subscores).toMatchObject({
+			colorBoundary: expect.any(Number),
+			luminanceGradient: expect.any(Number),
+			alphaGradient: expect.any(Number),
+			autocorrelation: expect.any(Number),
+			reconstruction: expect.any(Number),
+			localPhaseStability: expect.any(Number),
+			methodAgreement: expect.any(Number),
+		});
 	});
 });
