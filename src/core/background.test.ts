@@ -132,6 +132,43 @@ describe("automatic background model", () => {
 		expect(result.image.data[interiorOffset]).toBe(208);
 	});
 
+	it("estimates a background when only the outermost ring is transparent", () => {
+		const image = createImage(40, 40, (x, y) => {
+			if (x === 0 || y === 0 || x === 39 || y === 39) return [0, 0, 0, 0];
+			if (x >= 14 && x <= 25 && y >= 14 && y <= 25) return [30, 60, 90, 255];
+			return [235, 238, 240, 255];
+		});
+		const result = removeAutomaticBackground(image, 32, "outer", "4");
+
+		expect(result.model.clusters.length).toBeGreaterThan(0);
+		expect(result.rolledBack).toBe(false);
+		expect(alphaAt(result.image, 2, 2)).toBe(0);
+		expect(alphaAt(result.image, 20, 20)).toBe(255);
+	});
+
+	it("corrects the innermost fringe ring within the dehalo radius", () => {
+		const image = createImage(16, 16, (x, y) => {
+			const inSubject = x >= 4 && x <= 11 && y >= 4 && y <= 11;
+			if (!inSubject) return [255, 255, 255, 255];
+			if (x === 4 || x === 11 || y === 4 || y === 11) {
+				return [200, 200, 200, 255];
+			}
+			if (x === 5 || x === 10 || y === 5 || y === 10) {
+				return [190, 190, 190, 255];
+			}
+			return [48, 48, 48, 255];
+		});
+		const result = removeAutomaticBackground(image, 16, "outer", "4");
+		const outerRingOffset = (7 * image.width + 4) * 4;
+		const innerRingOffset = (7 * image.width + 5) * 4;
+		const interiorOffset = (7 * image.width + 7) * 4;
+
+		expect(result.rolledBack).toBe(false);
+		expect(result.image.data[outerRingOffset]).toBeLessThan(200);
+		expect(result.image.data[innerRingOffset]).toBeLessThan(190);
+		expect(result.image.data[interiorOffset]).toBe(48);
+	});
+
 	it("treats a fully transparent border as known background", () => {
 		const image = createImage(8, 8, (x, y) => {
 			if (x === 0 || y === 0 || x === 7 || y === 7) return [200, 10, 50, 0];

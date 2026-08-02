@@ -120,19 +120,30 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 		};
 	}
 
-	const labsL = new Float64Array(opaqueCount);
-	const labsA = new Float64Array(opaqueCount);
-	const labsB = new Float64Array(opaqueCount);
-	const reds = new Float64Array(opaqueCount);
-	const greens = new Float64Array(opaqueCount);
-	const blues = new Float64Array(opaqueCount);
-	const outermost = new Uint8Array(opaqueCount);
+	// [Intended] 境界帯は画像サイズに比例して大きくなるため、決定論的な等間隔サンプリングで
+	// サンプル数に上限を設ける。比率として使う統計量のみを取るので間引いても評価軸は変わらない。
+	const sampleStride = Math.max(
+		1,
+		Math.ceil(opaqueCount / BACKGROUND_MODEL_LIMITS.maxBorderSamples),
+	);
+	const sampleCount = Math.ceil(opaqueCount / sampleStride);
+	const labsL = new Float64Array(sampleCount);
+	const labsA = new Float64Array(sampleCount);
+	const labsB = new Float64Array(sampleCount);
+	const reds = new Uint8Array(sampleCount);
+	const greens = new Uint8Array(sampleCount);
+	const blues = new Uint8Array(sampleCount);
+	const outermost = new Uint8Array(sampleCount);
 	let sampleIndex = 0;
+	let opaqueIndex = 0;
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
 			if (!isInBorderBand(x, y, width, height, band)) continue;
 			const offset = (y * width + x) * 4;
 			if (img.data[offset + 3] === 0) continue;
+			const currentOpaqueIndex = opaqueIndex;
+			opaqueIndex += 1;
+			if (currentOpaqueIndex % sampleStride !== 0) continue;
 			const r = img.data[offset];
 			const g = img.data[offset + 1];
 			const b = img.data[offset + 2];
@@ -148,7 +159,7 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 
 	const clusterLimit = Math.min(
 		BACKGROUND_MODEL_LIMITS.maxClusters,
-		opaqueCount,
+		sampleCount,
 	);
 	const centroidL = new Float64Array(clusterLimit);
 	const centroidA = new Float64Array(clusterLimit);
@@ -156,18 +167,18 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 	let meanL = 0;
 	let meanA = 0;
 	let meanB = 0;
-	for (let i = 0; i < opaqueCount; i += 1) {
+	for (let i = 0; i < sampleCount; i += 1) {
 		meanL += labsL[i];
 		meanA += labsA[i];
 		meanB += labsB[i];
 	}
-	centroidL[0] = meanL / opaqueCount;
-	centroidA[0] = meanA / opaqueCount;
-	centroidB[0] = meanB / opaqueCount;
+	centroidL[0] = meanL / sampleCount;
+	centroidA[0] = meanA / sampleCount;
+	centroidB[0] = meanB / sampleCount;
 	for (let cluster = 1; cluster < clusterLimit; cluster += 1) {
 		let farthestIndex = 0;
 		let farthestDistance = -1;
-		for (let i = 0; i < opaqueCount; i += 1) {
+		for (let i = 0; i < sampleCount; i += 1) {
 			let nearestDistance = Number.POSITIVE_INFINITY;
 			for (let current = 0; current < cluster; current += 1) {
 				nearestDistance = Math.min(
@@ -192,7 +203,7 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 		centroidB[cluster] = labsB[farthestIndex];
 	}
 
-	const assignments = new Uint8Array(opaqueCount);
+	const assignments = new Uint8Array(sampleCount);
 	const counts = new Uint32Array(clusterLimit);
 	const outerCounts = new Uint32Array(clusterLimit);
 	const sumL = new Float64Array(clusterLimit);
@@ -210,7 +221,7 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 		sumL.fill(0);
 		sumA.fill(0);
 		sumB.fill(0);
-		for (let i = 0; i < opaqueCount; i += 1) {
+		for (let i = 0; i < sampleCount; i += 1) {
 			let nearestCluster = 0;
 			let nearestDistance = Number.POSITIVE_INFINITY;
 			for (let cluster = 0; cluster < clusterLimit; cluster += 1) {
@@ -248,7 +259,7 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 	sumRgbB.fill(0);
 	const varianceSums = new Float64Array(clusterLimit);
 	let outerOpaqueCount = 0;
-	for (let i = 0; i < opaqueCount; i += 1) {
+	for (let i = 0; i < sampleCount; i += 1) {
 		const cluster = assignments[i];
 		counts[cluster] += 1;
 		sumR[cluster] += reds[i];
@@ -273,12 +284,17 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 	let weightedVariance = 0;
 	for (let cluster = 0; cluster < clusterLimit; cluster += 1) {
 		if (counts[cluster] === 0) continue;
-		const weight = counts[cluster] / opaqueCount;
-		const borderCoverage =
-			outerOpaqueCount === 0 ? 0 : outerCounts[cluster] / outerOpaqueCount;
+		const weight = counts[cluster] / sampleCount;
+		// [Intended] 最外周が全て透明な画像（透明パディング付き PNG など）では borderCoverage が
+		// 常に 0 になり全クラスタが落ちてしまうため、基準が無い場合は weight のみで足切りする。
+		const hasOuterReference = outerOpaqueCount > 0;
+		const borderCoverage = hasOuterReference
+			? outerCounts[cluster] / outerOpaqueCount
+			: 0;
 		if (
 			weight < BACKGROUND_MODEL_LIMITS.minClusterWeight ||
-			borderCoverage < BACKGROUND_MODEL_LIMITS.minClusterWeight
+			(hasOuterReference &&
+				borderCoverage < BACKGROUND_MODEL_LIMITS.minClusterWeight)
 		) {
 			continue;
 		}
@@ -299,7 +315,7 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 			variance,
 		});
 		modeledWeight +=
-			(counts[cluster] / opaqueCount) *
+			(counts[cluster] / sampleCount) *
 			(opaqueCount / Math.max(1, totalBorderCount));
 		weightedVariance += variance * weight;
 	}
@@ -311,7 +327,9 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 			left.color.a - right.color.a ||
 			left.color.b - right.color.b,
 	);
-	const varianceConfidence = clampUnit(1 - weightedVariance / 0.012);
+	const varianceConfidence = clampUnit(
+		1 - weightedVariance / BACKGROUND_MODEL_LIMITS.varianceConfidenceScale,
+	);
 	return {
 		clusters,
 		confidence: clampUnit(modeledWeight * (0.35 + 0.65 * varianceConfidence)),
@@ -441,7 +459,9 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
 		const pixel = queue[head];
 		head += 1;
 		const distance = boundaryDistance[pixel];
-		if (distance > BACKGROUND_MODEL_LIMITS.dehaloRadius) continue;
+		// [Intended] dehaloRadius は「補正する深さ」であり、最も内側の補正対象
+		// （距離 dehaloRadius + 1）も内側の参照先を必要とするため、距離ラベルは 1 段深くまで付ける。
+		if (distance > BACKGROUND_MODEL_LIMITS.dehaloRadius + 1) continue;
 		const x = pixel % width;
 		const y = (pixel / width) | 0;
 		if (x > 0 && boundaryDistance[pixel - 1] === 0) {
@@ -517,7 +537,13 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
 				nearestCluster = cluster;
 			}
 		}
-		if (nearestBackgroundDistance > 128 * 128) continue;
+		if (
+			nearestBackgroundDistance >
+			BACKGROUND_MODEL_LIMITS.dehaloMaxRgbDistance *
+				BACKGROUND_MODEL_LIMITS.dehaloMaxRgbDistance
+		) {
+			continue;
+		}
 		const neighborOffset = bestNeighbor * 4;
 		const background = model.clusters[nearestCluster].rgb;
 		for (let channel = 0; channel < 3; channel += 1) {
@@ -529,8 +555,13 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
 					: channel === 1
 						? background.g
 						: background.b;
-			const awayFromBackground = current + (current - backgroundValue) * 0.35;
-			const target = awayFromBackground * 0.35 + interior * 0.65;
+			const awayFromBackground =
+				current +
+				(current - backgroundValue) *
+					BACKGROUND_MODEL_LIMITS.dehaloPushStrength;
+			const target =
+				awayFromBackground * BACKGROUND_MODEL_LIMITS.dehaloSourceBlend +
+				interior * BACKGROUND_MODEL_LIMITS.dehaloInteriorBlend;
 			const delta = Math.max(
 				-BACKGROUND_MODEL_LIMITS.dehaloMaxChannelChange,
 				Math.min(
@@ -564,6 +595,8 @@ export const removeAutomaticBackground = (
 		};
 	}
 	const candidates = buildCandidateMask(img, model, tolerance);
+	// [Intended] Auto には角の選択が無いため、"selected" は "outer" と同じく画像端全周からの
+	// 連結判定として扱う。角シードを持つのはレガシー抽出方式だけである。
 	const selected =
 		scope === "all"
 			? candidates

@@ -61,8 +61,14 @@ export const BACKGROUND_MODEL_LIMITS = {
 	baseOklabTolerance: 0.018,
 	maxOklabTolerance: 0.2,
 	varianceScale: 2.5,
+	varianceConfidenceScale: 0.012,
+	maxBorderSamples: 262_144,
 	dehaloRadius: 2,
 	dehaloMaxChannelChange: 32,
+	dehaloMaxRgbDistance: 128,
+	dehaloPushStrength: 0.35,
+	dehaloSourceBlend: 0.35,
+	dehaloInteriorBlend: 0.65,
 } as const;
 
 export const GRID_CANDIDATE_SCORE_WEIGHTS = {
