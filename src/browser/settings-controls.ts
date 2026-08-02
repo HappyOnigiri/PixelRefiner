@@ -113,6 +113,7 @@ export const setupSettingsControls = ({
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
 			closeEyedropperModal();
+			triggerAutoProcess();
 		}
 	});
 
