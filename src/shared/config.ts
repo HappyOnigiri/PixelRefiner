@@ -13,6 +13,10 @@ export const PROCESS_RANGES = {
 	backgroundMaskTolerance: { min: 0, max: 255, default: 0 } as const,
 	// 処理器: ダウンサンプリング時の中央値ウィンドウ
 	sampleWindow: { min: 1, max: 9, default: 3 } as const,
+	// 処理器: 1セルから評価するサンプル数の上限
+	maxSamplesPerCell: { min: 1, max: 256, default: 64 } as const,
+	// 処理器: 色候補として扱うアルファの下限
+	cellAlphaThreshold: { min: 0, max: 255, default: 16 } as const,
 	// 塗りつぶしの許容値（チャンネルごと）
 	backgroundTolerance: { min: 0, max: 255, default: 64 } as const,
 	// トリミング用の境界ボックスしきい値
@@ -310,6 +314,9 @@ export const PROCESS_DEFAULTS = {
 	keepAspectRatio: false,
 	// グリッド検出モード（UI 用）
 	gridDetectionMode: "auto",
+	// [Intended] UIにはアルゴリズム名を出さず、Autoで頑健なセル復元を使う。
+	cellSamplingMode: "alpha-aware-medoid",
+	preserveThinFeatures: true,
 
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,

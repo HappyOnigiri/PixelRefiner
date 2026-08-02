@@ -128,6 +128,7 @@ describe("processImage modes", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				floatingMaxPixels: 0,
@@ -344,6 +345,7 @@ describe("processImage modes", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				// ユーザーフィードバックに基づき、検索範囲の緩和とペナルティ調整により、

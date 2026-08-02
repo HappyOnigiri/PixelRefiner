@@ -7,6 +7,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -60,6 +61,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 46,
       "forcePixelsH": 13,
       "detectionQuantStep": 64,
@@ -114,6 +116,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -166,6 +169,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -222,6 +226,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -279,6 +284,7 @@
     "inputKind": "synthetic-many-color",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "reduceColors": true,
       "reduceColorMode": "auto",
       "colorCount": 8,
@@ -328,6 +334,7 @@
     "inputKind": "continuous-tone",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "reduceColors": true,
       "reduceColorMode": "gb_pocket",
       "ditherStrength": 0,
@@ -379,6 +386,7 @@
     "inputKind": "continuous-tone",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "reduceColors": true,
       "reduceColorMode": "mono",
       "ditherMode": "floyd-steinberg",
@@ -431,6 +439,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -484,6 +493,7 @@
     "inputKind": "pixel-art-1x",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "trimToContent": false,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -528,6 +538,7 @@
     "inputKind": "pixel-art-1x",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "trimToContent": false,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -572,6 +583,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -626,6 +638,7 @@
       "low-color-subject"
     ],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "enableGridDetection": false,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -660,6 +673,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-2x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -705,6 +719,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-3x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -746,6 +761,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-4x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -787,6 +803,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-8x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -828,6 +845,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-16x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -869,6 +887,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-32x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -910,6 +929,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["nearest-1.5x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -958,6 +978,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["nearest-2.5x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1006,6 +1027,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["nearest-3.2x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1054,6 +1076,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["bilinear"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1107,6 +1130,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["bicubic-equivalent"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1155,6 +1179,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["gaussian-blur-light"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1203,6 +1228,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["rgb-noise"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1251,6 +1277,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["alpha-edge-blur"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1303,6 +1330,7 @@
       "crop-shift-3px"
     ],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1371,6 +1399,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["padding", "background-white"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1421,6 +1450,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["background-black"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1471,6 +1501,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["background-solid"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1521,6 +1552,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["background-gradient"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1571,6 +1603,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["anisotropic-scale"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1612,6 +1645,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["anisotropic-scale", "non-integer-scale"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
@@ -1663,6 +1697,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["transparent-rgb-garbage"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": false,
       "backgroundMask": true,
       "backgroundMaskTolerance": 0,
@@ -1714,6 +1749,7 @@
     "inputKind": "uncertain",
     "degradationPatterns": ["one-axis-periodicity"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": false,
       "backgroundMask": false,
       "bgRemovalScope": "off",
@@ -1761,6 +1797,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["weak-color-boundaries", "alpha-periodicity"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "gridSignals": {
@@ -1815,6 +1852,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["diagonal-dominant"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "gridSignals": {
@@ -1872,6 +1910,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["same-color-runs", "doubled-period"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "gridSignals": {
@@ -1915,12 +1954,71 @@
     ]
   },
   {
+    "id": "restore-thin-features-and-alpha-coverage",
+    "featureIds": ["PRF-130"],
+    "optionNames": [
+      "cellSamplingMode",
+      "maxSamplesPerCell",
+      "cellAlphaThreshold",
+      "preserveThinFeatures"
+    ],
+    "profile": "smoke",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["thin-features", "transparent-rgb"],
+    "options": {
+      "forcePixelsW": 6,
+      "forcePixelsH": 6,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "maxSamplesPerCell": 64,
+      "cellAlphaThreshold": 16,
+      "preserveThinFeatures": true,
+      "sampleWindow": 3,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf130_cell_sampling.png",
+    "expected": "test/fixtures/quality_prf130_cell_sampling-expect.png",
+    "assertions": [
+      "input RGB medoid",
+      "thin line and highlight retention",
+      "alpha coverage",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 6, "expectedHeight": 6 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf130_cell_sampling.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf130_cell_sampling-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
     "id": "preserve-continuous-tone",
     "featureIds": ["PRF-001", "PRF-002", "continuous-tone"],
     "profile": "smoke",
     "inputKind": "continuous-tone",
     "degradationPatterns": ["continuous-tone"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "enableGridDetection": false,
       "preRemoveBackground": false,
       "postRemoveBackground": false,

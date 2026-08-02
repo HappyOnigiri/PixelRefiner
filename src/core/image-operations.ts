@@ -1,4 +1,17 @@
 import type { PixelGrid, RawImage } from "../shared/types";
+import {
+	type CellSamplerOptions,
+	type CellSamplingMode,
+	sampleImageCells,
+} from "./cell-sampler";
+
+export type DownsampleOptions = {
+	mode: CellSamplingMode;
+	sampleWindow: number;
+	maxSamplesPerCell: number;
+	alphaThreshold: number;
+	preserveThinFeatures: boolean;
+};
 
 export const cloneImage = (img: RawImage): RawImage => ({
 	width: img.width,
@@ -18,7 +31,7 @@ const medianOf = (values: number[]): number => {
 	return values[mid];
 };
 
-export const downsample = (
+const downsampleLegacy = (
 	img: RawImage,
 	grid: PixelGrid,
 	sampleWindow = 3,
@@ -118,6 +131,27 @@ export const downsample = (
 	}
 
 	return { width: outW, height: outH, data: out };
+};
+
+export const downsample = (
+	img: RawImage,
+	grid: PixelGrid,
+	options: number | DownsampleOptions = 3,
+): RawImage => {
+	if (typeof options === "number" || options.mode === "legacy-median") {
+		return downsampleLegacy(
+			img,
+			grid,
+			typeof options === "number" ? options : options.sampleWindow,
+		);
+	}
+	const samplerOptions: CellSamplerOptions = {
+		mode: options.mode,
+		maxSamplesPerCell: options.maxSamplesPerCell,
+		alphaThreshold: options.alphaThreshold,
+		preserveThinFeatures: options.preserveThinFeatures,
+	};
+	return sampleImageCells(img, grid, samplerOptions);
 };
 
 /**

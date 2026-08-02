@@ -14,7 +14,9 @@ import type {
 	RawImage,
 	RGB,
 } from "../shared/types";
+import type { CellSamplingMode } from "./cell-sampler";
 import type { DetectOptions } from "./detector";
+import type { DownsampleOptions } from "./image-operations";
 
 export type ProcessOptions = DetectOptions & {
 	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
@@ -52,6 +54,14 @@ export type ProcessOptions = DetectOptions & {
 	bgConnectivity?: Connectivity;
 	backgroundTolerance?: number;
 	sampleWindow?: number;
+	/** セル色の復元方法。アルゴリズム名は内部比較用で、UIには公開しない。 */
+	cellSamplingMode?: CellSamplingMode;
+	/** 1セルから決定論的に抽出するサンプル数の上限。 */
+	maxSamplesPerCell?: number;
+	/** 色候補として扱うアルファの下限。 */
+	cellAlphaThreshold?: number;
+	/** セルを横断する少数色を線や輪郭として保護する。 */
+	preserveThinFeatures?: boolean;
 	trimToContent?: boolean;
 	trimAlphaThreshold?: number;
 	/**
@@ -159,6 +169,10 @@ export const normalizeProcessOptions = (
 	bgConnectivity: Connectivity;
 	backgroundTolerance: number;
 	sampleWindow: number;
+	cellSamplingMode: CellSamplingMode;
+	maxSamplesPerCell: number;
+	cellAlphaThreshold: number;
+	preserveThinFeatures: boolean;
 	trimToContent: boolean;
 	trimAlphaThreshold: number;
 	autoGridFromTrimmed: boolean;
@@ -234,6 +248,18 @@ export const normalizeProcessOptions = (
 		raw.sampleWindow ?? PROCESS_RANGES.sampleWindow.default,
 		PROCESS_RANGES.sampleWindow,
 	);
+	const cellSamplingMode =
+		raw.cellSamplingMode ?? PROCESS_DEFAULTS.cellSamplingMode;
+	const maxSamplesPerCell = clampInt(
+		raw.maxSamplesPerCell ?? PROCESS_RANGES.maxSamplesPerCell.default,
+		PROCESS_RANGES.maxSamplesPerCell,
+	);
+	const cellAlphaThreshold = clampInt(
+		raw.cellAlphaThreshold ?? PROCESS_RANGES.cellAlphaThreshold.default,
+		PROCESS_RANGES.cellAlphaThreshold,
+	);
+	const preserveThinFeatures =
+		raw.preserveThinFeatures ?? PROCESS_DEFAULTS.preserveThinFeatures;
 	const trimToContent = raw.trimToContent ?? PROCESS_DEFAULTS.trimToContent;
 	const trimAlphaThreshold = clampInt(
 		raw.trimAlphaThreshold ?? PROCESS_RANGES.trimAlphaThreshold.default,
@@ -287,6 +313,10 @@ export const normalizeProcessOptions = (
 		bgConnectivity,
 		backgroundTolerance,
 		sampleWindow,
+		cellSamplingMode,
+		maxSamplesPerCell,
+		cellAlphaThreshold,
+		preserveThinFeatures,
 		trimToContent,
 		trimAlphaThreshold,
 		autoGridFromTrimmed,
@@ -315,3 +345,14 @@ export const normalizeProcessOptions = (
 export type NormalizedProcessOptions = ReturnType<
 	typeof normalizeProcessOptions
 >;
+
+export const getDownsampleOptions = (
+	options: NormalizedProcessOptions,
+	sampleWindow = options.sampleWindow,
+): DownsampleOptions => ({
+	mode: options.cellSamplingMode,
+	sampleWindow,
+	maxSamplesPerCell: options.maxSamplesPerCell,
+	alphaThreshold: options.cellAlphaThreshold,
+	preserveThinFeatures: options.preserveThinFeatures,
+});
