@@ -6,15 +6,15 @@ import time
 
 def run_task(name, command, show_success_output=False):
     """
-    Execute the specified command and return success/failure and output.
-    :param name: Task name
-    :param command: Command to execute (list format)
-    :param show_success_output: Whether to print captured output on success
+    指定したコマンドを実行し、成否と出力を返す。
+    :param name: タスク名
+    :param command: 実行するコマンド（リスト形式）
+    :param show_success_output: 成功時に取得した出力を表示するか
     :return: (is_success, name, output, duration, show_success_output)
     """
     start_time = time.time()
     try:
-        # Capture output and execute
+        # 出力を取得しながら実行する
         result = subprocess.run(
             command,
             check=True,
@@ -30,10 +30,10 @@ def run_task(name, command, show_success_output=False):
 
 def execute_phase(phase_name, tasks):
     """
-    Execute a list of tasks in parallel.
-    :param phase_name: Phase name (for logging)
-    :param tasks: List of (name, command, show_success_output) tuples
-    :return: Whether successful (bool)
+    タスクのリストを並列実行する。
+    :param phase_name: フェーズ名（ログ用）
+    :param tasks: (name, command, show_success_output) タプルのリスト
+    :return: 成功したか（bool）
     """
     if phase_name:
         print(f"--- {phase_name} ---")
@@ -41,8 +41,8 @@ def execute_phase(phase_name, tasks):
     failed = False
     failure_details = []
 
-    # The number of parallel workers is automatically adjusted according to the number of tasks.
-    # ThreadPoolExecutor is sufficient since it's mostly I/O bound or lightweight wrappers.
+    # 並列ワーカー数はタスク数に合わせて自動調整する。
+    # 主に I/O 待ちや軽量なラッパー処理なので ThreadPoolExecutor で十分である。
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(tasks)) as executor:
         future_to_name = {
             executor.submit(run_task, name, cmd, show_output): name
@@ -60,7 +60,7 @@ def execute_phase(phase_name, tasks):
                 failed = True
                 failure_details.append((name, output))
 
-    # Display failure details
+    # 失敗の詳細を表示する
     if failed:
         print("\n=== FAILURE DETAILS ===")
         for name, output in failure_details:
@@ -72,20 +72,20 @@ def execute_phase(phase_name, tasks):
     return True
 
 def main():
-    # Phase 1: Fix (Fixing tasks)
-    # These may modify code, so run them before checks
+    # フェーズ 1: 修正（自動修正タスク）
+    # コードを変更する可能性があるため、検査より先に実行する
     fix_tasks = [
         ("TS Fix", ["make", "ts-fix-diff"], False),
         ("HTML Fix", ["make", "html-fix-diff"], False),
     ]
 
-    # The fix phase is often empty, but display it explicitly for clarity.
+    # 修正フェーズが空の場合も多いが、分かりやすいよう明示する。
     if not execute_phase("Auto Fix Phase", fix_tasks):
         print("Fix phase failed. Stopping.")
         sys.exit(1)
 
-    # Phase 2: Check (Verification tasks)
-    # Perform checks on the fixed code
+    # フェーズ 2: 検査（検証タスク）
+    # 修正後のコードを検査する
     check_tasks = [
         ("TS Check", ["make", "ts-check-diff"], False),
         ("HTML Check", ["make", "html-check-diff"], False),

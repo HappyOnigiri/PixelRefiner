@@ -31,9 +31,9 @@ type GridSizeCandidate = {
 };
 
 /**
- * To "disperse" candidate sizes to some extent, divide the outH range into buckets and pick the best from each bucket.
- * - Even if the scale differs significantly, candidates that are not too close to each other are obtained.
- * - The best candidate is always included, and any shortfall is filled in order of score.
+ * 候補サイズをある程度「分散」させるため、outH の範囲をバケットに分け、各バケットから最良候補を選ぶ。
+ * - スケールが大きく異なっても、互いに近すぎない候補を得られる。
+ * - 最良候補は必ず含め、不足分はスコア順に補う。
  */
 const pickDistributedGridSizeCandidates = (
 	results: GridSizeCandidate[],
@@ -72,7 +72,7 @@ const pickDistributedGridSizeCandidates = (
 	const selected: GridSizeCandidate[] = [];
 	const seen = new Set<string>();
 
-	// Always include the best candidate
+	// 最良候補は常に含める
 	const best = byScore[0];
 	selected.push(best);
 	seen.add(`${best.outW}x${best.outH}`);
@@ -86,7 +86,7 @@ const pickDistributedGridSizeCandidates = (
 		if (selected.length >= count) break;
 	}
 
-	// If there is space, fill with others in order of score
+	// 空きがあれば、他の候補をスコア順に追加する
 	for (const r of byScore) {
 		if (selected.length >= count) break;
 		const key = `${r.outW}x${r.outH}`;
@@ -95,7 +95,7 @@ const pickDistributedGridSizeCandidates = (
 		seen.add(key);
 	}
 
-	// Sort by size for better display in UI
+	// UI で見やすいようサイズ順に並べる
 	selected.sort((a, b) => a.outH - b.outH || a.outW - b.outW);
 	return selected.slice(0, count);
 };
@@ -166,7 +166,7 @@ export class FastGridSearchFromTrimmed
 			const small = downsample(cropped, grid, sampleWindow);
 			const smallData = small.data;
 
-			// Reconstruction error (ignore mask alpha=0 for background)
+			// 再構成誤差（背景のマスク alpha=0 は無視する）
 			let err = 0;
 			let n = 0;
 			for (let y = 0; y < croppedH; y += pixelStride) {
@@ -195,8 +195,8 @@ export class FastGridSearchFromTrimmed
 			if (n === 0) continue;
 
 			const reconErr = err / n;
-			// Reconstruction error tends to drop monotonically with over-partitioning, so add a penalty proportional to number of cells.
-			// Use square root order to balance between low resolution (few cells) and high resolution (many cells).
+			// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
+			// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
 			const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
 			allResults.push({ outH, outW, score });
@@ -240,23 +240,23 @@ export class FastGridSearchFromTrimmed
 		sampleWindow: number,
 		hint?: { outW: number; outH: number },
 	): GridEstimateFromTrimmed | null {
-		// Vary outH based on ratio to determine outW (limits search space)
+		// 比率に基づいて outH を変化させ、outW を決定する（探索空間を制限する）
 		const outHMin = Math.max(2, Math.floor(cropped.height / 32));
-		// If 1 cell is too small (= over-partitioned), error always drops, so require at least ~4px/cell
+		// 1 セルが小さすぎる（= 過分割）と誤差は常に下がるため、少なくとも約 4px/セルを要求する
 		const outHMax = Math.min(
 			512,
 			Math.max(outHMin, Math.floor(cropped.height / 4)),
 		);
 
-		// If image is larger, reduce candidates with coarser steps
+		// 画像が大きい場合は粗い刻みで候補を減らす
 		const span = outHMax - outHMin;
 		const outHStep = span >= 64 ? 3 : span >= 32 ? 2 : 1;
 
-		// Downsample the reconstruction error evaluation points (more effective for larger images)
+		// 再構成誤差の評価点をダウンサンプリングする（大きい画像ほど効果的）
 		const maxDim = Math.max(cropped.width, cropped.height);
 		const pixelStride = Math.min(4, Math.max(1, Math.floor(maxDim / 512)));
 
-		// If hint is specified, start precise search (outHStep=1) from its neighborhood
+		// ヒントが指定されている場合は、その近傍から精密検索（outHStep=1）を開始する
 		if (hint) {
 			const hintOutH = clampInt(hint.outH, {
 				min: outHMin,
@@ -291,7 +291,7 @@ export class FastGridSearchFromTrimmed
 		);
 		if (!coarse) return null;
 
-		// Fine-grained re-scan around the best coarse-search candidate (stride is reduced as the range is narrow)
+		// 粗い検索の最良候補周辺を細かく再走査する（範囲が狭いため刻みを小さくする）
 		const refineRadius = outHStep * 2;
 		const r0 = Math.max(outHMin, coarse.bestOutH - refineRadius);
 		const r1 = Math.min(outHMax, coarse.bestOutH + refineRadius);
@@ -304,9 +304,9 @@ export class FastGridSearchFromTrimmed
 			1,
 			Math.max(1, Math.floor(pixelStride / 2)),
 		);
-		// NOTE:
-		// Candidate list (for size adjustment in UI) uses Top 3 from "coarse-search".
-		// The finally adopted grid maintains the best result from "refined-search".
+		// 注記:
+		// 候補リスト（UI でのサイズ調整用）には「粗い検索」の上位 3 件を使用する。
+		// 最終的に採用するグリッドは「精密検索」の最良結果を維持する。
 		const best = refined?.est ?? coarse.est;
 		return { ...best, candidates: coarse.est.candidates };
 	}
@@ -326,10 +326,10 @@ const legacySearchGridFromTrimmed = (
 	sampleWindow: number,
 	hint?: { outW: number; outH: number },
 ): GridEstimateFromTrimmed | null => {
-	// Determine outW by varying outH based on ratio (to limit search space)
+	// 比率に基づいて outH を変化させ、outW を決定する（探索空間を制限する）
 	const ratio = cropped.width / Math.max(1, cropped.height);
 	const outHMin = Math.max(2, Math.floor(cropped.height / 32));
-	// If 1 cell is too small (= over-partitioned), error always drops, so require at least ~4px/cell
+	// 1 セルが小さすぎる（= 過分割）と誤差は常に下がるため、少なくとも約 4px/セルを要求する
 	const outHMax = Math.min(
 		512,
 		Math.max(outHMin, Math.floor(cropped.height / 4)),
@@ -370,7 +370,7 @@ const legacySearchGridFromTrimmed = (
 		};
 		const small = downsample(cropped, grid, sampleWindow);
 
-		// Reconstruction error (ignore mask alpha=0 for background)
+		// 再構成誤差（背景のマスク alpha=0 は無視する）
 		let err = 0;
 		let n = 0;
 		const croppedData = cropped.data;
@@ -403,8 +403,8 @@ const legacySearchGridFromTrimmed = (
 		if (n === 0) continue;
 
 		const reconErr = err / n;
-		// Reconstruction error tends to drop monotonically with over-partitioning, so add a penalty proportional to number of cells.
-		// Use square root order to balance between low resolution (few cells) and high resolution (many cells).
+		// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
+		// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
 		const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
 		const score = reconErr + complexityPenalty;
 		allResults.push({ outH, outW, score });

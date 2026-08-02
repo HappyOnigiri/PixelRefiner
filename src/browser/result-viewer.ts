@@ -54,7 +54,7 @@ export class ResultViewer {
 		this.compareBtn = this.get<HTMLButtonElement>(".js-btn-view-compare");
 		this.loadingOverlay = this.get<HTMLElement>(".js-loading-overlay");
 
-		// Init state from markup
+		// マークアップから状態を初期化
 		const activeBgBtn = this.bgSelector.querySelector(
 			".bg-btn.active",
 		) as HTMLElement | null;
@@ -62,7 +62,7 @@ export class ResultViewer {
 		this.currentBgType = initialBg;
 		this.setBackground(initialBg);
 
-		// Ensure download menu is addressable for aria-controls
+		// aria-controls からダウンロードメニューを参照できるようにする
 		if (!this.downloadMenu.id) {
 			this.downloadMenu.id = `download-menu-${ResultViewer.nextId++}`;
 		}
@@ -89,16 +89,16 @@ export class ResultViewer {
 	}
 
 	private initEventListeners() {
-		// Zoom Toggle
+		// ズーム切替
 		this.zoomCheck.addEventListener("change", () => {
 			this.updateZoomState();
 			this.callbacks.onZoomToggle?.(this.zoomCheck.checked);
 		});
 
-		// Grid Toggle
+		// グリッド切替
 		this.gridCheck.addEventListener("change", () => {
 			if (this.gridCheck.checked) {
-				// Grid ON -> Ensure Zoom is ON
+				// グリッド ON → ズームが ON であることを保証
 				if (!this.zoomCheck.checked) {
 					this.zoomCheck.checked = true;
 					this.updateZoomState();
@@ -109,7 +109,7 @@ export class ResultViewer {
 			this.callbacks.onGridToggle?.(this.gridCheck.checked);
 		});
 
-		// Background Selector
+		// 背景選択
 		this.bgSelector.querySelectorAll(".bg-btn").forEach((btn) => {
 			btn.addEventListener("click", (e) => {
 				const target = (e.target as HTMLElement).closest(
@@ -124,7 +124,7 @@ export class ResultViewer {
 			});
 		});
 
-		// Download Buttons
+		// ダウンロードボタン
 		const handleDownload = (scale: number) => {
 			this.callbacks.onDownload?.(scale);
 			this.closeDownloadMenu();
@@ -152,24 +152,24 @@ export class ResultViewer {
 			});
 		});
 
-		// Compare Button
+		// 比較ボタン
 		this.compareBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			this.callbacks.onCompare?.();
 		});
 
-		// Click on canvas container to trigger onImageClick
-		// We use container because canvas might be smaller than container in some layouts,
-		// but typically we want the image click.
-		// However, the requested feature is "click on image".
-		// But in zoom mode, canvas fills container or scrolls.
-		// Let's attach to the container but check if we clicked on valid area if needed?
-		// Simply attaching to container ".js-result-canvas-container" is easier and covers the area.
+		// キャンバスコンテナのクリックで onImageClick を発火する
+		// レイアウトによってはキャンバスがコンテナより小さいためコンテナを使用するが、
+		// 通常は画像のクリックを受け取りたい。
+		// ただし、要望された機能は「画像をクリック」である。
+		// ズームモードではキャンバスがコンテナを満たすか、スクロールする。
+		// コンテナに設定しつつ、必要に応じて有効領域のクリックか確認する？
+		// コンテナ ".js-result-canvas-container" に設定するだけなら簡単で領域もカバーできる。
 		const canvasContainer = this.canvas.parentElement;
 		if (canvasContainer) {
 			canvasContainer.addEventListener("click", () => {
-				// Ignore if clicking on buttons or controls inside (though there are none usually in the canvas area)
-				// Also ignore if no image
+				// 内部のボタンやコントロールをクリックした場合は無視（通常、キャンバス領域にはない）
+				// 画像がない場合も無視
 				if (!this.currentImage) return;
 				this.callbacks.onImageClick?.();
 			});
@@ -258,14 +258,14 @@ export class ResultViewer {
 
 		this.updateSizeLabel();
 
-		// Update UI visibility
+		// UI の表示状態を更新
 		this.downloadBtn.style.display = "inline-flex";
 		this.downloadDropdownBtn.style.display = "inline-flex";
 
-		// Update Container State
+		// コンテナの状態を更新
 		const canvasContainer = this.canvas.parentElement;
 		if (canvasContainer) {
-			// Remove placeholder, show canvases
+			// プレースホルダーを削除してキャンバスを表示
 			const placeholder = canvasContainer.querySelector(".placeholder");
 			if (placeholder) (placeholder as HTMLElement).style.display = "none";
 			this.canvas.style.display = "block";
@@ -284,13 +284,13 @@ export class ResultViewer {
 
 	public setBackground(bgType: string) {
 		this.currentBgType = bgType;
-		// Update buttons
+		// ボタンを更新
 		this.bgSelector.querySelectorAll(".bg-btn").forEach((b) => {
 			const btn = b as HTMLElement;
 			btn.classList.toggle("active", btn.dataset.bg === bgType);
 		});
 
-		// Update container class
+		// コンテナクラスを更新
 		const container = this.canvas.parentElement;
 		if (container) {
 			["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach((cls) => {
@@ -321,11 +321,11 @@ export class ResultViewer {
 				container.classList.add("zoom-enabled");
 			} else {
 				container.classList.remove("zoom-enabled");
-				// If zoom off, grid should appear off visually (handled by CSS usually, but logic enforcement here)
+				// ズームがオフならグリッドも視覚的にオフにする（通常は CSS で処理するが、ここでロジックを強制）
 				if (this.gridCheck.checked) {
-					// We don't auto-uncheck grid checkbox to preserve preference,
-					// but we might want to clear the grid canvas.
-					// For now, relies on CSS hiding .zoom-enabled .grid-canvas
+					// 設定を保持するためグリッドチェックボックスは自動で外さないが、
+					// グリッドキャンバスはクリアした方がよいかもしれない。
+					// 現時点では CSS による .zoom-enabled .grid-canvas の非表示に依存する
 				}
 			}
 		}
@@ -336,10 +336,10 @@ export class ResultViewer {
 		const ctx = this.gridCanvas.getContext("2d");
 		if (!ctx) return;
 
-		// Clear previous grid
+		// 前のグリッドをクリア
 		ctx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
 
-		// Grid is only drawn if enabled and zoom is enabled
+		// グリッドは有効かつズーム有効の場合のみ描画
 		if (
 			!this.gridCheck.checked ||
 			!this.zoomCheck.checked ||
@@ -351,7 +351,7 @@ export class ResultViewer {
 
 		this.canvas.parentElement?.classList.add("grid-enabled");
 
-		// Measure container (or canvas) display size
+		// コンテナ（またはキャンバス）の表示サイズを測定
 		const rect = this.canvas.getBoundingClientRect();
 		const dpr = window.devicePixelRatio || 1;
 		const cssW = rect.width;
@@ -359,7 +359,7 @@ export class ResultViewer {
 
 		if (cssW === 0 || cssH === 0) return;
 
-		// Set grid canvas resolution to screen pixels
+		// グリッドキャンバスの解像度を画面ピクセルに設定
 		const targetWidth = Math.round(cssW * dpr);
 		const targetHeight = Math.round(cssH * dpr);
 
@@ -371,7 +371,7 @@ export class ResultViewer {
 			this.gridCanvas.height = targetHeight;
 		}
 
-		// Calculations for object-fit: contain
+		// object-fit: contain の計算
 		const imgW = this.currentImage.width;
 		const imgH = this.currentImage.height;
 		const imgRatio = imgW / imgH;
@@ -383,40 +383,40 @@ export class ResultViewer {
 		let offsetY = 0;
 
 		if (containerRatio > imgRatio) {
-			// Container is wider than image -> Pillarbox (bars on sides)
+			// コンテナが画像より横長 → ピラーボックス（左右に余白）
 			drawH = cssH;
 			drawW = cssH * imgRatio;
 			offsetX = (cssW - drawW) / 2;
 		} else {
-			// Container is taller than image -> Letterbox (bars top/bottom)
+			// コンテナが画像より縦長 → レターボックス（上下に余白）
 			drawW = cssW;
 			drawH = cssW / imgRatio;
 			offsetY = (cssH - drawH) / 2;
 		}
 
-		// Adjust calculations to canvas coordinate space (Multiplying by DPR)
-		// Or we can simple scale the context.
+		// 計算をキャンバス座標系に合わせる（DPR を乗算）
+		// またはコンテキストを単純にスケーリングできる。
 		ctx.resetTransform();
 		ctx.scale(dpr, dpr);
 
 		ctx.beginPath();
-		// Use a thin line that remains visible
+		// 視認性を保つ細い線を使用
 		ctx.strokeStyle = "rgba(128, 128, 128, 0.4)";
 		ctx.lineWidth = 1;
 
-		// Shift by 0.5 to draw sharp lines if we are taking about 1px lines,
-		// but since we are scaling, direct coordinate is likely fine or we might want to align to pixels.
-		// However, "step" might be fractional.
-		// Drawing at logical pixel boundaries is safer.
+		// 1px 程度の線なら 0.5 ずらすと鮮明に描画できるが、
+		// スケーリングしているため直接座標でもよく、ピクセルに揃えることもできる。
+		// ただし "step" は小数になる可能性がある。
+		// 論理ピクセル境界で描画する方が安全である。
 
 		const stepX = drawW / imgW;
 		const stepY = drawH / imgH;
 
-		// Vertical lines
-		// We avoid drawing the very first and last lines if they overlap with container border,
-		// but typically we draw all internal lines.
-		// Optimization: if step is very small (zoom out), don't draw grid?
-		// User asked for "Zoom Mode" so it's likely zoomed in.
+		// 垂直線
+		// コンテナ境界と重なる場合は最初と最後の線を避けるが、
+		// 通常はすべての内部線を描画する。
+		// 最適化: step が非常に小さい（ズームアウト）場合はグリッドを描画しない？
+		// ユーザーは「ズームモード」を求めているため、ズームインしている可能性が高い。
 
 		for (let x = 0; x <= imgW; x++) {
 			const px = offsetX + x * stepX;
@@ -424,7 +424,7 @@ export class ResultViewer {
 			ctx.lineTo(px, offsetY + drawH);
 		}
 
-		// Horizontal lines
+		// 水平線
 		for (let y = 0; y <= imgH; y++) {
 			const py = offsetY + y * stepY;
 			ctx.moveTo(offsetX, py);
@@ -509,7 +509,7 @@ export class ResultViewer {
 		menu.className = "candidates-menu";
 		menu.setAttribute("role", "menu");
 		menu.style.position = "absolute";
-		// Above modal overlay (3000)
+		// モーダルオーバーレイ（3000）の上
 		menu.style.zIndex = "3001";
 
 		const title = document.createElement("div");
@@ -532,28 +532,28 @@ export class ResultViewer {
 		menu.style.borderBottom = "1px solid var(--border-color)";
 		menu.appendChild(note);
 
-		// Combine candidates and current size, then sort
+		// 候補と現在のサイズを結合してソート
 		const current = this.currentGrid;
 		const rawCandidates = [...(this.currentGrid.candidates || [])];
 
-		// 1. Exclude candidates that are "too close" to the current size.
-		// 2. Exclude candidates that are "too close" to each other.
-		// Criteria: small difference in area and cell size (px).
+		// 1. 現在のサイズに「近すぎる」候補を除外する。
+		// 2. 互いに「近すぎる」候補を除外する。
+		// 基準: 面積とセルサイズ（px）の差が小さいこと。
 		const isSimilar = (a: PixelGrid, b: PixelGrid) => {
 			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
 			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
 			const areaDiff = Math.abs(areaA - areaB);
 			const cellDiff = Math.abs(a.cellW - b.cellW);
 
-			// Consider identical if area difference is within 2% and pixel size difference is within 0.2px.
+			// 面積差が 2% 以内かつピクセルサイズ差が 0.2px 以内なら同一とみなす。
 			const areaThreshold = Math.max(areaA, areaB) * 0.02;
 			return areaDiff <= Math.max(2, areaThreshold) && cellDiff < 0.2;
 		};
 
-		// First, filter based on current size
+		// まず現在のサイズに基づいてフィルタリング
 		const filtered = rawCandidates.filter((c) => !isSimilar(c, current));
 
-		// Exclude duplicates among candidates (sort by size and compare adjacent elements)
+		// 候補内の重複を除外（サイズ順にソートし、隣接要素を比較）
 		filtered.sort(
 			(a, b) => (a.outW ?? 0) * (a.outH ?? 0) - (b.outW ?? 0) * (b.outH ?? 0),
 		);
@@ -567,17 +567,17 @@ export class ResultViewer {
 			}
 		}
 
-		// Integrate current size
+		// 現在のサイズを統合
 		const candidates = [current, ...uniqueCandidates];
 
-		// Sort by final size order (area order)
+		// 最終的なサイズ順（面積順）にソート
 		candidates.sort((a, b) => {
 			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
 			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
 			return areaA - areaB;
 		});
 
-		// Limit to maximum number of items
+		// 項目数を最大数に制限
 		const displayCandidates = candidates.slice(0, 12);
 
 		displayCandidates.forEach((c) => {
@@ -622,31 +622,31 @@ export class ResultViewer {
 		document.body.appendChild(menu);
 		this.candidatesMenu = menu;
 
-		// Position near sizeLabel
+		// sizeLabel の近くに配置
 		const rect = this.sizeLabel.getBoundingClientRect();
 		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 		const scrollLeft =
 			window.pageXOffset || document.documentElement.scrollLeft;
 
-		// Reset any inherited positioning (safety)
+		// 継承された位置指定をリセット（安全策）
 		menu.style.right = "auto";
 		menu.style.bottom = "auto";
 
-		// Default: position below the label
+		// 既定: ラベルの下に配置
 		menu.style.left = `${rect.left + scrollLeft}px`;
 		menu.style.top = `${rect.bottom + scrollTop + 6}px`;
 
-		// Reposition if it overflows viewport (after it's in DOM)
+		// ビューポートからはみ出す場合は位置を変更（DOM 挿入後）
 		const menuRect = menu.getBoundingClientRect();
 		const padding = 10;
 
-		// Horizontal overflow
+		// 水平方向のはみ出し
 		if (menuRect.right > window.innerWidth - padding) {
 			const nextLeft = rect.right + scrollLeft - Math.max(menuRect.width, 200);
 			menu.style.left = `${Math.max(padding + scrollLeft, nextLeft)}px`;
 		}
 
-		// Vertical overflow (open upward)
+		// 垂直方向のはみ出し（上に開く）
 		const nextMenuRect = menu.getBoundingClientRect();
 		if (nextMenuRect.bottom > window.innerHeight - padding) {
 			const topUp = rect.top + scrollTop - nextMenuRect.height - 6;

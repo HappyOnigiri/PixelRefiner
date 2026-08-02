@@ -3,7 +3,7 @@ import { rgbToOklab } from "./colorUtils";
 import { getDitherMatrix } from "./dither-matrix";
 
 /**
- * Fixed palette quantization using Oklab distance
+ * Oklab 距離を用いた固定パレットの量子化
  */
 export class PaletteQuantizer {
 	private paletteLabs: Oklab[];
@@ -13,7 +13,7 @@ export class PaletteQuantizer {
 	}
 
 	quantize(pixels: PixelData[]): PixelData[] {
-		const memo = new Map<number, number>(); // RGB key -> palette index
+		const memo = new Map<number, number>(); // RGB キー -> パレットのインデックス
 
 		return pixels.map((p) => {
 			if (p.alpha === 0) return p;
@@ -29,25 +29,25 @@ export class PaletteQuantizer {
 					const targetLab = this.paletteLabs[i];
 					const targetRgb = this.palette[i];
 
-					// Oklab distance
+					// Oklab 距離
 					let dist = this.colorDistanceSq(lab, targetLab);
 
-					// For dark pixels, to prevent them from being pulled towards dark colors like brown,
-					// apply a bias to the pure black (L=0) judgment or use RGB distance as an aid.
-					// This specifically prevents misclassification of NES black (#000000) and brown (#503000).
+					// 暗いピクセルが茶色などの暗色へ引っ張られるのを防ぐため、
+					// 純粋な黒（L=0）の判定にバイアスをかけるか、RGB 距離を補助的に使用する。
+					// 特に NES の黒（#000000）と茶色（#503000）の誤分類を防ぐ。
 					const isTargetBlack =
 						targetRgb.r === 0 && targetRgb.g === 0 && targetRgb.b === 0;
 
 					if (isTargetBlack) {
-						// Apply bias only to extremely dark pixels below approx L=0.2 (approx 45-50 in sRGB).
-						// This prevents "dark gray" in palettes like Game Boy from being judged as black.
+						// バイアスはおよそ L=0.2 未満（sRGB でおよそ 45〜50）の非常に暗いピクセルにのみ適用する。
+						// これにより、ゲームボーイなどのパレットにある「濃いグレー」が黒と判定されるのを防ぐ。
 						if (lab.L < 0.2) {
 							const lBias = (0.2 - lab.L) * 1.5;
 							dist -= lBias * lBias;
 						}
 					}
 
-					// Also supplementally use the distance in RGB space (only for extremely dark colors).
+					// RGB 空間の距離も補助的に使用する（非常に暗い色のみ）。
 					if (lab.L < 0.1) {
 						const dR = (p.r - targetRgb.r) / 255;
 						const dG = (p.g - targetRgb.g) / 255;
@@ -71,7 +71,7 @@ export class PaletteQuantizer {
 	}
 
 	/**
-	 * Floyd-Steinberg dithering using fixed palette
+	 * 固定パレットを使用する Floyd-Steinberg ディザリング
 	 */
 	dither(
 		pixels: PixelData[],
@@ -89,7 +89,7 @@ export class PaletteQuantizer {
 	}
 
 	/**
-	 * Apply dithering with various modes
+	 * 各種モードでディザリングを適用する
 	 */
 	applyDithering(
 		pixels: PixelData[],
@@ -166,7 +166,7 @@ export class PaletteQuantizer {
 				out[idx].g = closest.g;
 				out[idx].b = closest.b;
 
-				// Distribute error
+				// 誤差を分配する
 				this.distributeError(
 					out,
 					x + 1,

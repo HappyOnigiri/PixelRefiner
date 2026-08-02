@@ -1,5 +1,5 @@
 /**
- * Display error in overlay
+ * オーバーレイにエラーを表示する
  */
 export const showError = (message: string) => {
 	const toast = document.createElement("div");
@@ -17,12 +17,12 @@ export const showError = (message: string) => {
 	toast.appendChild(text);
 	document.body.appendChild(toast);
 
-	// Start showing in the next frame
+	// 次のフレームで表示を開始
 	requestAnimationFrame(() => {
 		toast.classList.add("show");
 	});
 
-	// Remove after 5 seconds
+	// 5 秒後に削除
 	setTimeout(() => {
 		toast.classList.remove("show");
 		toast.addEventListener(
@@ -36,7 +36,7 @@ export const showError = (message: string) => {
 };
 
 /**
- * Display information (success, etc.) in toast
+ * トーストに情報（成功など）を表示する
  */
 export const showInfo = (message: string) => {
 	const toast = document.createElement("div");

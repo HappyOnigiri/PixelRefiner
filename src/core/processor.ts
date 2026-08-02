@@ -130,12 +130,12 @@ export const processImage = (
 	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
 	if (gridDisabledResult) return gridDisabledResult;
 
-	// auto: First, estimate outW/outH from the background-trimmed area (before downsampling) and downsample as is.
-	// (Even for images with many gaps, we want to focus on the content area for stability.)
+	// auto: まず背景トリミング後の領域（ダウンサンプリング前）から outW/outH を推定し、そのままダウンサンプリングする。
+	// （隙間の多い画像でも、安定させるためコンテンツ領域に注目したい。）
 	const autoGridFromTrimmed = o.autoGridFromTrimmed;
 
-	// Output the "after background trimming" look (before downsampling) for debugging.
-	// This is calculated for debug output only and does not change the actual processing pipeline.
+	// デバッグ用に「背景トリミング後」（ダウンサンプリング前）の見た目を出力する。
+	// これはデバッグ出力のためだけに計算され、実際の処理パイプラインは変更しない。
 	const bgTol = o.backgroundTolerance;
 	const maskedStart = performance.now();
 	const maskedForDebugOrAuto =
@@ -236,10 +236,10 @@ export const processImage = (
 					: o.fastAutoGridFromTrimmed
 						? "trimmed-reconstruction-fast"
 						: "trimmed-reconstruction";
-				// NOTE:
-				// - Even when trimming is OFF, we want to use the "estimated grid from content BBox" (to prevent crushing).
-				// - However, trimming OFF just leaves background (margins), so apply downsampling to the whole image (working).
-				//   This makes the number of cells (apparent size) of the center object more stable.
+				// 注記:
+				// - トリミングが OFF でも、つぶれを防ぐため「コンテンツ BBox から推定したグリッド」を使用する。
+				// - ただしトリミング OFF は背景（余白）を残すだけなので、画像全体にダウンサンプリングを適用する。
+				//   これにより中央オブジェクトのセル数（見かけのサイズ）がより安定する。
 				const includeCandidates = hint === undefined;
 				const searchCandidates = [
 					...(phaseAwareEstimate && phaseAwareReliable
@@ -289,8 +289,8 @@ export const processImage = (
 	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
 
 	const downsampleStart = performance.now();
-	// [Intended] Candidate diagnostics stay in the detector's shared coordinate
-	// space while the selected output grid may later be trimmed or padded.
+	// [Intended] 選択した出力グリッドは後でトリミングまたはパディングされる場合がある一方で、
+	// 候補診断は検出器で共有する座標空間に保つ。
 	const diagnosticGrid = grid;
 	const down = downsample(working, grid, o.sampleWindow);
 	log(
@@ -300,17 +300,17 @@ export const processImage = (
 		sampleWindow: o.sampleWindow,
 	});
 
-	// Compare "before": original image resized only (no sanitize).
+	// 「処理前」比較: 元画像をリサイズするだけ（補正なし）。
 	let compareBefore = cropRawImageNearestFromGrid(img, grid);
-	// Compare "before (sanitized)": original image downsampled (median sampling) using the same grid.
+	// 「処理前（補正済み）」比較: 同じグリッドを使い、元画像をダウンサンプリング（中央値サンプリング）する。
 	let compareBeforeSanitized = downsample(img, grid, o.sampleWindow);
 
 	let trimmed = down;
 	let trimmedGrid = grid;
 	if (trimToContent) {
 		const trimStart = performance.now();
-		// After removing background (flood fill from corners), trim by content BBox in cell units.
-		// This allows outW/outH to fit the "content" even for images with large margins.
+		// 背景を除去（角からの塗りつぶし）後、セル単位でコンテンツ BBox によりトリミングする。
+		// これにより余白が大きい画像でも、outW/outH を「コンテンツ」に合わせられる。
 		const bgTol = o.backgroundTolerance;
 		const masked = removeBackground(
 			down,
@@ -340,7 +340,7 @@ export const processImage = (
 				cropH: b.h * grid.cellH,
 			};
 
-			// Recompute comparison befores using the updated trimmed grid
+			// 更新済みのトリミンググリッドを使って処理前比較を再計算する
 			compareBefore = cropRawImageNearestFromGrid(img, trimmedGrid);
 			compareBeforeSanitized = cropRawImage(
 				compareBeforeSanitized,
@@ -377,7 +377,7 @@ export const processImage = (
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
 
-	// Color reduction
+	// 色削減
 	let finalResult = result;
 	if (o.reduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
@@ -391,13 +391,13 @@ export const processImage = (
 		);
 	}
 
-	// Outline processing
+	// アウトライン処理
 	if (o.outlineStyle !== "none") {
 		const prevW = finalResult.width;
 		const prevH = finalResult.height;
 		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
 
-		// Update grid info if image size was expanded
+		// 画像サイズを拡張した場合はグリッド情報を更新する
 		if (finalResult.width !== prevW || finalResult.height !== prevH) {
 			const dw = finalResult.width - prevW;
 			const dh = finalResult.height - prevH;
@@ -406,8 +406,8 @@ export const processImage = (
 			const padRight = dw - padLeft;
 			const padBottom = dh - padTop;
 
-			// Keep compareBefore aligned with the expanded result (transparent padding).
-			// Scale padding by cell size because compareBefore is high resolution.
+			// compareBefore を拡張後の結果（透明パディング）に合わせる。
+			// compareBefore は高解像度のため、パディングをセルサイズで拡大する。
 			compareBefore = padRawImage(
 				compareBefore,
 				padLeft * trimmedGrid.cellW,

@@ -21,9 +21,9 @@ const formatMetric = (value: number | undefined): string =>
 const formatConfidence = (value: number | null): string =>
 	value === null ? "-" : value.toFixed(4);
 
-// [Policy] A case description must stand on its own: name the input characteristic,
-// the processing being exercised, and what must remain unchanged. Avoid vague text
-// such as "preserve the image" when adding an image test.
+// [Policy] ケースの説明だけで内容を理解できるように、入力の特性、検証する処理、
+// 変化してはならない点を記載する。画像テストの追加時は「画像を保持する」のような
+// 曖昧な表現を避ける。
 const describeCase = (
 	result: QualityCaseResult,
 ): { en: string; ja: string } => {

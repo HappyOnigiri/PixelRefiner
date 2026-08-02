@@ -6,8 +6,8 @@ from pathlib import Path
 MAX_LINE_LENGTH = 160
 TAB_WIDTH = 4
 
-# [Policy] Translation resources contain intentionally uninterrupted localized
-# strings. Splitting them would obscure the text and make translation reviews harder.
+# [Policy] 翻訳リソースには意図的に分割していないローカライズ文字列を含める。
+# 分割すると文章が分かりにくくなり、翻訳レビューも困難になる。
 EXCLUDED_FILES = {Path("src/browser/i18n.ts")}
 
 

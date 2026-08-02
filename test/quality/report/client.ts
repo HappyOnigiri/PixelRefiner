@@ -8,7 +8,7 @@ declare global {
 	}
 }
 
-// [Intended] This self-contained function is serialized into each static report.
+// [Intended] この自己完結した関数は各静的レポートへシリアライズされる。
 export const runQualityReportClient = (): void => {
 	const translations = window.__QUALITY_REPORT_TRANSLATIONS__;
 	const preferredLanguage = (

@@ -8,8 +8,8 @@ from pathlib import Path
 WARNING_LINE_LIMIT = 600
 HARD_LINE_LIMIT = 1000
 
-# [Policy] Translation resources keep all locales together so key additions and
-# translation changes can be reviewed as one synchronized unit.
+# [Policy] 翻訳リソースはすべてのロケールをまとめて保持し、キーの追加と
+# 翻訳変更を同期した一単位としてレビューできるようにする。
 EXCLUDED_FILES = {Path("src/browser/i18n.ts")}
 
 

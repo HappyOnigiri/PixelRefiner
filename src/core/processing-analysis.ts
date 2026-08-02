@@ -179,8 +179,8 @@ export const createProcessingAnalysis = (
 		confidence: selected.confidence,
 		warnings,
 		gridCandidates,
-		// [Intended] PRF-100 withholds automatic confirmation at low confidence.
-		// The legacy output remains available until PRF-300 owns route selection.
+		// [Intended] PRF-100 は信頼度が低い場合に自動確定を行わない。
+		// PRF-300 が経路選択を担うまで、旧来の出力は利用可能なままとする。
 		selectedCandidateIndex: selectionConfirmed
 			? Math.max(0, selectedCandidateIndex)
 			: undefined,

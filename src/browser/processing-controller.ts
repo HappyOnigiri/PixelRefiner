@@ -53,17 +53,17 @@ export const createRunProcessing = ({
 
 		mainResultViewer.setLoading(true);
 
-		// Disable UI
+		// UI を無効化
 		els.processButton.disabled = true;
 		els.loadingOverlay.style.display = "flex";
 		els.outputPanel.classList.add("is-processing");
 		els.outputPanel.setAttribute("aria-busy", "true");
 
-		// Design to process only the currently active image
-		// (Batch processing requires separate implementation, but currently auto-processes on switch)
+		// 現在アクティブな画像のみを処理する設計
+		// （一括処理には別実装が必要だが、現在は切替時に自動処理する）
 		const currentItem = imageSession.getActiveImage();
 		if (!currentItem) {
-			// Cleanup and finish
+			// クリーンアップして完了
 			els.loadingOverlay.style.display = "none";
 			els.outputPanel.classList.remove("is-processing");
 			els.outputPanel.removeAttribute("aria-busy");
@@ -199,13 +199,13 @@ export const createRunProcessing = ({
 				fixedPalette: processingState.currentFixedPalette,
 			});
 
-			// Transferred data might become unavailable in the caller thread (depending on Comlink behavior,
-			// basically designed so RawImage is not reused, so re-assigned here)
-			// However, Comlink uses structured cloning by default,
-			// so currentImage is maintained unless transfer is used explicitly.
-			// Keeping it as a copy for simplicity.
+			// 転送したデータは呼び出し元スレッドで利用できなくなる可能性がある（Comlink の挙動に依存し、
+			// RawImage を再利用しない設計のため、ここで再代入する）
+			// ただし、Comlink は既定で構造化クローンを使用するため、
+			// 明示的に transfer を使わない限り currentImage は維持される。
+			// 簡潔にするためコピーとして保持する。
 			const resultImage = result;
-			// currentResult = resultImage; // No longer used directly
+			// currentResult = resultImage; // 直接使用しなくなった
 			const effectiveGrid = imageSession.updateImageResult(
 				currentItem.id,
 				resultImage,
@@ -216,7 +216,7 @@ export const createRunProcessing = ({
 			modalResultViewer.updateImage(resultImage, effectiveGrid);
 			mainResultViewer.setLoading(false);
 
-			// Turn off the grid for large results to avoid an overly dense overlay.
+			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。
 			if (resultImage.width > 256 || resultImage.height > 256) {
 				if (els.gridOutputCheck.checked) {
 					els.gridOutputCheck.checked = false;
@@ -225,7 +225,7 @@ export const createRunProcessing = ({
 				}
 			}
 
-			// Sort the palette for better visualization
+			// 見やすくするためパレットをソート
 			const sortedPalette = sortPalette(extractedPalette);
 			processingState.currentExtractedPalette = sortedPalette;
 
@@ -233,7 +233,7 @@ export const createRunProcessing = ({
 			els.downloadButton.style.display = "flex";
 			els.downloadDropdownButton.style.display = "flex";
 
-			// Update size display in download menu
+			// ダウンロードメニューのサイズ表示を更新
 			els.downloadMenu.querySelectorAll("button").forEach((btn) => {
 				const scale = Number(btn.dataset.scale);
 				if (scale && scale > 1) {
@@ -241,7 +241,7 @@ export const createRunProcessing = ({
 				}
 			});
 
-			// Update comparison slider (generate both resized original and sanitized)
+			// 比較スライダーを更新（リサイズ済みの元画像と処理済み画像の両方を生成）
 			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
 			drawRawImageToCanvas(
 				compareBeforeSanitized,
@@ -261,15 +261,15 @@ export const createRunProcessing = ({
 					: processingState.compareBeforeOriginalUrl;
 			comparer.updateImages(before, processingState.compareAfterUrl);
 
-			// If modal is open, reflect immediately (including size sync)
+			// モーダルが開いている場合は直ちに反映する（サイズ同期を含む）
 			if (els.compareModal.style.display !== "none") {
 				requestAnimationFrame(() => {
 					comparer.syncImageSize();
 				});
 			}
 
-			// Redraw grid when processing result is updated
-			// Delay slightly to wait for DOM update (canvas display size determination)
+			// 処理結果の更新時にグリッドを再描画
+			// DOM 更新（キャンバス表示サイズの決定）を待つため少し遅延させる
 			requestAnimationFrame(() => {
 				updateGrid();
 			});
@@ -277,9 +277,9 @@ export const createRunProcessing = ({
 			if (analysis.warnings.length > 0) {
 				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
 			}
-			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // Handled by ResultViewer
+			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
 
-			// If background removal method is corner-based, reflect extracted color in UI
+			// 背景除去方法がコーナーベースの場合は、抽出した色を UI に反映
 			updateBgColorFromMethod();
 		} catch (err) {
 			const msg = `${i18n.t("error.process_failed")}: ${(err as Error).message}`;

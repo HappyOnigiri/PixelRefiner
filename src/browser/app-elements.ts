@@ -55,8 +55,8 @@ export type Elements = {
 
 	autoProcessToggle: HTMLInputElement;
 
-	// Palette UI
-	// Palette UI
+	// パレット UI
+	// パレット UI
 	paletteColors: HTMLElement;
 	exportGPLButton: HTMLButtonElement;
 	exportPNGButton: HTMLButtonElement;
@@ -66,12 +66,12 @@ export type Elements = {
 	closePaletteModal: HTMLButtonElement;
 	paletteFileInput: HTMLInputElement;
 
-	// Compare View
-	// Result Modal
+	// 比較ビュー
+	// 結果モーダル
 	resultModal: HTMLElement;
 	closeResultModal: HTMLButtonElement;
 
-	// Compare Modal
+	// 比較モーダル
 	compareModal: HTMLElement;
 	closeCompareModal: HTMLButtonElement;
 	compareContainer: HTMLElement;
@@ -81,7 +81,7 @@ export type Elements = {
 	btnCompareBeforeOriginal: HTMLButtonElement;
 	btnCompareBeforeSanitized: HTMLButtonElement;
 
-	// Image List
+	// 画像リスト
 	imageListPanel: HTMLElement;
 	imageListContainer: HTMLElement;
 	clearAllButton: HTMLButtonElement;
@@ -89,7 +89,7 @@ export type Elements = {
 	downloadAllDropdownButton: HTMLButtonElement;
 	downloadAllMenu: HTMLElement;
 
-	// Presets
+	// プリセット
 	presetNameInput: HTMLInputElement;
 	savePresetButton: HTMLButtonElement;
 	loadPresetModalButton: HTMLButtonElement;
@@ -176,7 +176,7 @@ export const getElements = (): Elements => {
 		closePaletteModal: get<HTMLButtonElement>("close-palette-modal"),
 		paletteFileInput: get<HTMLInputElement>("palette-file-input"),
 
-		// Result Modal
+		// 結果モーダル
 		resultModal: get<HTMLElement>("result-modal"),
 		closeResultModal: get<HTMLElement>("result-modal").querySelector(
 			".js-close-result-modal",
@@ -195,7 +195,7 @@ export const getElements = (): Elements => {
 			"btn-compare-before-sanitized",
 		),
 
-		// Image List
+		// 画像リスト
 		imageListPanel: get<HTMLElement>("image-list-panel"),
 		imageListContainer: get<HTMLElement>("image-list-container"),
 		clearAllButton: get<HTMLButtonElement>("clear-all-button"),

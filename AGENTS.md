@@ -12,10 +12,11 @@ When adding or changing `data-i18n` or `data-i18n-attr` attributes, register the
 
 ## Intent Comments
 
-- `[Intended]` records deliberate behavior, `[Policy]` records an operational constraint, and `[Workaround]` records a temporary external workaround.
-- Preserve tagged code unless the comment's rationale has been checked and is no longer valid. Tag newly introduced code when its unusual shape would otherwise invite an incorrect refactor.
+- コードコメントは日本語で記述する。
+- `[Intended]` は意図的な挙動、`[Policy]` は運用上の制約、`[Workaround]` は一時的な外部要因への回避策を記録する。
+- タグ付きコードは、コメントの根拠を確認して無効になった場合を除き保持する。特殊な形のために誤ったリファクタリングを招きうる新規コードにはタグを付ける。
 
 ## Verification
 
 - Run `make ci` after changes.
-- When asked to commit, use an English Conventional Commit message.
+- コミットを求められた場合は、Conventional Commits 形式を使い、説明を日本語で記述する。

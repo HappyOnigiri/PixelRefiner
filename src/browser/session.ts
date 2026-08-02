@@ -38,7 +38,7 @@ export class ImageSession {
 		};
 		this.images.push(item);
 
-		// If this is the first image or no active image, select it
+		// 最初の画像、またはアクティブな画像がない場合は選択する
 		if (!this.activeImageId) {
 			this.setActiveImage(id);
 		} else {
@@ -54,9 +54,9 @@ export class ImageSession {
 		this.images.splice(idx, 1);
 
 		if (wasActive) {
-			// Select next available image, or null if empty
+			// 次に利用可能な画像を選択し、空なら null にする
 			if (this.images.length > 0) {
-				// Try to select the image at the same index, or the last one
+				// 同じインデックスの画像、または最後の画像を選択する
 				const nextIdx = Math.min(idx, this.images.length - 1);
 				this.setActiveImage(this.images[nextIdx].id);
 			} else {
@@ -98,7 +98,7 @@ export class ImageSession {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.result = result;
-			// Keep previous auto-detection candidates so they can be re-selected even if candidates are lost due to size specification (force), etc.
+			// サイズ指定（force）などで候補が失われても再選択できるよう、以前の自動検出候補を保持する
 			if (grid) {
 				const prevCandidates = img.grid?.candidates;
 				if (
@@ -132,7 +132,7 @@ export class ImageSession {
 		}
 	}
 
-	// Helper to create a small data URL for thumbnail
+	// サムネイル用の小さなデータ URL を作成するヘルパー
 	private createThumbnail(raw: RawImage, maxDim = 80): string {
 		const canvas = document.createElement("canvas");
 		let w = raw.width;
@@ -144,10 +144,10 @@ export class ImageSession {
 			h = Math.floor(h * ratio);
 		}
 
-		// Create a temp canvas for the full image first to resize cleanly
-		// Or just draw directly scaled. For pixel art, nearest neighbor is best,
-		// but for thumbnails, smooth might be better? Let's stick to default (smooth) for thumbnails
-		// or maybe nearest to keep pixel art look? Let's use nearest for consistency.
+		// きれいにリサイズするため、まずフル画像用の一時キャンバスを作成する
+		// 直接スケーリングして描画することもできる。ピクセルアートには最近傍法が最適だが、
+		// サムネイルにはスムージングの方がよい可能性がある。サムネイルは既定（スムージング）を使う。
+		// ピクセルアートらしさを保つため最近傍法も考えられるが、一貫性のため最近傍法を使用する。
 
 		const tempCanvas = document.createElement("canvas");
 		drawRawImageToCanvas(raw, tempCanvas);

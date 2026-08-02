@@ -20,7 +20,7 @@ export const setupCompareControls = ({
 	const openCompareModal = () => {
 		compareModalController.open();
 
-		// Sync background color from the saved display settings.
+		// 保存済みの表示設定から背景色を同期する。
 		try {
 			const settings = readDisplaySettings();
 			if (settings) {
@@ -42,10 +42,10 @@ export const setupCompareControls = ({
 			console.error(e);
 		}
 
-		// Need size synchronization immediately after modal opens
+		// モーダルを開いた直後にサイズを同期する必要がある
 		requestAnimationFrame(() => {
-			// Always keep grid OFF in compare modal (nothing to draw, but keep state consistent)
-			// (No-op for now, since compare modal does not use grid-canvas.)
+			// 比較モーダルでは常にグリッドを OFF にする（描画対象はないが状態を一貫させる）
+			// （比較モーダルでは grid-canvas を使用しないため、現時点では何もしない。）
 			const before =
 				processingState.compareBeforeMode === "sanitized"
 					? processingState.compareBeforeSanitizedUrl

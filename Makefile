@@ -1,18 +1,18 @@
 .PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-ts-line-length check-file-line-count setup
 
-# Run repomix to bundle files into tmp/repomix/ folder
+# repomix を実行してファイルを tmp/repomix/ にまとめる
 repomix:
 	mkdir -p tmp/repomix
-	# Full version
+	# 完全版
 	pnpm dlx repomix --output tmp/repomix/repomix-full.txt
-	# Version excluding lockfiles, images, licenses, etc.
+	# ロックファイル、画像、ライセンスなどを除く版
 	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
-	# Version further excluding test files
+	# さらにテストファイルを除く版
 	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
-# CI entrypoint (local and GitHub Actions)
-# Strategy: run auto-fix, then GitHub Actions detects diffs via git diff --exit-code
-# NOTE: if you change this target, also check .github/workflows/ci.yml
+# CI のエントリーポイント（ローカルおよび GitHub Actions）
+# 方針: 自動修正を実行し、GitHub Actions で git diff --exit-code により差分を検出する
+# 注: このターゲットを変更する場合は .github/workflows/ci.yml も確認する
 ci:
 	python3 scripts/run_ci.py
 
@@ -48,7 +48,7 @@ ts-check-diff:
 	echo "$$files" | sed 's/^/ - /'; \
 	pnpm dlx @biomejs/biome@latest check $$files
 
-# Apply safe Biome fixes (format, organizeImports, etc.) to changed TS/TSX files
+# 変更された TS/TSX ファイルに安全な Biome 修正（整形、import の整理など）を適用する
 ts-fix-diff:
 	@files="$$( ( \
 		git diff --name-only --diff-filter=ACMRTUXB HEAD -- '*.ts' '*.tsx' 2>/dev/null; \

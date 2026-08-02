@@ -1,7 +1,7 @@
 import type { Oklab, RGB } from "../shared/types";
 
 /**
- * sRGB (0-255) to Linear RGB (0.0-1.0)
+ * sRGB（0〜255）からリニア RGB（0.0〜1.0）への変換
  */
 function srgbToLinear(c: number): number {
 	const v = c / 255;
@@ -9,7 +9,7 @@ function srgbToLinear(c: number): number {
 }
 
 /**
- * Linear RGB (0.0-1.0) to sRGB (0-255)
+ * リニア RGB（0.0〜1.0）から sRGB（0〜255）への変換
  */
 function linearToSrgb(c: number): number {
 	const v = c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
@@ -17,7 +17,7 @@ function linearToSrgb(c: number): number {
 }
 
 /**
- * RGB to Oklab
+ * RGB から Oklab への変換
  */
 export function rgbToOklab(rgb: RGB): Oklab {
 	const r = srgbToLinear(rgb.r);
@@ -40,7 +40,7 @@ export function rgbToOklab(rgb: RGB): Oklab {
 }
 
 /**
- * Oklab to RGB
+ * Oklab から RGB への変換
  */
 export function oklabToRgb(lab: Oklab): RGB {
 	const l_ = lab.L + 0.3963377774 * lab.a + 0.2158037573 * lab.b;

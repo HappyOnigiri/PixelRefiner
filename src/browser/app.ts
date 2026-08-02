@@ -49,7 +49,7 @@ export const initApp = (): void => {
 		els.closePresetModal,
 	);
 
-	// Sync logic
+	// 同期ロジック
 	const syncViewers = (
 		_source: ResultViewer,
 		target: ResultViewer,
@@ -70,43 +70,43 @@ export const initApp = (): void => {
 		},
 		onActiveChange: (item) => {
 			if (item) {
-				// Restore result if available, or original
-				// const displayImage = item.result || item.original; // Unused
+				// 結果があれば復元し、なければ元画像を使用
+				// const displayImage = item.result || item.original; // 未使用
 
-				// Update Viewers
+				// ビューアーを更新
 				drawRawImageToCanvas(item.original, els.originalCanvas);
 
-				// If result exists, show it. If not, clear output?
+				// 結果があれば表示し、なければ出力をクリアするか？
 				if (item.result) {
 					mainResultViewer.updateImage(item.result, item.grid);
 					modalResultViewer.updateImage(item.result, item.grid);
 					els.outputPanel.classList.add("has-image");
-					// els.outputSize.textContent = `${item.result.width}x${item.result.height} px`; // Handled by ResultViewer
+					// els.outputSize.textContent = `${item.result.width}x${item.result.height} px`; // ResultViewer で処理する
 					els.downloadButton.style.display = "flex";
 					els.downloadDropdownButton.style.display = "flex";
 
-					// Re-apply grid if needed
+					// 必要に応じてグリッドを再適用
 					setTimeout(() => {
 						mainResultViewer.drawGrid();
 						modalResultViewer.drawGrid();
 					}, 0);
 				} else {
-					// Pending state: Clear output or show placeholder?
-					// Currently app doesn't have "clear output" method easily exposed without clearing canvas.
-					// Let's just hide functionality or show original in output?
-					// Typically we run processing immediately.
-					// If pending, runProcessing will be triggered by auto-process or manual.
-					// For now, let's clear the result view if no result.
+					// 保留状態: 出力をクリアするか、プレースホルダーを表示するか？
+					// 現在、キャンバスをクリアせずに「出力をクリア」するメソッドはアプリから容易に公開されていない。
+					// 機能を隠すか、出力に元画像を表示するか？
+					// 通常は直ちに処理を実行する。
+					// 保留中の場合、runProcessing は自動処理または手動操作で実行される。
+					// 現時点では、結果がなければ結果ビューをクリアする。
 
-					// However, runProcessing is usually called immediately after add.
-					// If switching back to a pending image (e.g. error or cleared), we should maybe clear output.
-					// But we don't have "clear" method on ResultViewer.
-					// We can just not update it, but that leaves previous image.
-					// TODO: Add clear method to ResultViewer? Or just existing behavior.
-					// Let's leave it for now, assuming auto-process is ON or user clicks process.
+					// ただし通常、runProcessing は追加直後に呼び出される。
+					// 保留中の画像（エラー時やクリア後など）へ戻る場合は、出力をクリアすべきかもしれない。
+					// しかし ResultViewer には clear メソッドがない。
+					// 更新しないこともできるが、前の画像が残ってしまう。
+					// TODO: ResultViewer に clear メソッドを追加するか、既存の挙動に任せる。
+					// 自動処理が ON、またはユーザーが処理をクリックする前提で、現時点ではこのままにする。
 
 					els.outputPanel.classList.remove("has-image");
-					// els.outputSize.textContent = "-"; // Handled by ResultViewer
+					// els.outputSize.textContent = "-"; // ResultViewer で処理する
 					els.downloadButton.style.display = "none";
 					els.downloadDropdownButton.style.display = "none";
 					els.downloadMenu.classList.remove("show");
@@ -115,21 +115,20 @@ export const initApp = (): void => {
 				els.dropArea.classList.add("has-image");
 				els.inputSize.textContent = `${item.original.width}x${item.original.height} px`;
 
-				// Trigger processing if pending and auto-process is ON
-				// Note: For multiple images, auto-process is forced OFF above, so this only runs for single image
-				// unless we change logic.
+				// 保留中かつ自動処理が ON なら処理を開始
+				// 注: 複数画像では上で自動処理を強制的に OFF にするため、ロジックを変えない限りこれは単一画像でのみ実行される。
 				if (item.status === "pending" && els.autoProcessToggle.checked) {
 					runProcessing();
 				}
 
-				// Update BG extraction color if method is RGB
-				// (Or update RGB inputs if picking from image)
+				// 方法が RGB の場合は背景抽出色を更新
+				// （または画像から選ぶ場合は RGB 入力を更新）
 			} else {
-				// No active image
+				// アクティブな画像がない
 				els.dropArea.classList.remove("has-image");
 				els.outputPanel.classList.remove("has-image");
 				els.inputSize.textContent = "-";
-				// els.outputSize.textContent = "-"; // Handled by ResultViewer
+				// els.outputSize.textContent = "-"; // ResultViewer で処理する
 				const ctx = els.originalCanvas.getContext("2d");
 				ctx?.clearRect(
 					0,
@@ -143,10 +142,10 @@ export const initApp = (): void => {
 		},
 	});
 
-	// Image List UI Updater
+	// 画像リスト UI の更新処理
 	const updateImageList = () => {
 		const images = imageSession.getImages();
-		// Hide if 0 or 1 image (User Request)
+		// 画像が 0 枚または 1 枚なら非表示（ユーザー要望）
 		if (images.length <= 1) {
 			els.imageListPanel.style.display = "none";
 			return;
@@ -211,7 +210,7 @@ export const initApp = (): void => {
 			if (settings.autoProcess !== undefined)
 				els.autoProcessToggle.checked = settings.autoProcess;
 
-			// Update button visibility status
+			// ボタンの表示状態を更新
 			updateProcessButtonVisibility();
 
 			if (settings.bgType !== undefined) {
@@ -287,7 +286,7 @@ export const initApp = (): void => {
 					}, 1500);
 				});
 				updateRgbInputs(hex);
-				// Also select this color if in RGB mode
+				// RGB モードの場合はこの色も選択する
 				if (els.bgExtractionMethod.value === "rgb") {
 					els.bgExtractionMethod.dispatchEvent(new Event("change"));
 				}
@@ -298,29 +297,29 @@ export const initApp = (): void => {
 	};
 
 	const loadFiles = async (files: File[]) => {
-		// Only process images
+		// 画像のみ処理
 		const imageFiles = Array.from(files).filter((f) =>
 			f.type.startsWith("image/"),
 		);
 
 		if (imageFiles.length === 0) {
 			if (files.length > 0 && !files[0].name.endsWith(".gpl")) {
-				// If files were dropped but none were images (and not GPL), show error
-				// But we handle GPL separately in drop handler.
+				// ファイルがドロップされたものの画像がなく（GPL でもない）場合はエラーを表示
+				// ただし GPL はドロップハンドラーで別途処理する。
 			}
 			return;
 		}
 
 		try {
-			// Process one by one or Promise.all?
-			// Creating raw images is fast, sequential is fine.
+			// 1 枚ずつ処理するか Promise.all にするか？
+			// RawImage の作成は高速なため、逐次処理で問題ない。
 
 			for (const file of imageFiles) {
 				const raw = await imageToRawImage(file);
 				imageSession.addImage(file, raw);
 			}
 
-			// Select the last added image (User Request)
+			// 最後に追加した画像を選択（ユーザー要望）
 			const allImages = imageSession.getImages();
 			if (allImages.length > 0) {
 				const lastImage = allImages[allImages.length - 1];
@@ -337,7 +336,7 @@ export const initApp = (): void => {
 		}
 	});
 
-	// Drag & Drop visual feedback
+	// ドラッグ＆ドロップ時の視覚的フィードバック
 	const highlight = () => els.dropArea.classList.add("drag-over");
 	const unhighlight = () => els.dropArea.classList.remove("drag-over");
 
@@ -357,7 +356,7 @@ export const initApp = (): void => {
 		});
 	});
 
-	// Click on input canvas container triggers file input
+	// 入力キャンバスのコンテナをクリックするとファイル入力を開く
 	els.inputCanvasContainer.addEventListener("click", () => {
 		els.fileInput.click();
 	});
@@ -372,7 +371,7 @@ export const initApp = (): void => {
 			return;
 		}
 		loadFiles(Array.from(files));
-		// Reset value so same files can be selected again if needed
+		// 必要に応じて同じファイルを再選択できるよう値をリセット
 		els.fileInput.value = "";
 	});
 
@@ -382,7 +381,7 @@ export const initApp = (): void => {
 		if (files && files.length > 0) {
 			const file = files[0];
 			if (file.name.toLowerCase().endsWith(".gpl")) {
-				// Handle palette file
+				// パレットファイルを処理
 				const text = await file.text();
 				const palette = parseGPL(text);
 				if (palette.length > 0) {
@@ -395,13 +394,13 @@ export const initApp = (): void => {
 				}
 			} else {
 				loadFiles(Array.from(files));
-				// Update file input to match (optional but good for consistency)
-				// Cannot easily set FileList to input, but we don't need to.
+				// 一致するようファイル入力を更新（任意だが一貫性のため有用）
+				// FileList を入力へ簡単に設定できないが、その必要はない。
 			}
 		}
 	});
 
-	// Palette Import/Export
+	// パレットのインポート／エクスポート
 	els.exportGPLButton.addEventListener("click", () => {
 		if (processingState.currentExtractedPalette.length === 0) return;
 		const content = generateGPL(
@@ -431,14 +430,14 @@ export const initApp = (): void => {
 		URL.revokeObjectURL(url);
 	});
 	// ---------------------------------------------------------
-	// Result Modal
+	// 結果モーダル
 	// ---------------------------------------------------------
 
 	const closeResultModal = () => {
 		resultModalController.close();
 	};
 
-	// Open modal on result container click is now handled by ResultViewer onImageClick callback
+	// 結果コンテナのクリックでモーダルを開く処理は、現在 ResultViewer の onImageClick コールバックが担う
 
 	els.closeResultModal.addEventListener("click", closeResultModal);
 
@@ -472,7 +471,7 @@ export const initApp = (): void => {
 
 		try {
 			if (file.name.toLowerCase().endsWith(".gpl")) {
-				// Handle GIMP Palette files
+				// GIMP パレットファイルを処理
 				const text = await file.text();
 				const palette = parseGPL(text);
 				if (palette.length > 0) {
@@ -482,7 +481,7 @@ export const initApp = (): void => {
 					runProcessing();
 				}
 			} else if (file.type.startsWith("image/")) {
-				// Handle all image formats (PNG, JPEG, GIF, WebP, etc.)
+				// すべての画像形式（PNG、JPEG、GIF、WebP など）を処理
 				const img = new Image();
 				img.onload = () => {
 					const canvas = document.createElement("canvas");
@@ -493,13 +492,13 @@ export const initApp = (): void => {
 					ctx.drawImage(img, 0, 0);
 					const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
-					// Extract colors with 256 color limit
+					// 最大 256 色で色を抽出
 					const { colors, totalColors } = extractColorsFromImage(
 						imageData,
 						256,
 					);
 
-					// Show warning if there were more than 256 colors
+					// 256 色を超える場合は警告を表示
 					if (totalColors > 256) {
 						showError(i18n.t("error.palette_limit", { count: totalColors }));
 					}
@@ -518,7 +517,7 @@ export const initApp = (): void => {
 			console.error(err);
 			showError(i18n.t("error.load_failed"));
 		}
-		// Reset input
+		// 入力をリセット
 		els.paletteFileInput.value = "";
 	});
 
@@ -526,7 +525,7 @@ export const initApp = (): void => {
 		runProcessing();
 	});
 
-	// Display toggle logic
+	// 表示切替ロジック
 	const { openCompareModal } = setupCompareControls({
 		els,
 		processingState,
@@ -545,12 +544,12 @@ export const initApp = (): void => {
 		syncViewers,
 	});
 
-	// Display when app is ready
+	// アプリの準備完了時に表示
 	document.body.classList.add("loaded");
 
-	// Background selector logic (Moved to ResultViewer, but we might need initial sync or setup if logic was here)
-	// The logic was: set initial bg-checkered, and add click listener.
-	// ResultViewer handles this now.
+	// 背景選択のロジック（ResultViewer へ移動済みだが、ここにあった場合は初期同期や設定が必要になる可能性がある）
+	// ロジックは初期 bg-checkered の設定とクリックリスナーの追加だった。
+	// 現在は ResultViewer がこれを処理する。
 
 	loadSettings();
 
