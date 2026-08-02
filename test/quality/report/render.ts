@@ -171,6 +171,9 @@ const renderReportSidebar = (results: QualityResults): string => {
 				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
 					<span data-i18n="changed">changed</span>: ${results.summary.changed}
 				</button>
+				<button class="filter-button" type="button" data-change-filter="new" aria-pressed="false">
+					<span data-i18n="new">new</span>: ${results.summary.newCases}
+				</button>
 				<button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false">
 					<span data-i18n="regressed">regressed</span>: ${results.summary.regressed}
 				</button>
@@ -508,6 +511,7 @@ export const renderMarkdown = (results: QualityResults): string => {
 - Passed: ${summary.passed}
 - Failed: ${summary.failed}
 - Changed: ${summary.changed}
+- New: ${summary.newCases}
 - Regressed: ${summary.regressed}
 - Improved: ${summary.improved}
 - Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%

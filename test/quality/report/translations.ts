@@ -108,7 +108,7 @@ export const REPORT_TRANSLATIONS = {
 		improved: "base branchより改善",
 		regressed: "base branchより悪化",
 		unchanged: "base branchと差分なし",
-		new: "base branchにない新規ケース",
+		new: "新規追加",
 		changedCases: "差分あり",
 		allChanges: "すべて",
 		qualityStatus: "品質状態",

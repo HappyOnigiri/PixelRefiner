@@ -150,10 +150,7 @@ export const runQualityReportClient = (): void => {
 			let visible = 0;
 			for (const card of cards) {
 				const changeMatches =
-					!activeChange ||
-					(activeChange === "changed"
-						? card.dataset.change !== "unchanged"
-						: card.dataset.change === activeChange);
+					!activeChange || card.dataset.change === activeChange;
 				card.hidden = !(
 					(card.dataset.search ?? "").toLowerCase().includes(text) &&
 					(!activeStatus || card.dataset.status === activeStatus) &&
