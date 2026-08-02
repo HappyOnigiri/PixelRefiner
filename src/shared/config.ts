@@ -7,29 +7,29 @@ export type IntRange = {
 };
 
 export const PROCESS_RANGES = {
-	// detector: posterize step
+	// 検出器: ポスタライズの段階数
 	detectionQuantStep: { min: 1, max: 128, default: 64 } as const,
-	// detector: per-channel tolerance for dominant background colors
+	// 検出器: 支配的な背景色に対するチャンネルごとの許容値
 	backgroundMaskTolerance: { min: 0, max: 255, default: 0 } as const,
-	// processor: downsample median window
+	// 処理器: ダウンサンプリング時の中央値ウィンドウ
 	sampleWindow: { min: 1, max: 9, default: 3 } as const,
-	// flood fill tolerance (per channel)
+	// 塗りつぶしの許容値（チャンネルごと）
 	backgroundTolerance: { min: 0, max: 255, default: 64 } as const,
-	// bbox threshold for trimming
+	// トリミング用の境界ボックスしきい値
 	trimAlphaThreshold: { min: 1, max: 255, default: 16 } as const,
-	// UI: remove small floating islands threshold (% of total pixels)
+	// UI: 小さな孤立領域を除去するしきい値（総ピクセル数に対する割合）
 	floatingMaxPercent: { min: 0, max: 100, default: 3 } as const,
-	// remove small floating islands (connected components) as background
+	// 小さな孤立領域（連結成分）を背景として除去する
 	floatingMaxPixels: { min: 0, max: 1000000, default: 0 } as const,
-	// force output pixel size (after BBox trim)
+	// 出力ピクセルサイズを強制する（境界ボックスのトリミング後）
 	forcePixelsW: { min: 1, max: 1024, default: 0 } as const,
 	forcePixelsH: { min: 1, max: 1024, default: 0 } as const,
-	// color reduction
+	// 減色
 	colorCount: { min: 2, max: 256, default: 32 } as const,
-	// dithering
+	// ディザリング
 	ditherStrength: { min: 0, max: 100, default: 0 } as const,
-	// outline
-	outlineColor: { r: 255, g: 255, b: 255 }, // Default white
+	// アウトライン
+	outlineColor: { r: 255, g: 255, b: 255 }, // デフォルトの白
 } as const satisfies Record<string, IntRange | RGB>;
 
 export const PROCESS_ANALYSIS_THRESHOLDS = {
@@ -266,33 +266,33 @@ export const RETRO_PALETTES: Record<
 	},
 	sfc_sprite: {
 		name: "SFC Style (16 colors/Sprite)",
-		colors: [], // K-means 16 colors + 15bit rounding
+		colors: [], // K-means で 16 色に減色し、15 ビットに丸める
 	},
 	sfc_bg: {
 		name: "SFC Style (256 colors/BG)",
-		colors: [], // K-means 256 colors + 15bit rounding
+		colors: [], // K-means で 256 色に減色し、15 ビットに丸める
 	},
 };
 
 export const PROCESS_DEFAULTS = {
 	preRemoveBackground: true,
 	postRemoveBackground: true,
-	// Scope of background removal (off/selected/outer/all)
+	// 背景除去の範囲（off/selected/outer/all）
 	bgRemovalScope: "outer",
-	// Whether to include diagonals (8-neighbors) in connectivity search (4=no, 8=yes)
+	// 連結探索に対角方向（8 近傍）を含めるか（4=いいえ、8=はい）
 	bgConnectivity: "4",
-	// Trim to content BBox after processing (default ON)
+	// 処理後にコンテンツの境界ボックスまでトリミングする（デフォルトは ON）
 	trimToContent: true,
 	autoGridFromTrimmed: true,
-	// Speed up grid estimation for autoGridFromTrimmed (may affect results)
+	// autoGridFromTrimmed のグリッド推定を高速化する（結果に影響する場合がある）
 	fastAutoGridFromTrimmed: true,
-	// Enable grid detection and downsampling (default ON)
+	// グリッド検出とダウンサンプリングを有効にする（デフォルトは ON）
 	enableGridDetection: true,
-	// Fill the shorter side with transparent pixels to make the image square
+	// 短い辺を透明ピクセルで埋めて画像を正方形にする
 	makeSquare: false,
-	// Pad output to preserve the source aspect ratio
+	// 出力に余白を追加して元画像のアスペクト比を維持する
 	keepAspectRatio: false,
-	// Grid detection mode (for UI)
+	// グリッド検出モード（UI 用）
 	gridDetectionMode: "auto",
 
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,

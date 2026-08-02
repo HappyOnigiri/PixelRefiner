@@ -60,22 +60,22 @@ export const drawGridToCanvas = (
 
 	ctx.clearRect(0, 0, width, height);
 
-	// Draw with a very faint color to avoid obscuring the image.
-	// Use semi-transparent white or gray so it's visible on both dark and light pixels.
-	// Using light gray here for simplicity.
+	// 画像を隠さないよう、ごく薄い色で描画する。
+	// 暗いピクセルと明るいピクセルの両方で見えるよう、半透明の白またはグレーを使用する。
+	// ここでは簡潔に薄いグレーを使用する。
 	ctx.strokeStyle = "rgba(128, 128, 128, 0.4)";
 	ctx.lineWidth = 1;
 
-	// Start path
+	// パスを開始
 	ctx.beginPath();
 
-	// Vertical lines
+	// 垂直線
 	for (let x = 1; x < width; x++) {
 		ctx.moveTo(x + 0.5, 0);
 		ctx.lineTo(x + 0.5, height);
 	}
 
-	// Horizontal lines
+	// 水平線
 	for (let y = 1; y < height; y++) {
 		ctx.moveTo(0, y + 0.5);
 		ctx.lineTo(width, y + 0.5);

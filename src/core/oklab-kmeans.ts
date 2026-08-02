@@ -21,7 +21,7 @@ export class OklabKMeans {
 	) {}
 
 	/**
-	 * K-means clustering to reduce colors
+	 * K-means クラスタリングによる色削減
 	 */
 	quantize(pixels: PixelData[]): PixelData[] {
 		const { colors: uniqueColors, opaqueCount } =
@@ -35,7 +35,7 @@ export class OklabKMeans {
 
 		const centroids = this.fitCentroids(uniqueColors);
 		const fittedPalette = this.buildUniquePalette(centroids);
-		const centroidRgbMap = new Map<number, number>(); // unique color key -> palette index
+		const centroidRgbMap = new Map<number, number>(); // 一意の色キー -> パレットのインデックス
 
 		for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
 			const color = uniqueColors[colorIndex];
@@ -61,7 +61,7 @@ export class OklabKMeans {
 	}
 
 	/**
-	 * Floyd-Steinberg dithering using K-means centroids as palette
+	 * K-means の重心をパレットとして使用する Floyd-Steinberg ディザリング
 	 */
 	dither(
 		pixels: PixelData[],
@@ -79,7 +79,7 @@ export class OklabKMeans {
 	}
 
 	/**
-	 * Apply dithering with various modes
+	 * 各種モードでディザリングを適用する
 	 */
 	applyDithering(
 		pixels: PixelData[],
@@ -194,7 +194,7 @@ export class OklabKMeans {
 				out[idx].g = closest.g;
 				out[idx].b = closest.b;
 
-				// Distribute error
+				// 誤差を分配する
 				this.distributeError(
 					out,
 					x + 1,
@@ -268,7 +268,7 @@ export class OklabKMeans {
 				}
 
 				const threshold = matrix[(y % size) * size + (x % size)];
-				// Convert threshold to range -0.5 ~ 0.5 and multiply by strength
+				// しきい値を -0.5〜0.5 の範囲へ変換し、強度を掛ける
 				const bias = (threshold - 0.5) * strength * 255;
 
 				const biasedR = Math.max(0, Math.min(255, p.r + bias));
@@ -344,7 +344,7 @@ export class OklabKMeans {
 		}
 
 		const colors = Array.from(colorMap.values());
-		// [Intended] Stable RGB order also fixes floating-point accumulation order.
+		// [Intended] 安定した RGB 順序により、浮動小数点の加算順序も固定される。
 		colors.sort((left, right) => left.key - right.key);
 		return { colors, opaqueCount };
 	}
@@ -473,7 +473,7 @@ export class OklabKMeans {
 			}
 			centroids[centroidIndex] = { ...uniqueColors[bestIndex].lab };
 			usedColors[bestIndex] = 1;
-			// [Intended] Cache nearest distances so seeding stays O(colors * centroids).
+			// [Intended] シード選択を O(colors * centroids) に保つため、最近傍距離をキャッシュする。
 			for (let colorIndex = 0; colorIndex < uniqueColors.length; colorIndex++) {
 				if (usedColors[colorIndex] !== 0) continue;
 				const distance = this.colorDistanceSq(

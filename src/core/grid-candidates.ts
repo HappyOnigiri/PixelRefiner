@@ -195,7 +195,7 @@ export const rankGridCandidates = (
 				: clampUnit(Math.log2(Math.max(1, cellScale)) / 4),
 			coverage,
 			axisAgreement: axisAgreement(grid),
-			// [Intended] A single detector is neutral until PRF-120 adds ensemble votes.
+			// [Intended] PRF-120 がアンサンブル投票を追加するまで、単一の検出器は中立とする。
 			methodAgreement: 0.5,
 			stability: preserveCandidate
 				? 0

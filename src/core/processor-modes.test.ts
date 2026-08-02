@@ -40,14 +40,14 @@ describe("processImage modes", () => {
 		});
 
 		it("should correctly convert to GB palette (4 colors) and match expected image", () => {
-			// Run in Game Boy (Legacy) mode
+			// Game Boy（Legacy）モードで実行する
 			const { result } = processImage(img, {
 				reduceColors: true,
 				reduceColorMode: "gb_pocket",
 				ditherStrength: 0,
-				// Leave other processing OFF
+				// 他の処理は OFF のままにする
 				enableGridDetection: false,
-				bgExtractionMethod: "none", // Background extraction OFF
+				bgExtractionMethod: "none", // 背景抽出 OFF
 				preRemoveBackground: false,
 				postRemoveBackground: false,
 				bgRemovalScope: "selected",
@@ -84,14 +84,14 @@ describe("processImage modes", () => {
 		});
 
 		it("should process with dithering and match expected image", () => {
-			// 2 colors (Black & White) + Dithering
+			// 2 色（黒と白）+ ディザリング
 			const { result } = processImage(img, {
 				reduceColors: true,
-				reduceColorMode: "mono", // Monochrome
+				reduceColorMode: "mono", // モノクロ
 				ditherMode: "floyd-steinberg",
 				ditherStrength: 100,
 				enableGridDetection: false,
-				bgExtractionMethod: "none", // Background extraction OFF
+				bgExtractionMethod: "none", // 背景抽出 OFF
 				preRemoveBackground: false,
 				postRemoveBackground: false,
 				bgRemovalScope: "selected",
@@ -175,13 +175,13 @@ describe("processImage modes", () => {
 				data[idx + 2] = b;
 				data[idx + 3] = a;
 			};
-			// background (white)
+			// 背景（白）
 			for (let y = 0; y < h; y += 1) {
 				for (let x = 0; x < w; x += 1) {
 					set(x, y, 255, 255, 255, 255);
 				}
 			}
-			// object: 4x4 black block at (2, 2)
+			// オブジェクト: (2, 2) の 4x4 黒ブロック
 			for (let y = 2; y < 6; y += 1) {
 				for (let x = 2; x < 6; x += 1) {
 					set(x, y, 0, 0, 0, 255);
@@ -220,7 +220,7 @@ describe("processImage modes", () => {
 				),
 			});
 
-			// 4x4 black block at (2, 2)
+			// (2, 2) の 4x4 黒ブロック
 			expect(result.width).toBe(4);
 			expect(result.height).toBe(4);
 			expect(grid.cropX).toBe(2);
@@ -242,13 +242,13 @@ describe("processImage modes", () => {
 				),
 			});
 
-			// Count colors
+			// 色数を数える
 			const colors = new Set<number>();
 			const data32 = new Uint32Array(result.data.buffer);
 			for (let i = 0; i < data32.length; i++) {
 				colors.add(data32[i]);
 			}
-			// Should be 2 colors: background (white) and object (black)
+			// 背景（白）とオブジェクト（黒）の 2 色になるはずである
 			expect(colors.size).toBeLessThanOrEqual(2);
 		});
 	});
@@ -279,7 +279,7 @@ describe("processImage modes", () => {
 			expect(grid.outW).toBe(10);
 			expect(grid.outH).toBe(10);
 
-			// Red pixels exist at center (y=3 when 10x4 image centered), upper/lower margins (0,0 etc) should be transparent
+			// 赤ピクセルは中央にあり（10x4 画像を中央揃えした場合の y=3）、上下の余白（(0,0) など）は透明になるはずである
 			const topAlpha = result.data[3]; // (0, 0). (0,0,0,0)
 			expect(topAlpha).toBe(0);
 			const centerAlpha = result.data[(3 * 10 + 0) * 4 + 3]; // (0, 3)
@@ -308,7 +308,7 @@ describe("processImage modes", () => {
 			expect(grid.outW).toBe(10);
 			expect(grid.outH).toBe(10);
 
-			// Red pixels exist at center (x=3 when 4x10 image centered), left/right margins (0,0 etc) should be transparent
+			// 赤ピクセルは中央にあり（4x10 画像を中央揃えした場合の x=3）、左右の余白（(0,0) など）は透明になるはずである
 			const leftEdgeAlpha = result.data[3]; // (0, 0)
 			expect(leftEdgeAlpha).toBe(0);
 			const centerAlpha = result.data[(0 * 10 + 3) * 4 + 3]; // (3, 0)
@@ -346,27 +346,27 @@ describe("processImage modes", () => {
 				sampleWindow: 3,
 				trimToContent: true,
 				trimAlphaThreshold: 16,
-				// Based on user feedback, verify that high-resolution grids are detected
-				// even with autoGridFromTrimmed: true by relaxing search range and adjusting penalties.
+				// ユーザーフィードバックに基づき、検索範囲の緩和とペナルティ調整により、
+				// autoGridFromTrimmed: true でも高解像度グリッドが検出されることを確認する。
 				autoGridFromTrimmed: true,
 				debug: true,
 				debugHook: makeDebugHook("high_resolution", "for_verification"),
 			});
 
-			// Verify detection results
+			// 検出結果を確認する
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
 			expect(grid.outH).toBe(expected.height);
 
-			// Image comparison
+			// 画像比較
 			expectSameImage(result, expected, getExpectPath("high_resolution"));
 		});
 	});
 
 	describe("Grid Search Strategies Consistency", () => {
 		it("should yield same results for Fast and Legacy modes (simple image)", () => {
-			// Create 16x16 grid image (assuming 2x2 grid of 8x8 cells)
+			// 16x16 のグリッド画像を作成する（8x8 セルの 2x2 グリッドを想定）
 			const width = 16;
 			const height = 16;
 			const data = new Uint8ClampedArray(width * height * 4);
@@ -388,7 +388,7 @@ describe("processImage modes", () => {
 				data: new Uint8ClampedArray(data),
 			};
 
-			// Cast to access internal classes
+			// 内部クラスへアクセスするためキャストする
 			const legacy = new (
 				LegacyGridSearchFromTrimmed as unknown as {
 					new (): {

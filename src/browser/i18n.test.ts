@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { I18nManager } from "./i18n";
 
-// Mock localStorage
+// localStorage をモック
 const localStorageMock = (() => {
 	let store: Record<string, string> = {};
 	return {
@@ -42,7 +42,7 @@ if (typeof globalThis !== "undefined") {
 		configurable: true,
 	});
 
-	// Mock navigator
+	// navigator をモック
 	Object.defineProperty(globalThis, "navigator", {
 		value: {
 			language: "en-US",
@@ -60,7 +60,7 @@ describe("I18nManager", () => {
 
 	beforeEach(() => {
 		localStorageMock.clear();
-		// Reset navigator language
+		// navigator の言語をリセット
 		Object.defineProperty(navigator, "language", {
 			value: "en-US",
 			writable: true,

@@ -39,12 +39,12 @@ const getBorderPixels = (w: number, h: number): Array<[number, number]> => {
 };
 
 /**
- * Legacy-compatible background removal by flood fill.
+ * フラッドフィルによる旧仕様互換の背景除去。
  *
- * - Corner methods: flood fill from the selected corner (seed-color tolerance).
- * - RGB method: scan pixels near the specified RGB and flood fill from those seeds.
+ * - 角の方式: 選択した角からフラッドフィルする（シード色の許容差）。
+ * - RGB 方式: 指定 RGB に近いピクセルを走査し、それらをシードにフラッドフィルする。
  *
- * Note: connectivity is configurable here, but legacy default was effectively 4-way.
+ * 注記: ここでは連結性を設定できるが、旧来のデフォルトは実質的に 4 方向だった。
  */
 export const removeBackgroundByFloodFillLegacy = (
 	img: RawImage,
@@ -65,8 +65,8 @@ export const removeBackgroundByFloodFillLegacy = (
 	const w = img.width;
 	const h = img.height;
 
-	// RGB: scan all pixels and use matched pixels as flood-fill seeds.
-	// Use a shared visited map to avoid redundant flood fills (legacy behavior).
+	// RGB: すべてのピクセルを走査し、一致したピクセルをフラッドフィルのシードにする。
+	// 重複したフラッドフィルを避けるため共有の訪問済みマップを使用する（旧来の挙動）。
 	if (method === "rgb") {
 		if (bgTargets.length === 0) return out;
 		const visited = new Uint8Array(w * h);
@@ -94,7 +94,7 @@ export const removeBackgroundByFloodFillLegacy = (
 		return out;
 	}
 
-	// Corner methods: flood fill from the selected corner only (legacy behavior).
+	// 角の方式: 選択した角からのみフラッドフィルする（旧来の挙動）。
 	let sx = 0;
 	let sy = 0;
 	if (method === "bottom-left") {
@@ -126,7 +126,7 @@ export const removeBackground = (
 	if (method === "none") return cloneImage(img);
 	if (bgRemovalScope === "off") return cloneImage(img);
 
-	// 4/8 connectivity is only valid for selected / outer.
+	// 4/8 連結性が有効なのは selected / outer のみ。
 	if (bgRemovalScope === "selected") {
 		return removeBackgroundByFloodFillLegacy(
 			img,
@@ -175,10 +175,10 @@ export const removeBackground = (
 		return out;
 	}
 
-	// bgRemovalScope === "all": legacy-compatible behavior
-	// - First, remove background by legacy flood fill.
-	// - Then, remove inner background by scanning the whole image for bgTargets.
-	// NOTE: connectivity is intentionally fixed to 4-way here.
+	// bgRemovalScope === "all": 旧仕様互換の挙動
+	// - まず旧来のフラッドフィルで背景を除去する。
+	// - 次に画像全体から bgTargets を走査し、内側の背景を除去する。
+	// 注記: ここでは意図的に連結性を 4 方向に固定している。
 	const out = removeBackgroundByFloodFillLegacy(
 		img,
 		tolerance,
@@ -288,7 +288,7 @@ export const removeSmallFloatingComponentsInPlace = (
 			if (storing) {
 				pixels.push(cur);
 				if (pixels.length > maxPixels) {
-					// Stop recording as it is no longer a target for removal
+					// すでに除去対象ではないため記録を中止する
 					storing = false;
 					pixels = [];
 				}
@@ -297,7 +297,7 @@ export const removeSmallFloatingComponentsInPlace = (
 			const x = cur % w;
 			const y = (cur / w) | 0;
 
-			// Downsampling logic for nearest-neighbor scaling
+			// 最近傍スケーリング用のダウンサンプリングロジック
 			if (x > 0) {
 				const p2 = cur - 1;
 				if (!visited[p2] && isOpaque(p2)) {
@@ -332,13 +332,13 @@ export const removeSmallFloatingComponentsInPlace = (
 			largestSize = size;
 			largestId = id;
 		}
-		// Only keep coordinates for candidate for removal (small components)
+		// 除去候補（小さな連結成分）の座標のみ保持する
 		if (size <= maxPixels && pixels.length > 0) {
 			small.push({ id, pixels, size });
 		}
 	}
 
-	// The largest connected component is considered the "main object" and is kept even if it's a candidate for removal
+	// 最大の連結成分を「主オブジェクト」とみなし、除去候補であっても保持する
 	let removedComponents = 0;
 	let removedPixels = 0;
 	for (const comp of small) {

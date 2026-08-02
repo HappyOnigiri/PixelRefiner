@@ -27,28 +27,28 @@ export type PixelGrid = {
 };
 
 export interface RGB {
-	r: number; // 0-255
-	g: number; // 0-255
-	b: number; // 0-255
+	r: number; // 0～255
+	g: number; // 0～255
+	b: number; // 0～255
 }
 
 export type OutlineStyle = "none" | "rounded" | "sharp";
 
-/** Scope of background removal */
+/** 背景除去の範囲 */
 export type BackgroundRemovalScope = "off" | "selected" | "outer" | "all";
 
-/** Whether to include diagonals (8-neighbors) in connectivity check */
+/** 連結判定に対角方向（8 近傍）を含めるか */
 export type Connectivity = "4" | "8";
 
 export interface Oklab {
-	L: number; // Lightness
-	a: number; // Green-Red component
-	b: number; // Blue-Yellow component
+	L: number; // 明度
+	a: number; // 緑-赤成分
+	b: number; // 青-黄成分
 }
 
-// Pixel data with transparency
+// 透明度を持つピクセルデータ
 export interface PixelData extends RGB {
-	alpha: number; // 0-255 (Alpha)
+	alpha: number; // 0～255（アルファ）
 }
 
 export type DitherMode =
@@ -107,7 +107,7 @@ export type GridCandidateReport = {
 	cropH: number;
 	method: string;
 	totalScore: number;
-	/** A relative 0-1 comparison indicator, not a calibrated probability. */
+	/** 較正済みの確率ではなく、0～1 の相対比較指標。 */
 	confidence: number;
 	subscores?: Partial<GridCandidateSubscores>;
 };
@@ -115,7 +115,7 @@ export type GridCandidateReport = {
 export type ProcessingAnalysis = {
 	classification?: InputClassification;
 	route: ProcessingRoute;
-	/** A relative 0-1 comparison indicator, not a calibrated probability. */
+	/** 較正済みの確率ではなく、0～1 の相対比較指標。 */
 	confidence: number;
 	warnings: ProcessingWarningCode[];
 	gridCandidates: GridCandidateReport[];
@@ -129,9 +129,9 @@ export type ProcessResult = {
 	result: RawImage;
 	grid: PixelGrid;
 	extractedPalette: RGB[];
-	/** Original image normalized to the output geometry for comparison. */
+	/** 比較用に出力形状へ正規化した元画像。 */
 	compareBefore: RawImage;
-	/** Sanitized input normalized to the output geometry for comparison. */
+	/** 比較用に出力形状へ正規化したサニタイズ済み入力。 */
 	compareBeforeSanitized: RawImage;
 	analysis: ProcessingAnalysis;
 };

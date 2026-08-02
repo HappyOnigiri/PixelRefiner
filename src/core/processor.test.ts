@@ -36,19 +36,19 @@ describe("processImage", () => {
 				data[idx + 2] = b;
 				data[idx + 3] = a;
 			};
-			// background (white)
+			// 背景（白）
 			for (let y = 0; y < h; y += 1) {
 				for (let x = 0; x < w; x += 1) {
 					set(x, y, 255, 255, 255, 255);
 				}
 			}
-			// main object: 4x4 black block at (1..4, 1..4)
+			// 主オブジェクト: (1..4, 1..4) の 4x4 黒ブロック
 			for (let y = 1; y <= 4; y += 1) {
 				for (let x = 1; x <= 4; x += 1) {
 					set(x, y, 0, 0, 0, 255);
 				}
 			}
-			// floating noise: 1px at (8, 8) (position that doesn't foul the corner seed)
+			// 浮遊ノイズ: (8, 8) の 1px（角のシードを妨げない位置）
 			set(8, 8, 0, 0, 0, 255);
 			return { width: w, height: h, data };
 		};
@@ -75,7 +75,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 0,
 				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=0"),
 			});
-			// BBox including floating noise (8,8): x=1..8, y=1..8 => 8x8
+			// 浮遊ノイズ (8,8) を含む BBox: x=1..8、y=1..8 => 8x8
 			expect(gridNoIgnore.cropW).toBe(8);
 			expect(gridNoIgnore.cropH).toBe(8);
 
@@ -84,7 +84,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 4,
 				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=4"),
 			});
-			// BBox after removing floating noise: x=1..4, y=1..4 => 4x4
+			// 浮遊ノイズ除去後の BBox: x=1..4、y=1..4 => 4x4
 			expect(gridIgnore.cropW).toBe(4);
 			expect(gridIgnore.cropH).toBe(4);
 		});
@@ -123,8 +123,8 @@ describe("processImage", () => {
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: false, // Fast mode OFF
-				floatingMaxPixels: 0, // Floating noise OFF
+				fastAutoGridFromTrimmed: false, // 高速モード OFF
+				floatingMaxPixels: 0, // 浮遊ノイズ OFF
 				debugHook: makeDebugHook(
 					"resize_and_remove_bg",
 					"fastModeOFF(fastAutoGridFromTrimmed=false)_floatingNoiseOFF(floatingMaxPixels=0)_matchExpectedImage",
@@ -193,7 +193,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(46);
 			expect(result.height).toBe(13);
 			expect(result.width).toBe(expected.width);
@@ -237,7 +237,7 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		// [Policy] Grid detection can exceed Vitest's 5s default under shared CI runner load.
+		// [Policy] 共有 CI ランナーの負荷下では、グリッド検出が Vitest のデフォルト 5 秒を超える場合がある。
 		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid, analysis } = processImage(img, {
 				detectionQuantStep: 64,
@@ -257,7 +257,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(88);
 			expect(result.height).toBe(61);
 			expect(expected.width).toBe(88);
@@ -322,7 +322,7 @@ describe("processImage", () => {
 				);
 				return;
 			}
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
@@ -354,7 +354,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Verify that alpha near center (inner background) becomes 0
+			// 中心付近の alpha（内側の背景）が 0 になることを確認する
 			const cx = Math.floor(result.width / 2);
 			const cy = Math.floor(result.height / 2);
 			const alphas: number[] = [];
@@ -395,7 +395,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 32,
 				sampleWindow: 3,
-				trimToContent: false, // Turn OFF auto trimming
+				trimToContent: false, // 自動トリミングを OFF にする
 				trimAlphaThreshold: 16,
 
 				floatingMaxPixels: 50000,
@@ -406,7 +406,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);

@@ -1,8 +1,8 @@
 import type { RGB } from "../shared/types";
 
 /**
- * Parses a GIMP Palette (.gpl) string and returns an array of RGB colors.
- * Ignores comments and header lines.
+ * GIMP Palette（.gpl）文字列を解析し、RGB カラー配列を返す。
+ * コメントとヘッダー行は無視する。
  */
 export const parseGPL = (text: string): RGB[] => {
 	const lines = text.split(/\r?\n/);
@@ -12,8 +12,8 @@ export const parseGPL = (text: string): RGB[] => {
 		const trimmed = line.trim();
 		if (!trimmed) continue;
 
-		// Skip header lines until we find a line with digits
-		// GIMP Palette format usually has "GIMP Palette" then "Name: ...", "Columns: ...", then "#" or data
+		// 数字を含む行が見つかるまでヘッダー行を飛ばす
+		// GIMP Palette 形式は通常、「GIMP Palette」、「Name: ...」、「Columns: ...」の後に「#」またはデータが続く
 
 		if (
 			trimmed.startsWith("#") ||
@@ -23,7 +23,7 @@ export const parseGPL = (text: string): RGB[] => {
 			continue;
 		}
 
-		// Try to parse "R G B [Name]"
+		// 「R G B [名前]」形式として解析を試みる
 		const parts = trimmed.split(/\s+/).filter(Boolean);
 		if (parts.length >= 3) {
 			const r = parseInt(parts[0], 10);
@@ -40,18 +40,18 @@ export const parseGPL = (text: string): RGB[] => {
 };
 
 /**
- * Generates a GIMP Palette (.gpl) string from an array of RGB colors.
+ * RGB カラー配列から GIMP Palette（.gpl）文字列を生成する。
  */
 export const generateGPL = (colors: RGB[], name: string): string => {
 	const lines = ["GIMP Palette", `Name: ${name}`, "Columns: 4", "#"];
 
 	for (const c of colors) {
-		// Format: R G B Name
+		// 形式: R G B 名前
 		const r = c.r.toString().padStart(3, " ");
 		const g = c.g.toString().padStart(3, " ");
 		const b = c.b.toString().padStart(3, " ");
 
-		// Convert to hex for the name part
+		// 名前部分用に 16 進数へ変換する
 		const rHex = c.r.toString(16).padStart(2, "0").toUpperCase();
 		const gHex = c.g.toString(16).padStart(2, "0").toUpperCase();
 		const bHex = c.b.toString(16).padStart(2, "0").toUpperCase();
@@ -64,9 +64,9 @@ export const generateGPL = (colors: RGB[], name: string): string => {
 };
 
 /**
- * Generates a PNG blob from an array of RGB colors.
- * The image will be 1px high and Npx wide.
- * Note: This function uses DOM APIs so it must run in browser context.
+ * RGB カラー配列から PNG Blob を生成する。
+ * 画像の高さは 1px、幅は Npx となる。
+ * 注: この関数は DOM API を使用するため、ブラウザーコンテキストで実行する必要がある。
  */
 export const generatePaletteImage = (colors: RGB[]): Promise<Blob | null> => {
 	return new Promise((resolve) => {
@@ -92,7 +92,7 @@ export const generatePaletteImage = (colors: RGB[]): Promise<Blob | null> => {
 			imgData.data[idx] = c.r;
 			imgData.data[idx + 1] = c.g;
 			imgData.data[idx + 2] = c.b;
-			imgData.data[idx + 3] = 255; // Alpha
+			imgData.data[idx + 3] = 255; // アルファ
 		}
 		ctx.putImageData(imgData, 0, 0);
 
@@ -103,7 +103,7 @@ export const generatePaletteImage = (colors: RGB[]): Promise<Blob | null> => {
 };
 
 /**
- * Finds the nearest color in the palette using Euclidean distance.
+ * ユークリッド距離を使用してパレット内の最も近い色を見つける。
  */
 export const findNearestColor = (target: RGB, palette: RGB[]): RGB => {
 	if (palette.length === 0) return target;
@@ -112,7 +112,7 @@ export const findNearestColor = (target: RGB, palette: RGB[]): RGB => {
 	let nearest = palette[0];
 
 	for (const p of palette) {
-		// Simple Euclidean distance in RGB space
+		// RGB 空間における単純なユークリッド距離
 		const dr = target.r - p.r;
 		const dg = target.g - p.g;
 		const db = target.b - p.b;
@@ -128,34 +128,34 @@ export const findNearestColor = (target: RGB, palette: RGB[]): RGB => {
 };
 
 /**
- * Sorts palette colors by relative luminance (perceived brightness).
- * Sorts from Brightest to Darkest.
+ * パレットの色を相対輝度（知覚上の明るさ）で並べ替える。
+ * 明るい順に並べる。
  */
 export const sortPalette = (palette: RGB[]): RGB[] => {
 	return [...palette].sort((a, b) => {
-		// Calculate relative luminance
+		// 相対輝度を計算する
 		// L = 0.2126*R + 0.7152*G + 0.0722*B (Rec. 709)
-		// or simpler: 0.299*R + 0.587*G + 0.114*B (Rec. 601)
-		// Using Rec. 601 for simplicity as it matches common perception well enough
+		// より単純な式: 0.299*R + 0.587*G + 0.114*B（Rec. 601）
+		// 一般的な知覚と十分一致するため、簡潔な Rec. 601 を使用する
 		const getLum = (c: RGB) => c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
-		return getLum(b) - getLum(a); // Descending (High L -> Low L)
+		return getLum(b) - getLum(a); // 降順（高い輝度から低い輝度へ）
 	});
 };
 
 /**
- * Median cut algorithm to select representative colors from a palette.
- * Recursively divides the color space to find the most diverse colors.
+ * 中央値分割法でパレットから代表色を選択する。
+ * 色空間を再帰的に分割して、最も多様な色を見つける。
  */
 const medianCut = (colors: RGB[], maxColors: number): RGB[] => {
 	if (colors.length <= maxColors) {
 		return colors;
 	}
 
-	// Create buckets for recursive division
+	// 再帰的に分割するためのバケットを作成する
 	const buckets: RGB[][] = [colors];
 
 	while (buckets.length < maxColors) {
-		// Find the bucket with the largest range
+		// 範囲が最も大きいバケットを見つける
 		let maxRange = -1;
 		let maxBucketIndex = 0;
 		let maxChannel: "r" | "g" | "b" = "r";
@@ -164,7 +164,7 @@ const medianCut = (colors: RGB[], maxColors: number): RGB[] => {
 			const bucket = buckets[i];
 			if (bucket.length === 1) continue;
 
-			// Calculate range for each channel
+			// 各チャンネルの範囲を計算する
 			const rRange = getRange(bucket, "r");
 			const gRange = getRange(bucket, "g");
 			const bRange = getRange(bucket, "b");
@@ -183,10 +183,10 @@ const medianCut = (colors: RGB[], maxColors: number): RGB[] => {
 			}
 		}
 
-		// If no bucket can be split, break
+		// 分割できるバケットがなければ終了する
 		if (maxRange === -1) break;
 
-		// Split the bucket at the median
+		// バケットを中央値で分割する
 		const bucket = buckets[maxBucketIndex];
 		bucket.sort((a, b) => a[maxChannel] - b[maxChannel]);
 		const median = Math.floor(bucket.length / 2);
@@ -199,7 +199,7 @@ const medianCut = (colors: RGB[], maxColors: number): RGB[] => {
 		);
 	}
 
-	// Return the average color of each bucket
+	// 各バケットの平均色を返す
 	return buckets.map((bucket) => {
 		const sum = bucket.reduce(
 			(acc, c) => ({
@@ -218,7 +218,7 @@ const medianCut = (colors: RGB[], maxColors: number): RGB[] => {
 };
 
 /**
- * Calculate the range of a color channel in a bucket.
+ * バケット内の色チャンネルの範囲を計算する。
  */
 const getRange = (colors: RGB[], channel: "r" | "g" | "b"): number => {
 	let min = 255;
@@ -231,10 +231,10 @@ const getRange = (colors: RGB[], channel: "r" | "g" | "b"): number => {
 };
 
 /**
- * Extracts unique colors from ImageData.
- * @param imageData - The ImageData to extract colors from
- * @param maxColors - Maximum number of colors to return (default: no limit)
- * @returns Object containing extracted colors array and total unique color count
+ * ImageData から重複しない色を抽出する。
+ * @param imageData - 色を抽出する対象の ImageData
+ * @param maxColors - 返す色数の上限（デフォルト: 上限なし）
+ * @returns 抽出した色の配列と重複しない色の総数を含むオブジェクト
  */
 export const extractColorsFromImage = (
 	imageData: ImageData,
@@ -244,9 +244,9 @@ export const extractColorsFromImage = (
 	const seen = new Set<string>();
 	const data = imageData.data;
 
-	// Extract all unique colors
+	// 重複しないすべての色を抽出する
 	for (let i = 0; i < data.length; i += 4) {
-		// Skip transparent pixels (alpha < 128)
+		// 透明ピクセルを飛ばす（アルファ < 128）
 		if (data[i + 3] < 128) continue;
 
 		const r = data[i];
@@ -262,11 +262,11 @@ export const extractColorsFromImage = (
 
 	const totalColors = colors.length;
 
-	// If maxColors is specified and we have more colors than the limit,
-	// use median cut algorithm to select representative colors
+	// maxColors が指定され、色数が上限を超える場合は、
+	// 中央値分割法で代表色を選択する
 	if (maxColors !== undefined && colors.length > maxColors) {
 		const selected = medianCut(colors, maxColors);
-		// Sort the selected colors by luminance for consistent display
+		// 表示を一貫させるため、選択した色を輝度順に並べる
 		const sorted = sortPalette(selected);
 		return {
 			colors: sorted,

@@ -75,7 +75,7 @@ export const setupPresetControls = ({
 	};
 
 	const applyUiState = (state: Record<string, string | number | boolean>) => {
-		// Backward compatibility: migrate old boolean "enable-grid-detection" to new mode select
+		// 後方互換性: 旧 boolean の "enable-grid-detection" を新しいモード選択へ移行
 		if (
 			state["grid-detection-mode"] === undefined &&
 			typeof state["enable-grid-detection"] === "boolean"
@@ -85,7 +85,7 @@ export const setupPresetControls = ({
 				: "off";
 		}
 
-		// Backward compatibility: migrate enable-bg-removal to bg-extraction-method
+		// 後方互換性: enable-bg-removal を bg-extraction-method へ移行
 		if (
 			state["bg-extraction-method"] === undefined &&
 			typeof state["enable-bg-removal"] === "boolean"
@@ -95,7 +95,7 @@ export const setupPresetControls = ({
 				: "none";
 		}
 
-		// Backward compatibility: migrate remove-inner-background to bg-removal-scope
+		// 後方互換性: remove-inner-background を bg-removal-scope へ移行
 		if (
 			state["bg-removal-scope"] === undefined &&
 			typeof state["remove-inner-background"] === "boolean"
@@ -105,7 +105,7 @@ export const setupPresetControls = ({
 				: "outer";
 		}
 
-		// Deprecated "off" from bg removal scope: map to "outer"
+		// 非推奨の背景除去スコープ "off" は "outer" に対応付ける
 		if (state["bg-removal-scope"] === "off") {
 			state["bg-removal-scope"] = "outer";
 		}
@@ -123,7 +123,7 @@ export const setupPresetControls = ({
 			} else if (el instanceof HTMLSelectElement) {
 				el.value = String(value);
 			}
-			// Trigger change event to update UI dependencies
+			// UI の依存状態を更新するため change イベントを発火
 			el.dispatchEvent(new Event("change"));
 		}
 		updateDisabledStates();

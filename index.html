@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Primary SEO -->
+    <!-- 基本 SEO -->
     <title data-i18n="app.title">
       Pixel Refiner | AI Pixel Art Optimizer & Background Remover
     </title>
@@ -17,14 +17,14 @@
       content="pixel art, AI, anti-aliasing removal, background transparency, game assets, sprite, Pixel Refiner, pixel art optimization, AI image conversion, game development, indie game"
     />
 
-    <!-- Canonical / Indexing -->
+    <!-- 正規 URL / インデックス -->
     <link rel="canonical" href="https://pixel-refiner.app/" />
     <meta
       name="robots"
       content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     />
 
-    <!-- Language / Locale -->
+    <!-- 言語 / ロケール -->
     <link rel="alternate" hreflang="en" href="https://pixel-refiner.app/" />
     <link rel="alternate" hreflang="ja" href="https://pixel-refiner.app/" />
     <link rel="alternate" hreflang="zh-CN" href="https://pixel-refiner.app/" />
@@ -34,19 +34,19 @@
       href="https://pixel-refiner.app/"
     />
 
-    <!-- Additional Meta -->
+    <!-- 追加メタ情報 -->
     <meta name="author" content="Pixel Refiner" />
     <meta name="application-name" content="Pixel Refiner" />
     <meta name="format-detection" content="telephone=no" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0f1115" />
 
-    <!-- Favicon / Icons -->
+    <!-- ファビコン / アイコン -->
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="apple-touch-icon" href="/ogp.png" />
 
-    <!-- Web App Manifest -->
+    <!-- Web アプリマニフェスト -->
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -56,7 +56,7 @@
     />
     <meta name="apple-mobile-web-app-title" content="Pixel Refiner" />
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Facebook 用メタデータ -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pixel-refiner.app/" />
     <meta property="og:site_name" content="Pixel Refiner" />
@@ -79,7 +79,7 @@
       content="Pixel Refiner - AI Pixel Art Optimizer"
     />
 
-    <!-- Twitter -->
+    <!-- Twitter 用メタデータ -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://pixel-refiner.app/" />
     <meta
@@ -96,7 +96,7 @@
       content="Pixel Refiner - AI Pixel Art Optimizer"
     />
 
-    <!-- JSON-LD Structured Data: WebApplication -->
+    <!-- JSON-LD 構造化データ: WebApplication -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -133,7 +133,7 @@
       }
     </script>
 
-    <!-- JSON-LD Structured Data: FAQPage -->
+    <!-- JSON-LD 構造化データ: FAQPage -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -175,7 +175,7 @@
       }
     </script>
 
-    <!-- JSON-LD Structured Data: HowTo -->
+    <!-- JSON-LD 構造化データ: HowTo -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -335,7 +335,7 @@
                 accept="image/*"
                 style="display: none"
               />
-              <!-- Manual process button (shown only when Auto Process is OFF) -->
+              <!-- 手動処理ボタン（自動処理が OFF の場合のみ表示） -->
               <button
                 id="process-button"
                 type="button"
@@ -347,7 +347,7 @@
               </button>
             </section>
 
-            <!-- Image List (Filmstrip) -->
+            <!-- 画像リスト（フィルムストリップ） -->
             <section
               class="panel image-list-panel"
               id="image-list-panel"
@@ -399,7 +399,7 @@
                 </div>
               </div>
               <div class="image-list-container" id="image-list-container">
-                <!-- Javascript will populate this -->
+                <!-- JavaScript がここへ追加する -->
               </div>
             </section>
 
@@ -411,7 +411,7 @@
                 >
                   Color Reduction
                 </h3>
-                <!-- ... settings content ... -->
+                <!-- …設定内容… -->
                 <div class="grid-settings">
                   <label
                     id="color-mode-setting"
@@ -1065,7 +1065,7 @@
                 </div>
               </div>
 
-              <!-- Auto-conversion settings -->
+              <!-- 自動変換の設定 -->
               <div class="settings-group">
                 <h3 class="settings-group-title" data-i18n="setting.processing">
                   Processing
@@ -1086,7 +1086,7 @@
                 </div>
               </div>
 
-              <!-- Preset management -->
+              <!-- プリセット管理 -->
               <div class="settings-group">
                 <h3 class="settings-group-title" data-i18n="section.presets">
                   Presets
@@ -1139,12 +1139,12 @@
                   <span id="output-size" class="js-output-size">-</span>
                 </div>
                 <div class="controls-right">
-                  <!-- NOTE:
-                    This view-controls markup is intentionally duplicated in TWO places:
-                    - Output panel (#output-panel)
-                    - Result modal (#result-modal)
-                    ResultViewer depends on these class hooks (e.g. .js-bg-selector/.js-zoom-output/.js-grid-output).
-                    When editing buttons/structure, update BOTH copies to keep behavior and i18n consistent.
+                  <!-- 注:
+                    この表示コントロールのマークアップは、意図的に次の 2 箇所で重複している:
+                    - 出力パネル（#output-panel）
+                    - 結果モーダル（#result-modal）
+                    ResultViewer はこれらのクラスフック（例: .js-bg-selector/.js-zoom-output/.js-grid-output）に依存している。
+                    ボタンや構造を編集する場合は、動作と i18n の整合性を保つため両方を更新する。
                   -->
                   <div class="bg-selector js-bg-selector" id="bg-selector">
                     <button
@@ -1264,7 +1264,7 @@
                 <canvas id="result-canvas" class="js-result-canvas"></canvas>
                 <canvas id="grid-canvas" class="js-grid-canvas"></canvas>
               </div>
-              <!-- Download buttons -->
+              <!-- ダウンロードボタン -->
               <div class="result-actions">
                 <div class="view-controls">
                   <button
@@ -1362,8 +1362,8 @@
       </footer>
     </div>
 
-    <!-- Modals -->
-    <!-- Eyedropper Modal -->
+    <!-- モーダル -->
+    <!-- スポイトモーダル -->
     <div
       id="eyedropper-modal"
       class="modal"
@@ -1397,7 +1397,7 @@
       </div>
     </div>
 
-    <!-- Palette Modal -->
+    <!-- パレットモーダル -->
     <div
       id="palette-modal"
       class="modal-overlay"
@@ -1422,7 +1422,7 @@
         <div class="modal-body">
           <div id="palette-colors" class="palette-colors"></div>
 
-          <!-- Hidden file input for palette import -->
+          <!-- パレットのインポート用に隠したファイル入力 -->
           <input
             id="palette-file-input"
             type="file"
@@ -1454,7 +1454,7 @@
     </div>
     <script type="module" src="/src/browser/main.ts"></script>
 
-    <!-- Result Modal -->
+    <!-- 結果モーダル -->
     <div
       id="result-modal"
       class="modal"
@@ -1475,9 +1475,9 @@
           </button>
         </div>
         <div class="modal-body result-modal-body">
-          <!-- NOTE:
-            This view-controls markup is intentionally duplicated from the output panel (#output-panel)
-            for ResultViewer. When editing buttons/structure, update BOTH copies.
+          <!-- 注:
+            この表示コントロールのマークアップは、ResultViewer 用に出力パネル（#output-panel）から意図的に複製している。
+            ボタンや構造を編集する場合は、両方を更新する。
           -->
           <div class="status-bar">
             <div class="status-text">
@@ -1582,7 +1582,7 @@
             <canvas class="js-result-canvas"></canvas>
             <canvas class="js-grid-canvas" id="grid-canvas-modal"></canvas>
           </div>
-          <!-- Download buttons -->
+          <!-- ダウンロードボタン -->
           <div class="result-actions">
             <div class="view-controls">
               <button
@@ -1622,7 +1622,7 @@
       </div>
     </div>
 
-    <!-- Comparison Modal -->
+    <!-- 比較モーダル -->
     <div
       id="compare-modal"
       class="modal"
@@ -1695,7 +1695,7 @@
       </div>
     </div>
 
-    <!-- Preset Modal -->
+    <!-- プリセットモーダル -->
     <div
       id="preset-modal"
       class="modal"
@@ -1718,7 +1718,7 @@
         </div>
         <div class="modal-body">
           <div id="preset-modal-list" class="preset-list">
-            <!-- Javascript will populate this -->
+            <!-- JavaScript がここへ追加する -->
           </div>
         </div>
       </div>

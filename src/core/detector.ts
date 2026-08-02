@@ -138,28 +138,28 @@ type Estimate = { cellSize: number; offset: number; score: number };
 export type DetectOptions = {
 	detectionQuantStep?: number;
 	/**
-	 * Maximum number of cells for automatic detection (upper limit for outW/outH).
-	 * Default is 128.
+	 * 自動検出する最大セル数（outW/outH の上限）。
+	 * デフォルトは 128。
 	 */
 	autoMaxCellsW?: number;
 	autoMaxCellsH?: number;
 	/**
-	 * Number of sample strips for automatic detection (each axis). Larger values are more stable but slower.
-	 * Default: 12
+	 * 自動検出のサンプルストリップ数（各軸）。大きいほど安定するが遅くなる。
+	 * デフォルト: 12
 	 */
 	detectionStrips?: number;
 	/**
-	 * Guess the background color and mask it before detection (to handle background noise).
-	 * Default: true
+	 * 背景色を推測し、検出前にマスクする（背景ノイズに対応するため）。
+	 * デフォルト: true
 	 */
 	backgroundMask?: boolean;
 	/**
-	 * Tolerance for background mask (absolute difference for each RGB channel).
-	 * Default: 0
+	 * 背景マスクの許容差（RGB 各チャンネルの絶対差）。
+	 * デフォルト: 0
 	 */
 	backgroundMaskTolerance?: number;
 	/**
-	 * Logs the detection process to the console (for debugging).
+	 * 検出処理をコンソールに出力する（デバッグ用）。
 	 */
 	debug?: boolean;
 	debugLabel?: string;
@@ -288,9 +288,9 @@ export const detectGrid = (
 		scores.sort((a, b) => b.score - a.score);
 
 		const picked: number[] = [];
-		// If there is no assumed grid, select "dense" lines for detection.
-		// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
-		// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
+		// 想定グリッドがない場合は、検出用に「密な」線を選択する。
+		// ただし背景マスクは「線の選択」にのみ使用し、連続領域の境界計算は元画像（ポスタリゼーション結果）で行う。
+		// （隙間の多い画像では背景をマスクしすぎると周期（セルサイズ）の推定が難しくなる）。
 		const minSep = Math.max(1, Math.floor(len / Math.max(1, count * 6)));
 		for (const item of scores) {
 			if (item.score <= 0) break;
@@ -315,9 +315,9 @@ export const detectGrid = (
 		),
 	);
 
-	// If there is no assumed grid, select "dense" lines for detection.
-	// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
-	// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
+	// 想定グリッドがない場合は、検出用に「密な」線を選択する。
+	// ただし背景マスクは「線の選択」にのみ使用し、連続領域の境界計算は元画像（ポスタリゼーション結果）で行う。
+	// （隙間の多い画像では背景をマスクしすぎると周期（セルサイズ）の推定が難しくなる）。
 	const bgInfo = shouldMaskBackground ? dominantBackground(det) : null;
 	const detForPick = bgInfo
 		? maskBackground(det, bgInfo, backgroundMaskTolerance)
@@ -357,8 +357,8 @@ export const detectGrid = (
 		});
 	}
 
-	// High resolution support: 128 is too small for 4-5px dots in 1000px+ images.
-	// We increase the default to 512 to support finer grids.
+	// 高解像度対応: 1000px 超の画像では、4〜5px のドットに対して 128 では小さすぎる。
+	// より細かいグリッドに対応するため、デフォルトを 512 に引き上げる。
 	const expMinX = Math.min(w, 8);
 	const expMaxX = options.autoMaxCellsW ?? 512;
 	const twX = 2.0;
@@ -392,14 +392,14 @@ export const detectGrid = (
 
 		for (const line of lines) {
 			let i = 0;
-			// Initial state
+			// 初期状態
 			const isFgAt = (pos: number): 0 | 1 => {
 				let idx: number;
 				if (axis === "x") {
-					// y is fixed, x moves
+					// y を固定し、x を移動する
 					idx = (line * w + pos) * 4;
 				} else {
-					// x is fixed, y moves
+					// x を固定し、y を移動する
 					idx = (pos * w + line) * 4;
 				}
 				return isBackgroundPixel(
@@ -426,7 +426,7 @@ export const detectGrid = (
 				}
 				i += 1;
 			}
-			// last run
+			// 最後の連続領域
 			const lastLen = len - start;
 			if (lastLen >= 2) runLengths.push(lastLen);
 		}
@@ -614,11 +614,10 @@ export const detectGrid = (
 			) ?? estimateFromSegments(xSegLists, w, expMinX, expMaxX, undefined, twX))
 		: estimateFromSegments(xSegLists, w, expMinX, expMaxX, undefined, twX);
 
-	// Previous logic had a retry mechanism here (estX2) that forced a lower cell count (max 64)
-	// if the first pass detected > 96 cells.
-	// This was causing high-resolution images (where dot size is small, e.g. 4px) to be
-	// incorrectly detected as having larger cells (e.g. 16px).
-	// We remove this retry restriction to support finer grids.
+	// 以前のロジックには、最初のパスで 96 セル超を検出した場合に、
+	// セル数を少なく（最大 64）強制する再試行機構（estX2）があった。
+	// これにより、高解像度画像（例: ドットサイズが 4px）でセルが大きく（例: 16px）
+	// 誤検出されていた。より細かいグリッドに対応するため、この再試行制限を削除する。
 
 	const ySegLists = xs.map((x) => {
 		const strip = extractStrip(detForDetect, "x", x);
@@ -682,8 +681,8 @@ export const detectGrid = (
 		};
 
 		if (!finalX && !finalY) {
-			// [Intended] A total detection failure preserves the source instead of
-			// collapsing an arbitrary image into a single logical pixel.
+			// [Intended] 検出に完全に失敗した場合は、任意の画像を単一の論理ピクセルへ
+			// 縮退させず、元画像を保持する。
 			const preserve = createFallbackGrid(1, 1, 0, 0);
 			const coarse = createFallbackGrid(w, h, 0, 0);
 			coarse.score = PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore;
@@ -763,7 +762,7 @@ export const detectGrid = (
 			scoreY: finalY.score,
 		});
 	}
-	// [Intended] Preserve is always available as the safe automatic fallback.
+	// [Intended] Preserve は安全な自動フォールバックとして常に利用可能である。
 	candidates.push({
 		cellW: 1,
 		cellH: 1,

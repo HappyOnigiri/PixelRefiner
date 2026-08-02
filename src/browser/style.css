@@ -1,31 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Colors */
+  /* 色 */
   --bg-app: #0f1115;
   --bg-panel: #181b21;
   --bg-input: #0f1115;
   --border-color: #2a2e37;
   --primary: #6366f1;
-  /* Indigo */
+  /* インディゴ */
   --primary-hover: #4f46e5;
   --accent: #06b6d4;
-  /* Cyan */
+  /* シアン */
   --text-main: #e2e8f0;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
-  /* Effects */
+  /* 効果 */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-glow: 0 0 15px rgba(99, 102, 241, 0.3);
 
-  /* Layout */
+  /* レイアウト */
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  /* Checkered Background */
+  /* 市松模様の背景 */
   --bg-checkered-color: #d0d0d0;
 }
 
@@ -55,7 +55,7 @@ body.modal-open {
   gap: 40px;
 }
 
-/* Header */
+/* ヘッダー */
 h1 {
   font-family: 'Pixelify Sans', sans-serif;
   font-size: 3.5rem;
@@ -132,7 +132,7 @@ h1 {
   justify-content: center;
   margin-bottom: 12px;
   position: relative;
-  /* Add if necessary */
+  /* 必要に応じて追加する */
 }
 
 .hero-badge {
@@ -149,7 +149,7 @@ h1 {
   text-transform: uppercase;
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
   white-space: nowrap;
-  /* Prevent text wrap */
+  /* テキストの折り返しを防ぐ */
 }
 
 .text-highlight {
@@ -186,7 +186,7 @@ main {
   gap: 40px;
 }
 
-/* Panels */
+/* パネル */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
@@ -240,7 +240,7 @@ main {
   background: rgba(99, 102, 241, 0.05);
 }
 
-/* Layout helpers */
+/* レイアウトヘルパー */
 .app-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -260,7 +260,7 @@ main {
 }
 
 .row {
-  /* Deprecated */
+  /* 非推奨 */
 }
 
 .grid-settings {
@@ -317,7 +317,7 @@ main {
   white-space: nowrap;
 }
 
-/* Canvas Container & Placeholder */
+/* キャンバスコンテナーとプレースホルダー */
 .canvas-container {
   width: 100%;
   height: 400px;
@@ -340,13 +340,13 @@ canvas {
   width: auto;
   height: auto;
   image-rendering: pixelated;
-  /* Essential for pixel art */
+  /* ピクセルアートに必須 */
   z-index: 2;
   display: none;
-  /* Hidden by default until image loaded */
+  /* 画像を読み込むまでデフォルトで非表示 */
 }
 
-/* Comparison Modal */
+/* 比較モーダル */
 .compare-modal-content {
   max-width: 95vw !important;
   width: 95vw !important;
@@ -423,7 +423,7 @@ canvas {
 .img-comp-overlay {
   z-index: 1;
   width: 50%;
-  /* Initial width */
+  /* 初期幅 */
 }
 
 #comp-slider-handle {
@@ -504,7 +504,7 @@ canvas {
   z-index: 3;
 }
 
-/* Zoom Control applied to container */
+/* コンテナーに適用するズーム制御 */
 .canvas-container.zoom-enabled canvas {
   width: 100%;
   height: 100%;
@@ -516,28 +516,28 @@ canvas {
   transform: none;
 }
 
-/* Show canvas when it has content (managed by JS class) */
+/* コンテンツがある場合にキャンバスを表示する（JS クラスで管理） */
 .panel.has-image canvas {
   display: block;
 }
 
-/* Make result canvas pointer to indicate clickability */
+/* 結果キャンバスをクリック可能と示すためポインターにする */
 .panel.has-image .js-result-canvas-container,
 .modal.has-image .js-result-canvas-container {
   cursor: pointer;
 }
 
-/* Override styles for modal context */
+/* モーダルコンテキスト用にスタイルを上書きする */
 .result-modal-body .js-result-canvas-container {
   width: 100%;
-  /* Use available height in modal */
+  /* モーダル内の利用可能な高さを使用する */
   flex: 1;
   min-height: 0;
   border: none;
   border-radius: 0;
 }
 
-/* Zoom state behavior */
+/* ズーム状態の挙動 */
 .js-result-canvas-container.zoom-enabled .js-result-canvas,
 .js-result-canvas-container.zoom-enabled .js-grid-canvas {
   width: 100%;
@@ -553,12 +553,12 @@ canvas {
   justify-content: center;
 }
 
-/* Grid canvas is hidden by default even if panel has image */
+/* パネルに画像があってもグリッドキャンバスはデフォルトで非表示 */
 .panel.has-image #grid-canvas {
   display: none;
 }
 
-/* Grid visibility */
+/* グリッドの表示状態 */
 .panel.has-image .canvas-container.grid-enabled #grid-canvas {
   display: block;
 }
@@ -609,7 +609,7 @@ canvas {
   margin-top: 4px;
 }
 
-/* Inputs */
+/* 入力欄 */
 label {
   display: flex;
   flex-direction: column;
@@ -701,7 +701,7 @@ select:focus {
   border-color: var(--primary);
 }
 
-/* Modal */
+/* モーダル */
 .modal {
   position: fixed;
   top: 0;
@@ -793,13 +793,13 @@ select:focus {
   image-rendering: pixelated;
 }
 
-/* Process Button in Settings */
+/* 設定内の処理ボタン */
 .process-action-button {
   width: 100%;
   margin-top: 24px;
 }
 
-/* Result Actions */
+/* 結果の操作 */
 .result-actions {
   padding: 16px 0 0;
   display: flex;
@@ -820,7 +820,7 @@ select:focus {
 
 
 
-/* Button */
+/* ボタン */
 .action-button {
   flex: 1;
   background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
@@ -865,7 +865,7 @@ select:focus {
   opacity: 0.6;
 }
 
-/* Download Dropdown */
+/* ダウンロード用ドロップダウン */
 .download-group {
   flex: 1;
   display: flex;
@@ -936,7 +936,7 @@ select:focus {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Grid Candidate Dropdown (Size) */
+/* グリッド候補のドロップダウン（サイズ） */
 .candidates-menu {
   position: absolute;
   background: var(--bg-panel);
@@ -971,7 +971,7 @@ select:focus {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Error and processing warning toasts */
+/* エラーと処理警告のトースト */
 .error-toast,
 .warning-toast {
   position: fixed;
@@ -979,7 +979,7 @@ select:focus {
   left: 50%;
   transform: translateX(-50%) translateY(100px);
   background: #ef4444;
-  /* Red-500 */
+  /* 赤-500 */
   color: white;
   padding: 12px 24px;
   border-radius: var(--radius-md);
@@ -1005,7 +1005,7 @@ select:focus {
   opacity: 1;
 }
 
-/* Info Toast */
+/* 情報トースト */
 .info-toast {
   position: fixed;
   bottom: 32px;
@@ -1111,7 +1111,7 @@ select:focus {
   background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
 }
 
-/* Container background variants (only applied when image is loaded) */
+/* コンテナー背景のバリエーション（画像読み込み時のみ適用） */
 .has-image .canvas-container.bg-white {
   background: #ffffff;
 }
@@ -1134,13 +1134,13 @@ select:focus {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-/* Result Viewer Container Base Styles */
+/* 結果ビューアーコンテナーの基本スタイル */
 .js-result-canvas-container {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 300px;
-  /* Default (no image): dark background like before */
+  /* デフォルト（画像なし）: 従来どおりの暗い背景 */
   background-color: var(--bg-input);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1148,8 +1148,8 @@ select:focus {
   border: 1px solid var(--border-color);
 }
 
-/* Background variants (Centralized) */
-/* Only apply when an image exists, so empty RESULT stays dark. */
+/* 背景のバリエーション（集約） */
+/* 空の結果表示を暗いままにするため、画像がある場合のみ適用する。 */
 .js-result-canvas-container.has-image.bg-white {
   background-color: #ffffff !important;
   background-image: none !important;
@@ -1166,7 +1166,7 @@ select:focus {
 }
 
 .js-result-canvas-container.has-image.bg-checkered {
-  /* Light checkerboard (transparent preview style) */
+  /* 明るい市松模様（透明プレビュー風） */
   background-color: #f0f0f0 !important;
   background-image: linear-gradient(45deg,
       var(--bg-checkered-color) 25%,
@@ -1178,7 +1178,7 @@ select:focus {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-/* Placeholder styling in Result Viewer */
+/* 結果ビューアー内のプレースホルダースタイル */
 .js-result-canvas-container .placeholder {
   display: flex;
   flex-direction: column;
@@ -1188,7 +1188,7 @@ select:focus {
   width: 100%;
 }
 
-/* Canvas styling */
+/* キャンバスのスタイル */
 .js-result-canvas,
 .js-grid-canvas {
   max-width: 100%;
@@ -1221,7 +1221,7 @@ select:focus {
   color: var(--accent);
 }
 
-/* Loading Overlay */
+/* 読み込みオーバーレイ */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -1283,7 +1283,7 @@ select:focus {
   background: rgba(6, 182, 212, 0.1);
 }
 
-/* Tooltip */
+/* ツールチップ */
 .help {
   display: inline-flex;
   align-items: center;
@@ -1300,7 +1300,7 @@ select:focus {
 
 
 
-/* Footer */
+/* フッター */
 .app-footer {
   margin-top: auto;
   padding: 32px 0 16px;
@@ -1348,7 +1348,7 @@ select:focus {
   opacity: 0.7;
 }
 
-/* Output Panel Size Label */
+/* 出力パネルのサイズラベル */
 .js-output-size {
   font-family: var(--font-mono);
   font-size: 0.85rem;
@@ -1373,7 +1373,7 @@ select:focus {
   }
 }
 
-/* Palette Section */
+/* パレットセクション */
 .palette-section {
   margin-top: 24px;
   padding-top: 24px;
@@ -1465,7 +1465,7 @@ select:focus {
   }
 }
 
-/* Palette Modal */
+/* パレットモーダル */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1511,7 +1511,7 @@ select:focus {
   padding: 24px;
   overflow-y: auto;
   flex: 1;
-  /* Take remaining space */
+  /* 残りのスペースを使用する */
 }
 
 .modal-footer {
@@ -1524,10 +1524,10 @@ select:focus {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  /* Removed margin-top as it's now in footer */
+  /* footer 側で設定するため margin-top を削除した */
 }
 
-/* Custom Tooltip (JS managed) */
+/* カスタムツールチップ（JS 管理） */
 .custom-tooltip {
   position: fixed;
   background: var(--bg-panel);
@@ -1550,7 +1550,7 @@ select:focus {
   opacity: 1;
 }
 
-/* Result Modal */
+/* 結果モーダル */
 .result-modal-content {
   max-width: 95vw !important;
   width: 95vw !important;
@@ -1575,12 +1575,12 @@ select:focus {
   display: block;
 }
 
-/* Make result canvas pointer to indicate clickability */
+/* 結果キャンバスをクリック可能と示すためポインターにする */
 .panel.has-image #result-canvas-container {
   cursor: pointer;
 }
 
-/* Image List Panel */
+/* 画像リストパネル */
 .image-list-panel {
   margin-top: 1rem;
   padding: 1rem;
@@ -1632,7 +1632,7 @@ select:focus {
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem; /* Space for scrollbar */
+  padding-bottom: 0.5rem; /* スクロールバー用の余白 */
   scrollbar-width: thin;
   scrollbar-color: #4a4e55 #1a1d23;
 }

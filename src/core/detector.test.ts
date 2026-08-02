@@ -5,14 +5,14 @@ import { describe, expect, it } from "vitest";
 import type { Pixel, RawImage } from "../shared/types";
 import { detectGrid, getRunLengths } from "./detector";
 
-// detectGrid is not exported, but it's used internally by getRunLengths.
-// We can verify its effect through getRunLengths.
+// detectGrid はエクスポートされていないが、getRunLengths の内部で使用される。
+// getRunLengths を通じてその効果を検証できる。
 
 describe("detector.ts (helpers)", () => {
 	describe("getRunLengths", () => {
-		const W: Pixel = [255, 255, 255, 255]; // White
-		const K: Pixel = [0, 0, 0, 255]; // Black
-		const T: Pixel = [0, 0, 0, 0]; // Transparent
+		const W: Pixel = [255, 255, 255, 255]; // 白
+		const K: Pixel = [0, 0, 0, 255]; // 黒
+		const T: Pixel = [0, 0, 0, 0]; // 透明
 
 		it("should correctly identify runs in a pixel strip", () => {
 			// [W, W, W, K, K, W]
@@ -23,21 +23,21 @@ describe("detector.ts (helpers)", () => {
 			const runs = segments[0].runs;
 			expect(runs.length).toBe(3);
 
-			// Run 1: White, length 3
+			// 連続領域 1: 白、長さ 3
 			expect(runs[0]).toMatchObject({
 				start: 0,
 				length: 3,
-				color: [192, 192, 192], // 255 quantized by 64 is 192
+				color: [192, 192, 192], // 255 を 64 で量子化すると 192
 			});
 
-			// Run 2: Black, length 2
+			// 連続領域 2: 黒、長さ 2
 			expect(runs[1]).toMatchObject({
 				start: 3,
 				length: 2,
 				color: [0, 0, 0],
 			});
 
-			// Run 3: White, length 1
+			// 連続領域 3: 白、長さ 1
 			expect(runs[2]).toMatchObject({
 				start: 5,
 				length: 1,
@@ -50,24 +50,24 @@ describe("detector.ts (helpers)", () => {
 			const strip: Pixel[] = [W, T, T, K, K];
 			const segments = getRunLengths(strip, 64, 16);
 
-			// Should result in two segments
+			// 2 つのセグメントになるはずである
 			expect(segments.length).toBe(2);
 
-			// Segment 1: [W]
+			// セグメント 1: [W]
 			expect(segments[0].start).toBe(0);
 			expect(segments[0].runs.length).toBe(1);
 			expect(segments[0].runs[0].length).toBe(1);
 
-			// Segment 2: [K, K]
+			// セグメント 2: [K, K]
 			expect(segments[1].start).toBe(3);
 			expect(segments[1].runs.length).toBe(1);
 			expect(segments[1].runs[0].length).toBe(2);
 		});
 
 		it("merges matching runs after smoothing single-pixel noise", () => {
-			// [W, W, K, W, W, W] -> K is single pixel noise between Ws
-			// The smoothing logic requires runs.length >= 3.
-			// [W, W], [K], [W, W, W] are 3 runs.
+			// [W, W, K, W, W, W] -> K は W の間にある単一ピクセルのノイズ
+			// 平滑化ロジックには runs.length >= 3 が必要である。
+			// [W, W]、[K]、[W, W, W] は 3 つの連続領域である。
 			const strip: Pixel[] = [W, W, K, W, W, W];
 			const segments = getRunLengths(strip, 64);
 
@@ -176,19 +176,19 @@ describe("detector.ts (helpers)", () => {
 	});
 
 	describe("estimateFromSegments (Unit Test)", () => {
-		// estimateFromSegments is not exported, so we test it indirectly through detectGrid.
-		// Here we verify accuracy using synthetic data.
+		// estimateFromSegments はエクスポートされていないため、detectGrid を通じて間接的にテストする。
+		// ここでは合成データを使って精度を検証する。
 
 		it("should detect correct cell size from perfect stripe patterns", () => {
-			// 16x16, 8px period stripes
-			// Black (0,0,0) and White (255,255,255) boundaries appear every 8px
+			// 16x16、周期 8px の縞模様
+			// 黒（0,0,0）と白（255,255,255）の境界が 8px ごとに現れる
 			const width = 16;
 			const height = 16;
 			const data = new Uint8ClampedArray(width * height * 4);
 			for (let y = 0; y < height; y++) {
 				for (let x = 0; x < width; x++) {
 					const idx = (y * width + x) * 4;
-					// Change color every 8px
+					// 8px ごとに色を変える
 					const isBlack =
 						Math.floor(x / 8) % 2 === 0 && Math.floor(y / 8) % 2 === 0;
 					const color = isBlack ? 0 : 255;
@@ -199,7 +199,7 @@ describe("detector.ts (helpers)", () => {
 				}
 			}
 			const img: RawImage = { width, height, data };
-			// Restrict autoMaxCells to ensure 8px is picked (16/8 = 2 cells)
+			// 8px が選ばれるよう autoMaxCells を制限する（16/8 = 2 セル）
 			const grid = detectGrid(img, { autoMaxCellsW: 2, autoMaxCellsH: 2 });
 
 			expect(grid.cellW).toBe(8);
@@ -209,7 +209,7 @@ describe("detector.ts (helpers)", () => {
 		});
 
 		it("should detect correctly even with offsets", () => {
-			// 24x24, 4px period, offset (2, 2)
+			// 24x24、周期 4px、オフセット (2, 2)
 			const width = 24;
 			const height = 24;
 			const cell = 4;
@@ -230,7 +230,7 @@ describe("detector.ts (helpers)", () => {
 				}
 			}
 			const img: RawImage = { width, height, data };
-			// 24 / 4 = 6 cells
+			// 24 / 4 = 6 セル
 			const grid = detectGrid(img, { autoMaxCellsW: 6, autoMaxCellsH: 6 });
 
 			expect(grid.cellW).toBe(cell);
@@ -262,13 +262,13 @@ describe("detectGrid (reproduction)", () => {
 
 		const grid = detectGrid(img);
 
-		// User says: currently detects ~74x110 cells (large cells).
-		// Expected: 2-3x more cells (smaller cells).
-		// 1024 / 74 = ~13.8px
-		// 1024 / 220 = ~4.6px
+		// ユーザー報告: 現在は約 74x110 セル（大きなセル）を検出する。
+		// 期待値: 2〜3 倍のセル数（小さなセル）。
+		// 1024 / 74 = 約 13.8px
+		// 1024 / 220 = 約 4.6px
 
-		// Assert that cell size is small (high resolution grid)
-		// If current behavior is maintained, this should FAIL.
+		// セルサイズが小さいこと（高解像度グリッド）を検証する
+		// 現在の挙動が維持されている場合、これは失敗するはずである。
 		expect(grid.cellW).toBeLessThan(10);
 		expect(grid.cellH).toBeLessThan(10);
 

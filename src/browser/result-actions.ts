@@ -57,12 +57,12 @@ export const setupResultActions = ({
 		if (scale === 1) {
 			link = document.createElement("a");
 			link.download = `refined_${timestamp}.png`;
-			link.href = els.originalCanvas.toDataURL("image/png"); // Fallback or current result?
-			// Wait, we need the result image data URL.
-			// Since currentResult is RawImage, we need to draw it to a canvas to get URL.
-			// We can use a temp canvas or one of the existing ones if we are sure it has the image.
-			// ResultViewer has the canvas, but we are outside.
-			// Let's use a temp canvas helper or drawRawImageToCanvas.
+			link.href = els.originalCanvas.toDataURL("image/png"); // フォールバックか現在の結果か？
+			// 待って、結果画像のデータ URL が必要である。
+			// currentResult は RawImage のため、URL を取得するにはキャンバスへ描画する必要がある。
+			// 画像が存在することを確信できれば、一時キャンバスまたは既存のキャンバスを使用できる。
+			// ResultViewer はキャンバスを持つが、ここはその外部である。
+			// 一時キャンバスのヘルパーまたは drawRawImageToCanvas を使用する。
 			const tempCanvas = document.createElement("canvas");
 			drawRawImageToCanvas(currentResult, tempCanvas);
 			link.href = tempCanvas.toDataURL("image/png");
@@ -89,7 +89,7 @@ export const setupResultActions = ({
 
 		els.loadingOverlay.style.display = "flex";
 		try {
-			// 1. Process ALL images (User Request: Force re-process to apply current settings)
+			// 1. すべての画像を処理（ユーザー要望: 現在の設定を適用するため再処理を強制）
 			const imagesToProcess = [...allImages];
 
 			if (imagesToProcess.length > 0) {
@@ -100,7 +100,7 @@ export const setupResultActions = ({
 					const index = i + 1;
 					const total = imagesToProcess.length;
 
-					// Update loading text
+					// 読み込み中のテキストを更新
 					const statusText = i18n.t("status.processing_batch", {
 						current: index,
 						total: total,
@@ -112,20 +112,20 @@ export const setupResultActions = ({
 					}
 
 					imageSession.setActiveImage(img.id);
-					// Wait a tick for UI to update (inputs to reflect, though they shouldn't change for same session if global)
+					// UI 更新を反映するため少し待機する（グローバル設定なら同一セッション内で入力値は変わらないはず）
 					await new Promise((r) => setTimeout(r, 10));
 
 					await runProcessing();
 				}
 
-				// Restore original active image
+				// 元のアクティブ画像を復元
 				if (originalActiveId) {
 					imageSession.setActiveImage(originalActiveId);
 				}
 			}
 
-			// 2. Create ZIP
-			// Re-fetch images to get updated results
+			// 2. ZIP を作成
+			// 更新済みの結果を取得するため画像を再取得
 			const imagesToZip = imageSession
 				.getImages()
 				.filter((img) => img.status === "done" && img.result);
@@ -140,11 +140,11 @@ export const setupResultActions = ({
 			for (const img of imagesToZip) {
 				if (!img.result) continue;
 
-				const name = img.file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+				const name = img.file.name.replace(/\.[^/.]+$/, ""); // 拡張子を削除
 				let filename =
 					scale === 1 ? `${name}_refined.png` : `${name}_refined_x${scale}.png`;
 
-				// Avoid duplicates
+				// 重複を回避
 				let counter = 1;
 				while (filenames.has(filename)) {
 					filename =
@@ -206,7 +206,7 @@ export const setupResultActions = ({
 		}
 	});
 
-	// Close menus on outside click
+	// 外側をクリックしたときにメニューを閉じる
 	document.addEventListener("click", () => {
 		els.downloadMenu.classList.remove("show");
 		els.downloadAllMenu.classList.remove("show");
@@ -222,7 +222,7 @@ export const setupResultActions = ({
 		onCompare: () => openCompareModal(),
 		onImageClick: () => {
 			resultModalController.open();
-			// Update grid and other drawings when modal is displayed (due to size difference)
+			// モーダル表示時にグリッドなどの描画を更新する（サイズが異なるため）
 			requestAnimationFrame(() => {
 				modalResultViewer.drawGrid();
 			});

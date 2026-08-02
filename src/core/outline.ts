@@ -1,12 +1,12 @@
 import type { OutlineStyle, RawImage, RGB } from "../shared/types";
 
 /**
- * Add an outline around a transparent image.
- * To ensure the outline is not cut off when there are dots at the edges,
- * the image is expanded by 1px in all directions (top, bottom, left, right) before processing.
- * @param image Input image
- * @param color Outline color
- * @param style Outline style ('rounded': 8-neighbors, 'sharp': 4-neighbors)
+ * 透明画像の周囲にアウトラインを追加する。
+ * 端にドットがあってもアウトラインが切れないよう、
+ * 処理前に画像を全方向（上、下、左、右）へ 1px 拡張する。
+ * @param image 入力画像
+ * @param color アウトラインの色
+ * @param style アウトラインのスタイル（'rounded': 8 近傍、'sharp': 4 近傍）
  */
 export function applyOutline(
 	image: RawImage,
@@ -15,7 +15,7 @@ export function applyOutline(
 ): RawImage {
 	if (style === "none") return image;
 
-	// Expand by 1px in all directions (top, bottom, left, right)
+	// 全方向（上、下、左、右）へ 1px 拡張する
 	const srcW = image.width;
 	const srcH = image.height;
 	const dstW = srcW + 2;
@@ -23,7 +23,7 @@ export function applyOutline(
 	const srcData = image.data;
 	const dstData = new Uint8ClampedArray(dstW * dstH * 4);
 
-	// Copy original image to the center
+	// 元画像を中央へコピーする
 	for (let y = 0; y < srcH; y++) {
 		const srcOffset = y * srcW * 4;
 		const dstOffset = ((y + 1) * dstW + 1) * 4;
@@ -33,23 +33,23 @@ export function applyOutline(
 	const outData = new Uint8ClampedArray(dstData);
 	const isSharp = style === "sharp";
 
-	// Relative coordinates for neighbors to check
+	// 確認する近傍の相対座標
 	const neighbors = isSharp
 		? [
-				[0, -1], // Up
-				[0, 1], // Down
-				[-1, 0], // Left
-				[1, 0], // Right
+				[0, -1], // 上
+				[0, 1], // 下
+				[-1, 0], // 左
+				[1, 0], // 右
 			]
 		: [
 				[0, -1],
 				[0, 1],
 				[-1, 0],
 				[1, 0],
-				[-1, -1], // Top-Left
-				[1, -1], // Top-Right
-				[-1, 1], // Bottom-Left
-				[1, 1], // Bottom-Right
+				[-1, -1], // 左上
+				[1, -1], // 右上
+				[-1, 1], // 左下
+				[1, 1], // 右下
 			];
 
 	for (let y = 0; y < dstH; y++) {
@@ -57,10 +57,10 @@ export function applyOutline(
 			const idx = (y * dstW + x) * 4;
 			const alpha = dstData[idx + 3];
 
-			// Skip if pixel is already opaque
+			// ピクセルがすでに不透明ならスキップする
 			if (alpha > 0) continue;
 
-			// Check surrounding pixels
+			// 周囲のピクセルを確認する
 			let hasOpaqueNeighbor = false;
 
 			for (const [dx, dy] of neighbors) {

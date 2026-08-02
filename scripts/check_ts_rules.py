@@ -2,9 +2,9 @@ import re
 import sys
 from pathlib import Path
 
-# Rules to check
-# 1. No explicit 'any' type (e.g., ': any', 'as any')
-# 2. No '@ts-ignore' or '@ts-nocheck'
+# 検査ルール
+# 1. 明示的な 'any' 型を使用しない（例: ': any'、'as any'）
+# 2. '@ts-ignore' または '@ts-nocheck' を使用しない
 EXPLICIT_ANY_RE = re.compile(r"(:|as)\s+any\b")
 TS_IGNORE_RE = re.compile(r"@ts-(ignore|nocheck)")
 
@@ -25,7 +25,7 @@ def main():
     src_dir = Path("src")
     all_errors = []
     
-    # Scan all .ts and .tsx files in src directory
+    # src ディレクトリ内のすべての .ts および .tsx ファイルを走査する
     for path in src_dir.rglob("*.ts"):
         if path.name.endswith(".test.ts"):
             continue

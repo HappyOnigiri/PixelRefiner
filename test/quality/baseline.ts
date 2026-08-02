@@ -5,7 +5,7 @@ import { QUALITY_BASELINE_VERSION, type QualityBaseline } from "./types";
 const DEFAULT_BASELINE_ROOT = path.resolve("test/quality/baseline");
 const DEFAULT_BASELINE_FILE = path.resolve("test/quality/baseline.json");
 
-// [Workaround] Keep PR-base comparisons continuous across the one-time case ID rename.
+// [Workaround] 一度限りのケース ID 改名後も PR ベース比較を継続できるようにする。
 const PREVIOUS_CASE_IDS: Record<string, string> = {
 	"remove-background-trim-auto-grid": "legacy-resize-remove-background",
 	"remove-background-trim-resize-46x13": "legacy-resize-trimming",

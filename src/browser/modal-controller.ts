@@ -7,7 +7,7 @@ const getFocusableElements = (root: HTMLElement): HTMLElement[] => {
 	return nodes.filter((el) => {
 		if (el.hasAttribute("disabled")) return false;
 		if (el.getAttribute("aria-hidden") === "true") return false;
-		// Skip elements that are not visible
+		// 表示されていない要素をスキップ
 		return el.offsetParent !== null || el === document.activeElement;
 	});
 };

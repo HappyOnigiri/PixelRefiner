@@ -33,9 +33,9 @@ export const writeRawImageAsPngSync = (
 };
 
 /**
- * RGB values of fully transparent pixels (alpha=0) in PNG do not affect visual appearance,
- * but depending on the generator tool, RGB might be zero-filled or retain original values, which can cause differences.
- * In tests, we normalize RGB to 0 when alpha=0 before comparison.
+ * PNG 内の完全に透明なピクセル（alpha=0）の RGB 値は見た目に影響しないが、
+ * 生成ツールによって RGB がゼロ埋めされたり元の値を保持したりするため、差異が生じる場合がある。
+ * テストでは比較前に、alpha=0 の RGB を 0 へ正規化する。
  */
 const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
 	const out = new Uint8ClampedArray(img.data);
@@ -51,10 +51,10 @@ const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
 };
 
 /**
- * Verify images match exactly (provides shorter messages to trace causes without heavy diffs on mismatch).
+ * 画像が完全に一致することを確認する（一致しない場合も重い差分を出さず、原因追跡向けに短いメッセージを提供する）。
  *
- * Vitest's `toEqual(Buffer)` can be extremely slow on mismatch due to large diff generation,
- * so here we report truthiness evaluation by `Buffer.equals()` + coordinates of the first difference.
+ * Vitest の `toEqual(Buffer)` は不一致時に大きな差分を生成して非常に遅くなる場合があるため、
+ * ここでは `Buffer.equals()` による真偽評価と最初の差異の座標を報告する。
  */
 export const expectSameImage = (
 	actual: RawImage,
@@ -111,13 +111,13 @@ const sanitizeForPath = (s: string): string => {
 
 export const cleanDebugDir = (testcaseName: string): void => {
 	if (!DEBUG_IMAGES) return;
-	// `make test-debug` runs `rm -rf tmp/debug` first, so recreate the root itself.
+	// `make test-debug` は先に `rm -rf tmp/debug` を実行するため、ルート自体を再作成する。
 	mkdirSync(DEBUG_ROOT, { recursive: true });
 	const dir = path.join(DEBUG_ROOT, sanitizeForPath(testcaseName));
 	rmSync(dir, { recursive: true, force: true });
 
-	// Cleanup for legacy format (from when currentTestName was used directly as directory name).
-	// e.g. prevents long directories like processImage___test6__... from remaining.
+	// 旧形式の後始末（currentTestName を直接ディレクトリ名としていた頃のもの）。
+	// 例: processImage___test6__... のような長いディレクトリが残らないようにする。
 	const legacyPrefix = `processImage___${sanitizeForPath(testcaseName)}__`;
 	try {
 		for (const e of readdirSync(DEBUG_ROOT, { withFileTypes: true })) {
@@ -126,7 +126,7 @@ export const cleanDebugDir = (testcaseName: string): void => {
 			rmSync(path.join(DEBUG_ROOT, e.name), { recursive: true, force: true });
 		}
 	} catch {
-		// Just in case: skip cleanup if DEBUG_ROOT doesn't exist
+		// 念のため、DEBUG_ROOT が存在しない場合は後始末を省略する
 	}
 };
 
@@ -184,8 +184,8 @@ const currentTestDebugDir = (): string => {
 	return path.join(DEBUG_ROOT, group, caseDir);
 };
 
-// When `processImage({ debug: true })`, ensure intermediate images/final result (99-result)
-// are output even if `debugHook` is not passed on the test side.
+// `processImage({ debug: true })` 時、テスト側で `debugHook` を渡さなくても中間画像と最終結果（99-result）を
+// 出力するようにする。
 if (DEBUG_IMAGES) {
 	globalThis.__PIXEL_REFINER_DEBUG_HOOK__ = (name, raw) => {
 		const dir = currentTestDebugDir();

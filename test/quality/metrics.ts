@@ -279,7 +279,7 @@ export const createDiffImage = (
 					expectedIndex < 0 || expectedAlpha === 0
 						? 0
 						: expected.data[expectedIndex + channel];
-				// [Intended] Encode alpha differences as visible intensity while keeping the PNG opaque.
+				// [Intended] PNG を不透明のまま保ちつつ、アルファ値の差を可視の強度として符号化する。
 				data[outputIndex + channel] = Math.max(
 					Math.abs(actualValue - expectedValue),
 					alphaDifference,

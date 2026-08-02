@@ -9,7 +9,7 @@ export const cloneImage = (img: RawImage): RawImage => ({
 const medianOf = (values: number[]): number => {
 	const n = values.length;
 	if (n === 0) return 0;
-	// Sort in-place as it doesn't affect the result (only median is needed).
+	// 結果には影響しないため、その場でソートする（中央値のみ必要）。
 	values.sort((a, b) => a - b);
 	const mid = Math.floor(n / 2);
 	if (n % 2 === 0) {
@@ -47,7 +47,7 @@ export const downsample = (
 	const imgWMax = imgW - 1;
 	const imgHMax = imgH - 1;
 
-	// Reuse arrays to avoid allocation for each pixel (keep value sequence and order).
+	// ピクセルごとの割り当てを避けるため配列を再利用する（値の並びと順序は維持する）。
 	const valuesR: number[] = [];
 	const valuesG: number[] = [];
 	const valuesB: number[] = [];
@@ -121,9 +121,9 @@ export const downsample = (
 };
 
 /**
- * Simple point sampling (Nearest Neighbor) to resize image for comparison.
- * Unlike `downsample`, this does not perform median filtering,
- * preserving original anti-aliasing and noise for visual comparison.
+ * 比較用に画像をリサイズする単純な点サンプリング（最近傍法）。
+ * `downsample` と異なり中央値フィルタリングを行わないため、
+ * 視覚比較用に元のアンチエイリアスとノイズを保持する。
  */
 export const sampleRawImage = (img: RawImage, grid: PixelGrid): RawImage => {
 	const cellW = grid.cellW;
@@ -164,9 +164,9 @@ export const sampleRawImage = (img: RawImage, grid: PixelGrid): RawImage => {
 };
 
 /**
- * Nearest-neighbor resize of a cropped region for comparison view.
- * This avoids smoothing and avoids any median/color aggregation
- * (i.e. no "dot sanitize").
+ * 比較表示用に、切り抜いた領域を最近傍法でリサイズする。
+ * 平滑化や中央値・色の集約を避ける
+ * （つまり「ドット補正」は行わない）。
  */
 export const resizeRawImageNearest = (
 	img: RawImage,
@@ -185,7 +185,7 @@ export const resizeRawImageNearest = (
 	const srcH = img.height;
 	const src = img.data;
 
-	// Avoid division by zero
+	// ゼロ除算を避ける
 	const cw = Math.max(1e-6, cropW);
 	const ch = Math.max(1e-6, cropH);
 	const scaleX = cw / dstW;
@@ -198,7 +198,7 @@ export const resizeRawImageNearest = (
 	};
 
 	for (let j = 0; j < dstH; j += 1) {
-		// Center-of-pixel mapping then nearest neighbor
+		// ピクセル中心へマッピングしてから最近傍法を適用する
 		const sy = cropY + (j + 0.5) * scaleY - 0.5;
 		const yy = clampInt0(Math.round(sy), srcH - 1);
 		const rowOffset = yy * srcW;
@@ -231,7 +231,7 @@ export const cropRawImageNearestFromGrid = (
 	const cropW = grid.cropW ?? outW * grid.cellW;
 	const cropH = grid.cropH ?? outH * grid.cellH;
 
-	// Use cropW/cropH as output size to preserve original resolution
+	// 元の解像度を保つため、cropW/cropH を出力サイズとして使用する
 	return resizeRawImageNearest(img, cropX, cropY, cropW, cropH, cropW, cropH);
 };
 

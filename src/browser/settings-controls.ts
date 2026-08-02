@@ -43,7 +43,7 @@ export const setupSettingsControls = ({
 		els.eyedropperModal.style.display = "none";
 	};
 
-	// Sync RGB inputs
+	// RGB 入力を同期
 	const updateRgbInputs = (hex: string) => {
 		els.bgRgbInput.value = hex;
 		els.bgColorInput.value = hex;
@@ -56,7 +56,7 @@ export const setupSettingsControls = ({
 		if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
 			if (!val.startsWith("#")) val = `#${val}`;
 			els.bgColorInput.value = val;
-			// Switch to RGB mode on manual input
+			// 手動入力時に RGB モードへ切り替え
 			if (els.bgExtractionMethod.value !== "rgb") {
 				els.bgExtractionMethod.value = "rgb";
 				updateBgDisabledStates();
@@ -66,7 +66,7 @@ export const setupSettingsControls = ({
 
 	els.bgColorInput.addEventListener("input", () => {
 		els.bgRgbInput.value = els.bgColorInput.value;
-		// Switch to RGB mode on manual input
+		// 手動入力時に RGB モードへ切り替え
 		if (els.bgExtractionMethod.value !== "rgb") {
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
@@ -93,8 +93,8 @@ export const setupSettingsControls = ({
 		if (!currentImage) return;
 
 		const rect = els.eyedropperCanvas.getBoundingClientRect();
-		// Canvas in modal is shown 1:1, so click coordinates are treated as image coordinates.
-		// However, consideration is needed if CSS scaling is applied.
+		// モーダル内のキャンバスは 1:1 で表示されるため、クリック座標は画像座標として扱う。
+		// ただし、CSS スケーリングが適用される場合は考慮が必要である。
 		const x = Math.floor(
 			((e.clientX - rect.left) / rect.width) * currentImage.width,
 		);
@@ -109,14 +109,14 @@ export const setupSettingsControls = ({
 			const b = currentImage.data[idx + 2];
 			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 			updateRgbInputs(hex);
-			// Switch to RGB mode when color is picked with eyedropper
+			// スポイトで色を選択したときに RGB モードへ切り替え
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
 			closeEyedropperModal();
 		}
 	});
 
-	// Apply default/range from config file to UI
+	// 設定ファイルの既定値・範囲を UI に適用
 	const applyConfigToUi = () => {
 		const setNumberInput = (
 			input: HTMLInputElement,
@@ -211,7 +211,7 @@ export const setupSettingsControls = ({
 		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
 		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
 
-		// Event listeners for language switching buttons
+		// 言語切替ボタンのイベントリスナー
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
 				const lang = el.getAttribute("data-lang-btn") as Language | null;
@@ -219,11 +219,11 @@ export const setupSettingsControls = ({
 			});
 		});
 
-		// Apply initial translation
+		// 初期翻訳を適用
 		i18n.updatePage();
 	};
 
-	// Toggle Process button visibility based on Auto Process state
+	// 自動処理の状態に応じて処理ボタンの表示を切り替え
 	const updateProcessButtonVisibility = () => {
 		els.processButton.style.display = els.autoProcessToggle.checked
 			? "none"
@@ -233,10 +233,10 @@ export const setupSettingsControls = ({
 	let autoProcessTimeout: number | undefined;
 	const triggerAutoProcess = () => {
 		if (!els.autoProcessToggle.checked) return;
-		// Do not run conversion if no image is set
+		// 画像が設定されていない場合は変換しない
 		if (!imageSession.getActiveImage()) return;
 
-		// Cancel existing reservation if any (debounce)
+		// 既存の予約があればキャンセルする（デバウンス）
 		if (autoProcessTimeout) {
 			window.clearTimeout(autoProcessTimeout);
 		}
@@ -268,7 +268,7 @@ export const setupSettingsControls = ({
 	syncSliderAndInput(els.colorCountSlider, els.colorCountInput);
 	syncSliderAndInput(els.ditherStrengthSlider, els.ditherStrengthInput);
 
-	// UI control when grid detection is disabled
+	// グリッド検出が無効な場合の UI 制御
 	const updateDisabledStates = () => {
 		const mode = els.gridDetectionModeSelect.value;
 		const isOff = mode === "off";
@@ -280,7 +280,7 @@ export const setupSettingsControls = ({
 			if (item) item.classList.toggle("disabled", disabled);
 		};
 
-		// detectGrid / autoGridFromTrimmed related
+		// detectGrid / autoGridFromTrimmed 関連
 		[
 			els.quantStepInput,
 			els.quantStepSlider,
@@ -289,12 +289,12 @@ export const setupSettingsControls = ({
 			setDisabledClass(el, !isAutoOrHint);
 		});
 
-		// pixel inputs (hint/force only)
+		// ピクセル入力（hint / force のみ）
 		[els.forcePixelsWInput, els.forcePixelsHInput].forEach((el) => {
 			setDisabledClass(el, !isHintOrForce);
 		});
 
-		// downsample-related (disabled only when off)
+		// ダウンサンプリング関連（off の場合のみ無効）
 		[els.sampleWindowInput, els.sampleWindowSlider].forEach((el) => {
 			setDisabledClass(el, isOff);
 		});
@@ -302,17 +302,17 @@ export const setupSettingsControls = ({
 
 	els.gridDetectionModeSelect.addEventListener("change", updateDisabledStates);
 
-	// UI control for color reduction settings
+	// 減色設定の UI 制御
 	const updatePaletteButtonVisibility = () => {
 		const mode = els.reduceColorModeSelect.value;
 		const isFixed = mode === "fixed";
 		const hasImage = !!imageSession.getActiveImage();
 
-		// In Fixed mode, Import is shown. (Only if image is set)
+		// Fixed モードではインポートを表示する（画像が設定されている場合のみ）
 		els.fixedPaletteImportButton.style.display =
 			isFixed && hasImage ? "flex" : "none";
 
-		// "Show Palette" is shown if we have a palette results. (Only if image is set)
+		// パレット結果がある場合は「パレットを表示」を表示する（画像が設定されている場合のみ）
 		const hasPalette = processingState.currentExtractedPalette.length > 0;
 		els.showPaletteButton.style.display =
 			hasPalette && hasImage ? "flex" : "none";
@@ -323,17 +323,17 @@ export const setupSettingsControls = ({
 		const isNone = mode === "none";
 		const isAuto = mode === "auto";
 
-		// Enable/Disable sections based on mode
+		// モードに応じてセクションを有効・無効にする
 		const isEnabled = !isNone;
 
 		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
 
 		const ditherMode = els.ditherModeSelect.value;
 		const isDitherNone = ditherMode === "none";
-		// Show strength if dithering is enabled
+		// ディザリングが有効な場合は強度を表示
 		els.ditherStrengthSetting.style.display = !isDitherNone ? "flex" : "none";
 
-		// Disable dithering settings when color reduction mode is None
+		// 減色モードが None の場合はディザリング設定を無効にする
 		const ditherModeItem = els.ditherModeSelect.closest(".setting-item");
 		if (ditherModeItem) {
 			ditherModeItem.classList.toggle("disabled", !isEnabled);
@@ -350,7 +350,7 @@ export const setupSettingsControls = ({
 
 	els.reduceColorModeSelect.addEventListener("change", () => {
 		updateReduceColorsDisabledStates();
-		// If we switch away from Fixed, clear the fixed palette
+		// Fixed 以外へ切り替えた場合は固定パレットをクリアする
 		if (els.reduceColorModeSelect.value !== "fixed") {
 			processingState.currentFixedPalette = undefined;
 		}
@@ -368,17 +368,17 @@ export const setupSettingsControls = ({
 	});
 	els.outlineColorInput.addEventListener("input", triggerAutoProcess);
 
-	// UI control for dithering (could keep it always shown, but enabled only when mode is not None)
-	// Keeping it simple for now
+	// ディザリングの UI 制御（常時表示も可能だが、モードが None 以外の場合のみ有効）
+	// 現時点では簡潔な実装にする
 	updateReduceColorsDisabledStates();
 
 	updateDisabledStates();
 
-	// Disable background-related UI when background removal method is none
+	// 背景除去方法が none の場合は背景関連 UI を無効にする
 	const updateBgDisabledStates = () => {
 		const isBgDisabled = els.bgExtractionMethod.value === "none";
 
-		// Control items related to background transparency
+		// 背景の透明化に関する項目を制御
 		[
 			els.toleranceInput,
 			els.toleranceSlider,
@@ -436,19 +436,19 @@ export const setupSettingsControls = ({
 
 	updateProcessButtonVisibility();
 
-	// Common listener for saving on setting changes (display conditions only)
+	// 設定変更時に保存する共通リスナー（表示条件のみ）
 	[els.zoomOutputCheck, els.gridOutputCheck, els.autoProcessToggle].forEach(
 		(el) => {
 			el.addEventListener("change", () => saveSettings());
 		},
 	);
 
-	// Toggle process button visibility when Auto Process toggle changes
+	// 自動処理トグルの変更時に処理ボタンの表示を切り替え
 	els.autoProcessToggle.addEventListener("change", () => {
 		updateProcessButtonVisibility();
 	});
 
-	// Add event listeners to trigger auto-processing on setting changes
+	// 設定変更時に自動処理を開始するイベントリスナーを追加
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
@@ -469,7 +469,7 @@ export const setupSettingsControls = ({
 		els.bgColorInput,
 	].forEach((el) => {
 		el.addEventListener("change", triggerAutoProcess);
-		// Also capture text inputs with input event
+		// input イベントでテキスト入力も捕捉する
 		if (
 			el instanceof HTMLInputElement &&
 			(el.type === "text" || el.type === "number")

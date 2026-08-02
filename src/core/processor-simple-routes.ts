@@ -33,7 +33,7 @@ export const processForcedRoute = (
 		return null;
 	}
 
-	// force: Trim with content BBox -> Force convert to specified pixel size (W x H) (no auto-detection)
+	// force: コンテンツ BBox でトリミングし、指定ピクセルサイズ（W x H）へ強制変換する（自動検出なし）
 	const bgTol = o.backgroundTolerance;
 	const masked = removeBackground(
 		working,
@@ -107,7 +107,7 @@ export const processForcedRoute = (
 		score: 0,
 	};
 
-	// 2. Downsampling / Sanitization
+	// 2. ダウンサンプリング / 補正
 	const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
 	const downsampleStart = performance.now();
 	const down2 = downsample(cropped, g, sw);
@@ -119,7 +119,7 @@ export const processForcedRoute = (
 		forced: true,
 	});
 
-	// 3. Post-process Transparency (Background removal)
+	// 3. 後処理の透明化（背景除去）
 	const postBgStart = performance.now();
 	const result2 = o.postRemoveBackground
 		? removeBackground(
@@ -135,7 +135,7 @@ export const processForcedRoute = (
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
 
-	// Color reduction
+	// 色削減
 	let finalResult = result2;
 	if (o.reduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
@@ -149,8 +149,8 @@ export const processForcedRoute = (
 		);
 	}
 
-	// compareBefore needs to be resized from the original image 'img'
-	// using the bounds 'b' and the forced grid.
+	// compareBefore は、元画像 'img' を境界 'b' と強制グリッドを使って
+	// リサイズする必要がある。
 	const forcedTrimmedGridForOriginal: PixelGrid = {
 		...g,
 		cropX: b.x,
@@ -163,7 +163,7 @@ export const processForcedRoute = (
 		forcedTrimmedGridForOriginal,
 	);
 
-	// Sanitized comparison: use the same downsample as the pipeline (median sampling).
+	// 補正済み比較: パイプラインと同じダウンサンプリング（中央値サンプリング）を使用する。
 	const croppedOriginal = cropRawImage(img, b.x, b.y, b.w, b.h);
 	let compareBeforeSanitized = downsample(croppedOriginal, g, sw);
 
@@ -255,7 +255,7 @@ export const processGridDisabledRoute = (
 		return null;
 	}
 
-	// enableGridDetection: Skip grid detection and downsampling
+	// enableGridDetection: グリッド検出とダウンサンプリングを省略する
 	const bgTol = o.backgroundTolerance;
 	const masked = removeBackground(
 		working,

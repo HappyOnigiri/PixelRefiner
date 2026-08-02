@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PixelData } from "../shared/types";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
 
-// PixelData generation helper
+// PixelData 生成ヘルパー
 const px = (r: number, g: number, b: number, a = 255): PixelData => ({
 	r,
 	g,
@@ -104,24 +104,24 @@ describe("quantizer.ts", () => {
 			const input = [px(255, 0, 0), px(0, 0, 0, 0), px(0, 0, 255)];
 			const result = q.quantize(input);
 			expect(result[1].alpha).toBe(0);
-			// Color info for transparent pixels is either maintained or alpha remains 0 even if changed
+			// 透明ピクセルの色情報は維持されるか、変更されても alpha は 0 のままである
 		});
 	});
 
 	describe("OklabKMeans Edge Cases", () => {
 		it("should not crash when input color count is less than specified count", () => {
-			const q = new OklabKMeans(16); // Want to reduce to 16 colors
+			const q = new OklabKMeans(16); // 16 色に削減する
 			const input = [
-				px(255, 0, 0), // Red
-				px(0, 0, 255), // Blue
-				px(255, 0, 0), // Red
+				px(255, 0, 0), // 赤
+				px(0, 0, 255), // 青
+				px(255, 0, 0), // 赤
 			];
 
-			// Return without error
+			// エラーなく返る
 			expect(() => q.quantize(input)).not.toThrow();
 			const result = q.quantize(input);
 
-			// Colors remain same (or within 2 colors)
+			// 色は同じまま（または 2 色以内）
 			const uniqueColors = new Set(result.map((p) => `${p.r},${p.g},${p.b}`));
 			expect(uniqueColors.size).toBeLessThanOrEqual(2);
 		});
@@ -129,15 +129,15 @@ describe("quantizer.ts", () => {
 		it("should not let Alpha=0 pixels affect centroid calculation", () => {
 			const q = new OklabKMeans(1);
 			const input = [
-				px(255, 0, 0, 255), // Red (Opaque)
-				px(0, 255, 0, 0), // Green (Transparent)
-				px(0, 255, 0, 0), // Green (Transparent)
-				px(0, 255, 0, 0), // Green (Transparent)
+				px(255, 0, 0, 255), // 赤（不透明）
+				px(0, 255, 0, 0), // 緑（透明）
+				px(0, 255, 0, 0), // 緑（透明）
+				px(0, 255, 0, 0), // 緑（透明）
 			];
 
 			const result = q.quantize(input);
-			// When reduced to 1 color, the opaque "Red" should be picked.
-			// If transparent "Green" was included in calculation, the color would be mixed.
+			// 1 色に削減する場合、不透明な「赤」が選ばれるはずである。
+			// 透明な「緑」を計算に含めると、色が混ざってしまう。
 			expect(result[0].r).toBeGreaterThan(200);
 			expect(result[0].g).toBeLessThan(50);
 		});
@@ -147,10 +147,10 @@ describe("quantizer.ts", () => {
 		it("should snap to the nearest palette color", () => {
 			const palette = [px(255, 255, 255), px(0, 0, 0)];
 			const q = new PaletteQuantizer(palette);
-			const input = [px(128, 128, 128)]; // Gray
+			const input = [px(128, 128, 128)]; // グレー
 			const result = q.quantize(input);
 
-			// 128,128,128 should snap to either 0,0,0 or 255,255,255 in Oklab distance
+			// 128,128,128 は Oklab 距離では 0,0,0 または 255,255,255 のいずれかにスナップするはずである
 			const isBlackOrWhite = (p: PixelData) =>
 				(p.r === 0 && p.g === 0 && p.b === 0) ||
 				(p.r === 255 && p.g === 255 && p.b === 255);
@@ -169,7 +169,7 @@ describe("quantizer.ts", () => {
 				px(150, 150, 150),
 			];
 			const result = q.applyDithering(input, 2, 2, "bayer-2x2", 1.0);
-			// Expect different palette colors to be assigned by threshold
+			// しきい値により異なるパレット色が割り当てられるはずである
 			const colors = new Set(result.map((p) => `${p.r},${p.g},${p.b}`));
 			expect(colors.size).toBeGreaterThan(1);
 		});

@@ -91,19 +91,19 @@ Invalid Line Here
 	describe("sortPalette", () => {
 		it("should sort palette by luminance (bright to dark)", () => {
 			const palette: RGB[] = [
-				{ r: 255, g: 255, b: 255 }, // White
-				{ r: 0, g: 0, b: 0 }, // Black
-				{ r: 255, g: 0, b: 0 }, // Red
-				{ r: 0, g: 255, b: 0 }, // Green
-				{ r: 0, g: 0, b: 255 }, // Blue
+				{ r: 255, g: 255, b: 255 }, // 白
+				{ r: 0, g: 0, b: 0 }, // 黒
+				{ r: 255, g: 0, b: 0 }, // 赤
+				{ r: 0, g: 255, b: 0 }, // 緑
+				{ r: 0, g: 0, b: 255 }, // 青
 			];
-			// Luminance (Rec 601):
-			// White: 255
-			// Green: ~150
-			// Red: ~76
-			// Blue: ~29
-			// Black: 0
-			// Expected: White, Green, Red, Blue, Black
+			// 輝度（Rec 601）:
+			// 白: 255
+			// 緑: 約 150
+			// 赤: 約 76
+			// 青: 約 29
+			// 黒: 0
+			// 期待値: 白、緑、赤、青、黒
 			const sorted = sortPalette(palette);
 			expect(sorted[0]).toEqual({ r: 255, g: 255, b: 255 });
 			expect(sorted[1]).toEqual({ r: 0, g: 255, b: 0 });
@@ -114,8 +114,8 @@ Invalid Line Here
 
 		it("should handle mixed brightness", () => {
 			const palette: RGB[] = [
-				{ r: 50, g: 50, b: 50 }, // Dark Gray
-				{ r: 200, g: 200, b: 200 }, // Light Gray
+				{ r: 50, g: 50, b: 50 }, // 濃い灰色
+				{ r: 200, g: 200, b: 200 }, // 薄い灰色
 			];
 			const sorted = sortPalette(palette);
 			expect(sorted[0]).toEqual({ r: 200, g: 200, b: 200 });
@@ -126,10 +126,10 @@ Invalid Line Here
 
 describe("extractColorsFromImage", () => {
 	/**
-	 * Helper function to create ImageData for testing
-	 * @param width - Width of the image
-	 * @param height - Height of the image
-	 * @param pixels - Array of [r, g, b] or [r, g, b, a] tuples
+	 * テスト用の ImageData を作成するヘルパー関数
+	 * @param width - 画像の幅
+	 * @param height - 画像の高さ
+	 * @param pixels - [r, g, b] または [r, g, b, a] タプルの配列
 	 */
 	const createImageData = (
 		width: number,
@@ -156,9 +156,9 @@ describe("extractColorsFromImage", () => {
 
 	it("should extract unique colors from image", () => {
 		const imageData = createImageData(3, 1, [
-			[255, 0, 0], // Red
-			[0, 255, 0], // Green
-			[255, 0, 0], // Red (duplicate)
+			[255, 0, 0], // 赤
+			[0, 255, 0], // 緑
+			[255, 0, 0], // 赤（重複）
 		]);
 
 		const { colors, totalColors } = extractColorsFromImage(imageData);
@@ -170,9 +170,9 @@ describe("extractColorsFromImage", () => {
 
 	it("should skip transparent pixels", () => {
 		const imageData = createImageData(3, 1, [
-			[255, 0, 0, 255], // Red (opaque)
-			[0, 255, 0, 100], // Green (semi-transparent, < 128)
-			[0, 0, 255, 128], // Blue (at threshold, should be included)
+			[255, 0, 0, 255], // 赤（不透明）
+			[0, 255, 0, 100], // 緑（半透明、< 128）
+			[0, 0, 255, 128], // 青（しきい値上のため含める）
 		]);
 
 		const { colors, totalColors } = extractColorsFromImage(imageData);
@@ -184,36 +184,36 @@ describe("extractColorsFromImage", () => {
 
 	it("should limit colors to maxColors using median cut", () => {
 		const imageData = createImageData(5, 1, [
-			[255, 255, 255], // White (brightest)
-			[0, 0, 0], // Black (darkest)
-			[255, 0, 0], // Red
-			[0, 255, 0], // Green
-			[0, 0, 255], // Blue
+			[255, 255, 255], // 白（最も明るい）
+			[0, 0, 0], // 黒（最も暗い）
+			[255, 0, 0], // 赤
+			[0, 255, 0], // 緑
+			[0, 0, 255], // 青
 		]);
 
 		const { colors, totalColors } = extractColorsFromImage(imageData, 3);
 		expect(totalColors).toBe(5);
 		expect(colors).toHaveLength(3);
-		// Median cut should select diverse colors from the color space
-		// The exact colors depend on the algorithm, but they should be diverse
-		// and sorted by luminance for display
+		// 中央値分割法は色空間から多様な色を選択する必要がある
+		// 正確な色はアルゴリズムに依存するが、多様であり、
+		// 表示用に輝度順で並んでいる必要がある
 	});
 
 	it("should select diverse colors when limiting", () => {
 		const imageData = createImageData(6, 1, [
-			[255, 0, 0], // Red
-			[255, 50, 50], // Light red
-			[255, 100, 100], // Lighter red
-			[0, 0, 255], // Blue
-			[50, 50, 255], // Light blue
-			[100, 100, 255], // Lighter blue
+			[255, 0, 0], // 赤
+			[255, 50, 50], // 薄い赤
+			[255, 100, 100], // さらに薄い赤
+			[0, 0, 255], // 青
+			[50, 50, 255], // 薄い青
+			[100, 100, 255], // さらに薄い青
 		]);
 
 		const { colors, totalColors } = extractColorsFromImage(imageData, 2);
 		expect(totalColors).toBe(6);
 		expect(colors).toHaveLength(2);
-		// Should select representative colors from red and blue groups
-		// The exact values are averages of each group, sorted by luminance
+		// 赤と青のグループから代表色を選択する必要がある
+		// 正確な値は各グループの平均値で、輝度順に並ぶ
 	});
 
 	it("should handle empty image", () => {
@@ -225,8 +225,8 @@ describe("extractColorsFromImage", () => {
 
 	it("should handle fully transparent image", () => {
 		const imageData = createImageData(2, 1, [
-			[255, 0, 0, 0], // Transparent red
-			[0, 255, 0, 50], // Transparent green
+			[255, 0, 0, 0], // 透明な赤
+			[0, 255, 0, 50], // 透明な緑
 		]);
 		const { colors, totalColors } = extractColorsFromImage(imageData);
 		expect(totalColors).toBe(0);

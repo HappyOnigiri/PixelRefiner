@@ -22,8 +22,8 @@ export const applyColorReduction = (
 		});
 	}
 
-	// In SFC mode, round to 15-bit color before color reduction,
-	// allowing K-means to select the optimal palette within the SFC color space.
+	// SFC モードでは色削減前に 15 ビットカラーへ丸め、
+	// K-means が SFC 色空間内で最適なパレットを選べるようにする。
 	let workingPixelData = pixelData;
 	const isSfcMode = mode === "sfc_sprite" || mode === "sfc_bg";
 	if (isSfcMode && !customPalette) {
@@ -76,7 +76,7 @@ export const applyColorReduction = (
 				ditherStrength / 100,
 			);
 		} else {
-			// Fallback to auto if palette not found
+			// パレットが見つからない場合は auto にフォールバック
 			const quantizer = new OklabKMeans(colorCount);
 			reducedPixels = quantizer.applyDithering(
 				workingPixelData,
@@ -109,7 +109,7 @@ export const extractUsedColors = (img: RawImage): RGB[] => {
 	const result: RGB[] = [];
 	for (let i = 0; i < img.data.length; i += 4) {
 		const a = img.data[i + 3];
-		if (a < 16) continue; // Transparency threshold
+		if (a < 16) continue; // 透明度のしきい値
 		const r = img.data[i];
 		const g = img.data[i + 1];
 		const b = img.data[i + 2];

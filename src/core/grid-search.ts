@@ -202,8 +202,8 @@ const scoreAxisCandidate = (
 		maxEdge = Math.max(maxEdge, edge);
 		const remainder = normalizeGridPhase(position - phase, cell);
 		const distance = Math.min(remainder, cell - remainder);
-		// [Intended] Nearest-neighbor scaling places a fractional boundary on either
-		// adjacent source pixel, so subpixel offsets up to half a pixel fully agree.
+		// [Intended] 最近傍スケーリングでは分数境界が隣接するいずれかの元ピクセル上に置かれるため、
+		// 半ピクセルまでのサブピクセルオフセットは完全に一致する。
 		if (distance <= 0.625) alignedEdge += edge;
 	}
 	let predictedEvidence = 0;

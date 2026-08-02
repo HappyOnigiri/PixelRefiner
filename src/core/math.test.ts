@@ -33,7 +33,7 @@ describe("math.ts", () => {
 
 	describe("computeVariance", () => {
 		it("should calculate variance correctly", () => {
-			// [1, 2, 3] -> mean = 2, variance = ((1-2)^2 + (2-2)^2 + (3-2)^2) / 3 = (1 + 0 + 1) / 3 = 2/3
+			// [1, 2, 3] -> 平均 = 2、分散 = ((1-2)^2 + (2-2)^2 + (3-2)^2) / 3 = (1 + 0 + 1) / 3 = 2/3
 			expect(computeVariance([1, 2, 3])).toBeCloseTo(2 / 3);
 		});
 

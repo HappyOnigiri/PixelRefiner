@@ -16,7 +16,7 @@ const detectBrowserLanguage = (): Language => {
 
 const resources = {
 	ja: {
-		// UI Headings & Labels
+		// UI 見出しとラベル
 		"app.title": "Pixel Refiner | AIドット絵の最適化・背景透過ツール",
 		"app.description":
 			'AIで生成したドット絵を、<span class="text-highlight">素材</span>や<span class="text-highlight">アイコン</span>として使えるクオリティに。<br />' +
@@ -53,7 +53,7 @@ const resources = {
 		"ui.close": "閉じる",
 		"ui.download_options": "ダウンロード種別を選択",
 
-		// Settings
+		// 設定
 		"setting.color_reduction": "減色",
 		"setting.color_mode": "減色モード",
 		"setting.color_count": "色数",
@@ -99,7 +99,7 @@ const resources = {
 		"tooltip.help.auto_process":
 			"設定を変更した際に、自動で変換処理を実行します。\n\n手動でボタンを押して実行したい場合はOFFにしてください。",
 
-		// Tooltips
+		// ツールチップ
 		"tooltip.help.color_mode":
 			"出力結果の色数を制限します。\n\nドット絵らしい色使いに整えたい場合に有効です。\n無効: 減色を行いません。\nGame Boy / PICO-8 / NES: 各ゲーム機のパレットを使用します。\n色数指定 (Auto): 指定した色数に自動で減色します。",
 		"tooltip.help.color_count":
@@ -141,7 +141,7 @@ const resources = {
 		"tooltip.help.keep_aspect_ratio":
 			"トリミング後の出力画像が元画像のアスペクト比を維持するように、透過ピクセルでパディングします。\n\nスプライトのキャンバスサイズを揃えたい場合に便利です。",
 
-		// Select Options
+		// 選択肢
 		"option.none": "無効",
 		"option.mono": "モノクロ",
 		"option.gb_legacy": "ゲームボーイ (初代)",
@@ -182,7 +182,7 @@ const resources = {
 		"option.bg_bottom_right": "右下",
 		"option.bg_rgb": "RGB指定",
 
-		// JS Messages
+		// JS メッセージ
 		"error.no_image": "先に画像を選択してください。",
 		"error.process_failed": "処理失敗",
 		"error.load_failed": "読み込み失敗",
@@ -206,7 +206,7 @@ const resources = {
 		"status.processing": "処理中...",
 		"status.processing_batch": "一括処理中... ({current}/{total})",
 
-		// Attributes & Titles
+		// 属性とタイトル
 		"attr.title.bg_checkered": "背景: 格子模様",
 		"attr.title.bg_white": "背景: 白",
 		"attr.title.bg_black": "背景: 黒",
@@ -216,16 +216,16 @@ const resources = {
 		"attr.title.eyedropper": "スポイトで画像から色を選択",
 		"attr.placeholder.auto": "自動",
 
-		// Modal
+		// モーダル
 		"modal.eyedropper.title": "背景色を選択",
 		"modal.eyedropper.instruction":
 			"画像内の背景にしたい色をクリックしてください",
 
-		// Footer
+		// フッター
 		"footer.privacy": "画像はブラウザ内で安全に処理されます",
 	},
 	"zh-CN": {
-		// UI Headings & Labels
+		// UI 見出しとラベル
 		"app.title": "Pixel Refiner | AI 像素画优化与背景透明工具",
 		"app.description":
 			'将 AI 生成的像素画优化为可直接用于<span class="text-highlight">素材</span>和<span class="text-highlight">图标</span>的品质。<br />' +
@@ -262,7 +262,7 @@ const resources = {
 		"ui.close": "关闭",
 		"ui.download_options": "选择下载类型",
 
-		// Settings
+		// 設定
 		"setting.color_reduction": "减色",
 		"setting.color_mode": "减色模式",
 		"setting.color_count": "颜色数量",
@@ -307,7 +307,7 @@ const resources = {
 		"tooltip.help.auto_process":
 			"设置变化时自动运行转换处理。\n\n如果想手动点击处理按钮，请关闭此选项。",
 
-		// Tooltips
+		// ツールチップ
 		"tooltip.help.color_mode":
 			"限制输出结果的颜色数量。\n\n适合将画面整理成更接近经典像素画的色彩风格。\n无：不进行减色。\nGame Boy / PICO-8 / NES：使用对应主机的调色板。\n自定义数量：自动减色到指定颜色数量。",
 		"tooltip.help.color_count":
@@ -349,7 +349,7 @@ const resources = {
 		"tooltip.help.keep_aspect_ratio":
 			"裁剪后的输出图片使用透明像素填充，以保持原图的宽高比。\n\n适用于需要统一精灵画布尺寸的场景。",
 
-		// Select Options
+		// 選択肢
 		"option.none": "无",
 		"option.mono": "黑白",
 		"option.gb_legacy": "Game Boy (初代)",
@@ -390,7 +390,7 @@ const resources = {
 		"option.bg_bottom_right": "右下",
 		"option.bg_rgb": "RGB 指定",
 
-		// JS Messages
+		// JS メッセージ
 		"error.no_image": "请先选择图片。",
 		"error.process_failed": "处理失败",
 		"error.load_failed": "加载失败",
@@ -410,7 +410,7 @@ const resources = {
 		"status.processing": "处理中...",
 		"status.processing_batch": "正在批量处理... ({current}/{total})",
 
-		// Attributes & Titles
+		// 属性とタイトル
 		"attr.title.bg_checkered": "背景：棋盘格",
 		"attr.title.bg_white": "背景：白色",
 		"attr.title.bg_black": "背景：黑色",
@@ -420,15 +420,15 @@ const resources = {
 		"attr.title.eyedropper": "用吸管从图片中选择颜色",
 		"attr.placeholder.auto": "自动",
 
-		// Modal
+		// モーダル
 		"modal.eyedropper.title": "选择背景色",
 		"modal.eyedropper.instruction": "点击图片中要作为背景的颜色",
 
-		// Footer
+		// フッター
 		"footer.privacy": "图片会在浏览器内安全处理",
 	},
 	en: {
-		// UI Headings & Labels
+		// UI 見出しとラベル
 		"app.title": "Pixel Refiner | AI Pixel Art Optimizer & Background Remover",
 		"app.description":
 			'Optimize AI-generated pixel art into <span class="text-highlight">high-quality assets</span> and <span class="text-highlight">icons</span>.<br />' +
@@ -465,7 +465,7 @@ const resources = {
 		"ui.close": "Close",
 		"ui.download_options": "Select download options",
 
-		// Settings
+		// 設定
 		"setting.color_reduction": "Color Reduction",
 		"setting.color_mode": "Reduction Mode",
 		"setting.color_count": "Color Count",
@@ -511,7 +511,7 @@ const resources = {
 		"tooltip.help.auto_process":
 			"Automatically runs processing when settings are changed.\n\nTurn OFF if you prefer to manually click the Process button.",
 
-		// Tooltips
+		// ツールチップ
 		"tooltip.help.color_mode":
 			"Limits the number of colors in the output.\n\nUseful for achieving a classic pixel art look.\nNone: No color reduction.\nGame Boy / PICO-8 / NES: Uses specific console palettes.\nAuto: Automatically reduces to the specified number of colors.",
 		"tooltip.help.color_count":
@@ -553,7 +553,7 @@ const resources = {
 		"tooltip.help.keep_aspect_ratio":
 			"Pads the trimmed output with transparent pixels to preserve the original image's aspect ratio.\n\nUseful for maintaining sprite canvas proportions after trimming.",
 
-		// Select Options
+		// 選択肢
 		"option.none": "None",
 		"option.mono": "Monochrome",
 		"option.gb_legacy": "Game Boy (Original)",
@@ -594,7 +594,7 @@ const resources = {
 		"option.bg_bottom_right": "Bottom-Right",
 		"option.bg_rgb": "RGB Specification",
 
-		// JS Messages
+		// JS メッセージ
 		"error.no_image": "Please select an image first.",
 		"error.process_failed": "Processing failed",
 		"error.load_failed": "Loading failed",
@@ -619,7 +619,7 @@ const resources = {
 		"status.processing": "Processing...",
 		"status.processing_batch": "Batch Processing... ({current}/{total})",
 
-		// Attributes & Titles
+		// 属性とタイトル
 		"attr.title.bg_checkered": "Background: Checkered",
 		"attr.title.bg_white": "Background: White",
 		"attr.title.bg_black": "Background: Black",
@@ -629,12 +629,12 @@ const resources = {
 		"attr.title.eyedropper": "Pick color from image",
 		"attr.placeholder.auto": "Auto",
 
-		// Modal
+		// モーダル
 		"modal.eyedropper.title": "Select Background Color",
 		"modal.eyedropper.instruction":
 			"Click on the color in the image you want to set as background",
 
-		// Footer
+		// フッター
 		"footer.privacy": "Images are processed safely within your browser",
 	},
 };
@@ -645,14 +645,14 @@ export class I18nManager {
 	currentLang: Language = "en";
 
 	constructor() {
-		// Handle environment where localStorage might be missing (e.g. Vitest/Node)
+		// localStorage が存在しない可能性がある環境（Vitest/Node など）を処理
 		let saved: string | null = null;
 		try {
 			if (typeof localStorage !== "undefined") {
 				saved = localStorage.getItem("pixel-refiner-lang");
 			}
 		} catch (_e) {
-			// Ignore security errors or missing localStorage
+			// セキュリティエラーまたは localStorage 未存在を無視
 		}
 
 		this.currentLang = isLanguage(saved) ? saved : detectBrowserLanguage();
@@ -665,7 +665,7 @@ export class I18nManager {
 				localStorage.setItem("pixel-refiner-lang", lang);
 			}
 		} catch (_e) {
-			// Ignore
+			// 無視
 		}
 		this.updatePage();
 	}

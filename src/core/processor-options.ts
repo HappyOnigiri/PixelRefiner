@@ -18,32 +18,32 @@ export type ProcessOptions = DetectOptions & {
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
-	 * Force conversion to the specified pixel size (W x H) after trimming with content BBox.
-	 * When enabled, automatic grid detection (detectGrid) is not performed.
+	 * コンテンツ BBox でトリミング後、指定ピクセルサイズ（W x H）へ強制変換する。
+	 * 有効時は自動グリッド検出（detectGrid）を行わない。
 	 *
-	 * Note:
-	 * - Conditions: both forcePixelsW/H must be specified.
-	 * - If upscaling is needed, nearest neighbor (sampleWindow=1) is used.
+	 * 注記:
+	 * - 条件: forcePixelsW/H の両方を指定する必要がある。
+	 * - アップスケーリングが必要な場合は最近傍法（sampleWindow=1）を使用する。
 	 */
 	forcePixelsW?: number;
 	forcePixelsH?: number;
 	/**
-	 * Use the specified pixel size (W x H) as a "hint" to start automatic grid estimation with a precise search from its neighborhood.
-	 * Unlike full pixel specification (forcePixelsW/H), automatic detection is still performed.
+	 * 指定ピクセルサイズ（W x H）を「ヒント」として、その近傍から精密検索を行う自動グリッド推定を開始する。
+	 * 完全なピクセル指定（forcePixelsW/H）と異なり、自動検出は継続して行われる。
 	 *
-	 * Note:
-	 * - Conditions: both hintPixelsW/H must be specified.
-	 * - Mainly used as a starting point for autoGridFromTrimmed search.
+	 * 注記:
+	 * - 条件: hintPixelsW/H の両方を指定する必要がある。
+	 * - 主に autoGridFromTrimmed 検索の開始点として使用する。
 	 */
 	hintPixelsW?: number;
 	hintPixelsH?: number;
 	/**
-	 * Scope of background removal (off/selected/outer/all)
-	 * For RGB specification + selected, it is automatically treated as outer.
+	 * 背景除去の範囲（off/selected/outer/all）。
+	 * RGB 指定 + selected は自動的に outer として扱う。
 	 */
 	bgRemovalScope?: BackgroundRemovalScope;
 	/**
-	 * Whether to include diagonals (8-neighbors) in connectivity search.
+	 * 連結性の探索に斜め方向（8 近傍）を含めるかどうか。
 	 */
 	bgConnectivity?: Connectivity;
 	backgroundTolerance?: number;
@@ -51,61 +51,61 @@ export type ProcessOptions = DetectOptions & {
 	trimToContent?: boolean;
 	trimAlphaThreshold?: number;
 	/**
-	 * Maximum number of pixels to consider as target for removal (original image pixels).
-	 * If 0, skip removal of floating noise.
+	 * 除去対象とみなす最大ピクセル数（元画像のピクセル数）。
+	 * 0 の場合は浮遊ノイズを除去しない。
 	 */
 	floatingMaxPixels?: number;
 	/**
-	 * When trimToContent=true, estimate the output grid (outW/outH) from the background removed -> BBox cropped area.
+	 * trimToContent=true の場合、背景除去後に BBox で切り抜いた領域から出力グリッド（outW/outH）を推定する。
 	 */
 	autoGridFromTrimmed?: boolean;
 	/**
-	 * Speed up grid estimation for autoGridFromTrimmed (may affect results).
-	 * If OFF, use legacy search logic.
+	 * autoGridFromTrimmed のグリッド推定を高速化する（結果に影響する場合がある）。
+	 * OFF の場合は旧来の検索ロジックを使用する。
 	 *
-	 * Default: true
+	 * デフォルト: true
 	 */
 	fastAutoGridFromTrimmed?: boolean;
 	/**
-	 * Enable grid detection and downsampling (default ON).
-	 * If OFF, skip grid detection and downsampling (for same-size pixel art).
-	 * Background trimming and transparency are still applied.
+	 * グリッド検出とダウンサンプリングを有効にする（デフォルト ON）。
+	 * OFF の場合はグリッド検出とダウンサンプリングを省略する（同サイズのピクセルアート用）。
+	 * 背景トリミングと透明化は引き続き適用される。
 	 */
 	enableGridDetection?: boolean;
 	/**
-	 * Fill the shorter side with transparent pixels to make the image square
+	 * 短い辺を透明ピクセルで埋め、画像を正方形にする。
 	 */
 	makeSquare?: boolean;
 	/**
-	 * Pad the output with transparent pixels to preserve the source aspect ratio
+	 * 元画像のアスペクト比を保つため、出力を透明ピクセルでパディングする。
 	 */
 	keepAspectRatio?: boolean;
 	/**
-	 * Enable color reduction.
+	 * 色削減を有効にする。
 	 */
 	reduceColors?: boolean;
 	/**
-	 * Color reduction mode
+	 * 色削減モード
 	 */
 	reduceColorMode?: string;
 	/**
-	 * Dithering mode
+	 * ディザリングモード
 	 */
 	ditherMode?: DitherMode;
 	/**
-	 * Number of colors after reduction.
+	 * 削減後の色数。
 	 */
 	colorCount?: number;
 	/**
-	 * Dithering strength (0-100). If 0, no dithering.
+	 * ディザリング強度（0〜100）。0 の場合はディザリングしない。
 	 */
 	ditherStrength?: number;
 	/**
-	 * Fixed palette
+	 * 固定パレット
 	 */
 	fixedPalette?: RGB[];
 	/**
-	 * Background extraction method
+	 * 背景抽出方式
 	 */
 	bgExtractionMethod?:
 		| "none"
@@ -115,14 +115,14 @@ export type ProcessOptions = DetectOptions & {
 		| "bottom-right"
 		| "rgb";
 	/**
-	 * Background color for RGB specification (#rrggbb)
+	 * RGB 指定時の背景色（#rrggbb）
 	 */
 	bgRgb?: string;
 	outlineStyle?: OutlineStyle;
 	outlineColor?: RGB;
 	/**
-	 * Hook to extract intermediate images for debugging.
-	 * To work in browser environment, PNG export, etc., should be performed on the calling side.
+	 * デバッグ用に中間画像を取得するフック。
+	 * ブラウザ環境で扱うための PNG 出力などは呼び出し側で行う。
 	 */
 	debugHook?: (
 		name: string,
