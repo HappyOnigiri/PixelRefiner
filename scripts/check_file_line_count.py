@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import os
+import shutil
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,10 +22,74 @@ class Violation:
     severity: str
 
 
+@dataclass(frozen=True)
+class DiffBase:
+    commit: str | None
+    detail: str
+
+
+def run_git(args: Sequence[str]) -> subprocess.CompletedProcess[bytes]:
+    return subprocess.run(
+        ["git", *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def get_pull_request_base() -> str | None:
+    if shutil.which("gh") is None:
+        return None
+    environment = os.environ.copy()
+    environment["GH_PROMPT_DISABLED"] = "1"
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "view",
+                "--json",
+                "baseRefOid",
+                "--jq",
+                ".baseRefOid",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env=environment,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    value = result.stdout.decode("utf-8", errors="replace").strip()
+    return value or None
+
+
+def parse_git_paths(output: bytes) -> set[Path]:
+    return {
+        Path(os.fsdecode(raw_path))
+        for raw_path in output.split(b"\0")
+        if raw_path
+    }
+
+
+def list_git_paths(args: Sequence[str]) -> set[Path]:
+    result = run_git(args)
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            ["git", *args],
+            output=result.stdout,
+            stderr=result.stderr,
+        )
+    return parse_git_paths(result.stdout)
+
+
 def find_typescript_files() -> list[Path]:
-    result = subprocess.run(
+    paths = list_git_paths(
         [
-            "git",
             "ls-files",
             "--cached",
             "--others",
@@ -33,14 +99,202 @@ def find_typescript_files() -> list[Path]:
             "*.ts",
             "*.tsx",
         ],
-        check=True,
-        stdout=subprocess.PIPE,
     )
     return sorted(
-        Path(path.decode("utf-8"))
-        for path in result.stdout.split(b"\0")
-        if path and Path(path.decode("utf-8")).is_file()
+        path for path in paths if path not in EXCLUDED_FILES and path.is_file()
     )
+
+
+def find_nonignored_untracked_files() -> set[Path]:
+    return list_git_paths(
+        [
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z",
+            "--",
+            "*.ts",
+            "*.tsx",
+        ],
+    )
+
+
+def resolve_commit(candidate: str) -> str | None:
+    value = candidate.strip()
+    if not value:
+        return None
+    # [Policy] 環境変数や外部ツール由来の値を Git のオプションとして解釈させない。
+    result = run_git(
+        [
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            "--end-of-options",
+            f"{value}^{{commit}}",
+        ],
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.decode("utf-8", errors="replace").strip() or None
+
+
+def resolve_merge_base(candidate: str) -> str | None:
+    commit = resolve_commit(candidate)
+    if commit is None:
+        return None
+    result = run_git(["merge-base", "HEAD", commit])
+    if result.returncode != 0:
+        return None
+    lines = result.stdout.decode("utf-8", errors="replace").splitlines()
+    if len(lines) != 1 or not lines[0]:
+        return None
+    return resolve_commit(lines[0])
+
+
+def get_git_value(args: Sequence[str]) -> str | None:
+    result = run_git(args)
+    if result.returncode != 0:
+        return None
+    value = result.stdout.decode("utf-8", errors="replace").strip()
+    return value or None
+
+
+def current_branch() -> str | None:
+    return get_git_value(["symbolic-ref", "--quiet", "--short", "HEAD"])
+
+
+def resolve_diff_base() -> DiffBase:
+    # [Policy] CI が指定した SHA、GitHub 上の PR base、VS Code が記録した
+    # 分岐元、既定ブランチの順で比較元を選ぶ。明示度の高い情報を優先しつつ、
+    # gh が使えないローカル環境でも変更範囲を推定できるようにする。
+    attempts: list[str] = []
+
+    def success_detail(source: str, candidate: str | None) -> str:
+        detail = f"source: {source}"
+        if candidate is not None:
+            detail += f"={candidate.strip()}"
+        detail += "; merge-base succeeded"
+        if attempts:
+            detail += "; fallback after: " + " | ".join(attempts)
+        return detail
+
+    def try_candidate(source: str, candidate: str | None) -> str | None:
+        if candidate is None:
+            attempts.append(f"{source} is not configured")
+            return None
+        commit = resolve_merge_base(candidate)
+        if commit is not None:
+            return commit
+        attempts.append(f"{source} could not resolve or merge-base failed")
+        return None
+
+    environment_base = os.environ.get("PIXEL_REFINER_DIFF_BASE")
+    if environment_base is not None and environment_base.strip():
+        commit = try_candidate(
+            "PIXEL_REFINER_DIFF_BASE",
+            environment_base,
+        )
+        if commit is not None:
+            return DiffBase(
+                commit,
+                success_detail("PIXEL_REFINER_DIFF_BASE", environment_base),
+            )
+        # [Policy] CI が明示した比較元を解決できない場合、別の参照で対象を
+        # 狭めると変更を見落としうるため、全ファイルを変更扱いにする。
+        return DiffBase(
+            None,
+            "fallback: all TypeScript files treated as changed; "
+            + " | ".join(attempts),
+        )
+
+    pull_request_base = get_pull_request_base()
+    if pull_request_base is not None:
+        commit = try_candidate("gh pr baseRefOid", pull_request_base)
+        if commit is not None:
+            return DiffBase(
+                commit,
+                success_detail("gh pr baseRefOid", pull_request_base),
+            )
+        # [Policy] GitHub が特定した PR base をローカルで解決できない場合、
+        # 推定した別の参照で対象を狭めず、全ファイルを変更扱いにする。
+        return DiffBase(
+            None,
+            "fallback: all TypeScript files treated as changed; "
+            + " | ".join(attempts),
+        )
+    attempts.append("gh PR base is unavailable")
+
+    branch = current_branch()
+    if branch is not None:
+        vscode_base = get_git_value(
+            ["config", "--get", f"branch.{branch}.vscode-merge-base"],
+        )
+        commit = try_candidate(
+            f"branch.{branch}.vscode-merge-base",
+            vscode_base,
+        )
+        if commit is not None:
+            return DiffBase(
+                commit,
+                success_detail(
+                    f"branch.{branch}.vscode-merge-base",
+                    vscode_base,
+                ),
+            )
+    else:
+        attempts.append("current branch is unavailable")
+
+    for fallback in ("origin/main", "main"):
+        commit = try_candidate(fallback, fallback)
+        if commit is not None:
+            return DiffBase(
+                commit,
+                success_detail(fallback, None),
+            )
+
+    reason = "; ".join(attempts) if attempts else "no valid comparison base"
+    return DiffBase(
+        None,
+        "fallback: all TypeScript files treated as changed; " + reason,
+    )
+
+
+def find_changed_files(
+    base: DiffBase,
+    all_paths: set[Path],
+) -> tuple[set[Path], str | None]:
+    if base.commit is None:
+        return set(all_paths), None
+
+    result = run_git(
+        [
+            "diff",
+            "--name-only",
+            "-z",
+            "--diff-filter=ACMRTUXB",
+            base.commit,
+            "--",
+            "*.ts",
+            "*.tsx",
+        ],
+    )
+    if result.returncode != 0:
+        return (
+            set(all_paths),
+            "git diff failed; all TypeScript files treated as changed",
+        )
+
+    try:
+        untracked = find_nonignored_untracked_files()
+    except subprocess.CalledProcessError:
+        return (
+            set(all_paths),
+            "untracked file listing failed; all TypeScript files treated as changed",
+        )
+
+    changed = parse_git_paths(result.stdout)
+    changed.update(untracked)
+    return changed & all_paths, None
 
 
 def count_lines(path: Path) -> int:
@@ -48,11 +302,11 @@ def count_lines(path: Path) -> int:
         return sum(1 for _ in file)
 
 
-def classify_file(path: Path) -> Violation | None:
+def classify_file(path: Path, warning_enabled: bool) -> Violation | None:
     line_count = count_lines(path)
     if line_count > HARD_LINE_LIMIT:
         return Violation(path, line_count, "error")
-    if line_count > WARNING_LINE_LIMIT:
+    if warning_enabled and line_count > WARNING_LINE_LIMIT:
         return Violation(path, line_count, "warning")
     return None
 
@@ -105,7 +359,53 @@ def print_error_guidance() -> None:
     print_shared_guidance()
 
 
-def main() -> int:
+def print_scopes(
+    all_warnings: bool,
+    base: DiffBase | None,
+    changed_count: int | None,
+    change_fallback: str | None,
+) -> None:
+    print(
+        "Hard-limit scope: all TypeScript files "
+        f"(>{HARD_LINE_LIMIT} lines and read errors)",
+    )
+    if all_warnings:
+        print(
+            "Warning scope: all TypeScript files "
+            f"({WARNING_LINE_LIMIT + 1}-{HARD_LINE_LIMIT} lines; --all-warnings)",
+        )
+        return
+
+    if base is None or base.commit is None:
+        print("Warning scope: all TypeScript files (no valid comparison base)")
+    elif change_fallback is not None:
+        print("Warning scope: all TypeScript files (change detection fallback)")
+    else:
+        print(
+            "Warning scope: changed TypeScript files "
+            f"({WARNING_LINE_LIMIT + 1}-{HARD_LINE_LIMIT} lines; "
+            f"{changed_count} changed file(s))",
+        )
+    if base is not None:
+        detail = base.detail
+        if change_fallback is not None:
+            detail += f"; {change_fallback}"
+        print(
+            f"Diff base: {base.commit or 'unavailable'} ({detail})",
+        )
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    if list(argv) == ["--all-warnings"]:
+        all_warnings = True
+    elif list(argv):
+        print("Usage: check_file_line_count.py [--all-warnings]", file=sys.stderr)
+        return 2
+    else:
+        all_warnings = False
+
     violations = []
     read_errors = []
 
@@ -115,16 +415,31 @@ def main() -> int:
         print(f"Failed to list TypeScript files: {error}", file=sys.stderr)
         return 1
 
+    if all_warnings:
+        base = None
+        changed_paths = set(paths)
+        change_fallback = None
+    else:
+        base = resolve_diff_base()
+        changed_paths, change_fallback = find_changed_files(
+            base,
+            set(paths),
+        )
+
     for path in paths:
-        if path in EXCLUDED_FILES:
-            continue
         try:
-            violation = classify_file(path)
+            warning_enabled = path in changed_paths
+            violation = classify_file(path, warning_enabled)
         except (OSError, UnicodeError) as error:
             read_errors.append(f"{path}: failed to read file: {error}")
             continue
         if violation is not None:
             violations.append(violation)
+
+    if all_warnings:
+        print_scopes(True, None, None, None)
+    else:
+        print_scopes(False, base, len(changed_paths), change_fallback)
 
     for violation in violations:
         emit_violation(violation)
