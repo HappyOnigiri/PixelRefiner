@@ -394,6 +394,19 @@ export const setupSettingsControls = ({
 			}
 		});
 
+		// [Intended] Auto には角の選択が無く、"selected" は "outer" と同じ結果になるため選ばせない。
+		const isAutoMethod = els.bgExtractionMethod.value === "auto";
+		const selectedScopeOption =
+			els.bgRemovalScopeSelect.querySelector<HTMLOptionElement>(
+				'option[value="selected"]',
+			);
+		if (selectedScopeOption) {
+			selectedScopeOption.disabled = isAutoMethod;
+		}
+		if (isAutoMethod && els.bgRemovalScopeSelect.value === "selected") {
+			els.bgRemovalScopeSelect.value = "outer";
+		}
+
 		const rgbContainer = els.rgbPickerContainer;
 		if (isBgDisabled) {
 			rgbContainer.classList.add("disabled");
