@@ -175,7 +175,25 @@ export const rankGridCandidates = (
 			Math.abs(source.width - (geometry.cropX + geometry.cropW)) +
 			Math.abs(source.height - (geometry.cropY + geometry.cropH));
 		const cellScale = Math.sqrt(grid.cellW * grid.cellH);
+		const signalScores = grid.signalScores;
+		// [Intended] アンサンブルを実行しない旧検出器では、未計測信号を否定票にしない。
+		const unmeasuredSignalScore = 0.5;
 		const subscores: GridCandidateSubscores = {
+			colorBoundary: preserveCandidate
+				? 0
+				: (signalScores?.colorBoundary ?? unmeasuredSignalScore),
+			luminanceGradient: preserveCandidate
+				? 0
+				: (signalScores?.luminanceGradient ?? unmeasuredSignalScore),
+			alphaGradient: preserveCandidate
+				? 0
+				: (signalScores?.alphaGradient ?? unmeasuredSignalScore),
+			autocorrelation: preserveCandidate
+				? 0
+				: (signalScores?.autocorrelation ?? unmeasuredSignalScore),
+			localPhaseStability: preserveCandidate
+				? 0
+				: (signalScores?.localPhaseStability ?? unmeasuredSignalScore),
 			periodicity: preserveCandidate
 				? 0
 				: 1 /
@@ -185,21 +203,25 @@ export const rankGridCandidates = (
 			edgeAlignment: clampUnit(
 				1 - edgeRemainder / Math.max(1, source.width + source.height),
 			),
-			reconstruction: clampUnit(
-				1 -
-					baseError *
-						PROCESS_ANALYSIS_THRESHOLDS.gridCandidateReconstructionScale,
-			),
+			reconstruction:
+				signalScores?.reconstruction ??
+				clampUnit(
+					1 -
+						baseError *
+							PROCESS_ANALYSIS_THRESHOLDS.gridCandidateReconstructionScale,
+				),
 			complexity: preserveCandidate
 				? 0
 				: clampUnit(Math.log2(Math.max(1, cellScale)) / 4),
 			coverage,
 			axisAgreement: axisAgreement(grid),
-			// [Intended] PRF-120 がアンサンブル投票を追加するまで、単一の検出器は中立とする。
-			methodAgreement: 0.5,
+			methodAgreement: preserveCandidate
+				? 0
+				: (signalScores?.methodAgreement ?? 0.5),
 			stability: preserveCandidate
 				? 0
-				: clampUnit((shiftedError - baseError) * 32),
+				: (signalScores?.localPhaseStability ??
+					clampUnit((shiftedError - baseError) * 32)),
 			harmonic: 0.5,
 			outputSize:
 				outputArea <= 1 || outputArea > sourceArea ? 0 : clampUnit(coverage),
@@ -217,34 +239,34 @@ export const rankGridCandidates = (
 	for (const report of reports) {
 		if (report.method === "preserve" || !report.subscores) continue;
 		const reportSubscores = report.subscores as GridCandidateSubscores;
-		let nearestHarmonic: GridCandidateReport | undefined;
-		let nearestDistance = Number.POSITIVE_INFINITY;
+		let harmonicScore = 0.5;
 		for (const other of reports) {
 			if (other === report || other.method === "preserve") continue;
-			const ratioW =
-				Math.max(report.grid.cellW, other.grid.cellW) /
-				Math.max(1, Math.min(report.grid.cellW, other.grid.cellW));
-			const ratioH =
-				Math.max(report.grid.cellH, other.grid.cellH) /
-				Math.max(1, Math.min(report.grid.cellH, other.grid.cellH));
-			const distance =
-				Math.abs(ratioW - Math.round(ratioW)) +
-				Math.abs(ratioH - Math.round(ratioH));
-			if (distance < 0.001 && distance < nearestDistance) {
-				nearestHarmonic = other;
-				nearestDistance = distance;
-			}
-		}
-		if (nearestHarmonic?.subscores) {
-			const harmonicSubscores =
-				nearestHarmonic.subscores as GridCandidateSubscores;
-			reportSubscores.harmonic = clampUnit(
-				0.5 +
-					(reportSubscores.reconstruction - harmonicSubscores.reconstruction) *
-						0.5,
+			if (!other.subscores) continue;
+			const ratioW = report.grid.cellW / Math.max(1, other.grid.cellW);
+			const ratioH = report.grid.cellH / Math.max(1, other.grid.cellH);
+			const factorW = Math.round(ratioW);
+			const factorH = Math.round(ratioH);
+			if (
+				factorW < 2 ||
+				factorW > 3 ||
+				factorH < 2 ||
+				factorH > 3 ||
+				Math.abs(ratioW - factorW) > 0.02 ||
+				Math.abs(ratioH - factorH) > 0.02
+			)
+				continue;
+			const smaller = other.subscores as GridCandidateSubscores;
+			const reconstructionGain =
+				reportSubscores.reconstruction - smaller.reconstruction;
+			// [Intended] 2倍・3倍周期は、再構成が明確に良い場合だけ基礎周期を上回れる。
+			harmonicScore = Math.min(
+				harmonicScore,
+				clampUnit(0.25 + reconstructionGain * 2),
 			);
-			report.totalScore = weightedScore(reportSubscores);
 		}
+		reportSubscores.harmonic = harmonicScore;
+		report.totalScore = weightedScore(reportSubscores);
 	}
 
 	reports.sort(

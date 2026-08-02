@@ -24,6 +24,25 @@ export type PixelGrid = {
 	scoreY?: number;
 	candidates?: PixelGrid[];
 	detectionFailedAxes?: Axis[];
+	signalScores?: GridSignalScores;
+};
+
+export type GridSignalOptions = {
+	colorBoundary: boolean;
+	luminanceAlphaGradient: boolean;
+	autocorrelation: boolean;
+	reconstruction: boolean;
+	localPhaseStability: boolean;
+};
+
+export type GridSignalScores = {
+	colorBoundary: number;
+	luminanceGradient: number;
+	alphaGradient: number;
+	autocorrelation: number;
+	reconstruction: number;
+	localPhaseStability: number;
+	methodAgreement: number;
 };
 
 export interface RGB {
@@ -84,6 +103,11 @@ export type ProcessingWarningCode =
 	| "FALLBACK_TO_PRESERVE";
 
 export type GridCandidateSubscores = {
+	colorBoundary: number;
+	luminanceGradient: number;
+	alphaGradient: number;
+	autocorrelation: number;
+	localPhaseStability: number;
 	periodicity: number;
 	edgeAlignment: number;
 	reconstruction: number;

@@ -399,6 +399,39 @@
       "catastrophicFailure": false
     },
     {
+      "id": "restore-alpha-only-grid-to-8x8",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-diagonal-grid-to-8x8",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 8.6875,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "prefer-base-grid-over-doubled-period",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "preserve-continuous-tone",
       "status": "passed",
       "outputWidth": 48,

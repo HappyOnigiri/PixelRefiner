@@ -47,16 +47,29 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 } as const;
 
 export const GRID_CANDIDATE_SCORE_WEIGHTS = {
-	periodicity: 0.2,
-	edgeAlignment: 0.08,
-	reconstruction: 0.22,
-	complexity: 0.08,
-	coverage: 0.08,
-	axisAgreement: 0.14,
+	colorBoundary: 0.08,
+	luminanceGradient: 0.08,
+	alphaGradient: 0.04,
+	autocorrelation: 0.12,
+	localPhaseStability: 0.1,
+	periodicity: 0.08,
+	edgeAlignment: 0.04,
+	reconstruction: 0.16,
+	complexity: 0.05,
+	coverage: 0.04,
+	axisAgreement: 0.08,
 	methodAgreement: 0.05,
-	stability: 0.08,
-	harmonic: 0.04,
-	outputSize: 0.03,
+	stability: 0.03,
+	harmonic: 0.03,
+	outputSize: 0.02,
+} as const;
+
+export const GRID_SIGNAL_DEFAULTS = {
+	colorBoundary: true,
+	luminanceAlphaGradient: true,
+	autocorrelation: true,
+	reconstruction: true,
+	localPhaseStability: true,
 } as const;
 
 export const GRID_CANDIDATE_CELL_SCALES = [0.5, 2] as const;
@@ -69,6 +82,9 @@ export const GRID_SEARCH_LIMITS = {
 	maxTransitionSamples: 32,
 	maxAnalysisDimension: 256,
 	axisConfidenceThreshold: 0.55,
+	localRegionCount: 4,
+	minimumAutocorrelationSamples: 3,
+	fullResolutionSampleLimit: 16384,
 } as const;
 
 export const RETRO_PALETTES: Record<

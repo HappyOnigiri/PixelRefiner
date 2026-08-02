@@ -217,7 +217,7 @@ export const processImage = (
 			).search(cropped, croppedMask, sw, hint);
 			const phaseAwareEstimate =
 				o.fastAutoGridFromTrimmed && hint === undefined
-					? searchPhaseAwareGrid(cropped, croppedMask)
+					? searchPhaseAwareGrid(cropped, croppedMask, o.gridSignals)
 					: null;
 			log(
 				`Grid search from trimmed done in ${(performance.now() - searchStart).toFixed(2)}ms`,
