@@ -104,6 +104,15 @@ pnpm build
 pnpm test
 ```
 
+### 品質チェック
+
+`make ci` で CI と同じチェックを実行できます。行数 warning は通常、現在の
+Pull Request の base から変更されたファイルだけが対象です。CI は比較元を
+`PIXEL_REFINER_DIFF_BASE` で渡し、ローカルでは認証済みの GitHub CLI (`gh`) が
+利用可能なら PR base を取得し、それ以外は Git/VS Code のブランチ情報へ
+フォールバックします。全 TypeScript ファイルの warning を監査する場合は
+`make check-file-line-count-all` を実行してください。
+
 ## 📂 プロジェクト構成
 
 - `src/browser/`: ブラウザ用UIロジック、メインエントリーポイント
