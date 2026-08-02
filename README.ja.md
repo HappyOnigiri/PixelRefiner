@@ -65,51 +65,14 @@ AIで生成したドット絵は、しばしば「ドットがぼやけている
 
 ## 🛠️ 開発
 
-このプロジェクトは TypeScript + Vite で構築されています。
-
-### 前提条件
-
-- Node.js 24.x
-- pnpm
-
-### インストール
+Node.js 24.x と pnpm が必要です。
 
 ```bash
-git clone https://github.com/HappyOnigiri/PixelRefiner.git
-cd PixelRefiner
-pnpm install
+pnpm install # 依存関係をインストール
+pnpm dev     # 開発サーバーを起動: http://localhost:5173
+pnpm build   # 本番用にビルド
+pnpm test    # テストを実行
 ```
-
-### 開発サーバーの起動
-
-```bash
-pnpm dev
-```
-
-ブラウザで `http://localhost:5173` にアクセスしてください。
-
-### ビルド
-
-```bash
-pnpm build
-```
-
-`dist` ディレクトリに静的ファイルが出力されます。
-
-### テスト
-
-コアロジック（画像処理部分）の単体テストを実行します。
-
-```bash
-pnpm test
-```
-
-## 📂 プロジェクト構成
-
-- `src/browser/`: ブラウザ用UIロジック、メインエントリーポイント
-- `src/core/`: 画像処理のコアアルゴリズム（グリッド検出、リサンプリング、透過処理など）
-- `src/shared/`: 型定義、定数設定
-- `test/`: テストコードとフィクスチャ画像
 
 ## 補足
 

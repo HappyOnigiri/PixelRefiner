@@ -65,51 +65,14 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 
 ## 🛠️ Development
 
-Built with TypeScript + Vite.
-
-### Prerequisites
-
-- Node.js 24.x
-- pnpm
-
-### Setup
+Requires Node.js 24.x and pnpm.
 
 ```bash
-git clone https://github.com/HappyOnigiri/PixelRefiner.git
-cd PixelRefiner
-pnpm install
+pnpm install # Install dependencies
+pnpm dev     # Start the dev server at http://localhost:5173
+pnpm build   # Create a production build
+pnpm test    # Run tests
 ```
-
-### Dev server
-
-```bash
-pnpm dev
-```
-
-Then open `http://localhost:5173` in your browser.
-
-### Build
-
-```bash
-pnpm build
-```
-
-Output goes to the `dist` directory.
-
-### Tests
-
-Runs unit tests for the core image processing logic.
-
-```bash
-pnpm test
-```
-
-## 📂 Project Structure
-
-- `src/browser/` — Browser UI logic and main entry point
-- `src/core/` — Core image processing algorithms (grid detection, resampling, transparency, etc.)
-- `src/shared/` — Type definitions and configuration constants
-- `test/` — Test code and fixture images
 
 ## Note
 
