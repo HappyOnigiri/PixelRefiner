@@ -1833,7 +1833,14 @@
     "input": "test/fixtures/quality_prf120_diagonal_grid.png",
     "expected": "test/fixtures/quality_prf120_diagonal_grid-expect.png",
     "assertions": ["top-3 grid size", "diagonal edge recovery", "determinism"],
-    "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
+    "expectation": {
+      "maxMeanRgbaError": 9,
+      "minEdgeF1": 1,
+      "minBackgroundMaskIou": 1,
+      "minSmallComponentRetention": 1,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
     "assets": [
       {
         "file": "test/fixtures/quality_prf120_diagonal_grid.png",

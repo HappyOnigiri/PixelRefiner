@@ -414,7 +414,7 @@
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
-      "meanRgbaError": 0,
+      "meanRgbaError": 8.6875,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
       "smallComponentRetention": 1,

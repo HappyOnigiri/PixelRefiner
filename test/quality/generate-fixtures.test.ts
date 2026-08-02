@@ -219,10 +219,11 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 			createAmbiguousAxisGrid(1),
 		);
 		for (const mode of ["alpha", "diagonal", "harmonic"] as const) {
-			writePng(
-				fixturePath(`quality_prf120_${mode}_grid.png`),
-				createEnsembleSignalGrid(4, mode),
-			);
+			const ensembleInput =
+				mode === "diagonal"
+					? resizeBilinear(createEnsembleSignalGrid(1, mode), 4)
+					: createEnsembleSignalGrid(4, mode);
+			writePng(fixturePath(`quality_prf120_${mode}_grid.png`), ensembleInput);
 			writePng(
 				fixturePath(`quality_prf120_${mode}_grid-expect.png`),
 				createEnsembleSignalGrid(1, mode),
