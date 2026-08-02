@@ -1,5 +1,11 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	chmodSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,14 +43,13 @@ function commit(repository: string, message: string): string {
 	return git(repository, ["rev-parse", "HEAD"]);
 }
 
-function setBranchBaseRef(repository: string, base: string): void {
+function setVsCodeMergeBase(repository: string, base: string): void {
 	const branch = git(repository, ["branch", "--show-current"]);
-	git(repository, ["config", `branch.${branch}.pixelRefinerBaseRef`, base]);
+	git(repository, ["config", `branch.${branch}.vscode-merge-base`, base]);
 }
 
-function setBranchBaseSha(repository: string, base: string): void {
-	const branch = git(repository, ["branch", "--show-current"]);
-	git(repository, ["config", `branch.${branch}.pixelRefinerBaseSha`, base]);
+function setPullRequestBase(repository: string, base: string): void {
+	writeFileSync(join(repository, ".test-bin", "gh-base"), `${base}\n`);
 }
 
 function runChecker(
@@ -56,6 +61,15 @@ function runChecker(
 		execFileSync("git", ["init", "--quiet"], { cwd: repository });
 		git(repository, ["config", "user.name", "File line count test"]);
 		git(repository, ["config", "user.email", "file-line-count@example.test"]);
+		git(repository, ["config", "commit.gpgsign", "false"]);
+		const testBin = join(repository, ".test-bin");
+		const fakeGh = join(testBin, "gh");
+		mkdirSync(testBin);
+		writeFileSync(
+			fakeGh,
+			'#!/bin/sh\n[ -f "$0-base" ] || exit 1\nexec sed -n "1p" "$0-base"\n',
+		);
+		chmodSync(fakeGh, 0o755);
 		for (const [name, contents] of Object.entries(files)) {
 			const path = join(repository, name);
 			mkdirSync(dirname(path), { recursive: true });
@@ -76,6 +90,7 @@ function runChecker(
 			env: {
 				...process.env,
 				GITHUB_ACTIONS: options.githubActions ? "true" : "false",
+				PATH: `${testBin}:${process.env.PATH ?? ""}`,
 				PIXEL_REFINER_DIFF_BASE: options.diffBase ?? "",
 			},
 		});
@@ -119,13 +134,30 @@ describe("check_file_line_count.py", () => {
 		);
 	});
 
-	it("excludes policy-approved TypeScript files", () => {
-		const result = runChecker({ "src/browser/i18n.ts": 1001 });
+	it("excludes policy-approved TypeScript files from warning and hard limits", () => {
+		const warningResult = runChecker(
+			{ "src/browser/i18n.ts": 601 },
+			{ allWarnings: true },
+		);
+		const hardResult = runChecker({ "src/browser/i18n.ts": 1001 });
 
-		expect(result.status).toBe(0);
-		expect(result.stdout).not.toContain("i18n.ts has");
-		expect(result.stdout).toContain(
+		expect(warningResult.status).toBe(0);
+		expect(warningResult.stdout).not.toContain("i18n.ts has");
+		expect(hardResult.status).toBe(0);
+		expect(hardResult.stdout).not.toContain("i18n.ts has");
+		expect(hardResult.stdout).toContain(
 			"0 warning(s), 0 line-count error(s), 0 read error(s)",
+		);
+	});
+
+	it("rejects unsupported arguments", () => {
+		const result = spawnSync("python3", [CHECKER_PATH, "--unknown"], {
+			encoding: "utf8",
+		});
+
+		expect(result.status).toBe(2);
+		expect(result.stderr).toContain(
+			"Usage: check_file_line_count.py [--all-warnings]",
 		);
 	});
 
@@ -153,7 +185,7 @@ describe("check_file_line_count.py", () => {
 			{
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, base);
+					setVsCodeMergeBase(repository, base);
 					writeFileSync(join(repository, "reduced.ts"), "line\n".repeat(601));
 					writeFileSync(join(repository, "increased.ts"), "line\n".repeat(601));
 				},
@@ -176,7 +208,7 @@ describe("check_file_line_count.py", () => {
 			{
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, base);
+					setVsCodeMergeBase(repository, base);
 				},
 			},
 		);
@@ -197,7 +229,7 @@ describe("check_file_line_count.py", () => {
 			{
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, base);
+					setVsCodeMergeBase(repository, base);
 					writeFileSync(join(repository, "committed.ts"), "line\n".repeat(601));
 					git(repository, ["add", "committed.ts"]);
 					git(repository, [
@@ -235,7 +267,7 @@ describe("check_file_line_count.py", () => {
 				allWarnings: true,
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, base);
+					setVsCodeMergeBase(repository, base);
 				},
 			},
 		);
@@ -245,6 +277,13 @@ describe("check_file_line_count.py", () => {
 		expect(result.stdout).toContain(
 			"Warning scope: all TypeScript files (601-1000 lines; --all-warnings)",
 		);
+	});
+
+	it("fails for hard-limit violations in the all-warning audit mode", () => {
+		const result = runChecker({ "error.ts": 1001 }, { allWarnings: true });
+
+		expect(result.status).toBe(1);
+		expect(result.stdout).toContain("ERROR: error.ts has 1001 lines");
 	});
 
 	it("prioritizes PIXEL_REFINER_DIFF_BASE over branch configuration", () => {
@@ -257,7 +296,7 @@ describe("check_file_line_count.py", () => {
 					git(repository, ["tag", "env-base"]);
 					writeFileSync(join(repository, "changed.ts"), "line\n".repeat(601));
 					const current = commit(repository, "changed branch");
-					setBranchBaseRef(repository, current);
+					setVsCodeMergeBase(repository, current);
 				},
 			},
 		);
@@ -274,7 +313,7 @@ describe("check_file_line_count.py", () => {
 				diffBase: "missing-ci-base",
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, base);
+					setVsCodeMergeBase(repository, base);
 				},
 			},
 		);
@@ -304,7 +343,12 @@ describe("check_file_line_count.py", () => {
 					writeFileSync(join(repository, "feature-b.ts"), "line\n".repeat(601));
 					commit(repository, "feature b");
 					git(repository, ["checkout", "--quiet", "-b", "feature/current"]);
-					setBranchBaseRef(repository, "feature/b");
+					setVsCodeMergeBase(repository, "origin/feature/b");
+					git(repository, [
+						"update-ref",
+						"refs/remotes/origin/feature/b",
+						"feature/b",
+					]);
 					writeFileSync(join(repository, "current.ts"), "line\n".repeat(601));
 				},
 			},
@@ -315,27 +359,46 @@ describe("check_file_line_count.py", () => {
 		expect(result.stdout).not.toContain("feature-b.ts has");
 		expect(result.stdout).toContain("WARNING: current.ts has 601 lines");
 		expect(result.stdout).toContain(
-			"source: branch.feature/current.pixelRefinerBaseRef=feature/b",
+			"source: branch.feature/current.vscode-merge-base=origin/feature/b",
 		);
 	});
 
-	it("falls back from an invalid base ref to the stored base sha", () => {
+	it("uses the pull request base before the VS Code merge base", () => {
 		const result = runChecker(
 			{ "changed.ts": 600 },
 			{
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, "missing-base-ref");
-					setBranchBaseSha(repository, base);
+					setPullRequestBase(repository, base);
 					writeFileSync(join(repository, "changed.ts"), "line\n".repeat(601));
+					const current = commit(repository, "changed branch");
+					setVsCodeMergeBase(repository, current);
 				},
 			},
 		);
 
 		expect(result.status).toBe(0);
 		expect(result.stdout).toContain("WARNING: changed.ts has 601 lines");
-		expect(result.stdout).toContain("source: branch.");
-		expect(result.stdout).toContain("pixelRefinerBaseSha=");
+		expect(result.stdout).toContain("source: gh pr baseRefOid=");
+	});
+
+	it("treats all files as changed when the PR base is missing locally", () => {
+		const result = runChecker(
+			{ "unchanged.ts": 601 },
+			{
+				prepare(repository) {
+					const current = commit(repository, "base");
+					setPullRequestBase(repository, "a".repeat(40));
+					setVsCodeMergeBase(repository, current);
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
+		expect(result.stdout).toContain(
+			"fallback: all TypeScript files treated as changed",
+		);
 	});
 
 	it("uses origin/main when branch-specific bases are unavailable", () => {
@@ -401,7 +464,7 @@ describe("check_file_line_count.py", () => {
 			{
 				prepare(repository) {
 					const base = commit(repository, "base");
-					setBranchBaseRef(repository, base);
+					setVsCodeMergeBase(repository, base);
 					git(repository, ["mv", "old.ts", "renamed.ts"]);
 					git(repository, ["rm", "--quiet", "deleted.ts"]);
 				},

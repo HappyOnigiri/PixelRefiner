@@ -33,6 +33,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Run CI
+        # [Policy] force-push などで before SHA を取得できない場合は、検査漏れを
+        # 避けるため行数 warning の対象を全 TypeScript ファイルへ広げる。
         env:
           PIXEL_REFINER_DIFF_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: make ci

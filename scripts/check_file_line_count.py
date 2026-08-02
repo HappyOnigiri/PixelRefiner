@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import os
+import shutil
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 WARNING_LINE_LIMIT = 600
 HARD_LINE_LIMIT = 1000
@@ -34,6 +35,36 @@ def run_git(args: Sequence[str]) -> subprocess.CompletedProcess[bytes]:
         stderr=subprocess.PIPE,
         check=False,
     )
+
+
+def get_pull_request_base() -> str | None:
+    if shutil.which("gh") is None:
+        return None
+    environment = os.environ.copy()
+    environment["GH_PROMPT_DISABLED"] = "1"
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "view",
+                "--json",
+                "baseRefOid",
+                "--jq",
+                ".baseRefOid",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            env=environment,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    value = result.stdout.decode("utf-8", errors="replace").strip()
+    return value or None
 
 
 def parse_git_paths(output: bytes) -> set[Path]:
@@ -92,6 +123,7 @@ def resolve_commit(candidate: str) -> str | None:
     value = candidate.strip()
     if not value:
         return None
+    # [Policy] 環境変数や外部ツール由来の値を Git のオプションとして解釈させない。
     result = run_git(
         [
             "rev-parse",
@@ -103,12 +135,7 @@ def resolve_commit(candidate: str) -> str | None:
     )
     if result.returncode != 0:
         return None
-    if b"ambiguous" in result.stderr.lower():
-        return None
-    lines = result.stdout.decode("utf-8", errors="replace").splitlines()
-    if len(lines) != 1 or not lines[0]:
-        return None
-    return lines[0]
+    return result.stdout.decode("utf-8", errors="replace").strip() or None
 
 
 def resolve_merge_base(candidate: str) -> str | None:
@@ -137,6 +164,9 @@ def current_branch() -> str | None:
 
 
 def resolve_diff_base() -> DiffBase:
+    # [Policy] CI が指定した SHA、GitHub 上の PR base、VS Code が記録した
+    # 分岐元、既定ブランチの順で比較元を選ぶ。明示度の高い情報を優先しつつ、
+    # gh が使えないローカル環境でも変更範囲を推定できるようにする。
     attempts: list[str] = []
 
     def success_detail(source: str, candidate: str | None) -> str:
@@ -177,37 +207,38 @@ def resolve_diff_base() -> DiffBase:
             + " | ".join(attempts),
         )
 
+    pull_request_base = get_pull_request_base()
+    if pull_request_base is not None:
+        commit = try_candidate("gh pr baseRefOid", pull_request_base)
+        if commit is not None:
+            return DiffBase(
+                commit,
+                success_detail("gh pr baseRefOid", pull_request_base),
+            )
+        # [Policy] GitHub が特定した PR base をローカルで解決できない場合、
+        # 推定した別の参照で対象を狭めず、全ファイルを変更扱いにする。
+        return DiffBase(
+            None,
+            "fallback: all TypeScript files treated as changed; "
+            + " | ".join(attempts),
+        )
+    attempts.append("gh PR base is unavailable")
+
     branch = current_branch()
     if branch is not None:
-        base_ref = get_git_value(
-            ["config", "--get", f"branch.{branch}.pixelRefinerBaseRef"],
+        vscode_base = get_git_value(
+            ["config", "--get", f"branch.{branch}.vscode-merge-base"],
         )
         commit = try_candidate(
-            f"branch.{branch}.pixelRefinerBaseRef",
-            base_ref,
+            f"branch.{branch}.vscode-merge-base",
+            vscode_base,
         )
         if commit is not None:
             return DiffBase(
                 commit,
                 success_detail(
-                    f"branch.{branch}.pixelRefinerBaseRef",
-                    base_ref,
-                ),
-            )
-
-        base_sha = get_git_value(
-            ["config", "--get", f"branch.{branch}.pixelRefinerBaseSha"],
-        )
-        commit = try_candidate(
-            f"branch.{branch}.pixelRefinerBaseSha",
-            base_sha,
-        )
-        if commit is not None:
-            return DiffBase(
-                commit,
-                success_detail(
-                    f"branch.{branch}.pixelRefinerBaseSha",
-                    base_sha,
+                    f"branch.{branch}.vscode-merge-base",
+                    vscode_base,
                 ),
             )
     else:
@@ -228,7 +259,10 @@ def resolve_diff_base() -> DiffBase:
     )
 
 
-def find_changed_files(base: DiffBase, all_paths: set[Path]) -> tuple[set[Path], str | None]:
+def find_changed_files(
+    base: DiffBase,
+    all_paths: set[Path],
+) -> tuple[set[Path], str | None]:
     if base.commit is None:
         return set(all_paths), None
 
@@ -245,7 +279,10 @@ def find_changed_files(base: DiffBase, all_paths: set[Path]) -> tuple[set[Path],
         ],
     )
     if result.returncode != 0:
-        return set(all_paths), "git diff failed; all TypeScript files treated as changed"
+        return (
+            set(all_paths),
+            "git diff failed; all TypeScript files treated as changed",
+        )
 
     try:
         untracked = find_nonignored_untracked_files()
@@ -380,7 +417,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if all_warnings:
         base = None
-        changed_paths = None
+        changed_paths = set(paths)
         change_fallback = None
     else:
         base = resolve_diff_base()
@@ -391,7 +428,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     for path in paths:
         try:
-            warning_enabled = all_warnings or path in changed_paths
+            warning_enabled = path in changed_paths
             violation = classify_file(path, warning_enabled)
         except (OSError, UnicodeError) as error:
             read_errors.append(f"{path}: failed to read file: {error}")
