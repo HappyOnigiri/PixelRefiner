@@ -3,6 +3,7 @@ import type {
 	Connectivity,
 	RawImage,
 } from "../shared/types";
+import { type BackgroundModel, removeAutomaticBackground } from "./background";
 import { floodFillTransparent } from "./floodfill";
 import { cloneImage } from "./image-operations";
 
@@ -117,14 +118,25 @@ export const removeBackground = (
 	bgTargets: Array<[number, number, number]>,
 	method:
 		| "none"
+		| "auto"
 		| "top-left"
 		| "bottom-left"
 		| "top-right"
 		| "bottom-right"
 		| "rgb",
+	automaticModel?: BackgroundModel,
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 	if (bgRemovalScope === "off") return cloneImage(img);
+	if (method === "auto") {
+		return removeAutomaticBackground(
+			img,
+			tolerance,
+			bgRemovalScope,
+			bgConnectivity,
+			automaticModel,
+		).image;
+	}
 
 	// 4/8 連結性が有効なのは selected / outer のみ。
 	if (bgRemovalScope === "selected") {
@@ -203,6 +215,7 @@ export const getBackgroundTargets = (
 	img: RawImage,
 	method:
 		| "none"
+		| "auto"
 		| "top-left"
 		| "bottom-left"
 		| "top-right"
@@ -211,7 +224,7 @@ export const getBackgroundTargets = (
 	bgRgb?: string,
 	alphaThreshold = 16,
 ): Array<[number, number, number]> => {
-	if (method === "none") return [];
+	if (method === "none" || method === "auto") return [];
 	if (method === "rgb" && bgRgb) {
 		const hex = bgRgb.replace("#", "");
 		const r = parseInt(hex.substring(0, 2), 16);

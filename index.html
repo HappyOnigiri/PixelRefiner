@@ -788,7 +788,7 @@
                       <span
                         class="help"
                         data-i18n-attr="data-tooltip:tooltip.help.bg_method"
-                        data-tooltip="Select where to extract the background color from.&#10;&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
+                        data-tooltip="Select where to extract the background color from.&#10;&#10;Auto: Estimates the background from the full image border.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
                         >?</span
                       >
                     </span>
@@ -796,12 +796,11 @@
                       <option value="none" data-i18n="option.bg_none">
                         None
                       </option>
-                      <option
-                        value="top-left"
-                        data-i18n="option.bg_top_left"
-                        selected
-                      >
-                        Top-Left (Default)
+                      <option value="auto" data-i18n="option.bg_auto" selected>
+                        Auto (Default)
+                      </option>
+                      <option value="top-left" data-i18n="option.bg_top_left">
+                        Top-Left
                       </option>
                       <option
                         value="bottom-left"

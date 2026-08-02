@@ -34,6 +34,22 @@ const stripedImage = (): RawImage => {
 	return { width, height, data };
 };
 
+const noisyImage = (): RawImage => {
+	const width = 20;
+	const height = 20;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			data[offset] = (x * 73 + y * 41) % 256;
+			data[offset + 1] = (x * 19 + y * 101) % 256;
+			data[offset + 2] = (x * 151 + y * 7) % 256;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
 describe("processing analysis", () => {
 	it("reports convert and preserve routes", () => {
 		const image = solidImage(16, 16, [20, 40, 60, 255]);
@@ -160,6 +176,7 @@ describe("processing analysis", () => {
 			preRemoveBackground: true,
 			bgRemovalScope: "all",
 			backgroundTolerance: 0,
+			bgExtractionMethod: "top-left",
 		});
 		const empty = processImage(solidImage(8, 8, [0, 0, 0, 0]), {
 			enableGridDetection: false,
@@ -170,6 +187,38 @@ describe("processing analysis", () => {
 		expect(removed.analysis.contentLossRatio).toBe(1);
 		expect(removed.analysis.warnings).toContain("CONTENT_LOSS_RISK");
 		expect(empty.analysis.warnings).toContain("NO_CONTENT");
+	});
+
+	it("reports an automatic background rollback as content-loss risk", () => {
+		const processed = processImage(solidImage(8, 8, [255, 255, 255, 255]), {
+			enableGridDetection: false,
+			preRemoveBackground: true,
+			postRemoveBackground: true,
+			trimToContent: false,
+			bgRemovalScope: "all",
+			bgExtractionMethod: "auto",
+		});
+
+		expect(processed.result.data).toEqual(
+			solidImage(8, 8, [255, 255, 255, 255]).data,
+		);
+		expect(processed.analysis.backgroundConfidence).toBeDefined();
+		expect(processed.analysis.warnings).toContain("CONTENT_LOSS_RISK");
+	});
+
+	it("warns and preserves pixels when automatic background confidence is low", () => {
+		const image = noisyImage();
+		const processed = processImage(image, {
+			enableGridDetection: false,
+			preRemoveBackground: true,
+			postRemoveBackground: false,
+			trimToContent: false,
+			bgRemovalScope: "outer",
+			bgExtractionMethod: "auto",
+		});
+
+		expect(processed.result.data).toEqual(image.data);
+		expect(processed.analysis.warnings).toContain("BACKGROUND_UNCERTAIN");
 	});
 
 	it("does not treat transparent padding as content loss", () => {

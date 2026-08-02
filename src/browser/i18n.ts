@@ -119,7 +119,7 @@ const resources = {
 		"tooltip.help.fast_mode":
 			"ONにすると、効率的なアルゴリズムで探索を高速化します。\nOFFにすると、より広範囲を精密に探索します。\n\n自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。",
 		"tooltip.help.bg_method":
-			"背景色をどこから抽出するか選択します。\n\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
+			"背景色をどこから抽出するか選択します。\n\n自動: 外周全体から背景を推定します。\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
 		"tooltip.help.bg_rgb":
 			"背景色として扱う色を16進数(例: #ffffff)で指定します。\n四隅指定時は自動で色がセットされます。スポイトボタンで画像から色を選択することもできます。",
 		"tooltip.help.bg_tolerance":
@@ -171,12 +171,13 @@ const resources = {
 		"option.grid_mode_force": "完全ピクセル指定",
 		"option.grid_mode_off": "無効",
 		"option.bg_none": "透過しない",
+		"option.bg_auto": "自動（デフォルト）",
 		"option.bg_scope_selected": "選択した角から繋がる部分のみ",
 		"option.bg_scope_outer": "外周に繋がる部分すべて",
 		"option.bg_scope_all": "外周＋内側（穴）も含む",
 		"option.bg_connectivity_4": "4方向（斜めなし）",
 		"option.bg_connectivity_8": "8方向（斜め含む）",
-		"option.bg_top_left": "左上（デフォルト）",
+		"option.bg_top_left": "左上",
 		"option.bg_bottom_left": "左下",
 		"option.bg_top_right": "右上",
 		"option.bg_bottom_right": "右下",
@@ -327,7 +328,7 @@ const resources = {
 		"tooltip.help.fast_mode":
 			"开启后使用更高效的算法加快搜索。\n关闭后会进行更大范围、更精细的搜索。\n\n如果自动检测结果错位，或图片包含大量噪点和细碎纹理，关闭后可能提高准确度。",
 		"tooltip.help.bg_method":
-			"选择从哪里提取背景色。\n\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
+			"选择从哪里提取背景色。\n\n自动：从整个图像边缘估算背景。\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
 		"tooltip.help.bg_rgb":
 			"用十六进制格式指定要视为背景的颜色（例如 #ffffff）。\n选择四角时会自动填入颜色。也可以用吸管按钮从图片中取色。",
 		"tooltip.help.bg_tolerance":
@@ -379,12 +380,13 @@ const resources = {
 		"option.grid_mode_force": "完全像素指定",
 		"option.grid_mode_off": "关闭",
 		"option.bg_none": "无",
+		"option.bg_auto": "自动（默认）",
 		"option.bg_scope_selected": "仅从所选角落连通的部分",
 		"option.bg_scope_outer": "所有与外边缘连通的部分",
 		"option.bg_scope_all": "外侧 + 内部孔洞",
 		"option.bg_connectivity_4": "4 方向（不含斜向）",
 		"option.bg_connectivity_8": "8 方向（含斜向）",
-		"option.bg_top_left": "左上（默认）",
+		"option.bg_top_left": "左上",
 		"option.bg_bottom_left": "左下",
 		"option.bg_top_right": "右上",
 		"option.bg_bottom_right": "右下",
@@ -531,7 +533,7 @@ const resources = {
 		"tooltip.help.fast_mode":
 			"When ON, uses an efficient algorithm to speed up the search.\nWhen OFF, performs a more comprehensive and precise search.\n\nIf automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy.",
 		"tooltip.help.bg_method":
-			"Select where to extract the background color from.\n\nNone: No background removal.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
+			"Select where to extract the background color from.\n\nAuto: Estimates the background from the full image border.\nNone: No background removal.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
 		"tooltip.help.bg_rgb":
 			"Specify the color to be treated as the background in hex format (e.g., #ffffff).\nWhen a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button.",
 		"tooltip.help.bg_tolerance":
@@ -583,12 +585,13 @@ const resources = {
 		"option.grid_mode_force": "Pixel Only",
 		"option.grid_mode_off": "Off",
 		"option.bg_none": "None",
+		"option.bg_auto": "Auto (Default)",
 		"option.bg_scope_selected": "Selected corner only",
 		"option.bg_scope_outer": "Outer (border-connected)",
 		"option.bg_scope_all": "Outer + inner holes",
 		"option.bg_connectivity_4": "4-way (no diagonals)",
 		"option.bg_connectivity_8": "8-way (with diagonals)",
-		"option.bg_top_left": "Top-Left (Default)",
+		"option.bg_top_left": "Top-Left",
 		"option.bg_bottom_left": "Bottom-Left",
 		"option.bg_top_right": "Top-Right",
 		"option.bg_bottom_right": "Bottom-Right",

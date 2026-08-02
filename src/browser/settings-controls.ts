@@ -183,7 +183,7 @@ export const setupSettingsControls = ({
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
-		els.bgExtractionMethod.value = "top-left";
+		els.bgExtractionMethod.value = PROCESS_DEFAULTS.bgExtractionMethod;
 
 		const applyTooltipRange = (
 			id: string,
@@ -405,7 +405,12 @@ export const setupSettingsControls = ({
 	const updateBgColorFromMethod = () => {
 		const method = els.bgExtractionMethod.value;
 		const currentImage = imageSession.getActiveImage()?.original;
-		if (method !== "none" && method !== "rgb" && currentImage) {
+		if (
+			method !== "none" &&
+			method !== "auto" &&
+			method !== "rgb" &&
+			currentImage
+		) {
 			const w = currentImage.width;
 			const h = currentImage.height;
 			let x = 0;

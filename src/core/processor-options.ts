@@ -123,6 +123,7 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	bgExtractionMethod?:
 		| "none"
+		| "auto"
 		| "top-left"
 		| "bottom-left"
 		| "top-right"
@@ -192,6 +193,7 @@ export const normalizeProcessOptions = (
 	floatingMaxPixels: number;
 	bgExtractionMethod:
 		| "none"
+		| "auto"
 		| "top-left"
 		| "bottom-left"
 		| "top-right"
@@ -298,7 +300,8 @@ export const normalizeProcessOptions = (
 		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
 		PROCESS_RANGES.floatingMaxPixels,
 	);
-	const bgExtractionMethod = raw.bgExtractionMethod ?? "top-left";
+	const bgExtractionMethod =
+		raw.bgExtractionMethod ?? PROCESS_DEFAULTS.bgExtractionMethod;
 	const bgRgb = raw.bgRgb;
 
 	return {

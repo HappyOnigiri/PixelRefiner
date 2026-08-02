@@ -21,6 +21,11 @@ import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
 
+// [Intended] 既存ケースはV1の背景抽出を固定し、Autoの品質ケースと分離する。
+const LEGACY_PROCESS_OPTIONS_V1 = {
+	bgExtractionMethod: "top-left",
+} as const;
+
 const metadataFromEnvironment = (): QualityMetadata => {
 	const repository =
 		process.env.GITHUB_REPOSITORY ?? "HappyOnigiri/PixelRefiner";
@@ -101,7 +106,11 @@ export const runQualityCase = (
 	const expectedPath = path.resolve(qualityCase.expected);
 	const input = readPng(inputPath);
 	const expected = readPng(expectedPath);
-	const options = { ...qualityCase.options, debug: false };
+	const options = {
+		...LEGACY_PROCESS_OPTIONS_V1,
+		...qualityCase.options,
+		debug: false,
+	};
 
 	const start = performance.now();
 	const currentRun = processImage(input, options);
@@ -224,7 +233,11 @@ export const writeQualityBaselineImage = (
 	outputPath: string,
 ): void => {
 	const input = readPng(path.resolve(qualityCase.input));
-	const options = { ...qualityCase.options, debug: false };
+	const options = {
+		...LEGACY_PROCESS_OPTIONS_V1,
+		...qualityCase.options,
+		debug: false,
+	};
 	writePng(outputPath, processImage(input, options).result);
 };
 

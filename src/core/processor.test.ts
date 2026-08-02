@@ -115,6 +115,7 @@ describe("processImage", () => {
 
 		it("should match expected image perfectly when fast mode OFF and floating noise OFF", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
@@ -170,6 +171,7 @@ describe("processImage", () => {
 
 		it("should force convert to 46x13 when forcePixelsW/H=46/13 and match expected image perfectly", () => {
 			const baseOpts = {
+				bgExtractionMethod: "top-left",
 				forcePixelsW: 46,
 				forcePixelsH: 13,
 				detectionQuantStep: 64,
@@ -242,6 +244,7 @@ describe("processImage", () => {
 
 		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid, analysis } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
@@ -301,6 +304,7 @@ describe("processImage", () => {
 
 		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
@@ -341,6 +345,7 @@ describe("processImage", () => {
 
 		it("should also remove background colors trapped inside (donut hole)", () => {
 			const { result } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
@@ -394,6 +399,7 @@ describe("processImage", () => {
 
 		it("should match expected image even when trimToContent is OFF", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,

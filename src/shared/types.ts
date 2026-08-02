@@ -147,6 +147,8 @@ export type ProcessingAnalysis = {
 	foregroundRatioBefore?: number;
 	foregroundRatioAfter?: number;
 	contentLossRatio?: number;
+	/** 自動背景モデルの信頼度。手動背景指定では省略する。 */
+	backgroundConfidence?: number;
 };
 
 export type ProcessResult = {

@@ -1,4 +1,7 @@
-import { PROCESS_ANALYSIS_THRESHOLDS } from "../shared/config";
+import {
+	BACKGROUND_MODEL_LIMITS,
+	PROCESS_ANALYSIS_THRESHOLDS,
+} from "../shared/config";
 import type {
 	GridCandidateReport,
 	PixelGrid,
@@ -124,6 +127,10 @@ export const createProcessingAnalysis = (
 	method: string,
 	alphaThreshold: number,
 	rankedCandidates?: GridCandidateReport[],
+	backgroundDiagnostic?: {
+		confidence: number;
+		contentLossRisk: boolean;
+	},
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
@@ -151,6 +158,12 @@ export const createProcessingAnalysis = (
 	const contentLossRatio =
 		before === 0 ? 0 : clampUnit((before - after) / before);
 	const warnings: ProcessingWarningCode[] = [];
+	if (
+		backgroundDiagnostic &&
+		backgroundDiagnostic.confidence < BACKGROUND_MODEL_LIMITS.minConfidence
+	) {
+		warnings.push("BACKGROUND_UNCERTAIN");
+	}
 	if (before === 0) warnings.push("NO_CONTENT");
 	if (grid.detectionFailedAxes?.length === 1) {
 		warnings.push("ONE_AXIS_DETECTION_FAILED");
@@ -163,7 +176,10 @@ export const createProcessingAnalysis = (
 	) {
 		warnings.push("LOW_GRID_CONFIDENCE");
 	}
-	if (contentLossRatio > PROCESS_ANALYSIS_THRESHOLDS.contentLossRatio) {
+	if (
+		contentLossRatio > PROCESS_ANALYSIS_THRESHOLDS.contentLossRatio ||
+		backgroundDiagnostic?.contentLossRisk
+	) {
 		warnings.push("CONTENT_LOSS_RISK");
 	}
 	if (
@@ -187,5 +203,6 @@ export const createProcessingAnalysis = (
 		foregroundRatioBefore: before,
 		foregroundRatioAfter: after,
 		contentLossRatio,
+		backgroundConfidence: backgroundDiagnostic?.confidence,
 	};
 };
