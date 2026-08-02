@@ -104,14 +104,6 @@ Runs unit tests for the core image processing logic.
 pnpm test
 ```
 
-### Quality checks
-
-Run the same checks as CI with `make ci`. Line-count warnings normally cover
-only files changed from the current pull request base. CI supplies that base via
-`PIXEL_REFINER_DIFF_BASE`; locally, the checker uses an authenticated GitHub CLI
-(`gh`) when available and otherwise falls back to Git/VS Code branch metadata.
-Run `make check-file-line-count-all` to audit warnings in every TypeScript file.
-
 ## 📂 Project Structure
 
 - `src/browser/` — Browser UI logic and main entry point

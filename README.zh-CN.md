@@ -104,14 +104,6 @@ pnpm build
 pnpm test
 ```
 
-### 质量检查
-
-使用 `make ci` 可以运行与 CI 相同的检查。行数 warning 通常只检查相对于当前
-Pull Request base 有改动的文件。CI 通过 `PIXEL_REFINER_DIFF_BASE` 提供比较基准；
-在本地，如果已认证的 GitHub CLI (`gh`) 可用，检查器会读取 PR base，否则回退到
-Git/VS Code 的分支信息。使用 `make check-file-line-count-all` 可以审查所有
-TypeScript 文件的 warning。
-
 ## 项目结构
 
 - `src/browser/`：浏览器 UI 逻辑和主入口
