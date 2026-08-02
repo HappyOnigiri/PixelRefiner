@@ -761,7 +761,6 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-4x"],
     "options": {
-      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1076,7 +1075,6 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["bilinear"],
     "options": {
-      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1277,7 +1275,6 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["alpha-edge-blur"],
     "options": {
-      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1399,7 +1396,6 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["padding", "background-white"],
     "options": {
-      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,

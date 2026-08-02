@@ -701,13 +701,13 @@
                   <label class="setting-item">
                     <span class="label-text">
                       <span data-i18n="setting.sample_window"
-                        >Sample Window</span
+                        >Grid Sampling Window</span
                       >
                       <span
                         id="help-sample-window"
                         class="help"
                         data-i18n-attr="data-tooltip:tooltip.help.sample_window"
-                        data-tooltip="The reference range (in pixels) used when determining the color of each dot.&#10;&#10;High: Noise is removed and colors become stable, but fine details may be lost.&#10;Low: Faithfully reproduces the original image, but is more affected by misalignment and noise.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                        data-tooltip="The reference range (in pixels) used to compare grid-size candidates in Auto and Hint modes.&#10;&#10;High: Grid detection is more resistant to noise, but fine boundaries may be overlooked.&#10;Low: Grid detection follows fine boundaries, but is more affected by misalignment and noise.&#10;&#10;Range: {min} to {max} (Default: {default})"
                         >?</span
                       >
                     </span>

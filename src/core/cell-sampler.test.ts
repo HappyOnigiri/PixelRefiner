@@ -108,27 +108,63 @@ describe("cell sampler", () => {
 	});
 
 	it("uses a deterministic bounded sample set for large cells", () => {
-		const width = 128;
-		const height = 128;
+		const width = 64;
+		const height = 64;
 		const data = new Uint8ClampedArray(width * height * 4);
-		for (let index = 0; index < width * height; index += 1) {
-			const offset = index * 4;
-			data[offset] = index % 251;
-			data[offset + 1] = (index * 7) % 253;
-			data[offset + 2] = (index * 13) % 255;
-			data[offset + 3] = index % 11 === 0 ? 0 : 255;
+		for (let y = 0; y < height; y += 1) {
+			for (let x = 0; x < width; x += 1) {
+				const offset = (y * width + x) * 4;
+				data[offset] = x === 32 ? 0 : 240;
+				data[offset + 2] = x === 32 ? 240 : 0;
+				data[offset + 3] = 255;
+			}
 		}
 		const source: RawImage = { width, height, data };
 		const boundedSampler = createCellSampler({
 			...options,
-			maxSamplesPerCell: 16,
+			maxSamplesPerCell: 64,
+		});
+		const secondSampler = createCellSampler({
+			...options,
+			maxSamplesPerCell: 64,
+		});
+		const centerOnlySampler = createCellSampler({
+			...options,
+			maxSamplesPerCell: 1,
 		});
 		const bounds = { x0: 0, y0: 0, x1: width, y1: height };
 		const context = { cellX: 0, cellY: 0, grid: grid(width, height) };
 
-		expect(boundedSampler.sample(source, bounds, context)).toEqual(
-			boundedSampler.sample(source, bounds, context),
+		expect(boundedSampler.sample(source, bounds, context)).toEqual([
+			240, 0, 0, 255,
+		]);
+		expect(secondSampler.sample(source, bounds, context)).toEqual([
+			240, 0, 0, 255,
+		]);
+		expect(centerOnlySampler.sample(source, bounds, context)).toEqual([
+			0, 0, 240, 255,
+		]);
+	});
+
+	it("protects a thin feature whose RGB is constant across an alpha gradient", () => {
+		const data = new Uint8ClampedArray(10 * 5 * 4);
+		for (let y = 0; y < 5; y += 1) {
+			for (let x = 0; x < 10; x += 1) {
+				const offset = (y * 10 + x) * 4;
+				data[offset] = y === 2 ? 240 : 16;
+				data[offset + 1] = y === 2 ? 48 : 16;
+				data[offset + 2] = y === 2 ? 32 : 16;
+				data[offset + 3] = y === 2 ? 64 + (x % 4) * 48 : 255;
+			}
+		}
+		const restored = sampleImageCells(
+			{ width: 10, height: 5, data },
+			{ ...grid(5, 5), outW: 2 },
+			{ ...options, preserveThinFeatures: true },
 		);
+
+		expect(Array.from(restored.data.slice(0, 3))).toEqual([240, 48, 32]);
+		expect(Array.from(restored.data.slice(4, 7))).toEqual([240, 48, 32]);
 	});
 
 	it("keeps the legacy median mode available for comparisons", () => {

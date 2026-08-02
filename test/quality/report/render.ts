@@ -28,6 +28,16 @@ const describeCase = (
 	result: QualityCaseResult,
 ): { en: string; ja: string } => {
 	const options = result.options;
+	if (result.id === "restore-thin-features-and-alpha-coverage") {
+		return {
+			en:
+				"Restore area-coverage alpha from enlarged artwork containing thin lines and highlights, " +
+				"while selecting an input RGB without mixing in hidden colors from transparent pixels.",
+			ja:
+				"細線とハイライトを含む拡大画像から面積被覆アルファを復元し、" +
+				"透明画素の隠れた色を混入させずに入力に存在するRGBを選択します。",
+		};
+	}
 	if (result.id === "convert-deterministic-auto-palette") {
 		return {
 			en:

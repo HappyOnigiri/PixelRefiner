@@ -14,7 +14,7 @@ export const PROCESS_RANGES = {
 	// 処理器: ダウンサンプリング時の中央値ウィンドウ
 	sampleWindow: { min: 1, max: 9, default: 3 } as const,
 	// 処理器: 1セルから評価するサンプル数の上限
-	maxSamplesPerCell: { min: 1, max: 256, default: 64 } as const,
+	maxSamplesPerCell: { min: 1, max: 256, default: 32 } as const,
 	// 処理器: 色候補として扱うアルファの下限
 	cellAlphaThreshold: { min: 0, max: 255, default: 16 } as const,
 	// 塗りつぶしの許容値（チャンネルごと）

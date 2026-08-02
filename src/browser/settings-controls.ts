@@ -271,7 +271,6 @@ export const setupSettingsControls = ({
 	// グリッド検出が無効な場合の UI 制御
 	const updateDisabledStates = () => {
 		const mode = els.gridDetectionModeSelect.value;
-		const isOff = mode === "off";
 		const isAutoOrHint = mode === "auto" || mode === "hint";
 		const isHintOrForce = mode === "hint" || mode === "force";
 
@@ -294,9 +293,9 @@ export const setupSettingsControls = ({
 			setDisabledClass(el, !isHintOrForce);
 		});
 
-		// ダウンサンプリング関連（off の場合のみ無効）
+		// [Intended] サンプル範囲はグリッド探索だけに使うため、Auto / Hint でのみ有効にする。
 		[els.sampleWindowInput, els.sampleWindowSlider].forEach((el) => {
-			setDisabledClass(el, isOff);
+			setDisabledClass(el, !isAutoOrHint);
 		});
 	};
 

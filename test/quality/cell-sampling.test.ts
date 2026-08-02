@@ -29,10 +29,7 @@ describe("PRF-130 quality comparison", () => {
 			...commonOptions,
 			cellSamplingMode: "legacy-median",
 		}).result;
-		const restored = processImage(input, {
-			...commonOptions,
-			cellSamplingMode: "alpha-aware-medoid",
-		}).result;
+		const restored = processImage(input, commonOptions).result;
 		expect(meanRgbaError(legacy, expected)).toBeGreaterThan(20);
 		expect(meanRgbaError(restored, expected)).toBe(0);
 		expect(Array.from(restored.data)).toEqual(Array.from(expected.data));

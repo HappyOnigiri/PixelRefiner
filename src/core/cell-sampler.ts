@@ -54,6 +54,7 @@ type Workspace = {
 	labL: Float64Array;
 	labA: Float64Array;
 	labB: Float64Array;
+	thinContinuity: Uint8Array;
 };
 
 const createWorkspace = (size: number): Workspace => ({
@@ -67,6 +68,7 @@ const createWorkspace = (size: number): Workspace => ({
 	labL: new Float64Array(size),
 	labA: new Float64Array(size),
 	labB: new Float64Array(size),
+	thinContinuity: new Uint8Array(size),
 });
 
 const srgbToLinear = (value: number): number => {
@@ -135,33 +137,53 @@ const collectSamples = (
 	if (total === 0) return 0;
 
 	const count = Math.min(total, limit);
-	const step = total / count;
+	const rows = Math.min(
+		height,
+		Math.max(1, Math.floor(Math.sqrt((count * height) / width))),
+	);
+	const columns = Math.min(width, Math.max(1, Math.floor(count / rows)));
+	const sampledCount = rows * columns;
 	const data = image.data;
-	for (let sampleIndex = 0; sampleIndex < count; sampleIndex += 1) {
-		// [Intended] 大セルでも同じ位置を選ぶため、乱数ではなく等間隔の中央点を使う。
-		const linearIndex = Math.min(
-			total - 1,
-			Math.floor((sampleIndex + 0.5) * step),
-		);
-		const x = startX + (linearIndex % width);
-		const y = startY + Math.floor(linearIndex / width);
-		const sourceOffset = (y * image.width + x) * 4;
-		const r = data[sourceOffset];
-		const g = data[sourceOffset + 1];
-		const b = data[sourceOffset + 2];
-		const a = data[sourceOffset + 3];
-		workspace.r[sampleIndex] = r;
-		workspace.g[sampleIndex] = g;
-		workspace.b[sampleIndex] = b;
-		workspace.a[sampleIndex] = a;
-		workspace.x[sampleIndex] = x;
-		workspace.y[sampleIndex] = y;
-		workspace.weight[sampleIndex] =
-			pixelOverlap(bounds.x0, bounds.x1, x) *
-			pixelOverlap(bounds.y0, bounds.y1, y);
-		writePremultipliedOklab(r, g, b, a, workspace, sampleIndex);
+	let sampleIndex = 0;
+	for (let row = 0; row < rows; row += 1) {
+		const stratumY0 = startY + (row * height) / rows;
+		const stratumY1 = startY + ((row + 1) * height) / rows;
+		const y = Math.min(endY - 1, Math.floor((stratumY0 + stratumY1) / 2));
+		for (let column = 0; column < columns; column += 1) {
+			// [Intended] 大セルでも全面を覆うため、2次元格子の各領域から中央点を選ぶ。
+			const stratumX0 = startX + (column * width) / columns;
+			const stratumX1 = startX + ((column + 1) * width) / columns;
+			const x = Math.min(endX - 1, Math.floor((stratumX0 + stratumX1) / 2));
+			const sourceOffset = (y * image.width + x) * 4;
+			const r = data[sourceOffset];
+			const g = data[sourceOffset + 1];
+			const b = data[sourceOffset + 2];
+			const a = data[sourceOffset + 3];
+			workspace.r[sampleIndex] = r;
+			workspace.g[sampleIndex] = g;
+			workspace.b[sampleIndex] = b;
+			workspace.a[sampleIndex] = a;
+			workspace.x[sampleIndex] = x;
+			workspace.y[sampleIndex] = y;
+			workspace.weight[sampleIndex] =
+				total <= limit
+					? pixelOverlap(bounds.x0, bounds.x1, x) *
+						pixelOverlap(bounds.y0, bounds.y1, y)
+					: Math.max(
+							0,
+							Math.min(bounds.x1, image.width, stratumX1) -
+								Math.max(bounds.x0, 0, stratumX0),
+						) *
+						Math.max(
+							0,
+							Math.min(bounds.y1, image.height, stratumY1) -
+								Math.max(bounds.y0, 0, stratumY0),
+						);
+			writePremultipliedOklab(r, g, b, a, workspace, sampleIndex);
+			sampleIndex += 1;
+		}
 	}
-	return count;
+	return sampledCount;
 };
 
 const coverageAlpha = (workspace: Workspace, count: number): number => {
@@ -363,7 +385,10 @@ const hasThinContinuity = (
 	for (let index = 0; index < count; index += 1) {
 		if (workspace.a[index] < alphaThreshold) continue;
 		eligible += 1;
-		if (colorDistanceSquared(workspace, candidate, index) > 0.0004) continue;
+		const deltaR = workspace.r[index] - workspace.r[candidate];
+		const deltaG = workspace.g[index] - workspace.g[candidate];
+		const deltaB = workspace.b[index] - workspace.b[candidate];
+		if (deltaR * deltaR + deltaG * deltaG + deltaB * deltaB > 192) continue;
 		matching += 1;
 		const x = workspace.x[index];
 		const y = workspace.y[index];
@@ -410,6 +435,7 @@ const findMedoid = (
 	const allowAll = eligibleCount === 0;
 	let bestIndex = 0;
 	let bestScore = Number.POSITIVE_INFINITY;
+	workspace.thinContinuity.fill(0, 0, count);
 	for (let candidate = 0; candidate < count; candidate += 1) {
 		if (!allowAll && workspace.a[candidate] < options.alphaThreshold) continue;
 		let score = 0;
@@ -421,19 +447,38 @@ const findMedoid = (
 				workspace.weight[other] *
 				alphaWeight;
 		}
-		if (
-			options.preserveThinFeatures &&
-			hasThinContinuity(
-				image,
-				workspace,
-				count,
-				candidate,
-				bounds,
-				options.alphaThreshold,
-			)
-		) {
+		const thinScoreFactor = options.mode === "edge-aware" ? 0.1 : 0.2;
+		let hasContinuity = false;
+		if (options.preserveThinFeatures && score * thinScoreFactor < bestScore) {
+			for (let previous = 0; previous < candidate; previous += 1) {
+				if (
+					workspace.thinContinuity[previous] !== 0 &&
+					workspace.r[previous] === workspace.r[candidate] &&
+					workspace.g[previous] === workspace.g[candidate] &&
+					workspace.b[previous] === workspace.b[candidate]
+				) {
+					workspace.thinContinuity[candidate] =
+						workspace.thinContinuity[previous];
+					break;
+				}
+			}
+			if (workspace.thinContinuity[candidate] === 0) {
+				workspace.thinContinuity[candidate] = hasThinContinuity(
+					image,
+					workspace,
+					count,
+					candidate,
+					bounds,
+					options.alphaThreshold,
+				)
+					? 2
+					: 1;
+			}
+			hasContinuity = workspace.thinContinuity[candidate] === 2;
+		}
+		if (hasContinuity) {
 			// [Intended] セルを横断する少数色はノイズではなく線・輪郭として優先する。
-			score *= options.mode === "edge-aware" ? 0.1 : 0.2;
+			score *= thinScoreFactor;
 		}
 		if (score < bestScore) {
 			bestScore = score;

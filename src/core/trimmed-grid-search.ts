@@ -163,6 +163,7 @@ export class FastGridSearchFromTrimmed
 				cropH: croppedH,
 				score: 0,
 			};
+			// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
 			const small = downsample(cropped, grid, sampleWindow);
 			const smallData = small.data;
 
@@ -368,6 +369,7 @@ const legacySearchGridFromTrimmed = (
 			cropH: cropped.height,
 			score: 0,
 		};
+		// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
 		const small = downsample(cropped, grid, sampleWindow);
 
 		// 再構成誤差（背景のマスク alpha=0 は無視する）
