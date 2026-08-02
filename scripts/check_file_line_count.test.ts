@@ -12,15 +12,50 @@ const CHECKER_PATH = fileURLToPath(
 interface CheckerResult {
 	status: number | null;
 	stdout: string;
+	stderr: string;
+}
+
+type TestFileContents = number | string | Uint8Array;
+
+interface CheckerOptions {
+	githubActions?: boolean;
+	allWarnings?: boolean;
+	diffBase?: string;
+	prepare?: (repository: string) => void;
+}
+
+function git(repository: string, args: string[]): string {
+	return execFileSync("git", args, {
+		cwd: repository,
+		encoding: "utf8",
+	}).trim();
+}
+
+function commit(repository: string, message: string): string {
+	git(repository, ["add", "--all"]);
+	git(repository, ["commit", "--quiet", "-m", message]);
+	return git(repository, ["rev-parse", "HEAD"]);
+}
+
+function setBranchBaseRef(repository: string, base: string): void {
+	const branch = git(repository, ["branch", "--show-current"]);
+	git(repository, ["config", `branch.${branch}.pixelRefinerBaseRef`, base]);
+}
+
+function setBranchBaseSha(repository: string, base: string): void {
+	const branch = git(repository, ["branch", "--show-current"]);
+	git(repository, ["config", `branch.${branch}.pixelRefinerBaseSha`, base]);
 }
 
 function runChecker(
-	files: Readonly<Record<string, number | string>>,
-	githubActions = false,
+	files: Readonly<Record<string, TestFileContents>>,
+	options: CheckerOptions = {},
 ): CheckerResult {
 	const repository = mkdtempSync(join(tmpdir(), "file-line-count-test-"));
 	try {
 		execFileSync("git", ["init", "--quiet"], { cwd: repository });
+		git(repository, ["config", "user.name", "File line count test"]);
+		git(repository, ["config", "user.email", "file-line-count@example.test"]);
 		for (const [name, contents] of Object.entries(files)) {
 			const path = join(repository, name);
 			mkdirSync(dirname(path), { recursive: true });
@@ -29,16 +64,26 @@ function runChecker(
 				typeof contents === "number" ? "line\n".repeat(contents) : contents,
 			);
 		}
+		options.prepare?.(repository);
 
-		const result = spawnSync("python3", [CHECKER_PATH], {
+		const args = [CHECKER_PATH];
+		if (options.allWarnings) {
+			args.push("--all-warnings");
+		}
+		const result = spawnSync("python3", args, {
 			cwd: repository,
 			encoding: "utf8",
 			env: {
 				...process.env,
-				GITHUB_ACTIONS: githubActions ? "true" : "false",
+				GITHUB_ACTIONS: options.githubActions ? "true" : "false",
+				PIXEL_REFINER_DIFF_BASE: options.diffBase ?? "",
 			},
 		});
-		return { status: result.status, stdout: result.stdout };
+		return {
+			status: result.status,
+			stdout: result.stdout,
+			stderr: result.stderr,
+		};
 	} finally {
 		rmSync(repository, { recursive: true, force: true });
 	}
@@ -66,7 +111,7 @@ describe("check_file_line_count.py", () => {
 	});
 
 	it("emits GitHub Actions annotations", () => {
-		const result = runChecker({ "warning.ts": 601 }, true);
+		const result = runChecker({ "warning.ts": 601 }, { githubActions: true });
 
 		expect(result.status).toBe(0);
 		expect(result.stdout).toContain(
@@ -96,5 +141,286 @@ describe("check_file_line_count.py", () => {
 		expect(result.stdout).not.toContain("large.ts");
 		expect(result.stdout).not.toContain("notes.txt");
 		expect(result.stdout).toContain("Checked 1 TypeScript files");
+	});
+
+	it("warns only changed warning-range files, including reduced files", () => {
+		const result = runChecker(
+			{
+				"unchanged.ts": 650,
+				"reduced.ts": 700,
+				"increased.ts": 600,
+			},
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, base);
+					writeFileSync(join(repository, "reduced.ts"), "line\n".repeat(601));
+					writeFileSync(join(repository, "increased.ts"), "line\n".repeat(601));
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).not.toContain("unchanged.ts has");
+		expect(result.stdout).toContain("WARNING: reduced.ts has 601 lines");
+		expect(result.stdout).toContain("WARNING: increased.ts has 601 lines");
+		expect(result.stdout).toContain("Warning scope: changed TypeScript files");
+	});
+
+	it("fails for an unchanged hard-limit violation", () => {
+		const result = runChecker(
+			{
+				"unchanged-warning.ts": 601,
+				"unchanged-hard.ts": 1001,
+			},
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, base);
+				},
+			},
+		);
+
+		expect(result.status).toBe(1);
+		expect(result.stdout).not.toContain("WARNING: unchanged-warning.ts");
+		expect(result.stdout).toContain("ERROR: unchanged-hard.ts has 1001 lines");
+	});
+
+	it("includes committed, staged, unstaged, and untracked changes", () => {
+		const result = runChecker(
+			{
+				"unchanged.ts": 601,
+				"committed.ts": 600,
+				"staged.ts": 600,
+				"unstaged.ts": 600,
+			},
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, base);
+					writeFileSync(join(repository, "committed.ts"), "line\n".repeat(601));
+					git(repository, ["add", "committed.ts"]);
+					git(repository, [
+						"commit",
+						"--quiet",
+						"--only",
+						"-m",
+						"committed change",
+						"committed.ts",
+					]);
+					writeFileSync(join(repository, "staged.ts"), "line\n".repeat(601));
+					git(repository, ["add", "staged.ts"]);
+					writeFileSync(join(repository, "unstaged.ts"), "line\n".repeat(601));
+					writeFileSync(join(repository, "untracked.ts"), "line\n".repeat(601));
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).not.toContain("unchanged.ts has");
+		for (const name of [
+			"committed.ts",
+			"staged.ts",
+			"unstaged.ts",
+			"untracked.ts",
+		]) {
+			expect(result.stdout).toContain(`WARNING: ${name} has 601 lines`);
+		}
+	});
+
+	it("warns unchanged files in the all-warning audit mode", () => {
+		const result = runChecker(
+			{ "unchanged.ts": 601 },
+			{
+				allWarnings: true,
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, base);
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
+		expect(result.stdout).toContain(
+			"Warning scope: all TypeScript files (601-1000 lines; --all-warnings)",
+		);
+	});
+
+	it("prioritizes PIXEL_REFINER_DIFF_BASE over branch configuration", () => {
+		const result = runChecker(
+			{ "changed.ts": 600 },
+			{
+				diffBase: "env-base",
+				prepare(repository) {
+					commit(repository, "base");
+					git(repository, ["tag", "env-base"]);
+					writeFileSync(join(repository, "changed.ts"), "line\n".repeat(601));
+					const current = commit(repository, "changed branch");
+					setBranchBaseRef(repository, current);
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: changed.ts has 601 lines");
+		expect(result.stdout).toContain("source: PIXEL_REFINER_DIFF_BASE=env-base");
+	});
+
+	it("treats all files as changed when the configured environment base is invalid", () => {
+		const result = runChecker(
+			{ "unchanged.ts": 601 },
+			{
+				diffBase: "missing-ci-base",
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, base);
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
+		expect(result.stdout).toContain(
+			"fallback: all TypeScript files treated as changed",
+		);
+	});
+
+	it("uses the recorded parent branch for stacked changes", () => {
+		const result = runChecker(
+			{
+				"feature-a.ts": 600,
+				"feature-b.ts": 600,
+				"current.ts": 600,
+			},
+			{
+				prepare(repository) {
+					commit(repository, "main");
+					git(repository, ["branch", "-M", "main"]);
+					git(repository, ["checkout", "--quiet", "-b", "feature/a"]);
+					writeFileSync(join(repository, "feature-a.ts"), "line\n".repeat(601));
+					commit(repository, "feature a");
+					git(repository, ["checkout", "--quiet", "-b", "feature/b"]);
+					writeFileSync(join(repository, "feature-b.ts"), "line\n".repeat(601));
+					commit(repository, "feature b");
+					git(repository, ["checkout", "--quiet", "-b", "feature/current"]);
+					setBranchBaseRef(repository, "feature/b");
+					writeFileSync(join(repository, "current.ts"), "line\n".repeat(601));
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).not.toContain("feature-a.ts has");
+		expect(result.stdout).not.toContain("feature-b.ts has");
+		expect(result.stdout).toContain("WARNING: current.ts has 601 lines");
+		expect(result.stdout).toContain(
+			"source: branch.feature/current.pixelRefinerBaseRef=feature/b",
+		);
+	});
+
+	it("falls back from an invalid base ref to the stored base sha", () => {
+		const result = runChecker(
+			{ "changed.ts": 600 },
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, "missing-base-ref");
+					setBranchBaseSha(repository, base);
+					writeFileSync(join(repository, "changed.ts"), "line\n".repeat(601));
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: changed.ts has 601 lines");
+		expect(result.stdout).toContain("source: branch.");
+		expect(result.stdout).toContain("pixelRefinerBaseSha=");
+	});
+
+	it("uses origin/main when branch-specific bases are unavailable", () => {
+		const result = runChecker(
+			{ "changed.ts": 600 },
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					git(repository, ["branch", "-M", "feature"]);
+					git(repository, ["update-ref", "refs/remotes/origin/main", base]);
+					writeFileSync(join(repository, "changed.ts"), "line\n".repeat(601));
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: changed.ts has 601 lines");
+		expect(result.stdout).toContain("source: origin/main");
+	});
+
+	it("uses main when origin/main is unavailable", () => {
+		const result = runChecker(
+			{ "changed.ts": 600 },
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					git(repository, ["branch", "-M", "feature"]);
+					git(repository, ["update-ref", "refs/heads/main", base]);
+					writeFileSync(join(repository, "changed.ts"), "line\n".repeat(601));
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: changed.ts has 601 lines");
+		expect(result.stdout).toContain("source: main");
+	});
+
+	it("treats all files as changed when no comparison base resolves", () => {
+		const result = runChecker(
+			{ "unchanged.ts": 601 },
+			{
+				prepare(repository) {
+					commit(repository, "base");
+					git(repository, ["branch", "-M", "feature"]);
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
+		expect(result.stdout).toContain(
+			"fallback: all TypeScript files treated as changed",
+		);
+	});
+
+	it("handles rename and deletion without checking deleted paths", () => {
+		const result = runChecker(
+			{
+				"old.ts": 601,
+				"deleted.ts": 1001,
+			},
+			{
+				prepare(repository) {
+					const base = commit(repository, "base");
+					setBranchBaseRef(repository, base);
+					git(repository, ["mv", "old.ts", "renamed.ts"]);
+					git(repository, ["rm", "--quiet", "deleted.ts"]);
+				},
+			},
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("WARNING: renamed.ts has 601 lines");
+		expect(result.stdout).not.toContain("deleted.ts");
+	});
+
+	it("reports read errors as failures", () => {
+		const result = runChecker({
+			"invalid-utf8.ts": new Uint8Array([0xff, 0x0a]),
+		});
+
+		expect(result.status).toBe(1);
+		expect(result.stdout).toContain("1 read error(s)");
+		expect(result.stderr).toContain("File read errors:");
+		expect(result.stderr).toContain("invalid-utf8.ts");
 	});
 });

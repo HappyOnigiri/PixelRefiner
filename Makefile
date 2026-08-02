@@ -1,4 +1,4 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-ts-line-length check-file-line-count setup
+.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-ts-line-length check-file-line-count check-file-line-count-all setup
 
 # repomix を実行してファイルを tmp/repomix/ にまとめる
 repomix:
@@ -34,6 +34,9 @@ check-ts-line-length:
 
 check-file-line-count:
 	python3 scripts/check_file_line_count.py
+
+check-file-line-count-all:
+	python3 scripts/check_file_line_count.py --all-warnings
 
 ts-check-diff:
 	@files="$$( ( \
