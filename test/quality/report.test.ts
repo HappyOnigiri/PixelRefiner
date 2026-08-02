@@ -46,6 +46,8 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(html).not.toContain(".images img{width:100%;height:220px");
 		expect(html).toContain('data-change-filter=""');
+		expect(html).toContain('data-change-filter="changed"');
+		expect(html).toContain('data-change-filter="new"');
 		expect(html).toContain('data-change-filter="regressed"');
 		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
 		const qualityGroupIndex = html.indexOf(
@@ -59,6 +61,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('id="visible-count"');
 		expect(html).toContain("unchanged from base branch");
 		expect(html).toContain("base branchと差分なし");
+		expect(html).toContain('new":"新規追加"');
+		expect(html).toContain("card.dataset.change === activeChange");
+		expect(html).not.toContain('activeChange === "changed"');
 		expect(html).not.toContain("Preserve the image.");
 		expect(html).not.toContain("画像を保持します。");
 		expect(html.match(/class="case-description"/g)).toHaveLength(
@@ -172,6 +177,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
 		expect(markdown).toContain("|Confidence (diagnostic)|");
+		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
 		expect(html).toContain(
 			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
 		);

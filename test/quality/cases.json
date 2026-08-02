@@ -1606,6 +1606,56 @@
     ]
   },
   {
+    "id": "discover-anisotropic-noninteger-grid",
+    "featureIds": ["PRF-110"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["anisotropic-scale", "non-integer-scale"],
+    "options": {
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf110_anisotropic_noninteger.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": [
+      "independent axis scale",
+      "non-integer scale candidate",
+      "determinism"
+    ],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf110_anisotropic_noninteger.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
     "id": "restore-transparent-rgb-padding-to-8x8",
     "featureIds": ["PRF-020", "auto-grid", "alpha-background"],
     "optionNames": ["backgroundMask", "backgroundMaskTolerance"],

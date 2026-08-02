@@ -271,8 +271,7 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		caseCount: count,
 		passed: cases.filter((result) => result.status === "passed").length,
 		failed: cases.filter((result) => result.status === "failed").length,
-		changed: cases.filter((result) => result.changeStatus !== "unchanged")
-			.length,
+		changed: cases.filter((result) => result.changeStatus === "changed").length,
 		improved: cases.filter((result) => result.changeStatus === "improved")
 			.length,
 		regressed: cases.filter((result) => result.changeStatus === "regressed")

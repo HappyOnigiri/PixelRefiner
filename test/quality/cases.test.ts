@@ -20,6 +20,9 @@ import { QUALITY_BASELINE_VERSION, type QualityBaseline } from "./types";
 const allCases = loadCases();
 const profile = qualityProfileFromEnvironment();
 const selectedCases = selectCasesForProfile(allCases, profile);
+// [Policy] Full-image quality cases may run under heavily contended shared CI
+// runners, so correctness checks must not use the short unit-test timeout.
+const QUALITY_CASE_TIMEOUT_MS = 120_000;
 const resultCache = new Map<string, ReturnType<typeof runQualityCase>>();
 const getResult = (
 	qualityCase: (typeof selectedCases)[number],
@@ -46,7 +49,7 @@ describe("quality case manifest", () => {
 			expect(result.failedAssertions).not.toContain("expected-width");
 			expect(result.failedAssertions).not.toContain("expected-height");
 		},
-		15_000,
+		QUALITY_CASE_TIMEOUT_MS,
 	);
 
 	it("does not regress the stored quality baseline", () => {

@@ -1,3 +1,4 @@
+import { GRID_SEARCH_LIMITS } from "../shared/config";
 import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
 import {
 	getBackgroundTargets,
@@ -8,6 +9,7 @@ import {
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { detectGrid } from "./detector";
 import { rankGridCandidates } from "./grid-candidates";
+import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
 import {
 	cloneImage,
 	cropRawImage,
@@ -32,6 +34,7 @@ import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
 export type { ProcessResult } from "../shared/types";
 export { _removeSmallFloatingComponentsInPlace } from "./background-removal";
+export { searchPhaseAwareGrid } from "./grid-search";
 export {
 	downsample,
 	padImageToAspectRatio,
@@ -205,51 +208,62 @@ export const processImage = (
 
 			const sw = o.sampleWindow;
 			const searchStart = performance.now();
-			const gridSearcher = getGridSearchFromTrimmedStrategy(
-				o.fastAutoGridFromTrimmed,
-			);
 			const hint =
 				o.hintPixelsW !== undefined && o.hintPixelsH !== undefined
 					? { outW: o.hintPixelsW, outH: o.hintPixelsH }
 					: undefined;
-			const est = gridSearcher.search(cropped, croppedMask, sw, hint);
+			const est = getGridSearchFromTrimmedStrategy(
+				o.fastAutoGridFromTrimmed,
+			).search(cropped, croppedMask, sw, hint);
+			const phaseAwareEstimate =
+				o.fastAutoGridFromTrimmed && hint === undefined
+					? searchPhaseAwareGrid(cropped, croppedMask)
+					: null;
 			log(
 				`Grid search from trimmed done in ${(performance.now() - searchStart).toFixed(2)}ms`,
 				est,
 			);
 			if (est) {
-				gridMethod = o.fastAutoGridFromTrimmed
-					? "trimmed-reconstruction-fast"
-					: "trimmed-reconstruction";
+				const phaseAwareReliable =
+					phaseAwareEstimate !== null &&
+					(phaseAwareEstimate.scoreX ?? 0) >=
+						GRID_SEARCH_LIMITS.axisConfidenceThreshold &&
+					(phaseAwareEstimate.scoreY ?? 0) >=
+						GRID_SEARCH_LIMITS.axisConfidenceThreshold;
+				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
+				gridMethod = phaseAwareReliable
+					? "phase-aware-grid-search"
+					: o.fastAutoGridFromTrimmed
+						? "trimmed-reconstruction-fast"
+						: "trimmed-reconstruction";
 				// NOTE:
 				// - Even when trimming is OFF, we want to use the "estimated grid from content BBox" (to prevent crushing).
 				// - However, trimming OFF just leaves background (margins), so apply downsampling to the whole image (working).
 				//   This makes the number of cells (apparent size) of the center object more stable.
-				const outW = Math.max(1, Math.floor(working.width / est.cellW));
-				const outH = Math.max(1, Math.floor(working.height / est.cellH));
 				const includeCandidates = hint === undefined;
-				grid = {
-					cellW: est.cellW,
-					cellH: est.cellH,
-					offsetX: 0,
-					offsetY: 0,
-					outW,
-					outH,
-					cropX: 0,
-					cropY: 0,
-					cropW: outW * est.cellW,
-					cropH: outH * est.cellH,
-					score: est.score ?? 0,
-					candidates: includeCandidates
-						? est.candidates?.map((c) => ({
-								cellW: c.cellW,
-								cellH: c.cellH,
-								offsetX: 0,
-								offsetY: 0,
-								outW: Math.max(1, Math.floor(working.width / c.cellW)),
-								outH: Math.max(1, Math.floor(working.height / c.cellH)),
-								score: c.score ?? 0,
+				const searchCandidates = [
+					...(phaseAwareEstimate && phaseAwareReliable
+						? (phaseAwareEstimate.candidates ?? []).map((candidate) => ({
+								candidate,
+								phaseAware: true,
 							}))
+						: []),
+					...(phaseAwareReliable ? [est] : []),
+					...(est.candidates ?? []),
+				];
+				grid = {
+					...resolveGridEstimate(
+						selectedEstimate,
+						working,
+						b,
+						phaseAwareReliable,
+					),
+					candidates: includeCandidates
+						? searchCandidates?.map((entry) => {
+								const c = "candidate" in entry ? entry.candidate : entry;
+								const phaseAware = "phaseAware" in entry;
+								return resolveGridEstimate(c, working, b, phaseAware);
+							})
 						: undefined,
 				};
 				o.debugHook?.("04-grid-crop", working, {

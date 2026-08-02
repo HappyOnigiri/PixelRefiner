@@ -22,9 +22,9 @@ baseline difference, and background-mask images for every selected case.
 The HTML report initially shows every case. Use the change-status, quality-status,
 and text filters to narrow the list to review targets. A difference is not
 automatically a regression: metric changes classify it as improved, regressed,
-or changed without a measurable quality change. Known expectation failures that
-are unchanged remain visible through the status filter but do not fail the
-regression gate.
+or changed without a measurable quality change. Cases absent from the PR base
+are classified separately as new. Known expectation failures that are unchanged
+remain visible through the status filter but do not fail the regression gate.
 
 ## Adding a fixture
 

@@ -165,6 +165,10 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 			fixturePath("quality_anisotropic.png"),
 			resizeNearest(reference, 4, 3),
 		);
+		writePng(
+			fixturePath("quality_prf110_anisotropic_noninteger.png"),
+			resizeNearest(reference, 2.5, 3.2),
+		);
 
 		const gradient = createContinuousGradient();
 		writePng(fixturePath("quality_continuous_tone.png"), gradient);

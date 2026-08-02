@@ -61,6 +61,16 @@ export const GRID_CANDIDATE_SCORE_WEIGHTS = {
 
 export const GRID_CANDIDATE_CELL_SCALES = [0.5, 2] as const;
 
+export const GRID_SEARCH_LIMITS = {
+	axisCandidateLimit: 24,
+	pairCandidateLimit: 128,
+	fullResolutionCandidateLimit: 32,
+	outputDimensionLimit: 600,
+	maxTransitionSamples: 32,
+	maxAnalysisDimension: 256,
+	axisConfidenceThreshold: 0.55,
+} as const;
+
 export const RETRO_PALETTES: Record<
 	string,
 	{ name: string; colors: string[] }
