@@ -237,7 +237,6 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		// [Policy] 共有 CI ランナーの負荷下では、グリッド検出が Vitest のデフォルト 5 秒を超える場合がある。
 		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid, analysis } = processImage(img, {
 				detectionQuantStep: 64,
@@ -270,7 +269,7 @@ describe("processImage", () => {
 			expect(analysis.warnings).not.toContain("LOW_GRID_CONFIDENCE");
 
 			expectSameImage(result, expected, getExpectPath("auto_grid_detection"));
-		}, 15_000);
+		});
 	});
 
 	describe("inner_background_removal", () => {
