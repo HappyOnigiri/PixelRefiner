@@ -65,51 +65,14 @@ AI 生成的像素画经常会出现边缘模糊（抗锯齿痕迹）、网格�
 
 ## 开发
 
-本项目使用 TypeScript + Vite 构建。
-
-### 前置条件
-
-- Node.js 24.x
-- pnpm
-
-### 安装
+需要 Node.js 24.x 和 pnpm。
 
 ```bash
-git clone https://github.com/HappyOnigiri/PixelRefiner.git
-cd PixelRefiner
-pnpm install
+pnpm install # 安装依赖
+pnpm dev     # 启动开发服务器: http://localhost:5173
+pnpm build   # 构建生产版本
+pnpm test    # 运行测试
 ```
-
-### 开发服务器
-
-```bash
-pnpm dev
-```
-
-然后在浏览器中打开 `http://localhost:5173`。
-
-### 构建
-
-```bash
-pnpm build
-```
-
-输出文件会生成到 `dist` 目录。
-
-### 测试
-
-运行核心图片处理逻辑的单元测试。
-
-```bash
-pnpm test
-```
-
-## 项目结构
-
-- `src/browser/`：浏览器 UI 逻辑和主入口
-- `src/core/`：核心图片处理算法，包括网格检测、重采样、透明化等
-- `src/shared/`：类型定义和配置常量
-- `test/`：测试代码和图片 fixture
 
 ## 说明
 
