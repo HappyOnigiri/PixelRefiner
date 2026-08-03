@@ -14,7 +14,11 @@ const getFocusableElements = (root: HTMLElement): HTMLElement[] => {
 
 export type ModalController = {
 	open: () => void;
-	close: () => void;
+	/**
+	 * ユーザー操作以外（処理の開始やアクティブ画像の切替）で閉じる場合は
+	 * restoreFocus に false を渡す。操作中の要素からフォーカスを奪わないため。
+	 */
+	close: (restoreFocus?: boolean) => void;
 	isOpen: () => boolean;
 };
 
@@ -92,13 +96,13 @@ export const createModalControllerFactory = (appRoot: HTMLElement | null) => {
 			requestAnimationFrame(() => focusInitial());
 		};
 
-		const close = () => {
+		const close = (restoreFocus = true) => {
 			if (modalEl.style.display === "none") return;
 			modalEl.style.display = "none";
 			setModalOpenState(false);
 			abort?.abort();
 			abort = null;
-			lastFocused?.focus?.();
+			if (restoreFocus) lastFocused?.focus?.();
 			lastFocused = null;
 		};
 

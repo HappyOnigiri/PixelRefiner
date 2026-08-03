@@ -35,7 +35,11 @@ export const initApp = (): void => {
 	const modalResultViewer = new ResultViewer(
 		els.resultModal.querySelector(".result-modal-body") as HTMLElement,
 	);
-	const candidateChooser = new CandidateChooser(els.candidateModal);
+	const candidateChooser = new CandidateChooser(
+		els.candidateModal,
+		// 閉じるボタンのフォーカスは CandidateChooser 側で先頭カードへ移すため渡さない。
+		createModalController(els.candidateModal, null),
+	);
 
 	const resultModalController = createModalController(
 		els.resultModal,
@@ -71,7 +75,7 @@ export const initApp = (): void => {
 			updateProcessButtonVisibility();
 		},
 		onActiveChange: (item) => {
-			candidateChooser.hide();
+			candidateChooser.dismiss();
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -81,8 +85,8 @@ export const initApp = (): void => {
 
 				// 結果があれば表示し、なければ出力をクリアするか？
 				if (item.result) {
-					mainResultViewer.updateImage(item.result, item.grid);
-					modalResultViewer.updateImage(item.result, item.grid);
+					mainResultViewer.updateImage(item.result);
+					modalResultViewer.updateImage(item.result);
 					els.outputPanel.classList.add("has-image");
 					// els.outputSize.textContent = `${item.result.width}x${item.result.height} px`; // ResultViewer で処理する
 					els.downloadButton.style.display = "flex";

@@ -970,8 +970,11 @@ select:focus {
   opacity: 1;
 }
 
-.candidate-modal-content {
+/* [Intended] `.modal .modal-content` と詳細度を揃えないと、既存の max-width: 800px に負けて
+   候補カードを2列で並べる幅が確保できない。 */
+.modal .candidate-modal-content {
 	width: min(920px, calc(100vw - 32px));
+	max-width: min(920px, calc(100vw - 32px));
 	max-height: min(760px, calc(100vh - 32px));
 }
 

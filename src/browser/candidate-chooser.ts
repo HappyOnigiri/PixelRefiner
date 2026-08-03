@@ -5,26 +5,33 @@ import type {
 } from "../shared/types";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
+import type { ModalController } from "./modal-controller";
 import { translateProcessingWarnings } from "./processing-warnings";
 
 type CandidateChooserCallbacks = {
-	onSelect: (selection: CandidateSelection) => Promise<void>;
+	onSelect: (
+		selection: CandidateSelection,
+		sourceImageId: string,
+	) => Promise<void>;
 };
 
 export class CandidateChooser {
 	private modal: HTMLElement;
+	private controller: ModalController;
 	private list: HTMLElement;
 	private reasons: HTMLElement;
-	private closeButton: HTMLButtonElement;
 	private callbacks: CandidateChooserCallbacks | null = null;
-	private previousFocus: HTMLElement | null = null;
+	private sourceImageId: string | null = null;
 
-	constructor(modal: HTMLElement) {
+	constructor(modal: HTMLElement, controller: ModalController) {
 		this.modal = modal;
+		this.controller = controller;
 		this.list = this.get<HTMLElement>(".js-candidate-list");
 		this.reasons = this.get<HTMLElement>(".js-candidate-reasons");
-		this.closeButton = this.get<HTMLButtonElement>(".js-close-candidates");
-		this.closeButton.addEventListener("click", () => this.hide());
+		this.get<HTMLButtonElement>(".js-close-candidates").addEventListener(
+			"click",
+			() => this.hide(),
+		);
 		this.modal.addEventListener("click", (event) => {
 			if (event.target === this.modal) this.hide();
 		});
@@ -47,23 +54,41 @@ export class CandidateChooser {
 	public show(
 		candidates: CandidatePreview[],
 		warnings: ProcessingWarningCode[],
+		sourceImageId: string,
 	): void {
 		this.list.replaceChildren();
 		this.reasons.textContent = translateProcessingWarnings(warnings).join(" ");
 		for (let index = 0; index < candidates.length; index += 1) {
 			this.list.appendChild(this.createCard(candidates[index]));
 		}
-		this.previousFocus = document.activeElement as HTMLElement | null;
-		this.modal.style.display = "flex";
+		this.sourceImageId = sourceImageId;
+		this.controller.open();
 		this.modal.setAttribute("aria-hidden", "false");
-		this.list.querySelector<HTMLButtonElement>("button")?.focus();
+		// ModalController は open 時に rAF で閉じるボタンへフォーカスするため、
+		// 先頭カードへ移すのはその後のフレームで行う。
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (this.controller.isOpen())
+					this.list.querySelector<HTMLButtonElement>("button")?.focus();
+			});
+		});
 	}
 
+	/** ユーザー操作で閉じる。直前のフォーカス位置へ戻す。 */
 	public hide(): void {
-		if (this.modal.style.display === "none") return;
-		this.modal.style.display = "none";
+		this.close(true);
+	}
+
+	/** 処理の開始やアクティブ画像の切替で閉じる。フォーカスは動かさない。 */
+	public dismiss(): void {
+		this.close(false);
+	}
+
+	private close(restoreFocus: boolean): void {
+		if (!this.controller.isOpen()) return;
+		this.controller.close(restoreFocus);
 		this.modal.setAttribute("aria-hidden", "true");
-		this.previousFocus?.focus();
+		this.sourceImageId = null;
 	}
 
 	private createCard(candidate: CandidatePreview): HTMLButtonElement {
@@ -102,19 +127,16 @@ export class CandidateChooser {
 		details.append(heading, metadata, description);
 		button.append(preview, details);
 		button.addEventListener("click", async () => {
-			if (!this.callbacks) return;
+			const sourceImageId = this.sourceImageId;
+			if (!this.callbacks || !sourceImageId) return;
 			this.hide();
-			await this.callbacks.onSelect(candidate);
+			await this.callbacks.onSelect(candidate, sourceImageId);
 		});
 		return button;
 	}
 
 	private handleKeydown(event: KeyboardEvent): void {
-		if (event.key === "Escape") {
-			event.preventDefault();
-			this.hide();
-			return;
-		}
+		// Escape と Tab のフォーカストラップは ModalController が処理する。
 		if (
 			!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)
 		)
