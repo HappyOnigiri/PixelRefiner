@@ -5,6 +5,7 @@ import {
 	createCandidatePreview,
 	selectCandidatePlans,
 } from "./candidate-previews";
+import { resizeRawImageNearest } from "./image-operations";
 import { processImage } from "./processor";
 import { readPngAsRawImage } from "./processor-test-helpers";
 
@@ -134,6 +135,35 @@ describe("candidate previews", () => {
 			);
 		});
 		expect(rendered).toHaveLength(first.length);
-		expect(rendered.every((candidate) => candidate.colorCount > 0)).toBe(true);
+		for (const candidate of rendered) {
+			let visiblePixels = 0;
+			for (
+				let offset = 3;
+				offset < candidate.preview.data.length;
+				offset += 4
+			) {
+				if (candidate.preview.data[offset] > 0) visiblePixels += 1;
+			}
+			expect(visiblePixels).toBeGreaterThan(0);
+			expect(candidate.colorCount).toBeGreaterThan(0);
+		}
+		const refined = rendered.filter(
+			(candidate) => candidate.processingMode === "refine",
+		);
+		const visualResults = new Set(
+			refined.map((candidate) => {
+				const normalized = resizeRawImageNearest(
+					candidate.preview,
+					0,
+					0,
+					candidate.preview.width,
+					candidate.preview.height,
+					96,
+					96,
+				);
+				return Buffer.from(normalized.data).toString("base64");
+			}),
+		);
+		expect(visualResults.size).toBe(refined.length);
 	});
 });

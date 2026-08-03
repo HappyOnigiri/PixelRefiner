@@ -1029,10 +1029,12 @@ select:focus {
 }
 
 .candidate-card-preview canvas {
+	display: block;
 	width: 100%;
 	height: 156px;
 	object-fit: contain;
 	image-rendering: pixelated;
+	/* [Intended] 全canvasを初期非表示にする共通規則を候補内だけ解除する。 */
 }
 
 .candidate-card-details,
