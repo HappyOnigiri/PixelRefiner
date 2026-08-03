@@ -88,6 +88,16 @@ export type ProcessingRoute = "refine" | "convert" | "preserve";
 
 export type ProcessingMode = "auto" | ProcessingRoute;
 
+export type DetailLevel = "coarse" | "balanced" | "detailed";
+
+export type ConvertCandidate = {
+	label: DetailLevel;
+	outW: number;
+	outH: number;
+	colorCount: number;
+	ditherStrength: number;
+};
+
 export type InputClassification =
 	| "native-pixel"
 	| "scaled-pixel"

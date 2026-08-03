@@ -59,14 +59,61 @@ describe("processing router", () => {
 		]);
 	});
 
-	it("routes continuous tone to a non-destructive convert candidate", () => {
+	it("routes continuous tone through the balanced convert candidate", () => {
 		const image = createContinuousImage();
 		const processed = processImage(image, safeOptions);
 
 		expect(processed.analysis.classification).toBe("continuous");
 		expect(processed.analysis.route).toBe("convert");
-		expect(processed.result).toEqual(image);
+		expect(processed.result.width).toBeLessThan(image.width);
+		expect(processed.result.height).toBeLessThan(image.height);
+		expect(processed.analysis.gridCandidates).toHaveLength(3);
+		expect(processed.extractedPalette.length).toBeLessThanOrEqual(24);
 	});
+
+	it("selects visibly different convert sizes from the detail level", () => {
+		const image = createContinuousImage();
+		const coarse = processImage(image, {
+			...safeOptions,
+			processingMode: "convert",
+			detailLevel: "coarse",
+		});
+		const detailed = processImage(image, {
+			...safeOptions,
+			processingMode: "convert",
+			detailLevel: "detailed",
+		});
+
+		expect(coarse.result.width).toBeLessThan(detailed.result.width);
+		expect(coarse.result.height).toBeLessThan(detailed.result.height);
+	});
+
+	it.each([
+		["transparent", 0],
+		["single-color", 255],
+	] as const)(
+		"converts a %s image safely and deterministically",
+		(_, alpha) => {
+			const image: RawImage = {
+				width: 8,
+				height: 8,
+				data: new Uint8ClampedArray(8 * 8 * 4),
+			};
+			for (let i = 0; i < image.data.length; i += 4) {
+				image.data[i] = 48;
+				image.data[i + 1] = 96;
+				image.data[i + 2] = 144;
+				image.data[i + 3] = alpha;
+			}
+			const options = { ...safeOptions, processingMode: "convert" } as const;
+			const first = processImage(image, options);
+			const second = processImage(image, options);
+
+			expect(first.result).toEqual(second.result);
+			expect(first.result.width).toBe(8);
+			expect(first.result.height).toBe(8);
+		},
+	);
 
 	it("allows an explicit route to override automatic classification", () => {
 		const processed = processImage(createContinuousImage(), {
@@ -121,7 +168,7 @@ describe("processing router", () => {
 		["quality_reference.png", "native-pixel", "preserve", 8, 8],
 		["quality_nearest_2x.png", "scaled-pixel", "refine", 8, 8],
 		["quality_bilinear.png", "soft-pixel", "refine", 8, 8],
-		["quality_continuous_tone.png", "continuous", "convert", 48, 32],
+		["quality_continuous_tone.png", "continuous", "convert", 24, 16],
 	] as const)(
 		"classifies and routes the %s quality fixture",
 		async (fileName, classification, route, width, height) => {

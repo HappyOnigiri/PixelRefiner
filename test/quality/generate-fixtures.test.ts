@@ -111,6 +111,33 @@ const createAutomaticBackgroundInput = (): RawImage => {
 	return { width, height, data };
 };
 
+const createContinuousIllustration = (): RawImage => {
+	const width = 72;
+	const height = 48;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const face = (x - 36) ** 2 / 324 + (y - 25) ** 2 / 256 <= 1;
+			const hair = (x - 36) ** 2 / 484 + (y - 20) ** 2 / 324 <= 1;
+			const eye = y >= 23 && y <= 25 && (x === 30 || x === 42);
+			const backgroundR = 72 + Math.round((x / (width - 1)) * 96);
+			const backgroundG = 112 + Math.round((y / (height - 1)) * 96);
+			data[offset] = eye ? 16 : face ? 232 + (x % 12) : hair ? 40 : backgroundR;
+			data[offset + 1] = eye
+				? 24
+				: face
+					? 168 + (y % 24)
+					: hair
+						? 64 + (x % 32)
+						: backgroundG;
+			data[offset + 2] = eye ? 48 : face ? 144 : hair ? 112 : 216;
+			data[offset + 3] = x < 4 ? x * 64 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
 const createEnsembleSignalGrid = (
 	scale: number,
 	mode: "alpha" | "diagonal" | "harmonic",
@@ -291,6 +318,34 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 
 		const gradient = createContinuousGradient();
 		writePng(fixturePath("quality_continuous_tone.png"), gradient);
+		const { result: gradientConverted } = processImage(gradient, {
+			processingMode: "convert",
+			detailLevel: "balanced",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			bgRemovalScope: "off",
+			bgExtractionMethod: "none",
+			trimToContent: false,
+		});
+		writePng(
+			fixturePath("quality_continuous_tone-convert-expect.png"),
+			gradientConverted,
+		);
+		const illustration = createContinuousIllustration();
+		writePng(fixturePath("quality_convert_illustration.png"), illustration);
+		const { result: illustrationConverted } = processImage(illustration, {
+			processingMode: "convert",
+			detailLevel: "detailed",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			bgRemovalScope: "off",
+			bgExtractionMethod: "none",
+			trimToContent: false,
+		});
+		writePng(
+			fixturePath("quality_convert_illustration-expect.png"),
+			illustrationConverted,
+		);
 		writePng(
 			fixturePath("quality_ambiguous_axis_grid.png"),
 			createAmbiguousAxisGrid(4),
