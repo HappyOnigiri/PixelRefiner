@@ -110,6 +110,7 @@ const candidateKey = (grid: PixelGrid, source: RawImage): string => {
 		grid.cellH,
 		grid.offsetX,
 		grid.offsetY,
+		grid.angle ?? 0,
 		geometry.outW,
 		geometry.outH,
 	].join(":");
@@ -233,6 +234,7 @@ export const rankGridCandidates = (
 			method: preserveCandidate ? "preserve" : method,
 			totalScore: preserveCandidate ? 0 : weightedScore(subscores),
 			confidence: 0,
+			angle: grid.angle,
 			subscores,
 		});
 	}

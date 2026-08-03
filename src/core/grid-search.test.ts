@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
-import { normalizeGridPhase, searchPhaseAwareGrid } from "./grid-search";
+import { rotateRawImageExpanded } from "./deskew";
+import {
+	normalizeGridPhase,
+	searchDeskewedGrid,
+	searchPhaseAwareGrid,
+} from "./grid-search";
 import { processImage } from "./processor";
 
 const createScaledGrid = (
@@ -267,5 +272,22 @@ describe("phase-aware grid search", () => {
 			localPhaseStability: expect.any(Number),
 			methodAgreement: expect.any(Number),
 		});
+	});
+
+	it.each([-3, -1, -0.25, 0.25, 1, 3])(
+		"detects a correction for a %s degree input rotation",
+		(angle) => {
+			const source = createScaledGrid(8, 7, 16, 16);
+			const rotated = rotateRawImageExpanded(source, angle);
+			const result = searchDeskewedGrid(rotated, rotated);
+			expect(result).not.toBeNull();
+			expect(Math.abs((result?.angle ?? 0) + angle)).toBeLessThanOrEqual(0.5);
+		},
+	);
+
+	it("keeps an unrotated grid at zero degrees", () => {
+		const source = createScaledGrid(8, 7, 4, 4);
+		const result = searchDeskewedGrid(source, source);
+		expect(result).toBeNull();
 	});
 });

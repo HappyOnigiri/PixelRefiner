@@ -1,4 +1,4 @@
-import { GRID_SEARCH_LIMITS } from "../shared/config";
+import { DESKEW_LIMITS, GRID_SEARCH_LIMITS } from "../shared/config";
 import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
 import {
 	getBackgroundTargets,
@@ -8,9 +8,15 @@ import {
 } from "./background-removal";
 import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
+import { rotateRawImageExpanded } from "./deskew";
 import { detectGrid } from "./detector";
 import { rankGridCandidates } from "./grid-candidates";
-import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
+import {
+	type DeskewGridSearchResult,
+	resolveGridEstimate,
+	searchDeskewedGrid,
+	searchPhaseAwareGrid,
+} from "./grid-search";
 import {
 	cloneImage,
 	cropRawImage,
@@ -71,10 +77,36 @@ export {
 } from "./trimmed-grid-search";
 
 export const processImage = (
-	img: RawImage,
+	inputImage: RawImage,
 	options: ProcessOptions = {},
 ): ProcessResult => {
 	const o = normalizeProcessOptions(options);
+	let deskewSearch: DeskewGridSearchResult | null = null;
+	let appliedDeskewAngle = o.deskewAngle;
+	let img = inputImage;
+	if (appliedDeskewAngle !== 0) {
+		img = rotateRawImageExpanded(inputImage, appliedDeskewAngle);
+	} else if (
+		o.enableDeskew &&
+		o.enableGridDetection &&
+		o.autoGridFromTrimmed &&
+		o.fastAutoGridFromTrimmed &&
+		o.hintPixelsW === undefined &&
+		o.hintPixelsH === undefined &&
+		o.forcePixelsW === undefined &&
+		o.forcePixelsH === undefined &&
+		(o.processingMode === "auto" || o.processingMode === "refine") &&
+		Math.min(inputImage.width, inputImage.height) >=
+			DESKEW_LIMITS.minimumInputDimension &&
+		// [Policy] 上位角度のフル解像度評価が処理時間を占有しないよう、自動補正の画素数を制限する。
+		inputImage.width * inputImage.height <= DESKEW_LIMITS.maximumInputPixels
+	) {
+		deskewSearch = searchDeskewedGrid(inputImage, inputImage, o.gridSignals);
+		if (deskewSearch) {
+			appliedDeskewAngle = deskewSearch.angle;
+			img = deskewSearch.image;
+		}
+	}
 	const startTime = performance.now();
 	const log = (...args: unknown[]) => {
 		if (o.debug) {
@@ -278,6 +310,7 @@ export const processImage = (
 			);
 			if (est) {
 				const phaseAwareReliable =
+					appliedDeskewAngle === 0 &&
 					phaseAwareEstimate !== null &&
 					(phaseAwareEstimate.scoreX ?? 0) >=
 						GRID_SEARCH_LIMITS.axisConfidenceThreshold &&
@@ -286,9 +319,13 @@ export const processImage = (
 				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
 				gridMethod = phaseAwareReliable
 					? "phase-aware-grid-search"
-					: o.fastAutoGridFromTrimmed
-						? "trimmed-reconstruction-fast"
-						: "trimmed-reconstruction";
+					: appliedDeskewAngle !== 0
+						? "deskewed-trimmed-reconstruction-fast"
+						: o.fastAutoGridFromTrimmed
+							? "trimmed-reconstruction-fast"
+							: "trimmed-reconstruction";
+				// [Intended] 回転後の拡張余白は元画像のグリッド位相ではないため、
+				// 傾き補正時はコンテンツ BBox のセル数推定を優先する。
 				// 注記:
 				// - トリミングが OFF でも、つぶれを防ぐため「コンテンツ BBox から推定したグリッド」を使用する。
 				// - ただしトリミング OFF は背景（余白）を残すだけなので、画像全体にダウンサンプリングを適用する。
@@ -315,9 +352,13 @@ export const processImage = (
 						? searchCandidates?.map((entry) => {
 								const c = "candidate" in entry ? entry.candidate : entry;
 								const phaseAware = "phaseAware" in entry;
-								return resolveGridEstimate(c, working, b, phaseAware);
+								return {
+									...resolveGridEstimate(c, working, b, phaseAware),
+									angle: appliedDeskewAngle,
+								};
 							})
 						: undefined,
+					angle: appliedDeskewAngle,
 				};
 				o.debugHook?.("04-grid-crop", working, {
 					grid,
@@ -331,6 +372,7 @@ export const processImage = (
 	if (!grid) {
 		const detectStart = performance.now();
 		grid = detectGrid(working, { ...o.detect, debug: o.debug });
+		grid.angle = appliedDeskewAngle;
 		log(
 			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
 			grid,
@@ -339,7 +381,23 @@ export const processImage = (
 			grid,
 		});
 	}
-	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	let rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	if (deskewSearch) {
+		const additional = deskewSearch.candidates
+			.filter((candidate) => candidate.angle !== appliedDeskewAngle)
+			.flatMap((candidate) =>
+				rankGridCandidates(
+					candidate.image,
+					{
+						...candidate.estimate,
+						angle: candidate.angle,
+						candidates: undefined,
+					},
+					"deskewed-phase-aware-grid-search",
+				).filter((report) => report.method !== "preserve"),
+			);
+		rankedGridCandidates = [...rankedGridCandidates, ...additional];
+	}
 	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
 	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =

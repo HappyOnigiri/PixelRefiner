@@ -1,6 +1,7 @@
 import {
 	CONVERT_DEFAULTS,
 	clampInt,
+	clampNumber,
 	clampOptionalInt,
 	GRID_SIGNAL_DEFAULTS,
 	PROCESS_DEFAULTS,
@@ -28,6 +29,10 @@ export type ProcessOptions = DetectOptions & {
 	detailLevel?: DetailLevel;
 	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
 	gridSignals?: Partial<GridSignalOptions>;
+	/** Auto経路で微小な傾き補正を試みる。 */
+	enableDeskew?: boolean;
+	/** 候補プレビュー再処理で明示適用する補正角度（度）。 */
+	deskewAngle?: number;
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
@@ -193,6 +198,8 @@ export const normalizeProcessOptions = (
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	gridSignals: GridSignalOptions;
+	enableDeskew: boolean;
+	deskewAngle: number;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
 	keepAspectRatio: boolean;
@@ -291,6 +298,11 @@ export const normalizeProcessOptions = (
 		...GRID_SIGNAL_DEFAULTS,
 		...raw.gridSignals,
 	};
+	const enableDeskew = raw.enableDeskew ?? PROCESS_DEFAULTS.enableDeskew;
+	const deskewAngle = clampNumber(
+		raw.deskewAngle ?? PROCESS_RANGES.deskewAngle.default,
+		PROCESS_RANGES.deskewAngle,
+	);
 	const makeSquare = raw.makeSquare ?? PROCESS_DEFAULTS.makeSquare;
 	const keepAspectRatio =
 		raw.keepAspectRatio ?? PROCESS_DEFAULTS.keepAspectRatio;
@@ -350,6 +362,8 @@ export const normalizeProcessOptions = (
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		gridSignals,
+		enableDeskew,
+		deskewAngle,
 		enableGridDetection,
 		makeSquare,
 		keepAspectRatio,
