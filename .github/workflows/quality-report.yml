@@ -57,21 +57,24 @@ jobs:
           QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
-      - name: Publish quality summary
-        if: always()
-        run: |
-          summary_file="tmp/quality-report/latest/summary.md"
-          if [ -f "$summary_file" ]; then
-            cat "$summary_file" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "## Quality report" >> "$GITHUB_STEP_SUMMARY"
-            echo "Comparison report generation did not produce a summary." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       - name: Run quality gate
         id: quality-gate
         continue-on-error: true
         run: pnpm test:quality:full
+
+      # 品質ゲートの後に掲載する。ゲートの成否を含めないと、
+      # 落ちた PR でもサマリーが比較レポートの要約だけになり結果を誤読させる。
+      - name: Publish quality summary
+        if: always()
+        run: |
+          gate_outcome="${{ steps.quality-gate.outcome }}"
+          echo "## Quality gate: ${gate_outcome:-not run}" >> "$GITHUB_STEP_SUMMARY"
+          summary_file="tmp/quality-report/latest/summary.md"
+          if [ -f "$summary_file" ]; then
+            cat "$summary_file" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Comparison report generation did not produce a summary." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload comparison report
         uses: actions/upload-artifact@v7
