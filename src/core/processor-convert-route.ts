@@ -11,6 +11,7 @@ import {
 	removeSmallFloatingComponentsInPlace,
 } from "./background-removal";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
+import { removeSmallComponents } from "./components";
 import {
 	createConvertCandidates,
 	edgeAwareAreaResample,
@@ -93,6 +94,7 @@ export const processConvertRoute = (
 		backgroundDiagnostic,
 		backgroundModel,
 	} = context;
+	let smallComponentRemoval = context.smallComponentRemoval;
 	// [Intended] 呼び出し元が同じマスクを算出済みなら再計算しない。
 	// 孤立成分の除去は working を破壊的に書き換えるため、2 度走らせると
 	// 1 回目の結果から作り直したマスクで別の成分まで消えうる。
@@ -111,12 +113,19 @@ export const processConvertRoute = (
 				)
 			: undefined);
 	if (masked && !context.preparedMask && o.floatingMaxPixels > 0) {
-		removeSmallFloatingComponentsInPlace(
+		const legacy = removeSmallFloatingComponentsInPlace(
 			working,
 			masked,
 			trimAlphaThreshold,
 			o.floatingMaxPixels,
 		);
+		smallComponentRemoval = {
+			mode: "legacy",
+			applied: true,
+			removedComponents: legacy.removedComponents,
+			removedPixels: legacy.removedPixels,
+			pixelBasis: "source",
+		};
 	}
 
 	// [Intended] 候補の解像度は被写体の寸法から決める。透明余白を含めたまま算出すると、
@@ -167,6 +176,35 @@ export const processConvertRoute = (
 		selected.outH,
 	);
 	let compareBeforeSanitized = finalResult;
+	const logicalMask =
+		o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off"
+			? removeBackground(
+					finalResult,
+					o.backgroundTolerance,
+					o.bgRemovalScope,
+					o.bgConnectivity,
+					bgTargets,
+					o.bgExtractionMethod,
+					backgroundModel,
+				)
+			: finalResult;
+	const componentResult = removeSmallComponents(
+		finalResult,
+		logicalMask,
+		compareBefore,
+		{
+			mode: o.smallComponentMode,
+			alphaThreshold: trimAlphaThreshold,
+			backgroundEnabled:
+				o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
+			automaticBackground: o.bgExtractionMethod === "auto",
+			backgroundConfidence: backgroundDiagnostic?.confidence,
+		},
+	);
+	if (o.smallComponentMode !== "off") {
+		smallComponentRemoval = componentResult.diagnostic;
+	}
+	finalResult = componentResult.image;
 
 	if (o.postRemoveBackground) {
 		finalResult = removeBackground(
@@ -271,6 +309,7 @@ export const processConvertRoute = (
 		context.classificationResult,
 		context.additionalWarnings,
 		selectedCandidateIndex,
+		smallComponentRemoval,
 	);
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
 	return {

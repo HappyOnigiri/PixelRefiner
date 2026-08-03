@@ -14,6 +14,17 @@ type PresetControlsOptions = {
 	triggerAutoProcess: () => void;
 };
 
+export const migrateSmallComponentMode = (
+	state: Record<string, string | number | boolean>,
+): void => {
+	if (state["small-component-mode"] !== undefined) return;
+	const legacyValue =
+		state["floating-max-percent"] ?? state["floating-max-percent-slider"];
+	if (typeof legacyValue === "number") {
+		state["small-component-mode"] = legacyValue <= 0 ? "off" : "auto";
+	}
+};
+
 export const setupPresetControls = ({
 	els,
 	presetModalController,
@@ -50,8 +61,7 @@ export const setupPresetControls = ({
 			els.ditherStrengthSlider,
 			els.outlineStyleSelect,
 			els.outlineColorInput,
-			els.floatingMaxPercentInput,
-			els.floatingMaxPercentSlider,
+			els.smallComponentModeSelect,
 			els.bgExtractionMethod,
 			els.bgRgbInput,
 			els.bgColorInput,
@@ -75,6 +85,8 @@ export const setupPresetControls = ({
 	};
 
 	const applyUiState = (state: Record<string, string | number | boolean>) => {
+		// [Policy] 旧プリセットの割合設定は、無効か安全な自動判定へだけ移行する。
+		migrateSmallComponentMode(state);
 		// 後方互換性: 旧 boolean の "enable-grid-detection" を新しいモード選択へ移行
 		if (
 			state["grid-detection-mode"] === undefined &&

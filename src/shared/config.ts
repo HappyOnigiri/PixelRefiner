@@ -1,4 +1,4 @@
-import type { DetailLevel, RGB } from "./types";
+import type { DetailLevel, RGB, SmallComponentRemovalMode } from "./types";
 
 export type IntRange = {
 	min: number;
@@ -21,8 +21,6 @@ export const PROCESS_RANGES = {
 	backgroundTolerance: { min: 0, max: 255, default: 64 } as const,
 	// トリミング用の境界ボックスしきい値
 	trimAlphaThreshold: { min: 1, max: 255, default: 16 } as const,
-	// UI: 小さな孤立領域を除去するしきい値（総ピクセル数に対する割合）
-	floatingMaxPercent: { min: 0, max: 100, default: 3 } as const,
 	// 小さな孤立領域（連結成分）を背景として除去する
 	floatingMaxPixels: { min: 0, max: 1000000, default: 0 } as const,
 	// 出力ピクセルサイズを強制する（境界ボックスのトリミング後）
@@ -147,6 +145,21 @@ export const BACKGROUND_MODEL_LIMITS = {
 	dehaloPushStrength: 0.35,
 	dehaloSourceBlend: 0.35,
 	dehaloInteriorBlend: 0.65,
+} as const;
+
+export const SMALL_COMPONENT_LIMITS = {
+	maxLogicalPixels: {
+		off: 0,
+		light: 1,
+		auto: 2,
+		strong: 4,
+	} satisfies Record<SmallComponentRemovalMode, number>,
+	proximityGap: 1,
+	matchingColorChannelTolerance: 16,
+	symmetryTolerance: 1,
+	strongEdgeDelta: 64,
+	highOpacity: 224,
+	outlineMinLength: 2,
 } as const;
 
 export const GRID_CANDIDATE_SCORE_WEIGHTS = {
@@ -419,7 +432,9 @@ export const PROCESS_DEFAULTS = {
 	// [Intended] UIにはアルゴリズム名を出さず、Autoで頑健なセル復元を使う。
 	cellSamplingMode: "alpha-aware-medoid",
 	preserveThinFeatures: true,
+	smallComponentMode: "auto",
 
+	// [Intended] 公開済みの旧オプション用。新しい既定処理には使用しない。
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
 	reduceColorMode: "none", // "none" | "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
