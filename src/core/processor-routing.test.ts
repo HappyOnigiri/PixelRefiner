@@ -47,6 +47,14 @@ const safeOptions = {
 } as const;
 
 describe("processing router", () => {
+	it("uses automatic routing when processingMode is omitted", () => {
+		const { processingMode: _processingMode, ...defaultOptions } = safeOptions;
+		const processed = processImage(createContinuousImage(), defaultOptions);
+
+		expect(processed.analysis.classification).toBe("continuous");
+		expect(processed.analysis.route).toBe("convert");
+	});
+
 	it("preserves native pixel art at its original size", () => {
 		const image = createNativePixelArt();
 		const processed = processImage(image, safeOptions);

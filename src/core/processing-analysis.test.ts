@@ -143,6 +143,7 @@ describe("processing analysis", () => {
 
 	it("warns when detection succeeds on only one axis", () => {
 		const processed = processImage(stripedImage(), {
+			processingMode: "refine",
 			autoGridFromTrimmed: false,
 			backgroundMask: false,
 			bgRemovalScope: "off",
@@ -163,6 +164,7 @@ describe("processing analysis", () => {
 
 	it("warns when grid detection cannot produce a reliable result", () => {
 		const processed = processImage(solidImage(64, 64, [40, 80, 120, 255]), {
+			processingMode: "refine",
 			autoGridFromTrimmed: false,
 			backgroundMask: false,
 			bgRemovalScope: "off",

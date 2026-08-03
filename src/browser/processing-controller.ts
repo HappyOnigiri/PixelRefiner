@@ -6,7 +6,6 @@ import type {
 	CandidateSelection,
 	DitherMode,
 	OutlineStyle,
-	ProcessingMode,
 } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
@@ -40,7 +39,6 @@ type ProcessingControllerOptions = {
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
 	candidateChooser: CandidateChooser;
-	processingMode: ProcessingMode;
 };
 
 export type RunProcessingOptions = {
@@ -58,7 +56,6 @@ export const createRunProcessing = ({
 	updateGrid,
 	updateBgColorFromMethod,
 	candidateChooser,
-	processingMode,
 }: ProcessingControllerOptions): ((
 	options?: RunProcessingOptions,
 ) => Promise<void>) => {
@@ -191,7 +188,6 @@ export const createRunProcessing = ({
 			const enableGridDetection = gridMode !== "off";
 
 			const processOptions: ProcessOptions = {
-				processingMode,
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
