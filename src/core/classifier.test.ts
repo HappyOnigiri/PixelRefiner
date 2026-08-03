@@ -52,6 +52,40 @@ const createNativePixelArt = (): RawImage => {
 	return image;
 };
 
+// 行内は同色で、列方向にだけ滑らかに変化する画像。
+const createColumnGradient = (): RawImage => {
+	const width = 32;
+	const height = 32;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		const value = y * 7;
+		for (let x = 0; x < width; x += 1) {
+			const index = (y * width + x) * 4;
+			data[index] = value;
+			data[index + 1] = (value + 40) % 256;
+			data[index + 2] = (value + 80) % 256;
+			data[index + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const rotateQuarterTurn = (image: RawImage): RawImage => {
+	const { width, height } = image;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const source = (y * width + x) * 4;
+			const target = (x * height + (height - 1 - y)) * 4;
+			data[target] = image.data[source];
+			data[target + 1] = image.data[source + 1];
+			data[target + 2] = image.data[source + 2];
+			data[target + 3] = image.data[source + 3];
+		}
+	}
+	return { width: height, height: width, data };
+};
+
 const candidate = (
 	image: RawImage,
 	cell: number,
@@ -130,11 +164,34 @@ describe("input classifier", () => {
 		expect(routeForClassification(classification)).toBe(route);
 	});
 
+	it("classifies an image and its rotation the same way", () => {
+		const columnGradient = createColumnGradient();
+
+		expect(classifyInput(columnGradient).classification).toBe(
+			classifyInput(rotateQuarterTurn(columnGradient)).classification,
+		);
+	});
+
 	it("falls back from a low-confidence refine decision", () => {
-		const image = createPixelArt(8, 2);
-		const decision = selectAutoProcessingRoute("soft-pixel", [
-			candidate(image, 2, 0.25),
-		]);
+		const decision = selectAutoProcessingRoute("soft-pixel", 0.25);
+
+		expect(decision).toEqual({
+			route: "preserve",
+			fellBackToPreserve: true,
+		});
+	});
+
+	it("keeps refine when the applied grid is confident enough", () => {
+		const decision = selectAutoProcessingRoute("soft-pixel", 0.45);
+
+		expect(decision).toEqual({
+			route: "refine",
+			fellBackToPreserve: false,
+		});
+	});
+
+	it("falls back when no candidate matches the applied grid", () => {
+		const decision = selectAutoProcessingRoute("scaled-pixel", undefined);
 
 		expect(decision).toEqual({
 			route: "preserve",

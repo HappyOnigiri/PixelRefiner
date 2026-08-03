@@ -4,9 +4,7 @@ import type { RawImage } from "../shared/types";
 import { processImage } from "./processor";
 import { readPngAsRawImage } from "./processor-test-helpers";
 
-const createNativePixelArt = (): RawImage => {
-	const width = 8;
-	const height = 8;
+const createNativePixelArt = (width = 8, height = 8): RawImage => {
 	const data = new Uint8ClampedArray(width * height * 4);
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
@@ -78,6 +76,45 @@ describe("processing router", () => {
 
 		expect(processed.analysis.classification).toBeUndefined();
 		expect(processed.analysis.route).toBe("preserve");
+	});
+
+	it("keeps an explicit convert route when grid detection is disabled", () => {
+		const processed = processImage(createContinuousImage(), {
+			...safeOptions,
+			processingMode: "convert",
+			enableGridDetection: false,
+		});
+
+		expect(processed.analysis.route).toBe("convert");
+	});
+
+	it("applies the requested outline on an automatic preserve route", () => {
+		const image = createNativePixelArt();
+		const processed = processImage(image, {
+			...safeOptions,
+			outlineStyle: "sharp",
+		});
+
+		expect(processed.analysis.route).toBe("preserve");
+		expect(processed.result).not.toEqual(image);
+	});
+
+	it("applies the requested square padding on an automatic preserve route", () => {
+		const processed = processImage(createNativePixelArt(12, 6), {
+			...safeOptions,
+			makeSquare: true,
+		});
+
+		expect(processed.analysis.route).toBe("preserve");
+		expect(processed.result.width).toBe(12);
+		expect(processed.result.height).toBe(12);
+	});
+
+	it("reports the grid metric and the classification metric separately", () => {
+		const processed = processImage(createNativePixelArt(), safeOptions);
+
+		expect(processed.analysis.classificationConfidence).toBeGreaterThan(0);
+		expect(processed.analysis.confidence).toBe(0);
 	});
 
 	it.each([

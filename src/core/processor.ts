@@ -22,7 +22,10 @@ import {
 	padRawImage,
 } from "./image-operations";
 import { applyOutline } from "./outline";
-import { createProcessingAnalysis } from "./processing-analysis";
+import {
+	createProcessingAnalysis,
+	findCandidateIndexForGrid,
+} from "./processing-analysis";
 import { prepareAutomaticBackground } from "./processor-background";
 import {
 	getDownsampleOptions,
@@ -30,6 +33,7 @@ import {
 	type ProcessOptions,
 } from "./processor-options";
 import {
+	processExplicitSimpleRoute,
 	processForcedRoute,
 	processGridDisabledRoute,
 } from "./processor-simple-routes";
@@ -153,16 +157,17 @@ export const processImage = (
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return forcedResult;
-	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
-	if (gridDisabledResult) return gridDisabledResult;
+	// [Intended] 明示された処理経路は enableGridDetection の早期 return より先に判定する。
+	// 逆順だと、グリッド検出を無効にしただけで指定した convert が preserve に化ける。
 	if (o.processingMode === "preserve" || o.processingMode === "convert") {
-		return processGridDisabledRoute({
+		return processExplicitSimpleRoute({
 			...simpleRouteContext,
-			o: { ...o, enableGridDetection: false },
 			route: o.processingMode,
 			method: `manual-${o.processingMode}`,
-		}) as ProcessResult;
+		});
 	}
+	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
+	if (gridDisabledResult) return gridDisabledResult;
 
 	// auto: まず背景トリミング後の領域（ダウンサンプリング前）から outW/outH を推定し、そのままダウンサンプリングする。
 	// （隙間の多い画像でも、安定させるためコンテンツ領域に注目したい。）
@@ -322,20 +327,27 @@ export const processImage = (
 		});
 	}
 	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
+	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
 		o.processingMode === "auto"
-			? classifyInput(img, rankedGridCandidates)
+			? classifyInput(working, rankedGridCandidates)
 			: undefined;
+	const selectedCandidateIndex = findCandidateIndexForGrid(
+		rankedGridCandidates,
+		grid,
+	);
 	const autoRoute = classificationResult
 		? selectAutoProcessingRoute(
 				classificationResult.classification,
-				rankedGridCandidates,
+				selectedCandidateIndex >= 0
+					? rankedGridCandidates[selectedCandidateIndex].confidence
+					: undefined,
 			)
 		: { route: "refine" as const, fellBackToPreserve: false };
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
-		return processGridDisabledRoute({
+		return processExplicitSimpleRoute({
 			...simpleRouteContext,
-			o: { ...o, enableGridDetection: false },
 			route: autoRoute.route,
 			method: autoRoute.fellBackToPreserve
 				? "auto-low-confidence-preserve"
@@ -345,7 +357,8 @@ export const processImage = (
 			additionalWarnings: autoRoute.fellBackToPreserve
 				? ["FALLBACK_TO_PRESERVE"]
 				: undefined,
-		}) as ProcessResult;
+			preparedMask: maskedForDebugOrAuto ?? undefined,
+		});
 	}
 
 	const downsampleStart = performance.now();

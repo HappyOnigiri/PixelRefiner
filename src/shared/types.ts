@@ -97,10 +97,8 @@ export type InputClassification =
 
 export type ClassificationFeatures = {
 	uniqueColorRatio: number;
-	colorEntropy: number;
 	flatNeighborRatio: number;
 	smoothGradientRatio: number;
-	alphaLevelRatio: number;
 	visiblePixelRatio: number;
 	gridConfidence: number;
 	gridScale: number;
@@ -180,6 +178,11 @@ export type ProcessingAnalysis = {
 	classification?: InputClassification;
 	classificationFeatures?: ClassificationFeatures;
 	classificationReasons?: ClassificationReason[];
+	/**
+	 * 入力分類のルール適合度（0～1）。分類を行った場合のみ設定する。
+	 * [Policy] グリッド候補の指標である confidence とは別の量なので、同じ欄に混ぜない。
+	 */
+	classificationConfidence?: number;
 	route: ProcessingRoute;
 	/** 較正済みの確率ではなく、0～1 の相対比較指標。 */
 	confidence: number;

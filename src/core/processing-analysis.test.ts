@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
 import { estimateBackgroundModel } from "./background";
+import { createProcessingAnalysis } from "./processing-analysis";
 import { processImage } from "./processor";
 
 const solidImage = (
@@ -318,6 +319,41 @@ describe("processing analysis", () => {
 				),
 			).size,
 		).toBe(candidates.length);
+	});
+
+	it("adds fallback warnings once even if already present", () => {
+		const image = solidImage(8, 8, [10, 20, 30, 255]);
+		const grid = {
+			cellW: 1,
+			cellH: 1,
+			offsetX: 0,
+			offsetY: 0,
+			outW: 8,
+			outH: 8,
+			cropX: 0,
+			cropY: 0,
+			cropW: 8,
+			cropH: 8,
+			score: 0,
+		};
+
+		const analysis = createProcessingAnalysis(
+			image,
+			image,
+			image,
+			grid,
+			"preserve",
+			"auto-low-confidence-preserve",
+			1,
+			undefined,
+			undefined,
+			undefined,
+			["FALLBACK_TO_PRESERVE", "FALLBACK_TO_PRESERVE"],
+		);
+
+		expect(
+			analysis.warnings.filter((code) => code === "FALLBACK_TO_PRESERVE"),
+		).toHaveLength(1);
 	});
 
 	it("is structured-clone compatible for worker transport", () => {

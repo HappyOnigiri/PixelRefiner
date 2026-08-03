@@ -57,6 +57,7 @@ export const INPUT_CLASSIFIER_THRESHOLDS = {
 	nativeSafeMaxDimension: 12,
 	nativeUniqueColorRatio: 0.35,
 	nativeFlatNeighborRatio: 0.42,
+	smoothGradientMaxDifference: 96,
 	scaledGridConfidence: 0.3,
 	scaledMinGridScale: 1.5,
 	scaledFlatNeighborRatio: 0.48,
@@ -66,7 +67,23 @@ export const INPUT_CLASSIFIER_THRESHOLDS = {
 	continuousUniqueColorRatio: 0.12,
 	continuousSmoothGradientRatio: 0.62,
 	continuousFlatNeighborRatio: 0.18,
-	minimumDecisionConfidence: 0.55,
+} as const;
+
+// 分類が返す信頼度（ルール適合度）の基準値とスケール係数。
+// 各分類は base から始まり、超過分 (strength - 1) に scale を掛けた値を max で頭打ちにする。
+export const INPUT_CLASSIFIER_CONFIDENCE = {
+	base: 0.55,
+	emptyOrTiny: 1,
+	nativeSafe: 0.85,
+	scaledMax: 0.99,
+	scaledScale: 0.35,
+	continuousMax: 0.98,
+	continuousScale: 0.25,
+	softMax: 0.95,
+	softScale: 0.3,
+	nativeMax: 0.95,
+	nativeScale: 0.25,
+	uncertain: 0.5,
 } as const;
 
 export const BACKGROUND_MODEL_LIMITS = {

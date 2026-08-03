@@ -120,6 +120,19 @@ const toCandidateReport = (
 	};
 };
 
+// 適用グリッドと同じセル寸法・オフセットを持つ候補の位置。見つからなければ -1。
+export const findCandidateIndexForGrid = (
+	candidates: GridCandidateReport[],
+	grid: PixelGrid,
+): number =>
+	candidates.findIndex(
+		(candidate) =>
+			candidate.grid.cellW === grid.cellW &&
+			candidate.grid.cellH === grid.cellH &&
+			candidate.grid.offsetX === grid.offsetX &&
+			candidate.grid.offsetY === grid.offsetY,
+	);
+
 export const createProcessingAnalysis = (
 	source: RawImage,
 	result: RawImage,
@@ -136,13 +149,7 @@ export const createProcessingAnalysis = (
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
 	const selectedCandidateIndex = rankedCandidates
-		? gridCandidates.findIndex(
-				(candidate) =>
-					candidate.grid.cellW === grid.cellW &&
-					candidate.grid.cellH === grid.cellH &&
-					candidate.grid.offsetX === grid.offsetX &&
-					candidate.grid.offsetY === grid.offsetY,
-			)
+		? findCandidateIndexForGrid(gridCandidates, grid)
 		: 0;
 	const selected =
 		selectedCandidateIndex >= 0
@@ -202,8 +209,9 @@ export const createProcessingAnalysis = (
 		classification: classificationResult?.classification,
 		classificationFeatures: classificationResult?.features,
 		classificationReasons: classificationResult?.reasons,
+		classificationConfidence: classificationResult?.confidence,
 		route,
-		confidence: classificationResult?.confidence ?? selected.confidence,
+		confidence: selected.confidence,
 		warnings,
 		gridCandidates,
 		// [Intended] PRF-100 は信頼度が低い場合に自動確定を行わない。
