@@ -71,6 +71,38 @@ const getGridSafety = (grid: PixelGrid, source: RawImage): GridSafety => {
 	};
 };
 
+/**
+ * 検出グリッド由来の低信頼シグナルを警告コードとして返す。
+ *
+ * [Intended] preserve 経路の診断はセル 1x1 の合成グリッドで行うため、
+ * 検出側で得た低信頼シグナルが analysis.warnings から落ちる。警告が無いと
+ * 候補選択も警告通知も出ず、縮小候補があることをユーザーへ伝えられないため、
+ * auto が preserve を選んだ場合はこの警告を補って渡す。
+ */
+export const detectedGridConfidenceWarnings = (
+	source: RawImage,
+	grid: PixelGrid,
+	selectedGridConfidence: number | undefined,
+): ProcessingWarningCode[] => {
+	// [Intended] 検出グリッドが原寸と同じ出力しか生まないなら提示できる候補が無い。
+	if (grid.outW === source.width && grid.outH === source.height) return [];
+	const warnings: ProcessingWarningCode[] = [];
+	const failedAxes = grid.detectionFailedAxes?.length ?? 0;
+	if (failedAxes === 1) warnings.push("ONE_AXIS_DETECTION_FAILED");
+	const lowConfidence =
+		selectedGridConfidence === undefined ||
+		selectedGridConfidence <
+			PROCESS_ANALYSIS_THRESHOLDS.gridCandidateConfidenceThreshold;
+	if (
+		failedAxes > 0 ||
+		lowConfidence ||
+		getGridSafety(grid, source).lowConfidence
+	) {
+		warnings.push("LOW_GRID_CONFIDENCE");
+	}
+	return warnings;
+};
+
 const getGridConfidence = (
 	grid: PixelGrid,
 	route: ProcessingRoute,

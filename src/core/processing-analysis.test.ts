@@ -162,6 +162,30 @@ describe("processing analysis", () => {
 		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
 	});
 
+	it("keeps low-confidence warnings when auto preserves the input size", () => {
+		const image = stripedImage();
+		const processed = processImage(image, {
+			processingMode: "auto",
+			autoGridFromTrimmed: false,
+			backgroundMask: false,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		});
+
+		expect(processed.analysis.route).toBe("preserve");
+		expect(processed.result.width).toBe(image.width);
+		expect(processed.result.height).toBe(image.height);
+		expect(processed.analysis.warnings).toContain("ONE_AXIS_DETECTION_FAILED");
+		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(
+			processed.analysis.gridCandidates.some(
+				(candidate) => candidate.method !== "preserve",
+			),
+		).toBe(true);
+	});
+
 	it("warns when grid detection cannot produce a reliable result", () => {
 		const processed = processImage(solidImage(64, 64, [40, 80, 120, 255]), {
 			processingMode: "refine",

@@ -24,6 +24,7 @@ import {
 import { applyOutline } from "./outline";
 import {
 	createProcessingAnalysis,
+	detectedGridConfidenceWarnings,
 	findCandidateIndexForGrid,
 } from "./processing-analysis";
 import { prepareAutomaticBackground } from "./processor-background";
@@ -349,12 +350,14 @@ export const processImage = (
 		rankedGridCandidates,
 		grid,
 	);
+	const selectedCandidateConfidence =
+		selectedCandidateIndex >= 0
+			? rankedGridCandidates[selectedCandidateIndex].confidence
+			: undefined;
 	const autoRoute = classificationResult
 		? selectAutoProcessingRoute(
 				classificationResult.classification,
-				selectedCandidateIndex >= 0
-					? rankedGridCandidates[selectedCandidateIndex].confidence
-					: undefined,
+				selectedCandidateConfidence,
 			)
 		: { route: "refine" as const, fellBackToPreserve: false };
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
@@ -375,9 +378,21 @@ export const processImage = (
 				: `auto-${autoRoute.route}`,
 			classificationResult,
 			rankedCandidates: rankedGridCandidates,
-			additionalWarnings: autoRoute.fellBackToPreserve
-				? ["FALLBACK_TO_PRESERVE"]
-				: undefined,
+			additionalWarnings: [
+				...(autoRoute.fellBackToPreserve
+					? (["FALLBACK_TO_PRESERVE"] as const)
+					: []),
+				// [Intended] 分類が preserve を選んだ場合も、検出側の低信頼シグナルを
+				// 握りつぶさず渡す。これが無いと候補選択の表示条件を満たさず、
+				// 復元候補の存在をユーザーが知る手段が無くなる。
+				...(autoRoute.route === "preserve"
+					? detectedGridConfidenceWarnings(
+							working,
+							grid,
+							selectedCandidateConfidence,
+						)
+					: []),
+			],
 			preparedMask: maskedForDebugOrAuto ?? undefined,
 		});
 	}
