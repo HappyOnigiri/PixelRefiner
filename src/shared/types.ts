@@ -86,12 +86,41 @@ export interface Palette {
 
 export type ProcessingRoute = "refine" | "convert" | "preserve";
 
+export type ProcessingMode = "auto" | ProcessingRoute;
+
 export type InputClassification =
 	| "native-pixel"
 	| "scaled-pixel"
 	| "soft-pixel"
 	| "continuous"
 	| "uncertain";
+
+export type ClassificationFeatures = {
+	uniqueColorRatio: number;
+	colorEntropy: number;
+	flatNeighborRatio: number;
+	smoothGradientRatio: number;
+	alphaLevelRatio: number;
+	visiblePixelRatio: number;
+	gridConfidence: number;
+	gridScale: number;
+};
+
+export type ClassificationReason =
+	| "EMPTY_OR_TINY_INPUT"
+	| "NATIVE_PIXEL_STRUCTURE"
+	| "INTEGER_GRID_STRUCTURE"
+	| "SOFT_GRID_STRUCTURE"
+	| "CONTINUOUS_TONE_STRUCTURE"
+	| "LOW_CLASSIFICATION_CONFIDENCE";
+
+export type InputClassificationResult = {
+	classification: InputClassification;
+	/** 較正済みの確率ではなく、0～1 のルール適合度。 */
+	confidence: number;
+	features: ClassificationFeatures;
+	reasons: ClassificationReason[];
+};
 
 export type ProcessingWarningCode =
 	| "LOW_GRID_CONFIDENCE"
@@ -149,6 +178,8 @@ export type BackgroundDiagnostic = {
 
 export type ProcessingAnalysis = {
 	classification?: InputClassification;
+	classificationFeatures?: ClassificationFeatures;
+	classificationReasons?: ClassificationReason[];
 	route: ProcessingRoute;
 	/** 較正済みの確率ではなく、0～1 の相対比較指標。 */
 	confidence: number;

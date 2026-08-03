@@ -11,6 +11,7 @@ import type {
 	DitherMode,
 	GridSignalOptions,
 	OutlineStyle,
+	ProcessingMode,
 	RawImage,
 	RGB,
 } from "../shared/types";
@@ -19,6 +20,8 @@ import type { DetectOptions } from "./detector";
 import type { DownsampleOptions } from "./image-operations";
 
 export type ProcessOptions = DetectOptions & {
+	/** 入力分類を使う自動経路、または処理経路の明示指定。 */
+	processingMode?: ProcessingMode;
 	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
 	gridSignals?: Partial<GridSignalOptions>;
 	preRemoveBackground?: boolean;
@@ -160,6 +163,7 @@ export const normalizeProcessOptions = (
 	options: ProcessOptions | undefined,
 ): {
 	detect: DetectOptions;
+	processingMode: ProcessingMode;
 	preRemoveBackground: boolean;
 	postRemoveBackground: boolean;
 	forcePixelsW?: number;
@@ -222,6 +226,7 @@ export const normalizeProcessOptions = (
 
 	const preRemoveBackground =
 		raw.preRemoveBackground ?? PROCESS_DEFAULTS.preRemoveBackground;
+	const processingMode = raw.processingMode ?? PROCESS_DEFAULTS.processingMode;
 	const postRemoveBackground =
 		raw.postRemoveBackground ?? PROCESS_DEFAULTS.postRemoveBackground;
 	const forcePixelsW = clampOptionalInt(
@@ -306,6 +311,7 @@ export const normalizeProcessOptions = (
 
 	return {
 		detect,
+		processingMode,
 		preRemoveBackground,
 		postRemoveBackground,
 		forcePixelsW,

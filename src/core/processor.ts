@@ -6,6 +6,7 @@ import {
 	removeBackgroundByFloodFillLegacy,
 	removeSmallFloatingComponentsInPlace,
 } from "./background-removal";
+import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { detectGrid } from "./detector";
 import { rankGridCandidates } from "./grid-candidates";
@@ -154,6 +155,14 @@ export const processImage = (
 	if (forcedResult) return forcedResult;
 	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
 	if (gridDisabledResult) return gridDisabledResult;
+	if (o.processingMode === "preserve" || o.processingMode === "convert") {
+		return processGridDisabledRoute({
+			...simpleRouteContext,
+			o: { ...o, enableGridDetection: false },
+			route: o.processingMode,
+			method: `manual-${o.processingMode}`,
+		}) as ProcessResult;
+	}
 
 	// auto: まず背景トリミング後の領域（ダウンサンプリング前）から outW/outH を推定し、そのままダウンサンプリングする。
 	// （隙間の多い画像でも、安定させるためコンテンツ領域に注目したい。）
@@ -313,6 +322,31 @@ export const processImage = (
 		});
 	}
 	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	const classificationResult =
+		o.processingMode === "auto"
+			? classifyInput(img, rankedGridCandidates)
+			: undefined;
+	const autoRoute = classificationResult
+		? selectAutoProcessingRoute(
+				classificationResult.classification,
+				rankedGridCandidates,
+			)
+		: { route: "refine" as const, fellBackToPreserve: false };
+	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
+		return processGridDisabledRoute({
+			...simpleRouteContext,
+			o: { ...o, enableGridDetection: false },
+			route: autoRoute.route,
+			method: autoRoute.fellBackToPreserve
+				? "auto-low-confidence-preserve"
+				: `auto-${autoRoute.route}`,
+			classificationResult,
+			rankedCandidates: rankedGridCandidates,
+			additionalWarnings: autoRoute.fellBackToPreserve
+				? ["FALLBACK_TO_PRESERVE"]
+				: undefined,
+		}) as ProcessResult;
+	}
 
 	const downsampleStart = performance.now();
 	// [Intended] 選択した出力グリッドは後でトリミングまたはパディングされる場合がある一方で、
@@ -581,6 +615,7 @@ export const processImage = (
 		trimAlphaThreshold,
 		rankedGridCandidates,
 		backgroundDiagnostic,
+		classificationResult,
 	);
 	log("Processing analysis", analysis);
 	return {

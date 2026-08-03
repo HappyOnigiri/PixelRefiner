@@ -5,6 +5,7 @@ import {
 import type {
 	BackgroundDiagnostic,
 	GridCandidateReport,
+	InputClassificationResult,
 	PixelGrid,
 	ProcessingAnalysis,
 	ProcessingRoute,
@@ -129,6 +130,8 @@ export const createProcessingAnalysis = (
 	alphaThreshold: number,
 	rankedCandidates?: GridCandidateReport[],
 	backgroundDiagnostic?: BackgroundDiagnostic,
+	classificationResult?: InputClassificationResult,
+	additionalWarnings: ProcessingWarningCode[] = [],
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
@@ -189,10 +192,18 @@ export const createProcessingAnalysis = (
 	) {
 		warnings.push("EXTREME_OUTPUT_SIZE");
 	}
+	for (let i = 0; i < additionalWarnings.length; i += 1) {
+		if (!warnings.includes(additionalWarnings[i])) {
+			warnings.push(additionalWarnings[i]);
+		}
+	}
 
 	return {
+		classification: classificationResult?.classification,
+		classificationFeatures: classificationResult?.features,
+		classificationReasons: classificationResult?.reasons,
 		route,
-		confidence: selected.confidence,
+		confidence: classificationResult?.confidence ?? selected.confidence,
 		warnings,
 		gridCandidates,
 		// [Intended] PRF-100 は信頼度が低い場合に自動確定を行わない。

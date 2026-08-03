@@ -1,6 +1,10 @@
 import type {
 	BackgroundDiagnostic,
+	GridCandidateReport,
+	InputClassificationResult,
 	PixelGrid,
+	ProcessingRoute,
+	ProcessingWarningCode,
 	ProcessResult,
 	RawImage,
 } from "../shared/types";
@@ -33,6 +37,11 @@ type SimpleRouteContext = {
 	log: (...args: unknown[]) => void;
 	backgroundDiagnostic?: BackgroundDiagnostic;
 	backgroundModel?: BackgroundModel;
+	route?: ProcessingRoute;
+	method?: string;
+	classificationResult?: InputClassificationResult;
+	additionalWarnings?: ProcessingWarningCode[];
+	rankedCandidates?: GridCandidateReport[];
 };
 
 export const processForcedRoute = (
@@ -262,8 +271,10 @@ export const processForcedRoute = (
 		"convert",
 		"forced-size",
 		trimAlphaThreshold,
-		undefined,
+		context.rankedCandidates,
 		backgroundDiagnostic,
+		context.classificationResult,
+		context.additionalWarnings,
 	);
 	log("Processing analysis", analysis);
 	return {
@@ -432,11 +443,13 @@ export const processGridDisabledRoute = (
 		finalResult,
 		compareBeforeSanitized,
 		finalGridForNoGrid,
-		"preserve",
-		"grid-disabled",
+		context.route ?? "preserve",
+		context.method ?? "grid-disabled",
 		trimAlphaThreshold,
-		undefined,
+		context.rankedCandidates,
 		backgroundDiagnostic,
+		context.classificationResult,
+		context.additionalWarnings,
 	);
 	log("Processing analysis", analysis);
 	return {
