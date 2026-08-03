@@ -73,6 +73,36 @@ const describeCase = (
 				"完全透明な画素を透明に保ったまま、ほぼ透明な画素のRGBをセルの代表色に選ばないことを確認します。",
 		};
 	}
+	if (result.id === "retain-protected-small-details") {
+		return {
+			en:
+				"Remove isolated background noise while retaining paired eyes, dakuten, " +
+				"and disconnected star and spark details in native-resolution pixel art.",
+			ja:
+				"等倍のドット絵から孤立した背景ノイズを除去しつつ、対になった目、濁点、" +
+				"分離した星と光の細部を保持します。",
+		};
+	}
+	if (result.id === "remove-isolated-small-noise") {
+		return {
+			en:
+				"Remove a weak isolated one-pixel noise component from a uniform background " +
+				"without changing the main native-resolution subject.",
+			ja:
+				"一様な背景にある弱い1ピクセルの孤立ノイズを除去し、" +
+				"等倍の主被写体を変化させずに保持します。",
+		};
+	}
+	if (result.id === "skip-small-removal-on-uncertain-background") {
+		return {
+			en:
+				"Keep every pixel unchanged when automatic background confidence is too low " +
+				"to safely classify disconnected details as removable noise.",
+			ja:
+				"自動背景の信頼度が低く、分離した細部を除去可能なノイズと安全に判定できない場合は、" +
+				"すべての画素を変更せずに保持します。",
+		};
+	}
 	if (options.reduceColorMode === "gb_pocket") {
 		return {
 			en: "Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
