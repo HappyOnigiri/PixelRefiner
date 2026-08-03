@@ -50,6 +50,29 @@ const describeCase = (
 				"強度100%のOrderedディザリングを適用します。",
 		};
 	}
+	if (result.id === "convert-continuous-tone-balanced") {
+		return {
+			en:
+				"Route a 48 x 32 continuous-tone image through Auto to the Convert pipeline, " +
+				"derive three candidate resolutions from its aspect ratio and information density, " +
+				"and emit the balanced candidate at 24 x 16 with edge-aware resampling instead of restoring an original grid.",
+			ja:
+				"48×32の連続階調画像をAuto判定からConvertパイプラインへ流し、" +
+				"縦横比と情報量から3つの候補解像度を導出したうえで、" +
+				"元グリッドの復元ではなく標準候補の24×16へエッジ考慮のリサンプルで変換します。",
+		};
+	}
+	if (result.id === "convert-illustration-detailed") {
+		return {
+			en:
+				"Convert a 72 x 48 illustration with transparent margins and thin high-contrast lines " +
+				"to the detailed candidate at 54 x 36, keeping fully transparent pixels transparent and " +
+				"never picking the RGB of a nearly transparent pixel as a cell's representative color.",
+			ja:
+				"透明余白と高コントラストの細線を含む72×48のイラストを細かめ候補の54×36へ変換し、" +
+				"完全透明な画素を透明に保ったまま、ほぼ透明な画素のRGBをセルの代表色に選ばないことを確認します。",
+		};
+	}
 	if (options.reduceColorMode === "gb_pocket") {
 		return {
 			en: "Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
