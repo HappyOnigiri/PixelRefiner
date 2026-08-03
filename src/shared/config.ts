@@ -94,6 +94,10 @@ export const CONVERT_LIMITS = {
 	maxAnalysisPixels: 65_536,
 	edgeThreshold: 0.08,
 	edgeBoost: 2.25,
+	// セル内の高コントラスト色を代表色へ昇格させる最小の色距離（Oklab の二乗距離）
+	featureDistanceThreshold: 0.0625,
+	// 同じ昇格に必要な最小の面積被覆率。孤立ノイズを除外する下限
+	featureCoverageThreshold: 0.04,
 } as const;
 
 export const CONVERT_CANDIDATE_DEFAULTS = {

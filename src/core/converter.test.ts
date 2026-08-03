@@ -80,6 +80,58 @@ describe("continuous image converter", () => {
 		expect(darkPixels).toBeGreaterThan(0);
 	});
 
+	it("does not surface the RGB of a nearly transparent pixel as an opaque color", () => {
+		const width = 24;
+		const height = 24;
+		const build = (spotRed: number): RawImage => {
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let i = 0; i < data.length; i += 4) {
+				data[i] = 255;
+				data[i + 1] = 255;
+				data[i + 2] = 255;
+				data[i + 3] = 255;
+			}
+			const spot = (12 * width + 12) * 4;
+			data[spot] = spotRed;
+			data[spot + 1] = spotRed;
+			data[spot + 2] = spotRed;
+			data[spot + 3] = 1;
+			return { width, height, data };
+		};
+
+		// ほぼ透明な1画素の RGB を変えても、出力の可視色は変わらない。
+		const white = edgeAwareAreaResample(build(255), 9, 9);
+		const black = edgeAwareAreaResample(build(0), 9, 9);
+		expect(black).toEqual(white);
+		for (let i = 0; i < black.data.length; i += 4) {
+			if (black.data[i + 3] > 32) expect(black.data[i]).toBeGreaterThan(200);
+		}
+	});
+
+	it("keeps candidate sizes stable across the analysis sampling threshold", () => {
+		// 透明と不透明が1画素ごとに交互に並ぶ画像。原点固定の間引きだと片方の位相しか読めない。
+		const build = (width: number, height: number): RawImage => {
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const index = (y * width + x) * 4;
+					const opaque = (x + y) % 2 === 0;
+					data[index] = 255;
+					data[index + 1] = 255;
+					data[index + 2] = 255;
+					data[index + 3] = opaque ? 255 : 0;
+				}
+			}
+			return { width, height, data };
+		};
+
+		const below = createConvertCandidates(build(256, 256));
+		const above = createConvertCandidates(build(257, 256));
+		for (let i = 0; i < below.length; i += 1) {
+			expect(above[i].outH).toBeGreaterThanOrEqual(below[i].outH - 1);
+		}
+	});
+
 	it("handles fully transparent and tiny images without failure", () => {
 		const transparent: RawImage = {
 			width: 1,

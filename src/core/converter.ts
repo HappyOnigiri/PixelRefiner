@@ -34,8 +34,16 @@ const analyzeInformation = (image: RawImage): number => {
 	let minY = height;
 	let maxX = -1;
 	let maxY = -1;
-	for (let y = 0; y < height; y += stride) {
-		for (let x = 0; x < width; x += stride) {
+	// [Intended] stride > 1 のとき原点を固定して間引くと、透明と不透明が交互に並ぶ画像で
+	// 片方の位相だけを読み、入力が 1 列増えただけで情報量が不連続に変わる。
+	// 行ごとに位相をずらした決定論的な層化サンプリングにして位相エイリアシングを避ける。
+	const columns = Math.ceil(width / stride);
+	const rows = Math.ceil(height / stride);
+	for (let sy = 0; sy < rows; sy += 1) {
+		const phase = sy % stride;
+		const y = Math.min(height - 1, sy * stride + phase);
+		for (let sx = 0; sx < columns; sx += 1) {
+			const x = Math.min(width - 1, sx * stride + ((sx + phase) % stride));
 			const index = (y * width + x) * 4;
 			sampled += 1;
 			if (data[index + 3] > 15) {
@@ -150,6 +158,7 @@ const writeOklab = (
 	g: number,
 	b: number,
 	target: Float64Array,
+	offset = 0,
 ): void => {
 	const linearR = srgbToLinear(r);
 	const linearG = srgbToLinear(g);
@@ -163,9 +172,12 @@ const writeOklab = (
 	const rootL = Math.cbrt(l);
 	const rootM = Math.cbrt(m);
 	const rootS = Math.cbrt(s);
-	target[0] = 0.2104542553 * rootL + 0.793617785 * rootM - 0.0040720468 * rootS;
-	target[1] = 1.9779984951 * rootL - 2.428592205 * rootM + 0.4505937099 * rootS;
-	target[2] = 0.0259040371 * rootL + 0.7827717662 * rootM - 0.808675766 * rootS;
+	target[offset] =
+		0.2104542553 * rootL + 0.793617785 * rootM - 0.0040720468 * rootS;
+	target[offset + 1] =
+		1.9779984951 * rootL - 2.428592205 * rootM + 0.4505937099 * rootS;
+	target[offset + 2] =
+		0.0259040371 * rootL + 0.7827717662 * rootM - 0.808675766 * rootS;
 };
 
 const createEdgeMap = (image: RawImage): Float32Array => {
@@ -213,9 +225,12 @@ export const edgeAwareAreaResample = (
 	const height = Math.max(1, Math.min(image.height, Math.trunc(outH)));
 	const output = new Uint8ClampedArray(width * height * 4);
 	const edges = createEdgeMap(image);
-	const lab = new Float64Array(3);
 	const scaleX = image.width / width;
 	const scaleY = image.height / height;
+	// [Intended] 1 セルが覆う元画素の最大数ぶんだけ Oklab の使い回しバッファを先に確保する。
+	// ループ内で確保せず、2 パス目は 1 パス目の変換結果を読むだけにする。
+	const cellStride = Math.ceil(scaleX) + 1;
+	const labCache = new Float64Array(cellStride * (Math.ceil(scaleY) + 1) * 3);
 	for (let outY = 0; outY < height; outY += 1) {
 		const sourceTop = outY * scaleY;
 		const sourceBottom = (outY + 1) * scaleY;
@@ -245,17 +260,20 @@ export const edgeAwareAreaResample = (
 					const weightedVisible = weightedArea * alpha;
 					areaWeight += weightedArea;
 					alphaWeight += weightedVisible;
-					if (weightedVisible <= 0) continue;
+					if (alpha <= 0) continue;
+					const cacheAt = ((y - firstY) * cellStride + (x - firstX)) * 3;
 					writeOklab(
 						image.data[index],
 						image.data[index + 1],
 						image.data[index + 2],
-						lab,
+						labCache,
+						cacheAt,
 					);
+					if (weightedVisible <= 0) continue;
 					visibleWeight += weightedVisible;
-					meanL += lab[0] * weightedVisible;
-					meanA += lab[1] * weightedVisible;
-					meanB += lab[2] * weightedVisible;
+					meanL += labCache[cacheAt] * weightedVisible;
+					meanA += labCache[cacheAt + 1] * weightedVisible;
+					meanB += labCache[cacheAt + 2] * weightedVisible;
 				}
 			}
 			const target = (outY * width + outX) * 4;
@@ -273,28 +291,30 @@ export const edgeAwareAreaResample = (
 				for (let x = firstX; x <= lastX; x += 1) {
 					const pixel = y * image.width + x;
 					const index = pixel * 4;
-					if (image.data[index + 3] === 0) continue;
-					writeOklab(
-						image.data[index],
-						image.data[index + 1],
-						image.data[index + 2],
-						lab,
-					);
-					const deltaL = lab[0] - meanL;
-					const deltaA = lab[1] - meanA;
-					const deltaB = lab[2] - meanB;
+					const alpha = image.data[index + 3];
+					if (alpha === 0) continue;
+					const cacheAt = ((y - firstY) * cellStride + (x - firstX)) * 3;
+					const deltaL = labCache[cacheAt] - meanL;
+					const deltaA = labCache[cacheAt + 1] - meanA;
+					const deltaB = labCache[cacheAt + 2] - meanB;
 					const rawDistance =
 						deltaL * deltaL + deltaA * deltaA + deltaB * deltaB;
-					const distance = rawDistance / (1 + edges[pixel]);
+					// [Intended] ほぼ透明な画素の RGB をそのまま代表色にすると、出力側の
+					// alpha はセル平均で決まるため、見えない色が不透明な点やハローとして現れる。
+					// 距離と面積被覆率を alpha で重み付けし、候補から外さずに優先度だけ下げる。
+					const visibility = alpha / 255;
+					const distance = rawDistance / ((1 + edges[pixel]) * visibility);
 					if (distance < bestDistance) {
 						bestDistance = distance;
 						bestIndex = index;
 					}
 					const overlapX =
 						Math.min(sourceRight, x + 1) - Math.max(sourceLeft, x);
-					const coverage = (overlapX * overlapY) / (scaleX * scaleY);
-					if (rawDistance > featureDistance) {
-						featureDistance = rawDistance;
+					const coverage =
+						((overlapX * overlapY) / (scaleX * scaleY)) * visibility;
+					const featureScore = rawDistance * visibility;
+					if (featureScore > featureDistance) {
+						featureDistance = featureScore;
 						featureCoverage = coverage;
 						featureIndex = index;
 					}
@@ -302,7 +322,10 @@ export const edgeAwareAreaResample = (
 			}
 			// [Intended] セル面積の一部を占める高コントラスト色は、平均色に近い面色より優先する。
 			// 通常の孤立ノイズは coverage の下限で除外し、細線や輪郭だけを残す。
-			if (featureDistance >= 0.0625 && featureCoverage >= 0.04) {
+			if (
+				featureDistance >= CONVERT_LIMITS.featureDistanceThreshold &&
+				featureCoverage >= CONVERT_LIMITS.featureCoverageThreshold
+			) {
 				bestIndex = featureIndex;
 			}
 			output[target] = image.data[bestIndex];
