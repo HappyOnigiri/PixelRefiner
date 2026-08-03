@@ -3,6 +3,8 @@ import type { RawImage } from "../shared/types";
 import {
 	type BatchExportItem,
 	createBatchArchiveEntries,
+	createBatchExportItems,
+	encodeBatchEntries,
 	serializeBatchDiagnostics,
 } from "./batch-export";
 
@@ -67,5 +69,56 @@ describe("batch export", () => {
 			confidence: 0.5,
 			attention: true,
 		});
+	});
+
+	it("builds exports only from the batch-start snapshot", () => {
+		const analysis = {
+			classification: "native-pixel" as const,
+			classificationConfidence: 0.9,
+			route: "preserve" as const,
+			confidence: 1,
+			warnings: [],
+			gridCandidates: [],
+		};
+		const processResult = {
+			result,
+			grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 1 },
+			extractedPalette: [{ r: 255, g: 0, b: 0 }],
+			compareBefore: result,
+			compareBeforeSanitized: result,
+			analysis,
+		};
+		const items = createBatchExportItems(
+			[{ id: "started", inputFilename: "started.png" }],
+			[
+				{ id: "started", status: "done", processResult },
+				{ id: "added-later", status: "done", processResult },
+			],
+		);
+
+		expect(items).toHaveLength(1);
+		expect(items[0]).toMatchObject({
+			id: "started",
+			inputFilename: "started.png",
+			status: "done",
+		});
+	});
+
+	it("isolates PNG encoding failures and keeps successful entries", async () => {
+		const entries = createBatchArchiveEntries(
+			[
+				{ id: "good", inputFilename: "good.png", status: "done", result },
+				{ id: "bad", inputFilename: "bad.png", status: "done", result },
+			],
+			1,
+		);
+		const encoded = await encodeBatchEntries(entries, async (entry) =>
+			entry.id === "good" ? new Blob(["png"]) : null,
+		);
+
+		expect(encoded.encoded.map(({ entry }) => entry.id)).toEqual(["good"]);
+		expect(encoded.failed).toMatchObject([
+			{ entry: { id: "bad" }, error: "PNG export failed: bad.png" },
+		]);
 	});
 });

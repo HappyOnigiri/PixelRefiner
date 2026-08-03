@@ -1,6 +1,7 @@
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
+import { isDitherSettingsEnabled } from "./batch-options";
 import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError } from "./notifications";
@@ -336,12 +337,11 @@ export const setupSettingsControls = ({
 
 	const updateReduceColorsDisabledStates = () => {
 		const mode = els.reduceColorModeSelect.value;
-		const isNone = mode === "none";
 		const isAuto = mode === "auto";
 		const isSharedPalette = els.sharedPaletteToggle.checked;
 
 		// モードに応じてセクションを有効・無効にする
-		const isEnabled = !isNone;
+		const isEnabled = isDitherSettingsEnabled(mode, isSharedPalette);
 
 		els.colorCountSetting.style.display =
 			isAuto || isSharedPalette ? "flex" : "none";
@@ -349,7 +349,8 @@ export const setupSettingsControls = ({
 		const ditherMode = els.ditherModeSelect.value;
 		const isDitherNone = ditherMode === "none";
 		// ディザリングが有効な場合は強度を表示
-		els.ditherStrengthSetting.style.display = !isDitherNone ? "flex" : "none";
+		els.ditherStrengthSetting.style.display =
+			isEnabled && !isDitherNone ? "flex" : "none";
 
 		// 減色モードが None の場合はディザリング設定を無効にする
 		const ditherModeItem = els.ditherModeSelect.closest(".setting-item");

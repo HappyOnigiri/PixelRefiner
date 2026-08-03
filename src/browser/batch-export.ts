@@ -1,3 +1,7 @@
+import {
+	type BatchProcessItemResult,
+	needsBatchAttention,
+} from "../core/batch";
 import type { ProcessingAnalysis, RawImage, RGB } from "../shared/types";
 
 export type BatchExportItem = {
@@ -15,6 +19,70 @@ export type BatchArchiveEntry = {
 	inputFilename: string;
 	outputFilename: string;
 	result: RawImage;
+};
+
+export type BatchExportSource = {
+	id: string;
+	inputFilename: string;
+};
+
+export type EncodedBatchEntry = {
+	entry: BatchArchiveEntry;
+	blob: Blob;
+};
+
+export type FailedBatchEntry = {
+	entry: BatchArchiveEntry;
+	error: string;
+};
+
+export const createBatchExportItems = (
+	sources: readonly BatchExportSource[],
+	results: readonly BatchProcessItemResult[],
+): BatchExportItem[] => {
+	const resultById = new Map(results.map((result) => [result.id, result]));
+	return sources.map((source) => {
+		const result = resultById.get(source.id);
+		if (!result || result.status === "error") {
+			return {
+				...source,
+				status: "error" as const,
+				error: result?.error ?? "Batch result missing.",
+			};
+		}
+		return {
+			...source,
+			status: "done" as const,
+			result: result.processResult.result,
+			analysis: result.processResult.analysis,
+			attention: needsBatchAttention(result.processResult.analysis),
+		};
+	});
+};
+
+export const encodeBatchEntries = async (
+	entries: readonly BatchArchiveEntry[],
+	encode: (entry: BatchArchiveEntry) => Promise<Blob | null>,
+): Promise<{
+	encoded: EncodedBatchEntry[];
+	failed: FailedBatchEntry[];
+}> => {
+	const encoded: EncodedBatchEntry[] = [];
+	const failed: FailedBatchEntry[] = [];
+	for (let index = 0; index < entries.length; index += 1) {
+		const entry = entries[index];
+		try {
+			const blob = await encode(entry);
+			if (!blob) throw new Error(`PNG export failed: ${entry.inputFilename}`);
+			encoded.push({ entry, blob });
+		} catch (error) {
+			failed.push({
+				entry,
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
+	}
+	return { encoded, failed };
 };
 
 const safeBasename = (filename: string): string => {

@@ -5,10 +5,13 @@ import type { DitherMode } from "../shared/types";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import {
-	type BatchExportItem,
 	createBatchArchiveEntries,
+	createBatchExportItems,
+	encodeBatchEntries,
 	serializeBatchDiagnostics,
 } from "./batch-export";
+import { createBatchItemOptions } from "./batch-options";
+import { failBatchProcessing } from "./batch-state";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError, showWarning } from "./notifications";
@@ -29,17 +32,6 @@ const timestamp = (): string => {
 	return `${date}_${time}`;
 };
 
-const toExportItems = (imageSession: ImageSession): BatchExportItem[] =>
-	imageSession.getImages().map((item) => ({
-		id: item.id,
-		inputFilename: item.file.name,
-		status: item.status === "done" ? "done" : "error",
-		result: item.result,
-		analysis: item.analysis,
-		attention: item.attention,
-		error: item.error,
-	}));
-
 export const setupBatchController = ({
 	els,
 	processingState,
@@ -47,6 +39,8 @@ export const setupBatchController = ({
 }: BatchControllerOptions): void => {
 	const handleDownloadAll = async (scale: number) => {
 		const images = imageSession.getImages();
+		const startedImageIds = images.map((image) => image.id);
+		let processingCompleted = false;
 		if (images.length === 0) {
 			showError(i18n.t("error.no_processed_images"));
 			return;
@@ -75,7 +69,10 @@ export const setupBatchController = ({
 				images.map((item) => ({
 					id: item.id,
 					image: item.original,
-					options: createProcessOptions(els, processingState, item.original),
+					options: createBatchItemOptions(
+						createProcessOptions(els, processingState, item.original),
+						item.candidateSelection,
+					),
 				})),
 				{
 					sharedPalette: els.sharedPaletteToggle.checked,
@@ -96,6 +93,7 @@ export const setupBatchController = ({
 					imageSession.setImageStatus(item.id, "error", item.error);
 				}
 			}
+			processingCompleted = true;
 			const activeId = imageSession.getActiveImage()?.id;
 			if (activeId) imageSession.setActiveImage(activeId);
 			if (loadingText) {
@@ -105,31 +103,52 @@ export const setupBatchController = ({
 				});
 			}
 
-			const exportItems = toExportItems(imageSession);
+			// [Intended] 処理開始後に追加・個別処理された画像を混ぜず、
+			// 開始時の入力と今回の Worker 結果だけで ZIP を構成する。
+			const exportItems = createBatchExportItems(
+				images.map((image) => ({
+					id: image.id,
+					inputFilename: image.file.name,
+				})),
+				batchResult.items,
+			);
 			const entries = createBatchArchiveEntries(exportItems, scale);
 			if (entries.length === 0)
 				throw new Error("No successfully processed images.");
 			const zip = new JSZip();
-			for (let index = 0; index < entries.length; index += 1) {
-				const entry = entries[index];
+			const encoded = await encodeBatchEntries(entries, async (entry) => {
 				const canvas = document.createElement("canvas");
 				drawRawImageToCanvas(
 					scale === 1 ? entry.result : upscaleNearest(entry.result, scale),
 					canvas,
 				);
-				const blob = await new Promise<Blob | null>((resolve) =>
+				return new Promise<Blob | null>((resolve) =>
 					canvas.toBlob(resolve, "image/png"),
 				);
-				if (!blob) throw new Error(`PNG export failed: ${entry.inputFilename}`);
+			});
+			for (let index = 0; index < encoded.encoded.length; index += 1) {
+				const { entry, blob } = encoded.encoded[index];
 				zip.file(entry.outputFilename, blob);
 				imageSession.setOutputFilename(entry.id, entry.outputFilename);
 			}
+			for (let index = 0; index < encoded.failed.length; index += 1) {
+				const failure = encoded.failed[index];
+				const item = exportItems.find(({ id }) => id === failure.entry.id);
+				if (item) {
+					item.status = "error";
+					item.error = failure.error;
+				}
+				imageSession.setImageStatus(failure.entry.id, "error", failure.error);
+			}
+			if (encoded.encoded.length === 0)
+				throw new Error("No successfully exported images.");
+			const exportedEntries = encoded.encoded.map(({ entry }) => entry);
 			if (els.includeDiagnosticsToggle.checked) {
 				zip.file(
 					"diagnostics.json",
 					serializeBatchDiagnostics(
 						exportItems,
-						entries,
+						exportedEntries,
 						batchResult.sharedPalette,
 					),
 				);
@@ -154,9 +173,12 @@ export const setupBatchController = ({
 			}
 		} catch (error) {
 			console.error(error);
-			showError(
-				`${i18n.t("error.download_failed")}: ${(error as Error).message}`,
-			);
+			const message = processingCompleted
+				? error instanceof Error
+					? error.message
+					: String(error)
+				: failBatchProcessing(imageSession, startedImageIds, error);
+			showError(`${i18n.t("error.download_failed")}: ${message}`);
 		} finally {
 			els.loadingOverlay.style.display = "none";
 			els.downloadAllButton.disabled = false;
