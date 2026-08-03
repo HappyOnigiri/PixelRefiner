@@ -1,4 +1,4 @@
-import type { PixelGrid, RawImage } from "../shared/types";
+import type { RawImage } from "../shared/types";
 import { drawRawImageToCanvas } from "./io";
 
 type ResultViewerCallbacks = {
@@ -239,7 +239,7 @@ export class ResultViewer {
 		this.callbacks = callbacks;
 	}
 
-	public updateImage(image: RawImage, _grid?: PixelGrid) {
+	public updateImage(image: RawImage) {
 		this.currentImage = image;
 		drawRawImageToCanvas(image, this.canvas);
 
