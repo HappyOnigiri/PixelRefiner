@@ -1925,7 +1925,11 @@
     },
     "input": "test/fixtures/quality_prf120_harmonic_grid.png",
     "expected": "test/fixtures/quality_prf120_harmonic_grid-expect.png",
-    "assertions": ["base period selected", "doubled-period rejection", "determinism"],
+    "assertions": [
+      "base period selected",
+      "doubled-period rejection",
+      "determinism"
+    ],
     "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
     "assets": [
       {
@@ -2009,22 +2013,31 @@
     ]
   },
   {
-    "id": "preserve-continuous-tone",
-    "featureIds": ["PRF-001", "PRF-002", "PRF-300", "continuous-tone"],
+    "id": "convert-continuous-tone-balanced",
+    "featureIds": ["PRF-001", "PRF-002", "PRF-300", "PRF-310"],
+    "optionNames": ["processingMode", "detailLevel"],
     "profile": "smoke",
     "inputKind": "continuous-tone",
     "degradationPatterns": ["continuous-tone"],
     "options": {
       "cellSamplingMode": "legacy-median",
       "processingMode": "auto",
+      "detailLevel": "balanced",
       "preRemoveBackground": false,
       "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
       "trimToContent": false
     },
     "input": "test/fixtures/quality_continuous_tone.png",
-    "expected": "test/fixtures/quality_continuous_tone.png",
-    "assertions": ["exact image", "convert route", "determinism"],
-    "expectation": { "exact": true },
+    "expected": "test/fixtures/quality_continuous_tone-convert-expect.png",
+    "assertions": [
+      "exact image",
+      "three convert candidates",
+      "balanced detail output size",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 24, "expectedHeight": 16 },
     "assets": [
       {
         "file": "test/fixtures/quality_continuous_tone.png",
@@ -2035,6 +2048,65 @@
         "redistributionAllowed": true,
         "commercialUseAllowed": true,
         "acquiredOrGeneratedAt": "2026-08-01"
+      },
+      {
+        "file": "test/fixtures/quality_continuous_tone-convert-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
+    "id": "convert-illustration-detailed",
+    "featureIds": ["PRF-310"],
+    "optionNames": ["processingMode", "detailLevel"],
+    "profile": "smoke",
+    "inputKind": "continuous-illustration",
+    "degradationPatterns": [],
+    "options": {
+      "processingMode": "convert",
+      "detailLevel": "detailed",
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_convert_illustration.png",
+    "expected": "test/fixtures/quality_convert_illustration-expect.png",
+    "assertions": [
+      "exact image",
+      "three convert candidates",
+      "detailed output size",
+      "transparent edge handling",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 54, "expectedHeight": 36 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_convert_illustration.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_convert_illustration-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
       }
     ]
   },

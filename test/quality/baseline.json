@@ -443,10 +443,21 @@
       "catastrophicFailure": false
     },
     {
-      "id": "preserve-continuous-tone",
+      "id": "convert-continuous-tone-balanced",
       "status": "passed",
-      "outputWidth": 48,
-      "outputHeight": 32,
+      "outputWidth": 24,
+      "outputHeight": 16,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "convert-illustration-detailed",
+      "status": "passed",
+      "outputWidth": 54,
+      "outputHeight": 36,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

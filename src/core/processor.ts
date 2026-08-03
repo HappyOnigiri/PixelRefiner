@@ -27,6 +27,7 @@ import {
 	findCandidateIndexForGrid,
 } from "./processing-analysis";
 import { prepareAutomaticBackground } from "./processor-background";
+import { processConvertRoute } from "./processor-convert-route";
 import {
 	getDownsampleOptions,
 	normalizeProcessOptions,
@@ -51,6 +52,10 @@ export type {
 	CellSamplerOptions,
 	CellSamplingMode,
 } from "./cell-sampler";
+export {
+	createConvertCandidates,
+	edgeAwareAreaResample,
+} from "./converter";
 export { searchPhaseAwareGrid } from "./grid-search";
 export {
 	downsample,
@@ -159,11 +164,18 @@ export const processImage = (
 	if (forcedResult) return forcedResult;
 	// [Intended] 明示された処理経路は enableGridDetection の早期 return より先に判定する。
 	// 逆順だと、グリッド検出を無効にしただけで指定した convert が preserve に化ける。
-	if (o.processingMode === "preserve" || o.processingMode === "convert") {
+	if (o.processingMode === "convert") {
+		return processConvertRoute({
+			...simpleRouteContext,
+			route: "convert",
+			method: "manual-convert",
+		});
+	}
+	if (o.processingMode === "preserve") {
 		return processExplicitSimpleRoute({
 			...simpleRouteContext,
-			route: o.processingMode,
-			method: `manual-${o.processingMode}`,
+			route: "preserve",
+			method: "manual-preserve",
 		});
 	}
 	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
@@ -346,6 +358,15 @@ export const processImage = (
 			)
 		: { route: "refine" as const, fellBackToPreserve: false };
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
+		if (autoRoute.route === "convert") {
+			return processConvertRoute({
+				...simpleRouteContext,
+				route: "convert",
+				method: "auto-convert",
+				classificationResult,
+				preparedMask: maskedForDebugOrAuto ?? undefined,
+			});
+		}
 		return processExplicitSimpleRoute({
 			...simpleRouteContext,
 			route: autoRoute.route,

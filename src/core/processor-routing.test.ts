@@ -59,13 +59,127 @@ describe("processing router", () => {
 		]);
 	});
 
-	it("routes continuous tone to a non-destructive convert candidate", () => {
+	it("routes continuous tone through the balanced convert candidate", () => {
 		const image = createContinuousImage();
 		const processed = processImage(image, safeOptions);
 
 		expect(processed.analysis.classification).toBe("continuous");
 		expect(processed.analysis.route).toBe("convert");
-		expect(processed.result).toEqual(image);
+		expect(processed.result.width).toBeLessThan(image.width);
+		expect(processed.result.height).toBeLessThan(image.height);
+		expect(processed.analysis.gridCandidates).toHaveLength(3);
+		expect(processed.extractedPalette.length).toBeLessThanOrEqual(24);
+	});
+
+	it("selects visibly different convert sizes from the detail level", () => {
+		const image = createContinuousImage();
+		const coarse = processImage(image, {
+			...safeOptions,
+			processingMode: "convert",
+			detailLevel: "coarse",
+		});
+		const detailed = processImage(image, {
+			...safeOptions,
+			processingMode: "convert",
+			detailLevel: "detailed",
+		});
+
+		expect(coarse.result.width).toBeLessThan(detailed.result.width);
+		expect(coarse.result.height).toBeLessThan(detailed.result.height);
+	});
+
+	it.each([
+		["transparent", 0],
+		["single-color", 255],
+	] as const)(
+		"converts a %s image safely and deterministically",
+		(_, alpha) => {
+			const image: RawImage = {
+				width: 8,
+				height: 8,
+				data: new Uint8ClampedArray(8 * 8 * 4),
+			};
+			for (let i = 0; i < image.data.length; i += 4) {
+				image.data[i] = 48;
+				image.data[i + 1] = 96;
+				image.data[i + 2] = 144;
+				image.data[i + 3] = alpha;
+			}
+			const options = { ...safeOptions, processingMode: "convert" } as const;
+			const first = processImage(image, options);
+			const second = processImage(image, options);
+
+			expect(first.result).toEqual(second.result);
+			expect(first.result.width).toBe(8);
+			expect(first.result.height).toBe(8);
+		},
+	);
+
+	it("derives convert candidate sizes from the trimmed subject", () => {
+		const size = 64;
+		const image: RawImage = {
+			width: size,
+			height: size,
+			data: new Uint8ClampedArray(size * size * 4),
+		};
+		for (let y = 16; y < 48; y += 1) {
+			for (let x = 16; x < 48; x += 1) {
+				const index = (y * size + x) * 4;
+				image.data[index] = x * 4;
+				image.data[index + 1] = y * 4;
+				image.data[index + 2] = (x * 3 + y * 5) % 256;
+				image.data[index + 3] = 255;
+			}
+		}
+		const options = { ...safeOptions, processingMode: "convert" } as const;
+		const trimmed = processImage(image, { ...options, trimToContent: true });
+		const untrimmed = processImage(image, { ...options, trimToContent: false });
+
+		const opaqueWidth = (output: RawImage): number => {
+			let min = output.width;
+			let max = -1;
+			for (let y = 0; y < output.height; y += 1) {
+				for (let x = 0; x < output.width; x += 1) {
+					if (output.data[(y * output.width + x) * 4 + 3] === 0) continue;
+					min = Math.min(min, x);
+					max = Math.max(max, x);
+				}
+			}
+			return max < min ? 0 : max - min + 1;
+		};
+
+		// 余白込みで候補を算出すると被写体に割り当たる画素が減る。
+		expect(opaqueWidth(trimmed.result)).toBeGreaterThan(
+			opaqueWidth(untrimmed.result),
+		);
+		expect(trimmed.grid.cropX).toBe(16);
+		expect(trimmed.grid.cropY).toBe(16);
+	});
+
+	it("selects the candidate matching the requested detail level in the report", () => {
+		const image: RawImage = {
+			width: 8,
+			height: 8,
+			data: new Uint8ClampedArray(8 * 8 * 4),
+		};
+		for (let i = 0; i < image.data.length; i += 4) {
+			image.data[i] = i % 256;
+			image.data[i + 1] = 128;
+			image.data[i + 2] = 255 - (i % 256);
+			image.data[i + 3] = 255;
+		}
+		const processed = processImage(image, {
+			...safeOptions,
+			processingMode: "convert",
+			detailLevel: "detailed",
+		});
+
+		expect(processed.analysis.selectedCandidateIndex).toBe(2);
+		expect(
+			processed.analysis.gridCandidates[
+				processed.analysis.selectedCandidateIndex ?? -1
+			].method,
+		).toBe("convert-detailed");
 	});
 
 	it("allows an explicit route to override automatic classification", () => {
@@ -121,7 +235,7 @@ describe("processing router", () => {
 		["quality_reference.png", "native-pixel", "preserve", 8, 8],
 		["quality_nearest_2x.png", "scaled-pixel", "refine", 8, 8],
 		["quality_bilinear.png", "soft-pixel", "refine", 8, 8],
-		["quality_continuous_tone.png", "continuous", "convert", 48, 32],
+		["quality_continuous_tone.png", "continuous", "convert", 24, 16],
 	] as const)(
 		"classifies and routes the %s quality fixture",
 		async (fileName, classification, route, width, height) => {

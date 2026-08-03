@@ -1,4 +1,5 @@
 import {
+	CONVERT_DEFAULTS,
 	clampInt,
 	clampOptionalInt,
 	GRID_SIGNAL_DEFAULTS,
@@ -8,6 +9,7 @@ import {
 import type {
 	BackgroundRemovalScope,
 	Connectivity,
+	DetailLevel,
 	DitherMode,
 	GridSignalOptions,
 	OutlineStyle,
@@ -22,6 +24,8 @@ import type { DownsampleOptions } from "./image-operations";
 export type ProcessOptions = DetectOptions & {
 	/** 入力分類を使う自動経路、または処理経路の明示指定。 */
 	processingMode?: ProcessingMode;
+	/** Convert 経路で採用する論理解像度。 */
+	detailLevel?: DetailLevel;
 	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
 	gridSignals?: Partial<GridSignalOptions>;
 	preRemoveBackground?: boolean;
@@ -164,6 +168,12 @@ export const normalizeProcessOptions = (
 ): {
 	detect: DetectOptions;
 	processingMode: ProcessingMode;
+	detailLevel: DetailLevel;
+	convertReduceColors: boolean;
+	convertReduceColorMode: string;
+	convertDitherMode: DitherMode;
+	convertColorCount?: number;
+	convertDitherStrength?: number;
 	preRemoveBackground: boolean;
 	postRemoveBackground: boolean;
 	forcePixelsW?: number;
@@ -227,6 +237,7 @@ export const normalizeProcessOptions = (
 	const preRemoveBackground =
 		raw.preRemoveBackground ?? PROCESS_DEFAULTS.preRemoveBackground;
 	const processingMode = raw.processingMode ?? PROCESS_DEFAULTS.processingMode;
+	const detailLevel = raw.detailLevel ?? PROCESS_DEFAULTS.detailLevel;
 	const postRemoveBackground =
 		raw.postRemoveBackground ?? PROCESS_DEFAULTS.postRemoveBackground;
 	const forcePixelsW = clampOptionalInt(
@@ -312,6 +323,14 @@ export const normalizeProcessOptions = (
 	return {
 		detect,
 		processingMode,
+		detailLevel,
+		convertReduceColors: raw.reduceColors ?? CONVERT_DEFAULTS.reduceColors,
+		convertReduceColorMode:
+			raw.reduceColorMode ?? CONVERT_DEFAULTS.reduceColorMode,
+		convertDitherMode: raw.ditherMode ?? CONVERT_DEFAULTS.ditherMode,
+		convertColorCount: raw.colorCount === undefined ? undefined : colorCount,
+		convertDitherStrength:
+			raw.ditherStrength === undefined ? undefined : ditherStrength,
 		preRemoveBackground,
 		postRemoveBackground,
 		forcePixelsW,

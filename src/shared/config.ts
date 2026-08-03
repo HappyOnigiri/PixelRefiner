@@ -1,4 +1,4 @@
-import type { RGB } from "./types";
+import type { DetailLevel, RGB } from "./types";
 
 export type IntRange = {
 	min: number;
@@ -84,6 +84,36 @@ export const INPUT_CLASSIFIER_CONFIDENCE = {
 	nativeMax: 0.95,
 	nativeScale: 0.25,
 	uncertain: 0.5,
+} as const;
+
+export const CONVERT_LIMITS = {
+	minShortSide: 8,
+	maxShortSide: 96,
+	baseAreaDivisor: 2.4,
+	informationAdjustment: 0.4,
+	maxAnalysisPixels: 65_536,
+	edgeThreshold: 0.08,
+	edgeBoost: 2.25,
+	// セル内の高コントラスト色を代表色へ昇格させる最小の色距離（Oklab の二乗距離）
+	featureDistanceThreshold: 0.0625,
+	// 同じ昇格に必要な最小の面積被覆率。孤立ノイズを除外する下限
+	featureCoverageThreshold: 0.04,
+} as const;
+
+export const CONVERT_CANDIDATE_DEFAULTS = {
+	coarse: { scale: 0.65, colorCount: 12, ditherStrength: 30 },
+	balanced: { scale: 1, colorCount: 24, ditherStrength: 20 },
+	detailed: { scale: 1.5, colorCount: 40, ditherStrength: 10 },
+} as const satisfies Record<
+	DetailLevel,
+	{ scale: number; colorCount: number; ditherStrength: number }
+>;
+
+export const CONVERT_DEFAULTS = {
+	detailLevel: "balanced",
+	reduceColors: true,
+	reduceColorMode: "auto",
+	ditherMode: "ordered",
 } as const;
 
 export const BACKGROUND_MODEL_LIMITS = {
@@ -354,6 +384,7 @@ export const RETRO_PALETTES: Record<
 export const PROCESS_DEFAULTS = {
 	// [Policy] Auto のUI導入までは既存利用者の出力互換性を優先する。
 	processingMode: "refine",
+	detailLevel: CONVERT_DEFAULTS.detailLevel,
 	preRemoveBackground: true,
 	postRemoveBackground: true,
 	bgExtractionMethod: "auto",
