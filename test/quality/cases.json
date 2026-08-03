@@ -1741,7 +1741,7 @@
   },
   {
     "id": "withhold-ambiguous-axis-grid",
-    "featureIds": ["PRF-100"],
+    "featureIds": ["PRF-100", "PRF-400"],
     "profile": "smoke",
     "inputKind": "uncertain",
     "degradationPatterns": ["one-axis-periodicity"],
@@ -1760,6 +1760,7 @@
       "multiple ranked candidates",
       "preserve fallback candidate",
       "low-confidence selection withheld",
+      "candidate preview includes original size",
       "determinism"
     ],
     "expectation": { "exact": true },

@@ -70,6 +70,7 @@ export type Elements = {
 	// 結果モーダル
 	resultModal: HTMLElement;
 	closeResultModal: HTMLButtonElement;
+	candidateModal: HTMLElement;
 
 	// 比較モーダル
 	compareModal: HTMLElement;
@@ -181,6 +182,7 @@ export const getElements = (): Elements => {
 		closeResultModal: get<HTMLElement>("result-modal").querySelector(
 			".js-close-result-modal",
 		) as HTMLButtonElement,
+		candidateModal: get<HTMLElement>("candidate-modal"),
 
 		compareModal: get<HTMLElement>("compare-modal"),
 		closeCompareModal: get<HTMLButtonElement>("close-compare-modal"),

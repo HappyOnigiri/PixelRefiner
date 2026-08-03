@@ -2,10 +2,15 @@ import { wrap } from "comlink";
 import type { ProcessOptions } from "../core/processor";
 import type { ProcessorWorker } from "../core/worker";
 import { clampInt, clampNumber, PROCESS_RANGES } from "../shared/config";
-import type { DitherMode, OutlineStyle } from "../shared/types";
+import type {
+	CandidateSelection,
+	DitherMode,
+	OutlineStyle,
+} from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
+import type { CandidateChooser } from "./candidate-chooser";
 import type { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
@@ -30,6 +35,11 @@ type ProcessingControllerOptions = {
 	updatePaletteDisplay: () => void;
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
+	candidateChooser: CandidateChooser;
+};
+
+export type RunProcessingOptions = {
+	showCandidates?: boolean;
 };
 
 export const createRunProcessing = ({
@@ -42,14 +52,21 @@ export const createRunProcessing = ({
 	updatePaletteDisplay,
 	updateGrid,
 	updateBgColorFromMethod,
-}: ProcessingControllerOptions): (() => Promise<void>) => {
+	candidateChooser,
+}: ProcessingControllerOptions): ((
+	options?: RunProcessingOptions,
+) => Promise<void>) => {
 	const compareBeforeCanvas = document.createElement("canvas");
 	const compareAfterCanvas = document.createElement("canvas");
 	const compareBeforeSanitizedCanvas = document.createElement("canvas");
 
-	return async () => {
+	const runProcessing = async (
+		selection?: CandidateSelection,
+		showCandidates = true,
+	) => {
 		const images = imageSession.getImages();
 		if (images.length === 0) return;
+		if (!selection) candidateChooser.hide();
 
 		mainResultViewer.setLoading(true);
 
@@ -158,14 +175,7 @@ export const createRunProcessing = ({
 				gridMode === "hint" && usePixels ? pixelsH : undefined;
 			const enableGridDetection = gridMode !== "off";
 
-			const {
-				result,
-				grid,
-				extractedPalette,
-				compareBefore,
-				compareBeforeSanitized,
-				analysis,
-			} = await processor.process(currentImage, {
+			const processOptions: ProcessOptions = {
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
@@ -197,7 +207,22 @@ export const createRunProcessing = ({
 				bgExtractionMethod: method,
 				bgRgb: els.bgRgbInput.value,
 				fixedPalette: processingState.currentFixedPalette,
-			});
+			};
+
+			const {
+				result,
+				grid,
+				extractedPalette,
+				compareBefore,
+				compareBeforeSanitized,
+				analysis,
+			} = selection
+				? await processor.processCandidate(
+						currentImage,
+						processOptions,
+						selection,
+					)
+				: await processor.process(currentImage, processOptions);
 
 			// 転送したデータは呼び出し元スレッドで利用できなくなる可能性がある（Comlink の挙動に依存し、
 			// RawImage を再利用しない設計のため、ここで再代入する）
@@ -277,6 +302,27 @@ export const createRunProcessing = ({
 			if (analysis.warnings.length > 0) {
 				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
 			}
+			if (
+				showCandidates &&
+				!selection &&
+				analysis.warnings.includes("LOW_GRID_CONFIDENCE")
+			) {
+				try {
+					const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
+					const previews = await processor.previewCandidates(
+						currentImage,
+						processOptions,
+						analysis,
+						cacheKey,
+					);
+					if (previews.length > 0) {
+						candidateChooser.show(previews, analysis.warnings);
+					}
+				} catch (error) {
+					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
+					console.error("Failed to create candidate previews:", error);
+				}
+			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
 
 			// 背景除去方法がコーナーベースの場合は、抽出した色を UI に反映
@@ -292,4 +338,10 @@ export const createRunProcessing = ({
 			els.processButton.disabled = false;
 		}
 	};
+
+	candidateChooser.setCallbacks({
+		onSelect: (selection) => runProcessing(selection),
+	});
+	return (options?: RunProcessingOptions) =>
+		runProcessing(undefined, options?.showCandidates !== false);
 };

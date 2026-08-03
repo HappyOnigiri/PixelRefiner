@@ -4,7 +4,8 @@ import type { Elements } from "./app-elements";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import type { ModalController } from "./modal-controller";
-import { showError, showInfo } from "./notifications";
+import { showError } from "./notifications";
+import type { RunProcessingOptions } from "./processing-controller";
 import type { ResultViewer } from "./result-viewer";
 import type { ImageSession } from "./session";
 
@@ -14,7 +15,7 @@ type ResultActionsOptions = {
 	mainResultViewer: ResultViewer;
 	modalResultViewer: ResultViewer;
 	resultModalController: ModalController;
-	runProcessing: () => Promise<void>;
+	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
 	openCompareModal: () => void;
 	closeResultModal: () => void;
 	syncViewers: (
@@ -115,7 +116,7 @@ export const setupResultActions = ({
 					// UI 更新を反映するため少し待機する（グローバル設定なら同一セッション内で入力値は変わらないはず）
 					await new Promise((r) => setTimeout(r, 10));
 
-					await runProcessing();
+					await runProcessing({ showCandidates: false });
 				}
 
 				// 元のアクティブ画像を復元
@@ -227,18 +228,6 @@ export const setupResultActions = ({
 				modalResultViewer.drawGrid();
 			});
 		},
-		onGridSelect: (grid) => {
-			if (grid.outW === undefined || grid.outH === undefined) return;
-			els.gridDetectionModeSelect.value = "hint";
-			els.gridDetectionModeSelect.dispatchEvent(new Event("change"));
-			els.forcePixelsWInput.value = grid.outW.toString();
-			els.forcePixelsHInput.value = grid.outH.toString();
-			showInfo(
-				i18n.t("info.grid_updated", { w: grid.outW, h: grid.outH }) ||
-					`Grid updated to ${grid.outW}x${grid.outH}`,
-			);
-			runProcessing();
-		},
 	});
 
 	modalResultViewer.setCallbacks({
@@ -251,18 +240,6 @@ export const setupResultActions = ({
 		onCompare: () => {
 			closeResultModal();
 			openCompareModal();
-		},
-		onGridSelect: (grid) => {
-			if (grid.outW === undefined || grid.outH === undefined) return;
-			els.gridDetectionModeSelect.value = "hint";
-			els.gridDetectionModeSelect.dispatchEvent(new Event("change"));
-			els.forcePixelsWInput.value = grid.outW.toString();
-			els.forcePixelsHInput.value = grid.outH.toString();
-			showInfo(
-				i18n.t("info.grid_updated", { w: grid.outW, h: grid.outH }) ||
-					`Grid updated to ${grid.outW}x${grid.outH}`,
-			);
-			runProcessing();
 		},
 	});
 };

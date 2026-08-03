@@ -1,0 +1,126 @@
+import { describe, expect, it } from "vitest";
+import type { ProcessingAnalysis } from "../shared/types";
+import {
+	candidateProcessOptions,
+	createCandidatePreview,
+	selectCandidatePlans,
+} from "./candidate-previews";
+import { processImage } from "./processor";
+import { readPngAsRawImage } from "./processor-test-helpers";
+
+const analysis = (classification: ProcessingAnalysis["classification"]) =>
+	({
+		classification,
+		route: "preserve",
+		confidence: 0.1,
+		warnings: ["LOW_GRID_CONFIDENCE"],
+		gridCandidates: [
+			{
+				grid: { cellW: 4, cellH: 4, offsetX: 0, offsetY: 0, score: 1 },
+				outW: 16,
+				outH: 16,
+				cropX: 0,
+				cropY: 0,
+				cropW: 64,
+				cropH: 64,
+				method: "grid",
+				totalScore: 0.9,
+				confidence: 0.2,
+			},
+			{
+				grid: { cellW: 2, cellH: 2, offsetX: 0, offsetY: 0, score: 2 },
+				outW: 32,
+				outH: 32,
+				cropX: 0,
+				cropY: 0,
+				cropW: 64,
+				cropH: 64,
+				method: "grid",
+				totalScore: 0.8,
+				confidence: 0.15,
+			},
+			{
+				grid: { cellW: 8, cellH: 8, offsetX: 0, offsetY: 0, score: 3 },
+				outW: 8,
+				outH: 8,
+				cropX: 0,
+				cropY: 0,
+				cropW: 64,
+				cropH: 64,
+				method: "grid",
+				totalScore: 0.7,
+				confidence: 0.1,
+			},
+		],
+	}) satisfies ProcessingAnalysis;
+
+describe("candidate previews", () => {
+	it("推奨・細かめ・粗め・原寸維持を決定論的に選ぶ", () => {
+		const plans = selectCandidatePlans(analysis("scaled-pixel"));
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"recommended",
+			"finer",
+			"coarser",
+			"preserve",
+		]);
+		expect(plans[0].recommended).toBe(true);
+	});
+
+	it("通常画像か不明な入力では空き枠へConvert候補を加える", () => {
+		const value = analysis("uncertain");
+		value.gridCandidates = value.gridCandidates.slice(0, 1);
+		expect(selectCandidatePlans(value).map((plan) => plan.kind)).toEqual([
+			"recommended",
+			"preserve",
+			"convert",
+		]);
+	});
+
+	it("候補適用時に元のヒント設定を引き継がない", () => {
+		const options = candidateProcessOptions(
+			{ hintPixelsW: 10, hintPixelsH: 10 },
+			selectCandidatePlans(analysis("scaled-pixel"))[0],
+		);
+		expect(options).toMatchObject({
+			processingMode: "refine",
+			forcePixelsW: 16,
+			forcePixelsH: 16,
+		});
+		expect(options.hintPixelsW).toBeUndefined();
+	});
+
+	it("大画像の候補は先に軽量なプレビューへ縮小する", () => {
+		const selection = selectCandidatePlans(analysis("scaled-pixel"))[0];
+		const preview = createCandidatePreview(
+			selection,
+			{
+				width: 400,
+				height: 200,
+				data: new Uint8ClampedArray(400 * 200 * 4),
+			},
+			1,
+		);
+		expect(preview.preview.width).toBe(192);
+		expect(preview.preview.height).toBe(96);
+		expect(preview.resultWidth).toBe(400);
+	});
+
+	it("PRF-400の低信頼度fixtureで原寸維持を必ず提示する", async () => {
+		const image = await readPngAsRawImage(
+			"test/fixtures/quality_ambiguous_axis_grid.png",
+		);
+		const processed = processImage(image, {
+			autoGridFromTrimmed: false,
+			backgroundMask: false,
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		});
+		const first = selectCandidatePlans(processed.analysis);
+		const second = selectCandidatePlans(processed.analysis);
+		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(first.some((plan) => plan.kind === "preserve")).toBe(true);
+		expect(second).toEqual(first);
+	});
+});

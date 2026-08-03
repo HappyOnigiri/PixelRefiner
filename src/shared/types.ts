@@ -216,3 +216,27 @@ export type ProcessResult = {
 	compareBeforeSanitized: RawImage;
 	analysis: ProcessingAnalysis;
 };
+
+export type CandidateKind =
+	| "recommended"
+	| "finer"
+	| "coarser"
+	| "preserve"
+	| "convert";
+
+export type CandidateSelection = {
+	id: string;
+	kind: CandidateKind;
+	recommended: boolean;
+	processingMode: ProcessingRoute;
+	outW?: number;
+	outH?: number;
+	detailLevel?: DetailLevel;
+};
+
+export type CandidatePreview = CandidateSelection & {
+	preview: RawImage;
+	resultWidth: number;
+	resultHeight: number;
+	colorCount: number;
+};

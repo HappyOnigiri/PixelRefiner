@@ -50,6 +50,12 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	legacyPreserveCandidateScore: 1_000_000,
 } as const;
 
+export const CANDIDATE_PREVIEW_LIMITS = {
+	maxCandidates: 4,
+	maxThumbnailDimension: 192,
+	maxCacheEntries: 8,
+} as const;
+
 export const INPUT_CLASSIFIER_THRESHOLDS = {
 	maxSamplePixels: 65_536,
 	minDimension: 2,

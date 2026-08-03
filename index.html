@@ -1621,6 +1621,42 @@
       </div>
     </div>
 
+    <div
+      id="candidate-modal"
+      class="modal candidate-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-labelledby="candidate-modal-title"
+      style="display: none"
+    >
+      <div class="modal-content candidate-modal-content">
+        <div class="modal-header">
+          <h3 id="candidate-modal-title" data-i18n="candidate.title">
+            Choose the best result
+          </h3>
+          <button
+            type="button"
+            class="close-button js-close-candidates"
+            data-i18n-attr="aria-label:ui.close"
+          >
+            &times;
+          </button>
+        </div>
+        <div class="candidate-modal-body">
+          <p data-i18n="candidate.intro">
+            Automatic detection was uncertain. Compare the actual results before
+            choosing.
+          </p>
+          <p
+            class="candidate-reasons js-candidate-reasons"
+            aria-live="polite"
+          ></p>
+          <div class="candidate-list js-candidate-list"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- 比較モーダル -->
     <div
       id="compare-modal"

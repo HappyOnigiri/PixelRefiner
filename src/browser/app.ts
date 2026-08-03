@@ -6,6 +6,7 @@ import {
 } from "../utils/palette";
 import { getElements } from "./app-elements";
 import { createProcessingState } from "./app-state";
+import { CandidateChooser } from "./candidate-chooser";
 import { ImageComparer } from "./compare";
 import { setupCompareControls } from "./compare-controls";
 import {
@@ -34,6 +35,7 @@ export const initApp = (): void => {
 	const modalResultViewer = new ResultViewer(
 		els.resultModal.querySelector(".result-modal-body") as HTMLElement,
 	);
+	const candidateChooser = new CandidateChooser(els.candidateModal);
 
 	const resultModalController = createModalController(
 		els.resultModal,
@@ -69,6 +71,7 @@ export const initApp = (): void => {
 			updateProcessButtonVisibility();
 		},
 		onActiveChange: (item) => {
+			candidateChooser.hide();
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -232,6 +235,7 @@ export const initApp = (): void => {
 		updatePaletteDisplay: () => updatePaletteDisplay(),
 		updateGrid: () => updateGrid(),
 		updateBgColorFromMethod: () => updateBgColorFromMethod(),
+		candidateChooser,
 	});
 	const {
 		updateRgbInputs,
