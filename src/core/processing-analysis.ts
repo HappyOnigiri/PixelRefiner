@@ -145,12 +145,18 @@ export const createProcessingAnalysis = (
 	backgroundDiagnostic?: BackgroundDiagnostic,
 	classificationResult?: InputClassificationResult,
 	additionalWarnings: ProcessingWarningCode[] = [],
+	/**
+	 * 候補配列上の採用位置。
+	 * [Policy] セル寸法が同一へ丸まる候補があると grid の一致検索では区別できないため、
+	 * 呼び出し元が採用位置を知っている経路はここで明示する。
+	 */
+	knownSelectedCandidateIndex?: number,
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
-	const selectedCandidateIndex = rankedCandidates
-		? findCandidateIndexForGrid(gridCandidates, grid)
-		: 0;
+	const selectedCandidateIndex =
+		knownSelectedCandidateIndex ??
+		(rankedCandidates ? findCandidateIndexForGrid(gridCandidates, grid) : 0);
 	const selected =
 		selectedCandidateIndex >= 0
 			? gridCandidates[selectedCandidateIndex]

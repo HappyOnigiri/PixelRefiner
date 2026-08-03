@@ -115,6 +115,73 @@ describe("processing router", () => {
 		},
 	);
 
+	it("derives convert candidate sizes from the trimmed subject", () => {
+		const size = 64;
+		const image: RawImage = {
+			width: size,
+			height: size,
+			data: new Uint8ClampedArray(size * size * 4),
+		};
+		for (let y = 16; y < 48; y += 1) {
+			for (let x = 16; x < 48; x += 1) {
+				const index = (y * size + x) * 4;
+				image.data[index] = x * 4;
+				image.data[index + 1] = y * 4;
+				image.data[index + 2] = (x * 3 + y * 5) % 256;
+				image.data[index + 3] = 255;
+			}
+		}
+		const options = { ...safeOptions, processingMode: "convert" } as const;
+		const trimmed = processImage(image, { ...options, trimToContent: true });
+		const untrimmed = processImage(image, { ...options, trimToContent: false });
+
+		const opaqueWidth = (output: RawImage): number => {
+			let min = output.width;
+			let max = -1;
+			for (let y = 0; y < output.height; y += 1) {
+				for (let x = 0; x < output.width; x += 1) {
+					if (output.data[(y * output.width + x) * 4 + 3] === 0) continue;
+					min = Math.min(min, x);
+					max = Math.max(max, x);
+				}
+			}
+			return max < min ? 0 : max - min + 1;
+		};
+
+		// 余白込みで候補を算出すると被写体に割り当たる画素が減る。
+		expect(opaqueWidth(trimmed.result)).toBeGreaterThan(
+			opaqueWidth(untrimmed.result),
+		);
+		expect(trimmed.grid.cropX).toBe(16);
+		expect(trimmed.grid.cropY).toBe(16);
+	});
+
+	it("selects the candidate matching the requested detail level in the report", () => {
+		const image: RawImage = {
+			width: 8,
+			height: 8,
+			data: new Uint8ClampedArray(8 * 8 * 4),
+		};
+		for (let i = 0; i < image.data.length; i += 4) {
+			image.data[i] = i % 256;
+			image.data[i + 1] = 128;
+			image.data[i + 2] = 255 - (i % 256);
+			image.data[i + 3] = 255;
+		}
+		const processed = processImage(image, {
+			...safeOptions,
+			processingMode: "convert",
+			detailLevel: "detailed",
+		});
+
+		expect(processed.analysis.selectedCandidateIndex).toBe(2);
+		expect(
+			processed.analysis.gridCandidates[
+				processed.analysis.selectedCandidateIndex ?? -1
+			].method,
+		).toBe("convert-detailed");
+	});
+
 	it("allows an explicit route to override automatic classification", () => {
 		const processed = processImage(createContinuousImage(), {
 			...safeOptions,

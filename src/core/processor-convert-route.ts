@@ -1,11 +1,15 @@
 import type {
 	ConvertCandidate,
+	DetailLevel,
 	GridCandidateReport,
 	PixelGrid,
 	ProcessResult,
 	RawImage,
 } from "../shared/types";
-import { removeBackground } from "./background-removal";
+import {
+	removeBackground,
+	removeSmallFloatingComponentsInPlace,
+} from "./background-removal";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import {
 	createConvertCandidates,
@@ -13,6 +17,8 @@ import {
 	selectConvertCandidate,
 } from "./converter";
 import {
+	cropRawImage,
+	findOpaqueBounds,
 	getAspectRatio,
 	padImageToAspectRatio,
 	padRawImage,
@@ -25,6 +31,9 @@ import type { SimpleRouteContext } from "./processor-simple-routes";
 const gridForCandidate = (
 	image: RawImage,
 	candidate: ConvertCandidate,
+	selectedLabel: DetailLevel,
+	cropX: number,
+	cropY: number,
 ): PixelGrid => ({
 	cellW: image.width / candidate.outW,
 	cellH: image.height / candidate.outH,
@@ -32,30 +41,41 @@ const gridForCandidate = (
 	offsetY: 0,
 	outW: candidate.outW,
 	outH: candidate.outH,
-	cropX: 0,
-	cropY: 0,
+	cropX,
+	cropY,
 	cropW: image.width,
 	cropH: image.height,
-	score: candidate.label === "balanced" ? 1 : 0.8,
+	// [Intended] 採用した候補のスコアを最大にする。balanced を固定で最大にすると、
+	// coarse / detailed を選んだときにレポートの上位候補と実際の出力が食い違う。
+	score: candidate.label === selectedLabel ? 1 : 0.8,
 });
 
 const candidateReports = (
 	image: RawImage,
 	candidates: ConvertCandidate[],
+	selectedLabel: DetailLevel,
+	cropX: number,
+	cropY: number,
 ): GridCandidateReport[] =>
 	candidates.map((candidate) => {
-		const grid = gridForCandidate(image, candidate);
+		const grid = gridForCandidate(
+			image,
+			candidate,
+			selectedLabel,
+			cropX,
+			cropY,
+		);
 		return {
 			grid,
 			outW: candidate.outW,
 			outH: candidate.outH,
-			cropX: 0,
-			cropY: 0,
+			cropX,
+			cropY,
 			cropW: image.width,
 			cropH: image.height,
 			method: `convert-${candidate.label}`,
 			totalScore: grid.score,
-			confidence: 1,
+			confidence: grid.score,
 		};
 	});
 
@@ -73,16 +93,65 @@ export const processConvertRoute = (
 		backgroundDiagnostic,
 		backgroundModel,
 	} = context;
-	const candidates = createConvertCandidates(working);
+	// [Intended] 呼び出し元が同じマスクを算出済みなら再計算しない。
+	// 孤立成分の除去は working を破壊的に書き換えるため、2 度走らせると
+	// 1 回目の結果から作り直したマスクで別の成分まで消えうる。
+	const needsMask = o.trimToContent || o.floatingMaxPixels > 0;
+	const masked =
+		context.preparedMask ??
+		(needsMask
+			? removeBackground(
+					working,
+					o.backgroundTolerance,
+					o.bgRemovalScope,
+					o.bgConnectivity,
+					bgTargets,
+					o.bgExtractionMethod,
+					backgroundModel,
+				)
+			: undefined);
+	if (masked && !context.preparedMask && o.floatingMaxPixels > 0) {
+		removeSmallFloatingComponentsInPlace(
+			working,
+			masked,
+			trimAlphaThreshold,
+			o.floatingMaxPixels,
+		);
+	}
+
+	// [Intended] 候補の解像度は被写体の寸法から決める。透明余白を含めたまま算出すると、
+	// 余白の広い画像で被写体の実効解像度だけが落ちる。
+	let source = working;
+	let sourceX = 0;
+	let sourceY = 0;
+	if (o.trimToContent && masked) {
+		const bounds = findOpaqueBounds(masked, trimAlphaThreshold);
+		if (bounds) {
+			source = cropRawImage(working, bounds.x, bounds.y, bounds.w, bounds.h);
+			sourceX = bounds.x;
+			sourceY = bounds.y;
+		}
+	}
+
+	const candidates = createConvertCandidates(source);
 	const selected = selectConvertCandidate(candidates, o.detailLevel);
-	const reports = candidateReports(working, candidates);
-	let grid = gridForCandidate(working, selected);
-	const resizeStart = performance.now();
-	let finalResult = edgeAwareAreaResample(
-		working,
-		selected.outW,
-		selected.outH,
+	const selectedCandidateIndex = candidates.indexOf(selected);
+	const reports = candidateReports(
+		source,
+		candidates,
+		o.detailLevel,
+		sourceX,
+		sourceY,
 	);
+	let grid = gridForCandidate(
+		source,
+		selected,
+		o.detailLevel,
+		sourceX,
+		sourceY,
+	);
+	const resizeStart = performance.now();
+	let finalResult = edgeAwareAreaResample(source, selected.outW, selected.outH);
 	log(
 		`Convert resampling done in ${(performance.now() - resizeStart).toFixed(2)}ms`,
 		selected,
@@ -90,10 +159,10 @@ export const processConvertRoute = (
 	o.debugHook?.("05-convert-resampled", finalResult, { candidate: selected });
 	let compareBefore = resizeRawImageNearest(
 		img,
-		0,
-		0,
-		img.width,
-		img.height,
+		sourceX,
+		sourceY,
+		source.width,
+		source.height,
 		selected.outW,
 		selected.outH,
 	);
@@ -201,6 +270,7 @@ export const processConvertRoute = (
 		backgroundDiagnostic,
 		context.classificationResult,
 		context.additionalWarnings,
+		selectedCandidateIndex,
 	);
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
 	return {
