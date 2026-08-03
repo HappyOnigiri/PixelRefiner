@@ -75,6 +75,18 @@ pnpm build   # Create a production build
 pnpm test    # Run tests
 ```
 
+### Experimental Auto pipeline
+
+The legacy pipeline remains the default during the staged rollout. Developers can
+open the app with `?pipeline=next` to enable the new Auto routing; the choice is
+saved in local storage for later visits. Use `?pipeline=legacy` to roll back, or
+run `localStorage.removeItem("pixel-refiner-pipeline")` in the browser console to
+return to the default.
+
+Run `pnpm test:quality:report` to compare the current output with the base
+baseline for the same fixtures. Pull requests also publish this comparison and
+its quality-gate summary in GitHub Actions.
+
 ## Note
 
 Please note that this tool is designed primarily for automatic image conversion and optimization. Therefore, we do not plan to implement manual pixel-by-pixel editing features similar to paint software.

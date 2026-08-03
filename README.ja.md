@@ -75,6 +75,18 @@ pnpm build   # 本番用にビルド
 pnpm test    # テストを実行
 ```
 
+### 試験提供中の Auto パイプライン
+
+段階導入中は従来パイプラインが既定です。開発者はアプリを
+`?pipeline=next` 付きで開くと新しい Auto ルーティングを有効化でき、選択は
+localStorage に保存されます。ロールバックするには `?pipeline=legacy` で開くか、
+ブラウザーコンソールで `localStorage.removeItem("pixel-refiner-pipeline")` を実行して
+既定値へ戻してください。
+
+`pnpm test:quality:report` を実行すると、同じ fixture に対する現在の出力と
+ベースラインを比較できます。Pull Request でも比較レポートと品質ゲートの要約を
+GitHub Actions に掲載します。
+
 ## 補足
 
 本ツールは画像の自動変換・最適化を主目的としています。そのため、一般的なペイントツールのように1ピクセル単位で手動編集する機能の実装予定はございません。

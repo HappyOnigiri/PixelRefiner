@@ -75,6 +75,16 @@ pnpm build   # 构建生产版本
 pnpm test    # 运行测试
 ```
 
+### 试用中的 Auto 流水线
+
+分阶段发布期间，旧流水线仍为默认选项。开发者可使用 `?pipeline=next` 打开应用，
+启用新的 Auto 路由；该选择会保存到 localStorage。需要回滚时，请使用
+`?pipeline=legacy` 打开应用，或在浏览器控制台运行
+`localStorage.removeItem("pixel-refiner-pipeline")` 恢复默认值。
+
+运行 `pnpm test:quality:report` 可针对同一组 fixture 比较当前输出与基线输出。
+Pull Request 也会在 GitHub Actions 中发布比较报告及质量门禁摘要。
+
 ## 说明
 
 本工具主要用于自动图片转换和优化。因此，当前不计划实现类似绘图软件的逐像素手动编辑功能。
