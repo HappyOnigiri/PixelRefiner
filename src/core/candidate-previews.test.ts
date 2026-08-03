@@ -105,22 +105,35 @@ describe("candidate previews", () => {
 		expect(preview.resultWidth).toBe(400);
 	});
 
-	it("PRF-400の低信頼度fixtureで原寸維持を必ず提示する", async () => {
+	it("PRF-400のUI既定値fixtureで候補モーダル条件を満たす", async () => {
 		const image = await readPngAsRawImage(
-			"test/fixtures/quality_ambiguous_axis_grid.png",
+			"test/fixtures/quality_prf400_ui_low_confidence.png",
 		);
-		const processed = processImage(image, {
-			autoGridFromTrimmed: false,
-			backgroundMask: false,
-			bgRemovalScope: "off",
-			preRemoveBackground: false,
-			postRemoveBackground: false,
-			trimToContent: false,
-		});
+		const options = {
+			// [Intended] UI既定値の3%をピクセル数へ変換した値だけを明示する。
+			floatingMaxPixels: Math.ceil(image.width * image.height * 0.03),
+		};
+		const processed = processImage(image, options);
 		const first = selectCandidatePlans(processed.analysis);
 		const second = selectCandidatePlans(processed.analysis);
 		expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(processed.analysis.warnings).not.toContain(
+			"BACKGROUND_REMOVAL_SKIPPED",
+		);
 		expect(first.some((plan) => plan.kind === "preserve")).toBe(true);
 		expect(second).toEqual(first);
+		const rendered = first.map((selection) => {
+			const candidate = processImage(
+				image,
+				candidateProcessOptions(options, selection),
+			);
+			return createCandidatePreview(
+				selection,
+				candidate.result,
+				candidate.extractedPalette.length,
+			);
+		});
+		expect(rendered).toHaveLength(first.length);
+		expect(rendered.every((candidate) => candidate.colorCount > 0)).toBe(true);
 	});
 });

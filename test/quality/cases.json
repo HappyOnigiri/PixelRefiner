@@ -1741,7 +1741,7 @@
   },
   {
     "id": "withhold-ambiguous-axis-grid",
-    "featureIds": ["PRF-100", "PRF-400"],
+    "featureIds": ["PRF-100"],
     "profile": "smoke",
     "inputKind": "uncertain",
     "degradationPatterns": ["one-axis-periodicity"],
@@ -1760,7 +1760,6 @@
       "multiple ranked candidates",
       "preserve fallback candidate",
       "low-confidence selection withheld",
-      "candidate preview includes original size",
       "determinism"
     ],
     "expectation": { "exact": true },
@@ -1784,6 +1783,49 @@
         "redistributionAllowed": true,
         "commercialUseAllowed": true,
         "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "show-ui-default-candidates",
+    "featureIds": ["PRF-400"],
+    "optionNames": ["floatingMaxPixels"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["ambiguous-detail"],
+    "options": {
+      "floatingMaxPixels": 123
+    },
+    "input": "test/fixtures/quality_prf400_ui_low_confidence.png",
+    "expected": "test/fixtures/quality_prf400_ui_low_confidence-expect.png",
+    "assertions": [
+      "UI-default low grid confidence",
+      "candidate preview includes original size",
+      "no background removal rollback",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_ui_low_confidence.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_ui_low_confidence-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
       }
     ]
   },

@@ -94,6 +94,38 @@ const createAmbiguousAxisGrid = (scale: number): RawImage => {
 	return { width, height, data };
 };
 
+const createUiLowConfidenceInput = (): RawImage => {
+	const width = 64;
+	const height = 64;
+	const padding = 8;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const inside =
+				x >= padding &&
+				x < width - padding &&
+				y >= padding &&
+				y < height - padding;
+			if (!inside) {
+				data[offset] = 236;
+				data[offset + 1] = 242;
+				data[offset + 2] = 248;
+				data[offset + 3] = 255;
+				continue;
+			}
+			const localX = x - padding;
+			const localY = y - padding;
+			const accent = (localX * 3 + localY * 5) % 17 < 3;
+			data[offset] = accent ? 224 : 32;
+			data[offset + 1] = accent ? 96 : 48;
+			data[offset + 2] = accent ? 80 : 72;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
 const createAutomaticBackgroundInput = (): RawImage => {
 	const width = 24;
 	const height = 24;
@@ -353,6 +385,21 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		writePng(
 			fixturePath("quality_ambiguous_axis_grid-expect.png"),
 			createAmbiguousAxisGrid(1),
+		);
+		const uiLowConfidence = createUiLowConfidenceInput();
+		writePng(
+			fixturePath("quality_prf400_ui_low_confidence.png"),
+			uiLowConfidence,
+		);
+		const { result: uiLowConfidenceExpected } = processImage(uiLowConfidence, {
+			// [Intended] UI既定値の3%をピクセル数へ変換した値だけを明示し、その他は共有既定値を使う。
+			floatingMaxPixels: Math.ceil(
+				uiLowConfidence.width * uiLowConfidence.height * 0.03,
+			),
+		});
+		writePng(
+			fixturePath("quality_prf400_ui_low_confidence-expect.png"),
+			uiLowConfidenceExpected,
 		);
 		for (const mode of ["alpha", "diagonal", "harmonic"] as const) {
 			const ensembleInput =
