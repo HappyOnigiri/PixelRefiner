@@ -83,9 +83,7 @@ result is uncertain. Low-confidence grid results open the candidate chooser
 instead of forcing an extreme reduction.
 
 Run `pnpm test:quality:report` to compare the current output with the base
-baseline and to compare the default Auto route with the Legacy compatibility
-settings for the same fixtures. Pull requests publish the quality-gate summary
-in GitHub Actions.
+baseline. Pull requests publish the quality-gate summary in GitHub Actions.
 
 ## Note
 

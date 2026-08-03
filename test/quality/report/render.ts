@@ -1,11 +1,6 @@
 import path from "node:path";
-import type {
-	QualityCaseResult,
-	QualityResults,
-	QualityRolloutCaseResult,
-} from "../types";
+import type { QualityCaseResult, QualityResults } from "../types";
 import { runQualityReportClient } from "./client";
-import { renderRolloutMarkdown, renderRolloutSidebar } from "./rollout-render";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 import { REPORT_TRANSLATIONS } from "./translations";
 
@@ -191,7 +186,6 @@ const renderReportSidebar = (results: QualityResults): string => {
 			<dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd>
 		</dl>
 	</section>
-${renderRolloutSidebar(results.rollout)}
 	<div class="filter-panel">
 		<fieldset class="filter-group">
 			<legend data-i18n="language">Language</legend>
@@ -350,10 +344,7 @@ ${renderImageDialog()}
 </html>`;
 };
 
-export const renderCaseDetailHtml = (
-	result: QualityCaseResult,
-	rollout?: QualityRolloutCaseResult,
-): string => {
+export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const description = describeCase(result);
 	const renderImages = (
 		images: Array<[string, string, string | null]>,
@@ -377,13 +368,6 @@ export const renderCaseDetailHtml = (
 		["groundTruthDifference", "Ground-truth difference", result.files.diff],
 		["baselineDifference", "Baseline difference", result.files.baselineDiff],
 		["backgroundMask", "Background mask", result.files.backgroundMask],
-		["nextAuto", "Default Auto", rollout?.files.next ?? null],
-		["legacyAuto", "Legacy", rollout?.files.legacy ?? null],
-		[
-			"rolloutDifference",
-			"Default Auto vs Legacy",
-			rollout?.files.diff ?? null,
-		],
 	]);
 	const warnings =
 		result.warnings.length === 0
@@ -573,8 +557,6 @@ export const renderMarkdown = (results: QualityResults): string => {
 - Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(
 		1,
 	)}%
-
-${renderRolloutMarkdown(results.rollout)}
 
 |Case|Status|Output|Confidence (diagnostic)|Mean RGBA error|Edge F1|Runtime (ms)|
 |---|---|---:|---:|---:|---:|---:|

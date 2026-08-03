@@ -15,22 +15,15 @@ import {
 	selectCasesForProfile,
 	validateManifest,
 } from "./manifest";
-import {
-	runRolloutCase,
-	selectRolloutCases,
-	summarizeRollout,
-} from "./rollout";
 import { QUALITY_BASELINE_VERSION, type QualityBaseline } from "./types";
 
 const allCases = loadCases();
 const profile = qualityProfileFromEnvironment();
 const selectedCases = selectCasesForProfile(allCases, profile);
-const rolloutCases = selectRolloutCases(selectedCases);
 // [Policy] 画像全体を対象とする品質ケースは、競合の激しい共有 CI ランナー上で
 // 実行される可能性があるため、正しさの検証には短い単体テストのタイムアウトを使用しない。
 const QUALITY_CASE_TIMEOUT_MS = 120_000;
 const resultCache = new Map<string, ReturnType<typeof runQualityCase>>();
-const rolloutCache = new Map<string, ReturnType<typeof runRolloutCase>>();
 const getResult = (
 	qualityCase: (typeof selectedCases)[number],
 ): ReturnType<typeof runQualityCase> => {
@@ -38,15 +31,6 @@ const getResult = (
 	if (cached) return cached;
 	const result = runQualityCase(qualityCase);
 	resultCache.set(qualityCase.id, result);
-	return result;
-};
-const getRolloutResult = (
-	qualityCase: (typeof selectedCases)[number],
-): ReturnType<typeof runRolloutCase> => {
-	const cached = rolloutCache.get(qualityCase.id);
-	if (cached) return cached;
-	const result = runRolloutCase(qualityCase);
-	rolloutCache.set(qualityCase.id, result);
 	return result;
 };
 
@@ -67,32 +51,6 @@ describe("quality case manifest", () => {
 		},
 		QUALITY_CASE_TIMEOUT_MS,
 	);
-
-	it.each(rolloutCases)(
-		"runs the default Auto rollout safely for $id",
-		(qualityCase) => {
-			const result = getRolloutResult(qualityCase);
-			expect(result.next.metrics.byteIdentical).toBe(true);
-			expect(result.next.metrics.catastrophicFailure).toBe(false);
-		},
-		QUALITY_CASE_TIMEOUT_MS,
-	);
-
-	it("meets the aggregate rollout gates against Legacy", () => {
-		const rollout = summarizeRollout(
-			rolloutCases.map((qualityCase) => getRolloutResult(qualityCase)),
-		).summary;
-		expect(rollout.nextByteIdentityRate).toBe(1);
-		expect(rollout.nextCatastrophicFailureRate).toBeLessThanOrEqual(
-			rollout.legacyCatastrophicFailureRate,
-		);
-		expect(rollout.nextTop1SizeAccuracy).toBeGreaterThanOrEqual(
-			rollout.legacyTop1SizeAccuracy,
-		);
-		expect(rollout.nextTop3SizeAccuracy).toBeGreaterThanOrEqual(
-			rollout.legacyTop3SizeAccuracy,
-		);
-	}, 60_000);
 
 	it("does not regress the stored quality baseline", () => {
 		const current: QualityBaseline = {

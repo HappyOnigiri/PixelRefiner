@@ -82,8 +82,8 @@ Autoが既定の処理パイプラインです。画像ごとに入力を分類�
 低い場合は、極端な縮小を確定せず候補選択を表示します。
 
 `pnpm test:quality:report` を実行すると、同じ fixture に対する現在の出力と
-ベースライン、および既定AutoとLegacy互換設定を比較できます。Pull Requestでも
-品質ゲートの要約をGitHub Actionsに掲載します。
+ベースラインを比較できます。Pull Requestでも品質ゲートの要約をGitHub Actionsに
+掲載します。
 
 ## 補足
 

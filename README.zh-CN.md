@@ -81,9 +81,8 @@ Auto 是默认处理流水线。它会对每张图像进行分类，并选择网
 或在结果不确定时安全地保留原始尺寸。网格判断置信度较低时，应用会显示候选结果，
 而不会强制进行极端缩小。
 
-运行 `pnpm test:quality:report` 可针对同一组 fixture 比较当前输出与基线输出，
-以及默认 Auto 与 Legacy 兼容设置。Pull Request 也会在 GitHub Actions 中发布
-质量门禁摘要。
+运行 `pnpm test:quality:report` 可针对同一组 fixture 比较当前输出与基线输出。
+Pull Request 也会在 GitHub Actions 中发布质量门禁摘要。
 
 ## 说明
 
