@@ -122,6 +122,7 @@ describe("processImage modes", () => {
 
 		it("should match expected image when keepAspectRatio is enabled", async () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
@@ -339,6 +340,7 @@ describe("processImage modes", () => {
 
 		it("should correctly detect and process high-resolution images (small pixels)", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,

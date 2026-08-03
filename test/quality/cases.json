@@ -2037,5 +2037,53 @@
         "acquiredOrGeneratedAt": "2026-08-01"
       }
     ]
+  },
+  {
+    "id": "remove-gradient-background-with-border-model",
+    "featureIds": ["PRF-200"],
+    "optionNames": ["bgExtractionMethod", "backgroundTolerance"],
+    "profile": "smoke",
+    "inputKind": "padded-pixel-art",
+    "degradationPatterns": ["background-gradient"],
+    "options": {
+      "enableGridDetection": false,
+      "preRemoveBackground": true,
+      "postRemoveBackground": false,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "auto",
+      "backgroundTolerance": 64
+    },
+    "input": "test/fixtures/quality_prf200_gradient_background.png",
+    "expected": "test/fixtures/quality_prf200_gradient_background-expect.png",
+    "assertions": [
+      "automatic border model selected",
+      "four-corner gradient transparency",
+      "subject retention",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 24, "expectedHeight": 24 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf200_gradient_background.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf200_gradient_background-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
   }
 ]

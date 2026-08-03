@@ -113,6 +113,7 @@ export const setupSettingsControls = ({
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
 			closeEyedropperModal();
+			triggerAutoProcess();
 		}
 	});
 
@@ -183,7 +184,7 @@ export const setupSettingsControls = ({
 		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
 		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
-		els.bgExtractionMethod.value = "top-left";
+		els.bgExtractionMethod.value = PROCESS_DEFAULTS.bgExtractionMethod;
 
 		const applyTooltipRange = (
 			id: string,
@@ -394,6 +395,19 @@ export const setupSettingsControls = ({
 			}
 		});
 
+		// [Intended] Auto には角の選択が無く、"selected" は "outer" と同じ結果になるため選ばせない。
+		const isAutoMethod = els.bgExtractionMethod.value === "auto";
+		const selectedScopeOption =
+			els.bgRemovalScopeSelect.querySelector<HTMLOptionElement>(
+				'option[value="selected"]',
+			);
+		if (selectedScopeOption) {
+			selectedScopeOption.disabled = isAutoMethod;
+		}
+		if (isAutoMethod && els.bgRemovalScopeSelect.value === "selected") {
+			els.bgRemovalScopeSelect.value = "outer";
+		}
+
 		const rgbContainer = els.rgbPickerContainer;
 		if (isBgDisabled) {
 			rgbContainer.classList.add("disabled");
@@ -405,7 +419,12 @@ export const setupSettingsControls = ({
 	const updateBgColorFromMethod = () => {
 		const method = els.bgExtractionMethod.value;
 		const currentImage = imageSession.getActiveImage()?.original;
-		if (method !== "none" && method !== "rgb" && currentImage) {
+		if (
+			method !== "none" &&
+			method !== "auto" &&
+			method !== "rgb" &&
+			currentImage
+		) {
 			const w = currentImage.width;
 			const h = currentImage.height;
 			let x = 0;

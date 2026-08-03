@@ -22,6 +22,7 @@ import {
 } from "./image-operations";
 import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
+import { prepareAutomaticBackground } from "./processor-background";
 import {
 	getDownsampleOptions,
 	normalizeProcessOptions,
@@ -34,6 +35,11 @@ import {
 import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
 export type { ProcessResult } from "../shared/types";
+export type { BackgroundCluster, BackgroundModel } from "./background";
+export {
+	estimateBackgroundModel,
+	removeAutomaticBackground,
+} from "./background";
 export { _removeSmallFloatingComponentsInPlace } from "./background-removal";
 export type {
 	CellSampler,
@@ -76,40 +82,51 @@ export const processImage = (
 		o.bgRemovalScope !== "off"
 			? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
 			: [];
+	const { automaticBackground, backgroundModel, backgroundDiagnostic } =
+		prepareAutomaticBackground(img, o);
 	log(
 		`Background targets extracted in ${(performance.now() - bgTargetsStart).toFixed(2)}ms`,
 		bgTargets,
 	);
 
 	const workingStart = performance.now();
-	const working = o.preRemoveBackground
-		? o.bgRemovalScope === "outer"
-			? removeBackground(
-					img,
-					o.backgroundTolerance,
-					"outer",
-					o.bgConnectivity,
-					bgTargets,
-					o.bgExtractionMethod,
-				)
-			: o.bgRemovalScope === "selected"
-				? removeBackgroundByFloodFillLegacy(
-						img,
-						o.backgroundTolerance,
-						o.bgConnectivity,
-						bgTargets,
-						o.bgExtractionMethod,
-					)
-				: o.bgRemovalScope === "all"
-					? removeBackgroundByFloodFillLegacy(
-							img,
-							o.backgroundTolerance,
-							"4",
-							bgTargets,
-							o.bgExtractionMethod,
-						)
-					: cloneImage(img)
-		: cloneImage(img);
+	let working: RawImage;
+	if (!o.preRemoveBackground) {
+		working = cloneImage(img);
+	} else if (automaticBackground) {
+		working = automaticBackground.image;
+	} else if (o.bgExtractionMethod === "auto") {
+		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
+		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
+		working = cloneImage(img);
+	} else if (o.bgRemovalScope === "outer") {
+		working = removeBackground(
+			img,
+			o.backgroundTolerance,
+			"outer",
+			o.bgConnectivity,
+			bgTargets,
+			o.bgExtractionMethod,
+		);
+	} else if (o.bgRemovalScope === "selected") {
+		working = removeBackgroundByFloodFillLegacy(
+			img,
+			o.backgroundTolerance,
+			o.bgConnectivity,
+			bgTargets,
+			o.bgExtractionMethod,
+		);
+	} else if (o.bgRemovalScope === "all") {
+		working = removeBackgroundByFloodFillLegacy(
+			img,
+			o.backgroundTolerance,
+			"4",
+			bgTargets,
+			o.bgExtractionMethod,
+		);
+	} else {
+		working = cloneImage(img);
+	}
 	log(
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
 	);
@@ -130,6 +147,8 @@ export const processImage = (
 		trimAlphaThreshold,
 		startTime,
 		log,
+		backgroundDiagnostic,
+		backgroundModel,
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return forcedResult;
@@ -153,6 +172,7 @@ export const processImage = (
 					o.bgConnectivity,
 					bgTargets,
 					o.bgExtractionMethod,
+					backgroundModel,
 				)
 			: null;
 	if (maskedForDebugOrAuto) {
@@ -326,6 +346,7 @@ export const processImage = (
 			o.bgConnectivity,
 			bgTargets,
 			o.bgExtractionMethod,
+			backgroundModel,
 		);
 		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
@@ -378,6 +399,8 @@ export const processImage = (
 				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
+				backgroundModel,
+				backgroundDiagnostic,
 			)
 		: trimmed;
 	log(
@@ -557,6 +580,7 @@ export const processImage = (
 		gridMethod,
 		trimAlphaThreshold,
 		rankedGridCandidates,
+		backgroundDiagnostic,
 	);
 	log("Processing analysis", analysis);
 	return {

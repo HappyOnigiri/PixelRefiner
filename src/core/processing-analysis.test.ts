@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
+import { estimateBackgroundModel } from "./background";
 import { processImage } from "./processor";
 
 const solidImage = (
@@ -29,6 +30,47 @@ const stripedImage = (): RawImage => {
 			data[i + 1] = value;
 			data[i + 2] = value;
 			data[i + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const noisyImage = (): RawImage => {
+	const width = 20;
+	const height = 20;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			data[offset] = (x * 73 + y * 41) % 256;
+			data[offset + 1] = (x * 19 + y * 101) % 256;
+			data[offset + 2] = (x * 151 + y * 7) % 256;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const pixelArtOnGradient = (): RawImage => {
+	const width = 32;
+	const height = 32;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const inSubject = x >= 8 && x < 24 && y >= 8 && y < 24;
+			if (inSubject) {
+				const value =
+					(Math.floor(x / 4) + Math.floor(y / 4)) % 2 === 0 ? 40 : 90;
+				data[offset] = value;
+				data[offset + 1] = value;
+				data[offset + 2] = value + 20;
+			} else {
+				data[offset] = 226 + Math.floor(x / 8);
+				data[offset + 1] = 228 + Math.floor(y / 8);
+				data[offset + 2] = 234;
+			}
+			data[offset + 3] = 255;
 		}
 	}
 	return { width, height, data };
@@ -160,6 +202,7 @@ describe("processing analysis", () => {
 			preRemoveBackground: true,
 			bgRemovalScope: "all",
 			backgroundTolerance: 0,
+			bgExtractionMethod: "top-left",
 		});
 		const empty = processImage(solidImage(8, 8, [0, 0, 0, 0]), {
 			enableGridDetection: false,
@@ -170,6 +213,59 @@ describe("processing analysis", () => {
 		expect(removed.analysis.contentLossRatio).toBe(1);
 		expect(removed.analysis.warnings).toContain("CONTENT_LOSS_RISK");
 		expect(empty.analysis.warnings).toContain("NO_CONTENT");
+	});
+
+	it("reports an automatic background rollback as a skipped removal", () => {
+		const processed = processImage(solidImage(8, 8, [255, 255, 255, 255]), {
+			enableGridDetection: false,
+			preRemoveBackground: true,
+			postRemoveBackground: true,
+			trimToContent: false,
+			bgRemovalScope: "all",
+			bgExtractionMethod: "auto",
+		});
+
+		expect(processed.result.data).toEqual(
+			solidImage(8, 8, [255, 255, 255, 255]).data,
+		);
+		expect(processed.analysis.backgroundConfidence).toBeDefined();
+		expect(processed.analysis.warnings).toContain("BACKGROUND_REMOVAL_SKIPPED");
+		expect(processed.analysis.warnings).not.toContain("CONTENT_LOSS_RISK");
+	});
+
+	it("hands the full-resolution background model to the post-processing removal", () => {
+		const image = pixelArtOnGradient();
+		const processed = processImage(image, {
+			bgExtractionMethod: "auto",
+			preRemoveBackground: false,
+			postRemoveBackground: true,
+			trimToContent: false,
+		});
+
+		// 事前除去が無効でも、診断は原寸画像から推定したモデルのものになる。
+		expect(processed.analysis.backgroundConfidence).toBe(
+			estimateBackgroundModel(image).confidence,
+		);
+		expect(processed.analysis.warnings).not.toContain(
+			"BACKGROUND_REMOVAL_SKIPPED",
+		);
+		// 引き渡したモデルで後処理の背景除去が働き、外周は透明になる。
+		expect(processed.result.data[3]).toBe(0);
+	});
+
+	it("warns and preserves pixels when automatic background confidence is low", () => {
+		const image = noisyImage();
+		const processed = processImage(image, {
+			enableGridDetection: false,
+			preRemoveBackground: true,
+			postRemoveBackground: false,
+			trimToContent: false,
+			bgRemovalScope: "outer",
+			bgExtractionMethod: "auto",
+		});
+
+		expect(processed.result.data).toEqual(image.data);
+		expect(processed.analysis.warnings).toContain("BACKGROUND_UNCERTAIN");
 	});
 
 	it("does not treat transparent padding as content loss", () => {

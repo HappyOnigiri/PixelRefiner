@@ -1,5 +1,9 @@
-import { PROCESS_ANALYSIS_THRESHOLDS } from "../shared/config";
+import {
+	BACKGROUND_MODEL_LIMITS,
+	PROCESS_ANALYSIS_THRESHOLDS,
+} from "../shared/config";
 import type {
+	BackgroundDiagnostic,
 	GridCandidateReport,
 	PixelGrid,
 	ProcessingAnalysis,
@@ -124,6 +128,7 @@ export const createProcessingAnalysis = (
 	method: string,
 	alphaThreshold: number,
 	rankedCandidates?: GridCandidateReport[],
+	backgroundDiagnostic?: BackgroundDiagnostic,
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
@@ -151,6 +156,17 @@ export const createProcessingAnalysis = (
 	const contentLossRatio =
 		before === 0 ? 0 : clampUnit((before - after) / before);
 	const warnings: ProcessingWarningCode[] = [];
+	if (
+		backgroundDiagnostic &&
+		backgroundDiagnostic.confidence < BACKGROUND_MODEL_LIMITS.minConfidence
+	) {
+		warnings.push("BACKGROUND_UNCERTAIN");
+	}
+	// [Intended] ロールバック時は背景が透過されなかっただけで内容は失われていないため、
+	// CONTENT_LOSS_RISK ではなく専用の警告で「背景透過を中止した」ことを伝える。
+	if (backgroundDiagnostic?.removalRolledBack) {
+		warnings.push("BACKGROUND_REMOVAL_SKIPPED");
+	}
 	if (before === 0) warnings.push("NO_CONTENT");
 	if (grid.detectionFailedAxes?.length === 1) {
 		warnings.push("ONE_AXIS_DETECTION_FAILED");
@@ -187,5 +203,6 @@ export const createProcessingAnalysis = (
 		foregroundRatioBefore: before,
 		foregroundRatioAfter: after,
 		contentLossRatio,
+		backgroundConfidence: backgroundDiagnostic?.confidence,
 	};
 };

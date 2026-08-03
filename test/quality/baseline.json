@@ -452,6 +452,17 @@
       "backgroundMaskIou": 1,
       "smallComponentRetention": 1,
       "catastrophicFailure": false
+    },
+    {
+      "id": "remove-gradient-background-with-border-model",
+      "status": "passed",
+      "outputWidth": 24,
+      "outputHeight": 24,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
     }
   ]
 }

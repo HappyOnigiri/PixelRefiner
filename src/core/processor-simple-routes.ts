@@ -1,4 +1,10 @@
-import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
+import type {
+	BackgroundDiagnostic,
+	PixelGrid,
+	ProcessResult,
+	RawImage,
+} from "../shared/types";
+import type { BackgroundModel } from "./background";
 import {
 	removeBackground,
 	removeSmallFloatingComponentsInPlace,
@@ -25,13 +31,24 @@ type SimpleRouteContext = {
 	trimAlphaThreshold: number;
 	startTime: number;
 	log: (...args: unknown[]) => void;
+	backgroundDiagnostic?: BackgroundDiagnostic;
+	backgroundModel?: BackgroundModel;
 };
 
 export const processForcedRoute = (
 	context: SimpleRouteContext,
 ): ProcessResult | null => {
-	const { img, o, working, bgTargets, trimAlphaThreshold, startTime, log } =
-		context;
+	const {
+		img,
+		o,
+		working,
+		bgTargets,
+		trimAlphaThreshold,
+		startTime,
+		log,
+		backgroundDiagnostic,
+		backgroundModel,
+	} = context;
 	if (o.forcePixelsW === undefined || o.forcePixelsH === undefined) {
 		return null;
 	}
@@ -45,6 +62,7 @@ export const processForcedRoute = (
 		o.bgConnectivity,
 		bgTargets,
 		o.bgExtractionMethod,
+		backgroundModel,
 	);
 	if (o.floatingMaxPixels > 0) {
 		const floatingStart = performance.now();
@@ -133,6 +151,8 @@ export const processForcedRoute = (
 				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
+				backgroundModel,
+				backgroundDiagnostic,
 			)
 		: down2;
 	log(
@@ -242,6 +262,8 @@ export const processForcedRoute = (
 		"convert",
 		"forced-size",
 		trimAlphaThreshold,
+		undefined,
+		backgroundDiagnostic,
 	);
 	log("Processing analysis", analysis);
 	return {
@@ -257,8 +279,17 @@ export const processForcedRoute = (
 export const processGridDisabledRoute = (
 	context: SimpleRouteContext,
 ): ProcessResult | null => {
-	const { img, o, working, bgTargets, trimAlphaThreshold, startTime, log } =
-		context;
+	const {
+		img,
+		o,
+		working,
+		bgTargets,
+		trimAlphaThreshold,
+		startTime,
+		log,
+		backgroundDiagnostic,
+		backgroundModel,
+	} = context;
 	if (o.enableGridDetection) {
 		return null;
 	}
@@ -272,6 +303,7 @@ export const processGridDisabledRoute = (
 		o.bgConnectivity,
 		bgTargets,
 		o.bgExtractionMethod,
+		backgroundModel,
 	);
 	if (o.floatingMaxPixels > 0) {
 		removeSmallFloatingComponentsInPlace(
@@ -403,6 +435,8 @@ export const processGridDisabledRoute = (
 		"preserve",
 		"grid-disabled",
 		trimAlphaThreshold,
+		undefined,
+		backgroundDiagnostic,
 	);
 	log("Processing analysis", analysis);
 	return {

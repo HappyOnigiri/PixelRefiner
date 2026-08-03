@@ -50,6 +50,27 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	legacyPreserveCandidateScore: 1_000_000,
 } as const;
 
+export const BACKGROUND_MODEL_LIMITS = {
+	borderBandRatio: 0.08,
+	minBorderBandPixels: 1,
+	maxClusters: 4,
+	clusterIterations: 6,
+	minClusterWeight: 0.04,
+	minConfidence: 0.55,
+	maxContentLossRatio: 0.92,
+	baseOklabTolerance: 0.018,
+	maxOklabTolerance: 0.2,
+	varianceScale: 2.5,
+	varianceConfidenceScale: 0.012,
+	maxBorderSamples: 262_144,
+	dehaloRadius: 2,
+	dehaloMaxChannelChange: 32,
+	dehaloMaxRgbDistance: 128,
+	dehaloPushStrength: 0.35,
+	dehaloSourceBlend: 0.35,
+	dehaloInteriorBlend: 0.65,
+} as const;
+
 export const GRID_CANDIDATE_SCORE_WEIGHTS = {
 	colorBoundary: 0.08,
 	luminanceGradient: 0.08,
@@ -297,6 +318,7 @@ export const RETRO_PALETTES: Record<
 export const PROCESS_DEFAULTS = {
 	preRemoveBackground: true,
 	postRemoveBackground: true,
+	bgExtractionMethod: "auto",
 	// 背景除去の範囲（off/selected/outer/all）
 	bgRemovalScope: "outer",
 	// 連結探索に対角方向（8 近傍）を含めるか（4=いいえ、8=はい）

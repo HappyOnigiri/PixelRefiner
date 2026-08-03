@@ -6,6 +6,8 @@ export const translateProcessingWarning = (code: string): string => {
 			return i18n.t("warning.low_grid_confidence");
 		case "BACKGROUND_UNCERTAIN":
 			return i18n.t("warning.background_uncertain");
+		case "BACKGROUND_REMOVAL_SKIPPED":
+			return i18n.t("warning.background_removal_skipped");
 		case "CONTENT_LOSS_RISK":
 			return i18n.t("warning.content_loss_risk");
 		case "ONE_AXIS_DETECTION_FAILED":

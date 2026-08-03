@@ -24,7 +24,8 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
   - **High-Resolution Support** — Enhanced accuracy for large images and complex pixel patterns.
   - **Fast estimation** — A turbo mode for quick previews, even on large images.
 - **Smart background removal**:
-  - Auto-transparency based on corner colors
+  - **Auto mode (default)** — Estimates the background from the whole image border, covering gradients and light noise
+  - Corner-color transparency (manual selection)
   - **Eyedropper tool** — Click to pick the exact background color
   - Adjustable tolerance
   - Interior hole filling (e.g. the inside of a donut shape)

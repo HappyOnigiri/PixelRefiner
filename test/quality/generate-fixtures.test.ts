@@ -94,6 +94,23 @@ const createAmbiguousAxisGrid = (scale: number): RawImage => {
 	return { width, height, data };
 };
 
+const createAutomaticBackgroundInput = (): RawImage => {
+	const width = 24;
+	const height = 24;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const subject = x >= 7 && x <= 16 && y >= 7 && y <= 16;
+			data[offset] = subject ? 32 : 224 + x;
+			data[offset + 1] = subject ? 48 : 226 + y;
+			data[offset + 2] = subject ? 80 : 232 + ((x + y) % 5);
+			data[offset + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
 const createEnsembleSignalGrid = (
 	scale: number,
 	mode: "alpha" | "diagonal" | "harmonic",
@@ -301,6 +318,28 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		writePng(
 			fixturePath("quality_prf130_cell_sampling-expect.png"),
 			cellSampling.expected,
+		);
+
+		const automaticBackground = createAutomaticBackgroundInput();
+		writePng(
+			fixturePath("quality_prf200_gradient_background.png"),
+			automaticBackground,
+		);
+		const { result: automaticBackgroundExpected } = processImage(
+			automaticBackground,
+			{
+				enableGridDetection: false,
+				preRemoveBackground: true,
+				postRemoveBackground: false,
+				trimToContent: false,
+				bgRemovalScope: "outer",
+				bgExtractionMethod: "auto",
+				backgroundTolerance: 64,
+			},
+		);
+		writePng(
+			fixturePath("quality_prf200_gradient_background-expect.png"),
+			automaticBackgroundExpected,
 		);
 
 		const quantizationInput = createQuantizationInput();

@@ -96,6 +96,7 @@ export type InputClassification =
 export type ProcessingWarningCode =
 	| "LOW_GRID_CONFIDENCE"
 	| "BACKGROUND_UNCERTAIN"
+	| "BACKGROUND_REMOVAL_SKIPPED"
 	| "CONTENT_LOSS_RISK"
 	| "ONE_AXIS_DETECTION_FAILED"
 	| "EXTREME_OUTPUT_SIZE"
@@ -136,6 +137,16 @@ export type GridCandidateReport = {
 	subscores?: Partial<GridCandidateSubscores>;
 };
 
+/** 自動背景モデルの診断情報。手動背景指定では省略する。 */
+export type BackgroundDiagnostic = {
+	confidence: number;
+	/**
+	 * 消えすぎ検出により背景除去を中止したか。
+	 * [Intended] 出力へ適用された各段階の結果を集約するため、処理中に書き換える。
+	 */
+	removalRolledBack: boolean;
+};
+
 export type ProcessingAnalysis = {
 	classification?: InputClassification;
 	route: ProcessingRoute;
@@ -147,6 +158,8 @@ export type ProcessingAnalysis = {
 	foregroundRatioBefore?: number;
 	foregroundRatioAfter?: number;
 	contentLossRatio?: number;
+	/** 自動背景モデルの信頼度。手動背景指定では省略する。 */
+	backgroundConfidence?: number;
 };
 
 export type ProcessResult = {
