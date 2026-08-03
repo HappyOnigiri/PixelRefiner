@@ -399,6 +399,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "show-ui-default-candidates",
+      "status": "passed",
+      "outputWidth": 2,
+      "outputHeight": 2,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "restore-alpha-only-grid-to-8x8",
       "status": "passed",
       "outputWidth": 8,

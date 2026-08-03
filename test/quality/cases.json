@@ -1787,6 +1787,49 @@
     ]
   },
   {
+    "id": "show-ui-default-candidates",
+    "featureIds": ["PRF-400"],
+    "optionNames": ["floatingMaxPixels"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["ambiguous-detail"],
+    "options": {
+      "floatingMaxPixels": 123
+    },
+    "input": "test/fixtures/quality_prf400_ui_low_confidence.png",
+    "expected": "test/fixtures/quality_prf400_ui_low_confidence-expect.png",
+    "assertions": [
+      "UI-default low grid confidence",
+      "candidate preview includes original size",
+      "no background removal rollback",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_ui_low_confidence.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_ui_low_confidence-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
     "id": "restore-alpha-only-grid-to-8x8",
     "featureIds": ["PRF-120"],
     "optionNames": ["gridSignals"],

@@ -2,15 +2,23 @@ import { wrap } from "comlink";
 import type { ProcessOptions } from "../core/processor";
 import type { ProcessorWorker } from "../core/worker";
 import { clampInt, clampNumber, PROCESS_RANGES } from "../shared/config";
-import type { DitherMode, OutlineStyle } from "../shared/types";
+import type {
+	CandidateSelection,
+	DitherMode,
+	OutlineStyle,
+} from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
+import type { CandidateChooser } from "./candidate-chooser";
 import type { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError, showWarning } from "./notifications";
-import { translateProcessingWarnings } from "./processing-warnings";
+import {
+	shouldNotifyProcessingWarnings,
+	translateProcessingWarnings,
+} from "./processing-warnings";
 import type { ResultViewer } from "./result-viewer";
 import type { ImageSession } from "./session";
 
@@ -30,6 +38,11 @@ type ProcessingControllerOptions = {
 	updatePaletteDisplay: () => void;
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
+	candidateChooser: CandidateChooser;
+};
+
+export type RunProcessingOptions = {
+	showCandidates?: boolean;
 };
 
 export const createRunProcessing = ({
@@ -42,14 +55,25 @@ export const createRunProcessing = ({
 	updatePaletteDisplay,
 	updateGrid,
 	updateBgColorFromMethod,
-}: ProcessingControllerOptions): (() => Promise<void>) => {
+	candidateChooser,
+}: ProcessingControllerOptions): ((
+	options?: RunProcessingOptions,
+) => Promise<void>) => {
 	const compareBeforeCanvas = document.createElement("canvas");
 	const compareAfterCanvas = document.createElement("canvas");
 	const compareBeforeSanitizedCanvas = document.createElement("canvas");
+	// [Intended] 候補プレビューの生成は await を挟むため、完了時に自分が最新の処理か判定する。
+	// これがないと、遅れて返った旧画像・旧設定の候補が現在の状態のものとして表示される。
+	let latestGeneration = 0;
 
-	return async () => {
+	const runProcessing = async (
+		selection?: CandidateSelection,
+		showCandidates = true,
+	) => {
 		const images = imageSession.getImages();
 		if (images.length === 0) return;
+		const generation = ++latestGeneration;
+		if (!selection) candidateChooser.dismiss();
 
 		mainResultViewer.setLoading(true);
 
@@ -72,6 +96,11 @@ export const createRunProcessing = ({
 		}
 
 		const currentImage = currentItem.original;
+		// 明示的な選択がなければ、この画像に対して以前選ばれた候補を引き継ぐ。
+		const effectiveSelection = selection ?? currentItem.candidateSelection;
+		if (selection) {
+			imageSession.setCandidateSelection(currentItem.id, selection);
+		}
 		imageSession.setImageStatus(currentItem.id, "processing");
 
 		try {
@@ -158,14 +187,7 @@ export const createRunProcessing = ({
 				gridMode === "hint" && usePixels ? pixelsH : undefined;
 			const enableGridDetection = gridMode !== "off";
 
-			const {
-				result,
-				grid,
-				extractedPalette,
-				compareBefore,
-				compareBeforeSanitized,
-				analysis,
-			} = await processor.process(currentImage, {
+			const processOptions: ProcessOptions = {
 				detectionQuantStep,
 				forcePixelsW,
 				forcePixelsH,
@@ -197,7 +219,22 @@ export const createRunProcessing = ({
 				bgExtractionMethod: method,
 				bgRgb: els.bgRgbInput.value,
 				fixedPalette: processingState.currentFixedPalette,
-			});
+			};
+
+			const {
+				result,
+				grid,
+				extractedPalette,
+				compareBefore,
+				compareBeforeSanitized,
+				analysis,
+			} = effectiveSelection
+				? await processor.processCandidate(
+						currentImage,
+						processOptions,
+						effectiveSelection,
+					)
+				: await processor.process(currentImage, processOptions);
 
 			// 転送したデータは呼び出し元スレッドで利用できなくなる可能性がある（Comlink の挙動に依存し、
 			// RawImage を再利用しない設計のため、ここで再代入する）
@@ -206,14 +243,10 @@ export const createRunProcessing = ({
 			// 簡潔にするためコピーとして保持する。
 			const resultImage = result;
 			// currentResult = resultImage; // 直接使用しなくなった
-			const effectiveGrid = imageSession.updateImageResult(
-				currentItem.id,
-				resultImage,
-				grid,
-			);
+			imageSession.updateImageResult(currentItem.id, resultImage, grid);
 
-			mainResultViewer.updateImage(resultImage, effectiveGrid);
-			modalResultViewer.updateImage(resultImage, effectiveGrid);
+			mainResultViewer.updateImage(resultImage);
+			modalResultViewer.updateImage(resultImage);
 			mainResultViewer.setLoading(false);
 
 			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。
@@ -274,7 +307,36 @@ export const createRunProcessing = ({
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
-			if (analysis.warnings.length > 0) {
+			let candidateModalShown = false;
+			if (
+				showCandidates &&
+				!effectiveSelection &&
+				analysis.warnings.includes("LOW_GRID_CONFIDENCE")
+			) {
+				try {
+					const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
+					const previews = await processor.previewCandidates(
+						currentImage,
+						processOptions,
+						analysis,
+						cacheKey,
+					);
+					// 待機中に別の処理が始まった、または表示対象が切り替わった場合は表示しない。
+					const stillCurrent =
+						generation === latestGeneration &&
+						imageSession.getActiveImage()?.id === currentItem.id;
+					if (stillCurrent && previews.length > 0) {
+						candidateChooser.show(previews, analysis.warnings, currentItem.id);
+						candidateModalShown = true;
+					}
+				} catch (error) {
+					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
+					console.error("Failed to create candidate previews:", error);
+				}
+			}
+			if (
+				shouldNotifyProcessingWarnings(analysis.warnings, candidateModalShown)
+			) {
 				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
 			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
@@ -292,4 +354,14 @@ export const createRunProcessing = ({
 			els.processButton.disabled = false;
 		}
 	};
+
+	candidateChooser.setCallbacks({
+		onSelect: async (selection, sourceImageId) => {
+			// 候補は生成元の画像に対する提案なので、表示後に切り替わっていたら適用しない。
+			if (imageSession.getActiveImage()?.id !== sourceImageId) return;
+			await runProcessing(selection);
+		},
+	});
+	return (options?: RunProcessingOptions) =>
+		runProcessing(undefined, options?.showCandidates !== false);
 };

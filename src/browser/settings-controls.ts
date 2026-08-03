@@ -4,13 +4,14 @@ import type { ProcessingState } from "./app-state";
 import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError } from "./notifications";
+import type { RunProcessingOptions } from "./processing-controller";
 import type { ImageSession } from "./session";
 
 type SettingsControlsOptions = {
 	els: Elements;
 	processingState: ProcessingState;
 	imageSession: ImageSession;
-	runProcessing: () => Promise<void>;
+	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
 	saveSettings: () => void;
 };
 
@@ -243,9 +244,24 @@ export const setupSettingsControls = ({
 		}
 
 		autoProcessTimeout = window.setTimeout(() => {
-			runProcessing();
+			// [Intended] 設定調整のたびに候補モーダルが開くと、入力からフォーカスが奪われ調整を続けられない。
+			// 候補の提示は明示的な処理実行に限る。
+			runProcessing({ showCandidates: false });
 		}, 300);
 	};
+
+	// グリッド設定を直接変えた場合は、候補プレビューでの選択より新しい指定として扱う。
+	const clearCandidateSelections = () => {
+		imageSession.clearCandidateSelections();
+	};
+	[
+		els.gridDetectionModeSelect,
+		els.forcePixelsWInput,
+		els.forcePixelsHInput,
+	].forEach((el) => {
+		el.addEventListener("change", clearCandidateSelections);
+		el.addEventListener("input", clearCandidateSelections);
+	});
 
 	const syncSliderAndInput = (
 		slider: HTMLInputElement,

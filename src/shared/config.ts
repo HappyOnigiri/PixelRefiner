@@ -50,6 +50,18 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	legacyPreserveCandidateScore: 1_000_000,
 } as const;
 
+export const CANDIDATE_PREVIEW_LIMITS = {
+	maxCandidates: 4,
+	maxThumbnailDimension: 192,
+	maxCacheEntries: 8,
+	/** 面積差がこの比率以内なら、候補として区別できないほど近いとみなす。 */
+	similarAreaRatio: 0.02,
+	/** 面積差の下限（極小サイズで比率が効かない場合の救済）。 */
+	minSimilarAreaDiff: 2,
+	/** セルサイズ差がこの px 未満なら、候補として区別できないほど近いとみなす。 */
+	similarCellDelta: 0.2,
+} as const;
+
 export const INPUT_CLASSIFIER_THRESHOLDS = {
 	maxSamplePixels: 65_536,
 	minDimension: 2,

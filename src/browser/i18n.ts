@@ -35,11 +35,6 @@ const resources = {
 		"ui.clear_all": "すべてクリア",
 		"ui.download_all": "一括ダウンロード",
 		"ui.download_all_zip": "一括ダウンロード (ZIP)",
-		"ui.pixel_size": "ピクセルサイズ",
-		"ui.select_size_title": "変更するサイズを選択",
-		"ui.select_size_note":
-			"※推定値です。選択したサイズを参考に最適なグリッドを再判定します。",
-		"ui.change_to_this_size": "このサイズに変更",
 		"ui.remove_image": "画像を削除",
 		"ui.confirm_clear_all": "すべての画像を削除してもよろしいですか？",
 		"ui.size": "サイズ",
@@ -52,6 +47,23 @@ const resources = {
 		"ui.placeholder.result": "処理結果がここに表示されます",
 		"ui.close": "閉じる",
 		"ui.download_options": "ダウンロード種別を選択",
+		"candidate.title": "結果を選択",
+		"candidate.intro":
+			"自動判定に確信を持てませんでした。実際の結果を比較して選んでください。",
+		"candidate.recommended_badge": "おすすめ",
+		"candidate.metadata": "{width} × {height} px・{colors}色",
+		"candidate.label.recommended": "推奨候補",
+		"candidate.label.finer": "細かめ",
+		"candidate.label.coarser": "粗め",
+		"candidate.label.preserve": "原寸維持",
+		"candidate.label.convert": "Convert候補",
+		"candidate.description.recommended":
+			"検出結果の中で画像構造に最も合う候補です。",
+		"candidate.description.finer": "細部を多く残す候補です。",
+		"candidate.description.coarser": "大きなドットへまとめる候補です。",
+		"candidate.description.preserve":
+			"縮小せず、安全に元の解像度を維持します。",
+		"candidate.description.convert": "通常画像としてドット絵風に変換します。",
 
 		// 設定
 		"setting.color_reduction": "減色",
@@ -187,7 +199,6 @@ const resources = {
 		"error.no_image": "先に画像を選択してください。",
 		"error.process_failed": "処理失敗",
 		"error.load_failed": "読み込み失敗",
-		"info.grid_updated": "グリッドサイズを {w}x{h} に更新しました",
 		"warning.low_grid_confidence":
 			"グリッド判定の信頼度が低いため、結果を確認してください。",
 		"warning.background_uncertain": "背景の判定が不確かです。",
@@ -247,11 +258,6 @@ const resources = {
 		"ui.clear_all": "全部清除",
 		"ui.download_all": "全部下载",
 		"ui.download_all_zip": "全部下载 (ZIP)",
-		"ui.pixel_size": "像素尺寸",
-		"ui.select_size_title": "选择要切换的尺寸",
-		"ui.select_size_note":
-			"*以下为估算值。选择后会根据该尺寸重新判定最佳网格。",
-		"ui.change_to_this_size": "切换到此尺寸",
 		"ui.remove_image": "移除图片",
 		"ui.confirm_clear_all": "确定要清除所有图片吗？",
 		"ui.size": "尺寸",
@@ -264,6 +270,20 @@ const resources = {
 		"ui.placeholder.result": "处理结果会显示在这里",
 		"ui.close": "关闭",
 		"ui.download_options": "选择下载类型",
+		"candidate.title": "选择处理结果",
+		"candidate.intro": "自动判断不够确定，请比较实际结果后再选择。",
+		"candidate.recommended_badge": "推荐",
+		"candidate.metadata": "{width} × {height} px・{colors} 色",
+		"candidate.label.recommended": "推荐方案",
+		"candidate.label.finer": "更精细",
+		"candidate.label.coarser": "更粗犷",
+		"candidate.label.preserve": "保持原尺寸",
+		"candidate.label.convert": "转换方案",
+		"candidate.description.recommended": "最符合图像结构的检测结果。",
+		"candidate.description.finer": "保留更多细节的方案。",
+		"candidate.description.coarser": "将图像整理为更大像素块的方案。",
+		"candidate.description.preserve": "不缩小图像，安全保留原始分辨率。",
+		"candidate.description.convert": "按普通图像转换为像素画风格。",
 
 		// 設定
 		"setting.color_reduction": "减色",
@@ -398,7 +418,6 @@ const resources = {
 		"error.no_image": "请先选择图片。",
 		"error.process_failed": "处理失败",
 		"error.load_failed": "加载失败",
-		"info.grid_updated": "网格尺寸已更新为 {w}x{h}",
 		"warning.low_grid_confidence": "网格判断可信度较低，请检查结果。",
 		"warning.background_uncertain": "背景判断存在不确定性。",
 		"warning.background_removal_skipped":
@@ -453,11 +472,6 @@ const resources = {
 		"ui.clear_all": "Clear All",
 		"ui.download_all": "Download All",
 		"ui.download_all_zip": "Download All (ZIP)",
-		"ui.pixel_size": "Pixel Size",
-		"ui.select_size_title": "Select size to change",
-		"ui.select_size_note":
-			"*Estimated values. The grid will be re-evaluated based on your selection.",
-		"ui.change_to_this_size": "Change to this size",
 		"ui.remove_image": "Remove Image",
 		"ui.confirm_clear_all": "Are you sure you want to clear all images?",
 		"ui.size": "Size",
@@ -470,6 +484,24 @@ const resources = {
 		"ui.placeholder.result": "Processed result will appear here",
 		"ui.close": "Close",
 		"ui.download_options": "Select download options",
+		"candidate.title": "Choose the best result",
+		"candidate.intro":
+			"Automatic detection was uncertain. Compare the actual results before choosing.",
+		"candidate.recommended_badge": "Recommended",
+		"candidate.metadata": "{width} × {height} px · {colors} colors",
+		"candidate.label.recommended": "Recommended",
+		"candidate.label.finer": "Finer",
+		"candidate.label.coarser": "Coarser",
+		"candidate.label.preserve": "Keep original size",
+		"candidate.label.convert": "Convert option",
+		"candidate.description.recommended":
+			"The detected result that best matches the image structure.",
+		"candidate.description.finer": "Keeps more fine detail.",
+		"candidate.description.coarser": "Groups the image into larger pixels.",
+		"candidate.description.preserve":
+			"Avoids downscaling and safely keeps the original resolution.",
+		"candidate.description.convert":
+			"Treats the input as a regular image and converts it to pixel art.",
 
 		// 設定
 		"setting.color_reduction": "Color Reduction",
@@ -605,7 +637,6 @@ const resources = {
 		"error.no_image": "Please select an image first.",
 		"error.process_failed": "Processing failed",
 		"error.load_failed": "Loading failed",
-		"info.grid_updated": "Grid updated to {w}x{h}",
 		"warning.low_grid_confidence":
 			"Grid confidence is low. Please check the result.",
 		"warning.background_uncertain": "The background detection is uncertain.",
