@@ -19,6 +19,7 @@ type QuickSettingsControlsOptions = {
 	triggerAutoProcess: () => void;
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
+	clearCandidateSelections: () => void;
 };
 
 export type QuickSettingsControls = {
@@ -34,6 +35,7 @@ export const setupQuickSettingsControls = ({
 	triggerAutoProcess,
 	updateReduceColorsDisabledStates,
 	updateBgDisabledStates,
+	clearCandidateSelections,
 }: QuickSettingsControlsOptions): QuickSettingsControls => {
 	const getQuickSettings = (): QuickSettingsState => ({
 		processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
@@ -93,6 +95,7 @@ export const setupQuickSettingsControls = ({
 		settings: QuickSettingsState,
 		presetId = "custom",
 	) => {
+		clearCandidateSelections();
 		if (presetId !== "custom") {
 			els.quantStepInput.value = String(
 				PROCESS_RANGES.detectionQuantStep.default,
@@ -143,6 +146,7 @@ export const setupQuickSettingsControls = ({
 		els.quickAutoTrimCheck,
 	].forEach((el) => {
 		el.addEventListener("change", () => {
+			clearCandidateSelections();
 			els.builtInPresetSelect.value = "custom";
 			syncQuickSettingsToAdvanced();
 			updateReduceColorsDisabledStates();
@@ -151,16 +155,20 @@ export const setupQuickSettingsControls = ({
 		});
 	});
 
-	[
-		els.reduceColorModeSelect,
-		els.colorCountInput,
-		els.colorCountSlider,
-	].forEach((el) => {
-		el.addEventListener("change", () => {
-			els.quickColorsSelect.value = "custom";
-			els.builtInPresetSelect.value = "custom";
-		});
+	const markColorsCustom = () => {
+		els.quickColorsSelect.value = "custom";
+		els.builtInPresetSelect.value = "custom";
+	};
+	els.reduceColorModeSelect.addEventListener("change", markColorsCustom);
+	[els.colorCountInput, els.colorCountSlider].forEach((el) => {
+		for (const eventName of ["input", "change"]) {
+			el.addEventListener(eventName, markColorsCustom);
+		}
 	});
+	const markBackgroundCustom = () => {
+		els.quickBackgroundSelect.value = "custom";
+		els.builtInPresetSelect.value = "custom";
+	};
 	[
 		els.bgExtractionMethod,
 		els.bgRgbInput,
@@ -169,22 +177,23 @@ export const setupQuickSettingsControls = ({
 		els.postRemoveCheck,
 		els.bgRemovalScopeSelect,
 		els.bgConnectivitySelect,
-		els.toleranceInput,
 	].forEach((el) => {
-		el.addEventListener("change", () => {
-			els.quickBackgroundSelect.value = "custom";
-			els.builtInPresetSelect.value = "custom";
-		});
+		el.addEventListener("change", markBackgroundCustom);
 	});
-	[
-		els.ditherModeSelect,
-		els.ditherStrengthInput,
-		els.ditherStrengthSlider,
-	].forEach((el) => {
-		el.addEventListener("change", () => {
-			els.quickDitheringSelect.value = "custom";
-			els.builtInPresetSelect.value = "custom";
-		});
+	[els.toleranceInput, els.toleranceSlider].forEach((el) => {
+		for (const eventName of ["input", "change"]) {
+			el.addEventListener(eventName, markBackgroundCustom);
+		}
+	});
+	const markDitheringCustom = () => {
+		els.quickDitheringSelect.value = "custom";
+		els.builtInPresetSelect.value = "custom";
+	};
+	els.ditherModeSelect.addEventListener("change", markDitheringCustom);
+	[els.ditherStrengthInput, els.ditherStrengthSlider].forEach((el) => {
+		for (const eventName of ["input", "change"]) {
+			el.addEventListener(eventName, markDitheringCustom);
+		}
 	});
 	els.outlineStyleSelect.addEventListener("change", () => {
 		els.quickOutlineStyleSelect.value = els.outlineStyleSelect.value;
@@ -194,6 +203,46 @@ export const setupQuickSettingsControls = ({
 		els.quickAutoTrimCheck.checked = els.trimToContentCheck.checked;
 		els.builtInPresetSelect.value = "custom";
 	});
+
+	const advancedControls = [
+		els.quantStepInput,
+		els.quantStepSlider,
+		els.forcePixelsWInput,
+		els.forcePixelsHInput,
+		els.sampleWindowInput,
+		els.sampleWindowSlider,
+		els.toleranceInput,
+		els.toleranceSlider,
+		els.preRemoveCheck,
+		els.postRemoveCheck,
+		els.bgRemovalScopeSelect,
+		els.bgConnectivitySelect,
+		els.trimToContentCheck,
+		els.fastAutoGridFromTrimmedCheck,
+		els.makeSquareCheck,
+		els.keepAspectRatioCheck,
+		els.gridDetectionModeSelect,
+		els.reduceColorModeSelect,
+		els.ditherModeSelect,
+		els.colorCountInput,
+		els.colorCountSlider,
+		els.ditherStrengthInput,
+		els.ditherStrengthSlider,
+		els.outlineStyleSelect,
+		els.outlineColorInput,
+		els.floatingMaxPercentInput,
+		els.floatingMaxPercentSlider,
+		els.bgExtractionMethod,
+		els.bgRgbInput,
+		els.bgColorInput,
+	];
+	for (const control of advancedControls) {
+		const markPresetCustom = () => {
+			els.builtInPresetSelect.value = "custom";
+		};
+		control.addEventListener("change", markPresetCustom);
+		control.addEventListener("input", markPresetCustom);
+	}
 
 	return {
 		getQuickSettings,

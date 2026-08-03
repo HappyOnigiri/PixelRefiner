@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PROCESS_DEFAULTS } from "../shared/config";
 import {
 	applyQuickSettingsToOptions,
 	BUILT_IN_PRESETS,
@@ -6,6 +7,15 @@ import {
 } from "./quick-settings";
 
 describe("quick settings", () => {
+	it("derives shared processing defaults from the central config", () => {
+		expect(QUICK_SETTINGS_DEFAULTS).toMatchObject({
+			processingMode: PROCESS_DEFAULTS.processingMode,
+			detailLevel: PROCESS_DEFAULTS.detailLevel,
+			outlineStyle: PROCESS_DEFAULTS.outlineStyle,
+			trimToContent: PROCESS_DEFAULTS.trimToContent,
+		});
+	});
+
 	it("delegates automatic color selection to the processing route", () => {
 		const result = applyQuickSettingsToOptions(
 			{ reduceColors: false, reduceColorMode: "none", colorCount: 99 },

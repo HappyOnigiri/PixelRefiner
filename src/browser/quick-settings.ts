@@ -1,4 +1,5 @@
 import type { ProcessOptions } from "../core/processor";
+import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
 	DetailLevel,
 	OutlineStyle,
@@ -26,13 +27,13 @@ export type BuiltInPreset = {
 };
 
 export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
-	processingMode: "auto",
-	detailLevel: "balanced",
+	processingMode: PROCESS_DEFAULTS.processingMode,
+	detailLevel: PROCESS_DEFAULTS.detailLevel,
 	colors: "auto",
 	background: "auto",
 	dithering: "off",
-	outlineStyle: "none",
-	trimToContent: true,
+	outlineStyle: PROCESS_DEFAULTS.outlineStyle,
+	trimToContent: PROCESS_DEFAULTS.trimToContent,
 };
 
 export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [

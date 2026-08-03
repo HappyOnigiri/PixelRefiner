@@ -37,6 +37,8 @@ describe("PresetManager", () => {
 					data: {
 						"reduce-color-mode": "pico8",
 						"bg-extraction-method": "top-left",
+						"outline-style": "rounded",
+						"trim-to-content": false,
 						unknown: { nested: true },
 					},
 				},
@@ -54,9 +56,40 @@ describe("PresetManager", () => {
 				"quick-colors": "custom",
 				"quick-background": "custom",
 				"quick-dithering": "custom",
+				"quick-outline-style": "rounded",
+				"quick-auto-trim": false,
 			},
 		});
 		expect(preset.data.unknown).toBeUndefined();
+	});
+
+	it("returns migrated presets when persisting the migration fails", () => {
+		store.set(
+			"pixel-refiner-presets",
+			JSON.stringify([
+				{
+					id: "legacy",
+					name: "Legacy",
+					timestamp: 10,
+					data: { "reduce-color-mode": "none" },
+				},
+			]),
+		);
+		vi.mocked(localStorage.setItem).mockImplementationOnce(() => {
+			throw new DOMException("quota exceeded", "QuotaExceededError");
+		});
+		const error = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+
+		expect(PresetManager.loadPresets()).toMatchObject([
+			{ id: "legacy", version: 2 },
+		]);
+		expect(error).toHaveBeenCalledWith(
+			"Failed to persist migrated presets:",
+			expect.any(DOMException),
+		);
+		error.mockRestore();
 	});
 
 	it("keeps valid presets when another entry is invalid", () => {

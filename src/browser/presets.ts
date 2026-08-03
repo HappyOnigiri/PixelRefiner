@@ -1,3 +1,5 @@
+import { PROCESS_DEFAULTS } from "../shared/config";
+
 export type PresetValue = string | number | boolean;
 
 export interface Preset {
@@ -35,11 +37,21 @@ const migratePreset = (value: unknown): Preset | null => {
 	if (value.version !== 2) {
 		// [Policy] 旧プリセットの低水準値を推測で高水準設定へ変換すると出力が変わり得る。
 		// 既存値をそのまま使う Custom として移行し、処理互換性を優先する。
-		data["quick-processing-mode"] ??= "auto";
-		data["quick-detail-level"] ??= "balanced";
+		data["quick-processing-mode"] ??= PROCESS_DEFAULTS.processingMode;
+		data["quick-detail-level"] ??= PROCESS_DEFAULTS.detailLevel;
 		data["quick-colors"] ??= "custom";
 		data["quick-background"] ??= "custom";
 		data["quick-dithering"] ??= "custom";
+		data["quick-outline-style"] ??=
+			data["outline-style"] === "none" ||
+			data["outline-style"] === "rounded" ||
+			data["outline-style"] === "sharp"
+				? data["outline-style"]
+				: PROCESS_DEFAULTS.outlineStyle;
+		data["quick-auto-trim"] ??=
+			typeof data["trim-to-content"] === "boolean"
+				? data["trim-to-content"]
+				: PROCESS_DEFAULTS.trimToContent;
 	}
 	return {
 		version: 2,
@@ -79,20 +91,26 @@ export const PresetManager = {
 	loadPresets(): Preset[] {
 		const saved = localStorage.getItem(STORAGE_KEY);
 		if (!saved) return [];
+		let parsed: unknown;
 		try {
-			const parsed: unknown = JSON.parse(saved);
-			if (!Array.isArray(parsed)) return [];
-			const presets = parsed
-				.map((entry) => migratePreset(entry))
-				.filter((entry): entry is Preset => entry !== null);
-			if (JSON.stringify(parsed) !== JSON.stringify(presets)) {
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-			}
-			return presets;
+			parsed = JSON.parse(saved);
 		} catch (e) {
 			console.error("Failed to parse presets:", e);
 			return [];
 		}
+		if (!Array.isArray(parsed)) return [];
+		const presets = parsed
+			.map((entry) => migratePreset(entry))
+			.filter((entry): entry is Preset => entry !== null);
+		if (JSON.stringify(parsed) !== JSON.stringify(presets)) {
+			try {
+				localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+			} catch (e) {
+				// [Intended] 移行結果の永続化に失敗しても、読み取れたプリセットはその場で利用できる。
+				console.error("Failed to persist migrated presets:", e);
+			}
+		}
+		return presets;
 	},
 
 	deletePreset(id: string): void {

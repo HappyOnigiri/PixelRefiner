@@ -15,6 +15,7 @@ type SettingsControlsOptions = {
 	imageSession: ImageSession;
 	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
 	saveSettings: () => void;
+	onLanguageChange: () => void;
 };
 
 export type SettingsControls = {
@@ -36,6 +37,7 @@ export const setupSettingsControls = ({
 	imageSession,
 	runProcessing,
 	saveSettings,
+	onLanguageChange,
 }: SettingsControlsOptions): SettingsControls => {
 	const openEyedropperModal = () => {
 		const img = imageSession.getActiveImage()?.original;
@@ -54,6 +56,7 @@ export const setupSettingsControls = ({
 		triggerAutoProcess: () => triggerAutoProcess(),
 		updateReduceColorsDisabledStates: () => updateReduceColorsDisabledStates(),
 		updateBgDisabledStates: () => updateBgDisabledStates(),
+		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
 	});
 	const {
 		getQuickSettings,
@@ -261,7 +264,10 @@ export const setupSettingsControls = ({
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
 				const lang = el.getAttribute("data-lang-btn") as Language | null;
-				if (lang) i18n.setLanguage(lang);
+				if (lang) {
+					i18n.setLanguage(lang);
+					onLanguageChange();
+				}
 			});
 		});
 

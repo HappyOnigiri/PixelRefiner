@@ -261,7 +261,12 @@ export const createRunProcessing = ({
 			// 簡潔にするためコピーとして保持する。
 			const resultImage = result;
 			// currentResult = resultImage; // 直接使用しなくなった
-			imageSession.updateImageResult(currentItem.id, resultImage, grid);
+			imageSession.updateImageResult(
+				currentItem.id,
+				resultImage,
+				grid,
+				analysis,
+			);
 
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);

@@ -1,4 +1,9 @@
-import type { CandidateSelection, PixelGrid, RawImage } from "../shared/types";
+import type {
+	CandidateSelection,
+	PixelGrid,
+	ProcessingAnalysis,
+	RawImage,
+} from "../shared/types";
 import { drawRawImageToCanvas } from "./io";
 
 export interface ImageItem {
@@ -7,6 +12,7 @@ export interface ImageItem {
 	original: RawImage;
 	result?: RawImage;
 	grid?: PixelGrid;
+	processingAnalysis?: ProcessingAnalysis;
 	thumbnail: string;
 	status: "pending" | "processing" | "done" | "error";
 	error?: string;
@@ -99,11 +105,13 @@ export class ImageSession {
 		id: string,
 		result: RawImage,
 		grid?: PixelGrid,
+		processingAnalysis?: ProcessingAnalysis,
 	): PixelGrid | undefined {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.result = result;
 			img.grid = grid;
+			img.processingAnalysis = processingAnalysis;
 			img.status = "done";
 			this.onUpdate();
 			return img.grid;

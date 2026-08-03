@@ -14,6 +14,8 @@ type PresetControlsOptions = {
 	updateProcessButtonVisibility: () => void;
 	triggerAutoProcess: () => void;
 	applyQuickSettings: (settings: QuickSettingsState, presetId?: string) => void;
+	clearCandidateSelections: () => void;
+	clearFixedPalette: () => void;
 };
 
 export const setupPresetControls = ({
@@ -25,6 +27,8 @@ export const setupPresetControls = ({
 	updateProcessButtonVisibility,
 	triggerAutoProcess,
 	applyQuickSettings,
+	clearCandidateSelections,
+	clearFixedPalette,
 }: PresetControlsOptions): void => {
 	els.builtInPresetSelect.innerHTML = "";
 	for (const preset of BUILT_IN_PRESETS) {
@@ -157,6 +161,10 @@ export const setupPresetControls = ({
 				}
 				el.value = next;
 			}
+		}
+		clearCandidateSelections();
+		if (els.reduceColorModeSelect.value !== "fixed") {
+			clearFixedPalette();
 		}
 		els.builtInPresetSelect.value = "custom";
 		els.quickBackgroundColorInput.value = els.bgColorInput.value;
