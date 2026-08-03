@@ -15,7 +15,10 @@ import type { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError, showWarning } from "./notifications";
-import { translateProcessingWarnings } from "./processing-warnings";
+import {
+	shouldNotifyProcessingWarnings,
+	translateProcessingWarnings,
+} from "./processing-warnings";
 import type { ResultViewer } from "./result-viewer";
 import type { ImageSession } from "./session";
 
@@ -299,9 +302,7 @@ export const createRunProcessing = ({
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
-			if (analysis.warnings.length > 0) {
-				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
-			}
+			let candidateModalShown = false;
 			if (
 				showCandidates &&
 				!selection &&
@@ -317,11 +318,17 @@ export const createRunProcessing = ({
 					);
 					if (previews.length > 0) {
 						candidateChooser.show(previews, analysis.warnings);
+						candidateModalShown = true;
 					}
 				} catch (error) {
 					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
 					console.error("Failed to create candidate previews:", error);
 				}
+			}
+			if (
+				shouldNotifyProcessingWarnings(analysis.warnings, candidateModalShown)
+			) {
+				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
 			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
 
