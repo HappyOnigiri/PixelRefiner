@@ -77,6 +77,47 @@ describe("candidate previews", () => {
 		]);
 	});
 
+	it("推奨と見分けが付かない近接候補は細かめ・粗めに採らない", () => {
+		const value = analysis("scaled-pixel");
+		// 推奨(100x100, cell 4)に対し面積差1%・セル差0.1pxの候補だけを並べる。
+		value.gridCandidates = [
+			{
+				...value.gridCandidates[0],
+				grid: { cellW: 4, cellH: 4, offsetX: 0, offsetY: 0, score: 1 },
+				outW: 100,
+				outH: 100,
+			},
+			{
+				...value.gridCandidates[0],
+				grid: { cellW: 4.1, cellH: 4.1, offsetX: 0, offsetY: 0, score: 1 },
+				outW: 101,
+				outH: 100,
+			},
+			{
+				...value.gridCandidates[0],
+				grid: { cellW: 3.9, cellH: 3.9, offsetX: 0, offsetY: 0, score: 1 },
+				outW: 99,
+				outH: 100,
+			},
+		];
+		expect(selectCandidatePlans(value).map((plan) => plan.kind)).toEqual([
+			"recommended",
+			"preserve",
+		]);
+	});
+
+	it("分類が未算出でも呼び出し側の判定でConvert候補を加えられる", () => {
+		const value = analysis(undefined);
+		value.gridCandidates = value.gridCandidates.slice(0, 1);
+		expect(selectCandidatePlans(value).map((plan) => plan.kind)).toEqual([
+			"recommended",
+			"preserve",
+		]);
+		expect(
+			selectCandidatePlans(value, "continuous").map((plan) => plan.kind),
+		).toEqual(["recommended", "preserve", "convert"]);
+	});
+
 	it("候補適用時に元のヒント設定を引き継がない", () => {
 		const options = candidateProcessOptions(
 			{ hintPixelsW: 10, hintPixelsH: 10 },

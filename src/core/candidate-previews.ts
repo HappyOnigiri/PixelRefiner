@@ -3,6 +3,7 @@ import type {
 	CandidatePreview,
 	CandidateSelection,
 	GridCandidateReport,
+	InputClassification,
 	ProcessingAnalysis,
 	RawImage,
 } from "../shared/types";
@@ -11,6 +12,27 @@ import type { ProcessOptions } from "./processor-options";
 
 const area = (candidate: GridCandidateReport): number =>
 	candidate.outW * candidate.outH;
+
+/**
+ * 出力サイズとセルサイズがともに近い候補は、サムネイルでも見分けが付かず選択の助けにならない。
+ * 判定式は削除されたサイズ候補メニューの近似判定を引き継いでいる。
+ */
+const isSimilar = (
+	left: GridCandidateReport,
+	right: GridCandidateReport,
+): boolean => {
+	const leftArea = area(left);
+	const rightArea = area(right);
+	const areaThreshold = Math.max(
+		CANDIDATE_PREVIEW_LIMITS.minSimilarAreaDiff,
+		Math.max(leftArea, rightArea) * CANDIDATE_PREVIEW_LIMITS.similarAreaRatio,
+	);
+	if (Math.abs(leftArea - rightArea) > areaThreshold) return false;
+	return (
+		Math.abs(left.grid.cellW - right.grid.cellW) <
+		CANDIDATE_PREVIEW_LIMITS.similarCellDelta
+	);
+};
 
 const selectionForGrid = (
 	candidate: GridCandidateReport,
@@ -27,6 +49,7 @@ const selectionForGrid = (
 
 export const selectCandidatePlans = (
 	analysis: ProcessingAnalysis,
+	classification: InputClassification | undefined = analysis.classification,
 ): CandidateSelection[] => {
 	const grids = analysis.gridCandidates.filter(
 		(candidate) => candidate.method !== "preserve",
@@ -39,8 +62,15 @@ export const selectCandidatePlans = (
 		const recommendedArea = area(recommended);
 		const coarser = [...byArea]
 			.reverse()
-			.find((candidate) => area(candidate) < recommendedArea);
-		const finer = byArea.find((candidate) => area(candidate) > recommendedArea);
+			.find(
+				(candidate) =>
+					area(candidate) < recommendedArea &&
+					!isSimilar(candidate, recommended),
+			);
+		const finer = byArea.find(
+			(candidate) =>
+				area(candidate) > recommendedArea && !isSimilar(candidate, recommended),
+		);
 		if (finer) plans.push(selectionForGrid(finer, "finer"));
 		if (coarser) plans.push(selectionForGrid(coarser, "coarser"));
 	}
@@ -54,8 +84,7 @@ export const selectCandidatePlans = (
 
 	if (
 		plans.length < CANDIDATE_PREVIEW_LIMITS.maxCandidates &&
-		(analysis.classification === "continuous" ||
-			analysis.classification === "uncertain")
+		(classification === "continuous" || classification === "uncertain")
 	) {
 		plans.push({
 			id: "convert:balanced",
