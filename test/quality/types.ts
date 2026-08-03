@@ -165,5 +165,42 @@ export type QualityResults = {
 		meanRuntimeMs: number;
 		approxPeakBytes: number;
 	};
+	rollout: QualityRolloutResults;
 	cases: QualityCaseResult[];
+};
+
+export type QualityRolloutCaseResult = {
+	id: string;
+	next: {
+		route: string;
+		metrics: QualityMetrics;
+	};
+	legacy: {
+		route: string;
+		metrics: QualityMetrics;
+	};
+	outputChanged: boolean;
+	regressedMetrics: string[];
+	files: {
+		next: string;
+		legacy: string;
+		diff: string;
+	};
+};
+
+export type QualityRolloutResults = {
+	summary: {
+		caseCount: number;
+		outputChanged: number;
+		routeChanged: number;
+		regressed: number;
+		nextTop1SizeAccuracy: number;
+		legacyTop1SizeAccuracy: number;
+		nextTop3SizeAccuracy: number;
+		legacyTop3SizeAccuracy: number;
+		nextByteIdentityRate: number;
+		nextCatastrophicFailureRate: number;
+		legacyCatastrophicFailureRate: number;
+	};
+	cases: QualityRolloutCaseResult[];
 };

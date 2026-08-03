@@ -4,6 +4,7 @@ import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { generateQualityReport, reportRoot } from "./benchmark";
 import { loadCases, selectCasesForProfile } from "./manifest";
+import { selectRolloutCases } from "./rollout";
 
 const enabled = process.env.QUALITY_REPORT === "1";
 
@@ -12,6 +13,9 @@ describe.skipIf(!enabled)("quality report", () => {
 	it("writes JSON, Markdown, HTML, and every case artifact", () => {
 		const allCases = loadCases();
 		const selectedCases = selectCasesForProfile(allCases);
+		const rolloutCaseIds = new Set(
+			selectRolloutCases(selectedCases).map((qualityCase) => qualityCase.id),
+		);
 		const results = generateQualityReport(selectedCases);
 		expect(results.cases).toHaveLength(selectedCases.length);
 		expect(existsSync(path.join(reportRoot, "index.html"))).toBe(true);
@@ -175,9 +179,25 @@ describe.skipIf(!enabled)("quality report", () => {
 		]) {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
+		const rolloutDetail = readFileSync(
+			path.join(
+				reportRoot,
+				"cases",
+				"convert-continuous-tone-balanced",
+				"index.html",
+			),
+			"utf8",
+		);
+		for (const imageKey of ["nextAuto", "legacyAuto", "rolloutDifference"]) {
+			expect(rolloutDetail).toContain(`data-i18n="${imageKey}"`);
+		}
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
 		expect(markdown).toContain("|Confidence (diagnostic)|");
+		expect(markdown).toContain("## Default Auto vs Legacy");
+		expect(markdown).toContain(
+			`- Cases with output changes: ${results.rollout.summary.outputChanged}/${results.rollout.summary.caseCount}`,
+		);
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
 		expect(html).toContain(
 			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
@@ -213,6 +233,15 @@ describe.skipIf(!enabled)("quality report", () => {
 				expect(existsSync(path.join(reportRoot, result.files.baseline))).toBe(
 					true,
 				);
+			}
+			const rollout = results.rollout.cases.find(
+				(caseResult) => caseResult.id === qualityCase.id,
+			);
+			expect(rollout !== undefined).toBe(rolloutCaseIds.has(qualityCase.id));
+			if (rollout) {
+				for (const file of Object.values(rollout.files)) {
+					expect(existsSync(path.join(reportRoot, file))).toBe(true);
+				}
 			}
 		}
 	}, 300_000);

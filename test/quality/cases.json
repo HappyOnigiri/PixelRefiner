@@ -1788,12 +1788,13 @@
   },
   {
     "id": "show-ui-default-candidates",
-    "featureIds": ["PRF-400"],
-    "optionNames": ["floatingMaxPixels"],
+    "featureIds": ["PRF-400", "PRF-900"],
+    "optionNames": ["processingMode", "floatingMaxPixels"],
     "profile": "smoke",
     "inputKind": "uncertain",
     "degradationPatterns": ["ambiguous-detail"],
     "options": {
+      "processingMode": "auto",
       "floatingMaxPixels": 123
     },
     "input": "test/fixtures/quality_prf400_ui_low_confidence.png",

@@ -12,6 +12,11 @@ import {
 	createBackgroundMaskImage,
 	createDiffImage,
 } from "./metrics";
+import {
+	runRolloutCase,
+	selectRolloutCases,
+	summarizeRollout,
+} from "./rollout";
 import type {
 	QualityCaseResult,
 	QualityImageCase,
@@ -326,9 +331,15 @@ export const generateQualityReport = (
 	const caseResults = cases.map((qualityCase) =>
 		runQualityCase(qualityCase, true),
 	);
+	const rollout = summarizeRollout(
+		selectRolloutCases(cases).map((qualityCase) =>
+			runRolloutCase(qualityCase, REPORT_ROOT),
+		),
+	);
 	const results: QualityResults = {
 		metadata: metadataFromEnvironment(),
 		summary: summarize(caseResults),
+		rollout,
 		cases: caseResults,
 	};
 	writeFileSync(
@@ -337,10 +348,13 @@ export const generateQualityReport = (
 	);
 	writeFileSync(path.join(REPORT_ROOT, "summary.md"), renderMarkdown(results));
 	writeFileSync(path.join(REPORT_ROOT, "index.html"), renderHtml(results));
+	const rolloutById = new Map(
+		results.rollout.cases.map((result) => [result.id, result]),
+	);
 	for (const result of results.cases) {
 		writeFileSync(
 			path.join(REPORT_ROOT, "cases", result.id, "index.html"),
-			renderCaseDetailHtml(result),
+			renderCaseDetailHtml(result, rolloutById.get(result.id)),
 		);
 	}
 	return results;
