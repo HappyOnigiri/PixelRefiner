@@ -431,12 +431,6 @@ export const PROCESS_DEFAULTS = {
 	debug: import.meta.env.DEV,
 } as const;
 
-// [Policy] V1 fixture は既定値から独立した互換基準として固定する。
-export const LEGACY_PROCESS_OPTIONS_V1 = {
-	processingMode: "refine",
-	bgExtractionMethod: "top-left",
-} as const;
-
 export const clampInt = (value: number, range: IntRange): number => {
 	const v = Number.isFinite(value) ? Math.trunc(value) : range.default;
 	return Math.min(range.max, Math.max(range.min, v));
