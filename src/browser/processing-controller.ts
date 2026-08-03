@@ -62,6 +62,9 @@ export const createRunProcessing = ({
 	const compareBeforeCanvas = document.createElement("canvas");
 	const compareAfterCanvas = document.createElement("canvas");
 	const compareBeforeSanitizedCanvas = document.createElement("canvas");
+	// [Intended] 候補プレビューの生成は await を挟むため、完了時に自分が最新の処理か判定する。
+	// これがないと、遅れて返った旧画像・旧設定の候補が現在の状態のものとして表示される。
+	let latestGeneration = 0;
 
 	const runProcessing = async (
 		selection?: CandidateSelection,
@@ -69,7 +72,8 @@ export const createRunProcessing = ({
 	) => {
 		const images = imageSession.getImages();
 		if (images.length === 0) return;
-		if (!selection) candidateChooser.hide();
+		const generation = ++latestGeneration;
+		if (!selection) candidateChooser.dismiss();
 
 		mainResultViewer.setLoading(true);
 
@@ -92,6 +96,11 @@ export const createRunProcessing = ({
 		}
 
 		const currentImage = currentItem.original;
+		// 明示的な選択がなければ、この画像に対して以前選ばれた候補を引き継ぐ。
+		const effectiveSelection = selection ?? currentItem.candidateSelection;
+		if (selection) {
+			imageSession.setCandidateSelection(currentItem.id, selection);
+		}
 		imageSession.setImageStatus(currentItem.id, "processing");
 
 		try {
@@ -219,11 +228,11 @@ export const createRunProcessing = ({
 				compareBefore,
 				compareBeforeSanitized,
 				analysis,
-			} = selection
+			} = effectiveSelection
 				? await processor.processCandidate(
 						currentImage,
 						processOptions,
-						selection,
+						effectiveSelection,
 					)
 				: await processor.process(currentImage, processOptions);
 
@@ -234,14 +243,10 @@ export const createRunProcessing = ({
 			// 簡潔にするためコピーとして保持する。
 			const resultImage = result;
 			// currentResult = resultImage; // 直接使用しなくなった
-			const effectiveGrid = imageSession.updateImageResult(
-				currentItem.id,
-				resultImage,
-				grid,
-			);
+			imageSession.updateImageResult(currentItem.id, resultImage, grid);
 
-			mainResultViewer.updateImage(resultImage, effectiveGrid);
-			modalResultViewer.updateImage(resultImage, effectiveGrid);
+			mainResultViewer.updateImage(resultImage);
+			modalResultViewer.updateImage(resultImage);
 			mainResultViewer.setLoading(false);
 
 			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。
@@ -305,7 +310,7 @@ export const createRunProcessing = ({
 			let candidateModalShown = false;
 			if (
 				showCandidates &&
-				!selection &&
+				!effectiveSelection &&
 				analysis.warnings.includes("LOW_GRID_CONFIDENCE")
 			) {
 				try {
@@ -316,8 +321,12 @@ export const createRunProcessing = ({
 						analysis,
 						cacheKey,
 					);
-					if (previews.length > 0) {
-						candidateChooser.show(previews, analysis.warnings);
+					// 待機中に別の処理が始まった、または表示対象が切り替わった場合は表示しない。
+					const stillCurrent =
+						generation === latestGeneration &&
+						imageSession.getActiveImage()?.id === currentItem.id;
+					if (stillCurrent && previews.length > 0) {
+						candidateChooser.show(previews, analysis.warnings, currentItem.id);
 						candidateModalShown = true;
 					}
 				} catch (error) {
@@ -347,7 +356,11 @@ export const createRunProcessing = ({
 	};
 
 	candidateChooser.setCallbacks({
-		onSelect: (selection) => runProcessing(selection),
+		onSelect: async (selection, sourceImageId) => {
+			// 候補は生成元の画像に対する提案なので、表示後に切り替わっていたら適用しない。
+			if (imageSession.getActiveImage()?.id !== sourceImageId) return;
+			await runProcessing(selection);
+		},
 	});
 	return (options?: RunProcessingOptions) =>
 		runProcessing(undefined, options?.showCandidates !== false);

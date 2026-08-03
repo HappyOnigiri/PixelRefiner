@@ -1,4 +1,4 @@
-import type { PixelGrid, RawImage } from "../shared/types";
+import type { CandidateSelection, PixelGrid, RawImage } from "../shared/types";
 import { drawRawImageToCanvas } from "./io";
 
 export interface ImageItem {
@@ -10,6 +10,11 @@ export interface ImageItem {
 	thumbnail: string;
 	status: "pending" | "processing" | "done" | "error";
 	error?: string;
+	/**
+	 * 候補プレビューで選んだ処理方針。設定変更で再処理しても自動判定へ戻らないよう保持する。
+	 * UI の設定値は書き換えないため、保持先はこの画像単位の状態になる。
+	 */
+	candidateSelection?: CandidateSelection;
 }
 
 export class ImageSession {
@@ -98,25 +103,26 @@ export class ImageSession {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.result = result;
-			// サイズ指定（force）などで候補が失われても再選択できるよう、以前の自動検出候補を保持する
-			if (grid) {
-				const prevCandidates = img.grid?.candidates;
-				if (
-					(prevCandidates?.length ?? 0) > 0 &&
-					(grid.candidates?.length ?? 0) === 0
-				) {
-					img.grid = { ...grid, candidates: prevCandidates };
-				} else {
-					img.grid = grid;
-				}
-			} else {
-				img.grid = grid;
-			}
+			img.grid = grid;
 			img.status = "done";
 			this.onUpdate();
 			return img.grid;
 		}
 		return grid;
+	}
+
+	public setCandidateSelection(
+		id: string,
+		selection: CandidateSelection | undefined,
+	): void {
+		const img = this.images.find((i) => i.id === id);
+		if (img) img.candidateSelection = selection;
+	}
+
+	public clearCandidateSelections(): void {
+		for (let index = 0; index < this.images.length; index += 1) {
+			this.images[index].candidateSelection = undefined;
+		}
 	}
 
 	public setImageStatus(
