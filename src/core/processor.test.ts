@@ -427,4 +427,88 @@ describe("processImage", () => {
 			expectSameImage(result, expected, getExpectPath("no_trimming"));
 		});
 	});
+
+	describe("logical small-component removal", () => {
+		const createScaledInput = (scale: number): RawImage => {
+			const logicalSize = 8;
+			const width = logicalSize * scale;
+			const height = logicalSize * scale;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const logicalX = Math.floor(x / scale);
+					const logicalY = Math.floor(y / scale);
+					const main =
+						logicalX >= 2 && logicalX <= 4 && logicalY >= 2 && logicalY <= 4;
+					const noise = logicalX === 7 && logicalY === 7;
+					const offset = (y * width + x) * 4;
+					const value = main ? 20 : noise ? 240 : 255;
+					data[offset] = value;
+					data[offset + 1] = value;
+					data[offset + 2] = value;
+					data[offset + 3] = noise ? 32 : 255;
+				}
+			}
+			return { width, height, data };
+		};
+
+		it("produces the same logical result for different source scales", () => {
+			const options = {
+				forcePixelsW: 8,
+				forcePixelsH: 8,
+				preRemoveBackground: false,
+				postRemoveBackground: true,
+				bgExtractionMethod: "top-left" as const,
+				bgRemovalScope: "outer" as const,
+				backgroundTolerance: 0,
+				trimToContent: true,
+				smallComponentMode: "auto" as const,
+			};
+			const twoTimes = processImage(createScaledInput(2), options);
+			const fourTimes = processImage(createScaledInput(4), options);
+
+			expect(twoTimes.result.data).toEqual(fourTimes.result.data);
+			expect(twoTimes.analysis.smallComponentRemoval).toMatchObject({
+				applied: true,
+				removedComponents: 1,
+			});
+			expect(fourTimes.analysis.smallComponentRemoval).toEqual(
+				twoTimes.analysis.smallComponentRemoval,
+			);
+		});
+
+		it("reports a skipped removal for an uncertain automatic background", () => {
+			const width = 20;
+			const height = 20;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const offset = (y * width + x) * 4;
+					data[offset] = (x * 73 + y * 41) % 256;
+					data[offset + 1] = (x * 19 + y * 101) % 256;
+					data[offset + 2] = (x * 151 + y * 7) % 256;
+					data[offset + 3] = 255;
+				}
+			}
+			const processed = processImage(
+				{ width, height, data },
+				{
+					processingMode: "preserve",
+					preRemoveBackground: false,
+					postRemoveBackground: true,
+					trimToContent: false,
+					bgExtractionMethod: "auto",
+					bgRemovalScope: "outer",
+					smallComponentMode: "strong",
+				},
+			);
+
+			expect(processed.analysis.smallComponentRemoval).toMatchObject({
+				applied: false,
+				skippedReason: "low-background-confidence",
+				removedComponents: 0,
+				removedPixels: 0,
+			});
+		});
+	});
 });
