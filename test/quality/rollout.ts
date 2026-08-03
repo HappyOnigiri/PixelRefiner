@@ -20,11 +20,7 @@ import type {
 export const selectRolloutCases = (
 	cases: QualityImageCase[],
 ): QualityImageCase[] =>
-	cases.filter(
-		(qualityCase) =>
-			qualityCase.options.processingMode === "auto" ||
-			qualityCase.featureIds.includes("PRF-900"),
-	);
+	cases.filter((qualityCase) => qualityCase.options.processingMode === "auto");
 
 const baselineFromMetrics = (
 	metrics: QualityRolloutCaseResult["legacy"]["metrics"],

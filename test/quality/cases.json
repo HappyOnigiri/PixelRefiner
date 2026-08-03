@@ -1788,7 +1788,7 @@
   },
   {
     "id": "show-ui-default-candidates",
-    "featureIds": ["PRF-400", "PRF-900"],
+    "featureIds": ["PRF-400"],
     "optionNames": ["processingMode", "floatingMaxPixels"],
     "profile": "smoke",
     "inputKind": "uncertain",
