@@ -50,6 +50,42 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	legacyPreserveCandidateScore: 1_000_000,
 } as const;
 
+export const INPUT_CLASSIFIER_THRESHOLDS = {
+	maxSamplePixels: 65_536,
+	minDimension: 2,
+	nativeMaxDimension: 64,
+	nativeSafeMaxDimension: 12,
+	nativeUniqueColorRatio: 0.35,
+	nativeFlatNeighborRatio: 0.42,
+	smoothGradientMaxDifference: 96,
+	scaledGridConfidence: 0.3,
+	scaledMinGridScale: 1.5,
+	scaledFlatNeighborRatio: 0.48,
+	softGridConfidence: 0.24,
+	softMinGridScale: 1.35,
+	softSmoothGradientRatio: 0.5,
+	continuousUniqueColorRatio: 0.12,
+	continuousSmoothGradientRatio: 0.62,
+	continuousFlatNeighborRatio: 0.18,
+} as const;
+
+// 分類が返す信頼度（ルール適合度）の基準値とスケール係数。
+// 各分類は base から始まり、超過分 (strength - 1) に scale を掛けた値を max で頭打ちにする。
+export const INPUT_CLASSIFIER_CONFIDENCE = {
+	base: 0.55,
+	emptyOrTiny: 1,
+	nativeSafe: 0.85,
+	scaledMax: 0.99,
+	scaledScale: 0.35,
+	continuousMax: 0.98,
+	continuousScale: 0.25,
+	softMax: 0.95,
+	softScale: 0.3,
+	nativeMax: 0.95,
+	nativeScale: 0.25,
+	uncertain: 0.5,
+} as const;
+
 export const BACKGROUND_MODEL_LIMITS = {
 	borderBandRatio: 0.08,
 	minBorderBandPixels: 1,
@@ -316,6 +352,8 @@ export const RETRO_PALETTES: Record<
 };
 
 export const PROCESS_DEFAULTS = {
+	// [Policy] Auto のUI導入までは既存利用者の出力互換性を優先する。
+	processingMode: "refine",
 	preRemoveBackground: true,
 	postRemoveBackground: true,
 	bgExtractionMethod: "auto",

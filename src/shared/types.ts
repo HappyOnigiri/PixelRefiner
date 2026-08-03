@@ -86,12 +86,39 @@ export interface Palette {
 
 export type ProcessingRoute = "refine" | "convert" | "preserve";
 
+export type ProcessingMode = "auto" | ProcessingRoute;
+
 export type InputClassification =
 	| "native-pixel"
 	| "scaled-pixel"
 	| "soft-pixel"
 	| "continuous"
 	| "uncertain";
+
+export type ClassificationFeatures = {
+	uniqueColorRatio: number;
+	flatNeighborRatio: number;
+	smoothGradientRatio: number;
+	visiblePixelRatio: number;
+	gridConfidence: number;
+	gridScale: number;
+};
+
+export type ClassificationReason =
+	| "EMPTY_OR_TINY_INPUT"
+	| "NATIVE_PIXEL_STRUCTURE"
+	| "INTEGER_GRID_STRUCTURE"
+	| "SOFT_GRID_STRUCTURE"
+	| "CONTINUOUS_TONE_STRUCTURE"
+	| "LOW_CLASSIFICATION_CONFIDENCE";
+
+export type InputClassificationResult = {
+	classification: InputClassification;
+	/** 較正済みの確率ではなく、0～1 のルール適合度。 */
+	confidence: number;
+	features: ClassificationFeatures;
+	reasons: ClassificationReason[];
+};
 
 export type ProcessingWarningCode =
 	| "LOW_GRID_CONFIDENCE"
@@ -149,6 +176,13 @@ export type BackgroundDiagnostic = {
 
 export type ProcessingAnalysis = {
 	classification?: InputClassification;
+	classificationFeatures?: ClassificationFeatures;
+	classificationReasons?: ClassificationReason[];
+	/**
+	 * 入力分類のルール適合度（0～1）。分類を行った場合のみ設定する。
+	 * [Policy] グリッド候補の指標である confidence とは別の量なので、同じ欄に混ぜない。
+	 */
+	classificationConfidence?: number;
 	route: ProcessingRoute;
 	/** 較正済みの確率ではなく、0～1 の相対比較指標。 */
 	confidence: number;

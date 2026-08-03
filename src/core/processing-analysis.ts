@@ -5,6 +5,7 @@ import {
 import type {
 	BackgroundDiagnostic,
 	GridCandidateReport,
+	InputClassificationResult,
 	PixelGrid,
 	ProcessingAnalysis,
 	ProcessingRoute,
@@ -119,6 +120,19 @@ const toCandidateReport = (
 	};
 };
 
+// 適用グリッドと同じセル寸法・オフセットを持つ候補の位置。見つからなければ -1。
+export const findCandidateIndexForGrid = (
+	candidates: GridCandidateReport[],
+	grid: PixelGrid,
+): number =>
+	candidates.findIndex(
+		(candidate) =>
+			candidate.grid.cellW === grid.cellW &&
+			candidate.grid.cellH === grid.cellH &&
+			candidate.grid.offsetX === grid.offsetX &&
+			candidate.grid.offsetY === grid.offsetY,
+	);
+
 export const createProcessingAnalysis = (
 	source: RawImage,
 	result: RawImage,
@@ -129,17 +143,13 @@ export const createProcessingAnalysis = (
 	alphaThreshold: number,
 	rankedCandidates?: GridCandidateReport[],
 	backgroundDiagnostic?: BackgroundDiagnostic,
+	classificationResult?: InputClassificationResult,
+	additionalWarnings: ProcessingWarningCode[] = [],
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
 	const selectedCandidateIndex = rankedCandidates
-		? gridCandidates.findIndex(
-				(candidate) =>
-					candidate.grid.cellW === grid.cellW &&
-					candidate.grid.cellH === grid.cellH &&
-					candidate.grid.offsetX === grid.offsetX &&
-					candidate.grid.offsetY === grid.offsetY,
-			)
+		? findCandidateIndexForGrid(gridCandidates, grid)
 		: 0;
 	const selected =
 		selectedCandidateIndex >= 0
@@ -189,8 +199,17 @@ export const createProcessingAnalysis = (
 	) {
 		warnings.push("EXTREME_OUTPUT_SIZE");
 	}
+	for (let i = 0; i < additionalWarnings.length; i += 1) {
+		if (!warnings.includes(additionalWarnings[i])) {
+			warnings.push(additionalWarnings[i]);
+		}
+	}
 
 	return {
+		classification: classificationResult?.classification,
+		classificationFeatures: classificationResult?.features,
+		classificationReasons: classificationResult?.reasons,
+		classificationConfidence: classificationResult?.confidence,
 		route,
 		confidence: selected.confidence,
 		warnings,

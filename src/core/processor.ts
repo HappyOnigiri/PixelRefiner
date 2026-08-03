@@ -6,6 +6,7 @@ import {
 	removeBackgroundByFloodFillLegacy,
 	removeSmallFloatingComponentsInPlace,
 } from "./background-removal";
+import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { detectGrid } from "./detector";
 import { rankGridCandidates } from "./grid-candidates";
@@ -21,7 +22,10 @@ import {
 	padRawImage,
 } from "./image-operations";
 import { applyOutline } from "./outline";
-import { createProcessingAnalysis } from "./processing-analysis";
+import {
+	createProcessingAnalysis,
+	findCandidateIndexForGrid,
+} from "./processing-analysis";
 import { prepareAutomaticBackground } from "./processor-background";
 import {
 	getDownsampleOptions,
@@ -29,6 +33,7 @@ import {
 	type ProcessOptions,
 } from "./processor-options";
 import {
+	processExplicitSimpleRoute,
 	processForcedRoute,
 	processGridDisabledRoute,
 } from "./processor-simple-routes";
@@ -152,6 +157,15 @@ export const processImage = (
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return forcedResult;
+	// [Intended] 明示された処理経路は enableGridDetection の早期 return より先に判定する。
+	// 逆順だと、グリッド検出を無効にしただけで指定した convert が preserve に化ける。
+	if (o.processingMode === "preserve" || o.processingMode === "convert") {
+		return processExplicitSimpleRoute({
+			...simpleRouteContext,
+			route: o.processingMode,
+			method: `manual-${o.processingMode}`,
+		});
+	}
 	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
 	if (gridDisabledResult) return gridDisabledResult;
 
@@ -313,6 +327,39 @@ export const processImage = (
 		});
 	}
 	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
+	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
+	const classificationResult =
+		o.processingMode === "auto"
+			? classifyInput(working, rankedGridCandidates)
+			: undefined;
+	const selectedCandidateIndex = findCandidateIndexForGrid(
+		rankedGridCandidates,
+		grid,
+	);
+	const autoRoute = classificationResult
+		? selectAutoProcessingRoute(
+				classificationResult.classification,
+				selectedCandidateIndex >= 0
+					? rankedGridCandidates[selectedCandidateIndex].confidence
+					: undefined,
+			)
+		: { route: "refine" as const, fellBackToPreserve: false };
+	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
+		return processExplicitSimpleRoute({
+			...simpleRouteContext,
+			route: autoRoute.route,
+			method: autoRoute.fellBackToPreserve
+				? "auto-low-confidence-preserve"
+				: `auto-${autoRoute.route}`,
+			classificationResult,
+			rankedCandidates: rankedGridCandidates,
+			additionalWarnings: autoRoute.fellBackToPreserve
+				? ["FALLBACK_TO_PRESERVE"]
+				: undefined,
+			preparedMask: maskedForDebugOrAuto ?? undefined,
+		});
+	}
 
 	const downsampleStart = performance.now();
 	// [Intended] 選択した出力グリッドは後でトリミングまたはパディングされる場合がある一方で、
@@ -581,6 +628,7 @@ export const processImage = (
 		trimAlphaThreshold,
 		rankedGridCandidates,
 		backgroundDiagnostic,
+		classificationResult,
 	);
 	log("Processing analysis", analysis);
 	return {

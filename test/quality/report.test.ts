@@ -142,9 +142,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		const exactCaseEnd = html.indexOf("</article>", exactCaseIdIndex);
 		const exactCase = html.slice(exactCaseStart, exactCaseEnd);
 		expect(exactCase).toContain('data-i18n="exactMatchShort"');
-		expect(exactCase).toContain('data-i18n="no"');
+		expect(exactCase).toContain('data-i18n="yes"');
 		expect(exactCase).toMatch(
-			/<strong data-i18n="meanRgbaErrorShort">Error<\/strong> \d+(?:\.\d+)?\/0/,
+			/<strong data-i18n="meanRgbaErrorShort">Error<\/strong> 0\/0/,
 		);
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),

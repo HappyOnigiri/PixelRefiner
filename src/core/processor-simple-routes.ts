@@ -1,6 +1,10 @@
 import type {
 	BackgroundDiagnostic,
+	GridCandidateReport,
+	InputClassificationResult,
 	PixelGrid,
+	ProcessingRoute,
+	ProcessingWarningCode,
 	ProcessResult,
 	RawImage,
 } from "../shared/types";
@@ -15,15 +19,18 @@ import {
 	cropRawImageNearestFromGrid,
 	downsample,
 	findOpaqueBounds,
+	getAspectRatio,
+	padImageToAspectRatio,
 	padRawImage,
 } from "./image-operations";
+import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
 import {
 	getDownsampleOptions,
 	type NormalizedProcessOptions,
 } from "./processor-options";
 
-type SimpleRouteContext = {
+export type SimpleRouteContext = {
 	img: RawImage;
 	o: NormalizedProcessOptions;
 	working: RawImage;
@@ -33,6 +40,23 @@ type SimpleRouteContext = {
 	log: (...args: unknown[]) => void;
 	backgroundDiagnostic?: BackgroundDiagnostic;
 	backgroundModel?: BackgroundModel;
+	route?: ProcessingRoute;
+	method?: string;
+	classificationResult?: InputClassificationResult;
+	additionalWarnings?: ProcessingWarningCode[];
+	rankedCandidates?: GridCandidateReport[];
+	/**
+	 * 呼び出し元で算出済みの背景マスク。
+	 * [Policy] これを渡す場合、孤立成分の除去も呼び出し元で済ませていること。
+	 * 渡された側は背景除去も孤立成分除去も繰り返さない。
+	 */
+	preparedMask?: RawImage;
+	/**
+	 * 背景除去（後段）・アウトライン・アスペクト比維持を最終結果へ適用するか。
+	 * [Policy] 既存の enableGridDetection=false 経路の出力を変えないため、
+	 * processingMode で明示的に選ばれた経路（manual / auto）でのみ true にする。
+	 */
+	applyFinalAdjustments?: boolean;
 };
 
 export const processForcedRoute = (
@@ -262,8 +286,10 @@ export const processForcedRoute = (
 		"convert",
 		"forced-size",
 		trimAlphaThreshold,
-		undefined,
+		context.rankedCandidates,
 		backgroundDiagnostic,
+		context.classificationResult,
+		context.additionalWarnings,
 	);
 	log("Processing analysis", analysis);
 	return {
@@ -296,16 +322,21 @@ export const processGridDisabledRoute = (
 
 	// enableGridDetection: グリッド検出とダウンサンプリングを省略する
 	const bgTol = o.backgroundTolerance;
-	const masked = removeBackground(
-		working,
-		bgTol,
-		o.bgRemovalScope,
-		o.bgConnectivity,
-		bgTargets,
-		o.bgExtractionMethod,
-		backgroundModel,
-	);
-	if (o.floatingMaxPixels > 0) {
+	// [Intended] 呼び出し元が同じマスクを算出済みなら再計算しない。
+	// 孤立成分の除去は working を破壊的に書き換えるため、2 度走らせると
+	// 1 回目の結果から作り直したマスクで別の成分まで消えうる。
+	const masked =
+		context.preparedMask ??
+		removeBackground(
+			working,
+			bgTol,
+			o.bgRemovalScope,
+			o.bgConnectivity,
+			bgTargets,
+			o.bgExtractionMethod,
+			backgroundModel,
+		);
+	if (!context.preparedMask && o.floatingMaxPixels > 0) {
 		removeSmallFloatingComponentsInPlace(
 			working,
 			masked,
@@ -314,17 +345,31 @@ export const processGridDisabledRoute = (
 		);
 	}
 
-	let finalResult = working;
+	const base =
+		context.applyFinalAdjustments && o.postRemoveBackground
+			? removeBackground(
+					working,
+					bgTol,
+					o.bgRemovalScope,
+					o.bgConnectivity,
+					bgTargets,
+					o.bgExtractionMethod,
+					backgroundModel,
+					backgroundDiagnostic,
+				)
+			: working;
+
+	let finalResult = base;
 	let compareBefore = img;
 	let compareBeforeSanitized = img;
-	let outW = working.width;
-	let outH = working.height;
+	let outW = base.width;
+	let outH = base.height;
 	let cropX = 0;
 	let cropY = 0;
 
 	if (o.reduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
-			working,
+			base,
 			o.reduceColorMode,
 			o.ditherMode,
 			o.colorCount,
@@ -366,6 +411,64 @@ export const processGridDisabledRoute = (
 		cropH: outH,
 		score: 0,
 	};
+
+	// この経路はセルサイズが 1 なので、比較画像のパディング量は出力と同じで済む。
+	const padCompanions = (
+		padLeft: number,
+		padTop: number,
+		padRight: number,
+		padBottom: number,
+	) => {
+		compareBefore = padRawImage(
+			compareBefore,
+			padLeft,
+			padTop,
+			padRight,
+			padBottom,
+		);
+		compareBeforeSanitized = padRawImage(
+			compareBeforeSanitized,
+			padLeft,
+			padTop,
+			padRight,
+			padBottom,
+		);
+		const baseCropX = finalGridForNoGrid.cropX ?? finalGridForNoGrid.offsetX;
+		const baseCropY = finalGridForNoGrid.cropY ?? finalGridForNoGrid.offsetY;
+		finalGridForNoGrid = {
+			...finalGridForNoGrid,
+			outW: finalResult.width,
+			outH: finalResult.height,
+			cropX: baseCropX - padLeft,
+			cropY: baseCropY - padTop,
+			cropW: finalResult.width,
+			cropH: finalResult.height,
+		};
+	};
+
+	if (context.applyFinalAdjustments && o.outlineStyle !== "none") {
+		const prevW = finalResult.width;
+		const prevH = finalResult.height;
+		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
+		const dw = finalResult.width - prevW;
+		const dh = finalResult.height - prevH;
+		if (dw !== 0 || dh !== 0) {
+			const padLeft = Math.floor(dw / 2);
+			const padTop = Math.floor(dh / 2);
+			padCompanions(padLeft, padTop, dw - padLeft, dh - padTop);
+		}
+	}
+
+	if (context.applyFinalAdjustments && o.keepAspectRatio && !o.makeSquare) {
+		const { image: paddedResult, padding } = padImageToAspectRatio(
+			finalResult,
+			getAspectRatio(img),
+		);
+		if (paddedResult !== finalResult) {
+			finalResult = paddedResult;
+			padCompanions(padding.left, padding.top, padding.right, padding.bottom);
+		}
+	}
 
 	if (o.makeSquare) {
 		const w = finalResult.width;
@@ -432,11 +535,13 @@ export const processGridDisabledRoute = (
 		finalResult,
 		compareBeforeSanitized,
 		finalGridForNoGrid,
-		"preserve",
-		"grid-disabled",
+		context.route ?? "preserve",
+		context.method ?? "grid-disabled",
 		trimAlphaThreshold,
-		undefined,
+		context.rankedCandidates,
 		backgroundDiagnostic,
+		context.classificationResult,
+		context.additionalWarnings,
 	);
 	log("Processing analysis", analysis);
 	return {
@@ -447,4 +552,20 @@ export const processGridDisabledRoute = (
 		compareBeforeSanitized,
 		analysis,
 	};
+};
+
+// [Intended] 明示経路（manual / auto）はグリッド検出を無効化して呼ぶため null は返らない。
+// 型上の null を as で潰さず、想定外の早期 return を実行時に検知できるようにする。
+export const processExplicitSimpleRoute = (
+	context: SimpleRouteContext,
+): ProcessResult => {
+	const result = processGridDisabledRoute({
+		...context,
+		o: { ...context.o, enableGridDetection: false },
+		applyFinalAdjustments: true,
+	});
+	if (!result) {
+		throw new Error("grid-disabled route must return a result");
+	}
+	return result;
 };

@@ -629,7 +629,7 @@
   },
   {
     "id": "preserve-native-pixel-art",
-    "featureIds": ["PRF-001"],
+    "featureIds": ["PRF-001", "PRF-300"],
     "profile": "smoke",
     "inputKind": "pixel-art-1x",
     "degradationPatterns": [
@@ -639,7 +639,7 @@
     ],
     "options": {
       "cellSamplingMode": "legacy-median",
-      "enableGridDetection": false,
+      "processingMode": "auto",
       "preRemoveBackground": false,
       "postRemoveBackground": false,
       "trimToContent": false
@@ -668,14 +668,13 @@
   },
   {
     "id": "restore-nearest-2x-to-8x8",
-    "featureIds": ["PRF-001", "auto-grid"],
+    "featureIds": ["PRF-001", "PRF-300", "auto-grid"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-2x"],
     "options": {
       "cellSamplingMode": "legacy-median",
-      "forcePixelsW": 8,
-      "forcePixelsH": 8,
+      "processingMode": "auto",
       "sampleWindow": 1,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -1071,16 +1070,17 @@
   },
   {
     "id": "restore-bilinear-to-8x8",
-    "featureIds": ["PRF-001", "interpolation"],
+    "featureIds": ["PRF-001", "PRF-300", "interpolation"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["bilinear"],
     "options": {
-      "forcePixelsW": 8,
-      "forcePixelsH": 8,
+      "processingMode": "auto",
       "sampleWindow": 3,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
       "trimToContent": false
     },
     "input": "test/fixtures/quality_bilinear.png",
@@ -2010,20 +2010,20 @@
   },
   {
     "id": "preserve-continuous-tone",
-    "featureIds": ["PRF-001", "PRF-002", "continuous-tone"],
+    "featureIds": ["PRF-001", "PRF-002", "PRF-300", "continuous-tone"],
     "profile": "smoke",
     "inputKind": "continuous-tone",
     "degradationPatterns": ["continuous-tone"],
     "options": {
       "cellSamplingMode": "legacy-median",
-      "enableGridDetection": false,
+      "processingMode": "auto",
       "preRemoveBackground": false,
       "postRemoveBackground": false,
       "trimToContent": false
     },
     "input": "test/fixtures/quality_continuous_tone.png",
     "expected": "test/fixtures/quality_continuous_tone.png",
-    "assertions": ["exact image", "preserve route", "determinism"],
+    "assertions": ["exact image", "convert route", "determinism"],
     "expectation": { "exact": true },
     "assets": [
       {
