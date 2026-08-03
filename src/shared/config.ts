@@ -62,6 +62,13 @@ export const CANDIDATE_PREVIEW_LIMITS = {
 	similarCellDelta: 0.2,
 } as const;
 
+export const BATCH_PALETTE_DEFAULTS = {
+	/** 画像ごとの総寄与を揃えたうえで、画像内の画素頻度へ割り当てる比率。 */
+	frequencyWeight: 0.75,
+	/** 小さなアクセント色を保護するため、一意色へ均等に割り当てる比率。 */
+	uniformColorWeight: 0.25,
+} as const;
+
 export const INPUT_CLASSIFIER_THRESHOLDS = {
 	maxSamplePixels: 65_536,
 	minDimension: 2,
@@ -428,6 +435,8 @@ export const PROCESS_DEFAULTS = {
 	ditherStrength: PROCESS_RANGES.ditherStrength.default,
 	outlineStyle: "none",
 	outlineColor: PROCESS_RANGES.outlineColor,
+	sharedPalette: false,
+	includeDiagnosticSummary: false,
 	debug: import.meta.env.DEV,
 } as const;
 

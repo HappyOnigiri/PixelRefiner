@@ -338,11 +338,13 @@ export const setupSettingsControls = ({
 		const mode = els.reduceColorModeSelect.value;
 		const isNone = mode === "none";
 		const isAuto = mode === "auto";
+		const isSharedPalette = els.sharedPaletteToggle.checked;
 
 		// モードに応じてセクションを有効・無効にする
 		const isEnabled = !isNone;
 
-		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
+		els.colorCountSetting.style.display =
+			isAuto || isSharedPalette ? "flex" : "none";
 
 		const ditherMode = els.ditherModeSelect.value;
 		const isDitherNone = ditherMode === "none";

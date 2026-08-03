@@ -1,6 +1,7 @@
 import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
+import { processBatchImages } from "../../src/core/batch";
 import { processImage } from "../../src/core/processor";
 import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
@@ -39,6 +40,38 @@ const effectiveCaseOptions = (
 	processingMode: PROCESS_DEFAULTS.processingMode,
 	...qualityCase.options,
 });
+
+const processQualityCase = (
+	qualityCase: QualityImageCase,
+	input: ReturnType<typeof readPng>,
+	options: ProcessOptions,
+): ReturnType<typeof processImage> => {
+	if (!qualityCase.sharedPalette) return processImage(input, options);
+	const images = [
+		input,
+		...qualityCase.sharedPalette.inputs.map((file) =>
+			readPng(path.resolve(file)),
+		),
+	];
+	const batch = processBatchImages(
+		images.map((image, index) => ({ id: String(index), image, options })),
+		{
+			sharedPalette: true,
+			colorCount: qualityCase.sharedPalette.colorCount,
+			ditherMode: qualityCase.sharedPalette.ditherMode,
+			ditherStrength: qualityCase.sharedPalette.ditherStrength,
+		},
+	);
+	const primary = batch.items[0];
+	if (!primary || primary.status === "error") {
+		throw new Error(
+			primary?.status === "error"
+				? primary.error
+				: "Shared-palette quality case produced no primary result",
+		);
+	}
+	return primary.processResult;
+};
 
 const metadataFromEnvironment = (): QualityMetadata => {
 	const repository =
@@ -124,9 +157,9 @@ export const runQualityCase = (
 	const options = { ...effectiveOptions, debug: false };
 
 	const start = performance.now();
-	const currentRun = processImage(input, options);
+	const currentRun = processQualityCase(qualityCase, input, options);
 	const runtime = performance.now() - start;
-	const repeatRun = processImage(input, options);
+	const repeatRun = processQualityCase(qualityCase, input, options);
 
 	const metrics = calculateMetrics(
 		currentRun.result,
@@ -235,7 +268,9 @@ export const runQualityCase = (
 		// [Intended] レポートには実行に使った合成後のオプションを載せる。ケース定義だけを
 		// 載せると fixture 既定や省略時の既定経路が抜け、表示された値での再実行が
 		// レポートの測定結果を再現しない。
-		options: effectiveOptions,
+		options: qualityCase.sharedPalette
+			? { ...effectiveOptions, sharedPalette: qualityCase.sharedPalette }
+			: effectiveOptions,
 		metrics,
 		baselineMetrics,
 		files,
@@ -248,7 +283,7 @@ export const writeQualityBaselineImage = (
 ): void => {
 	const input = readPng(path.resolve(qualityCase.input));
 	const options = { ...effectiveCaseOptions(qualityCase), debug: false };
-	writePng(outputPath, processImage(input, options).result);
+	writePng(outputPath, processQualityCase(qualityCase, input, options).result);
 };
 
 const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {

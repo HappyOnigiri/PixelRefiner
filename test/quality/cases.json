@@ -2202,5 +2202,69 @@
         "acquiredOrGeneratedAt": "2026-08-03"
       }
     ]
+  },
+  {
+    "id": "share-balanced-palette-across-batch",
+    "featureIds": ["PRF-420"],
+    "optionNames": ["sharedPalette", "colorCount"],
+    "profile": "smoke",
+    "inputKind": "native-pixel-art",
+    "degradationPatterns": ["low-color-subject"],
+    "options": {
+      "processingMode": "preserve",
+      "enableGridDetection": false,
+      "bgExtractionMethod": "none",
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "trimToContent": false
+    },
+    "sharedPalette": {
+      "inputs": ["test/fixtures/quality_prf420_shared_palette_companion.png"],
+      "colorCount": 5,
+      "ditherMode": "none",
+      "ditherStrength": 0
+    },
+    "input": "test/fixtures/quality_prf420_shared_palette_target.png",
+    "expected": "test/fixtures/quality_prf420_shared_palette_target-expect.png",
+    "assertions": [
+      "equal per-image palette contribution",
+      "small accent color retained",
+      "transparent colors excluded",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 16, "expectedHeight": 16 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf420_shared_palette_target.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf420_shared_palette_companion.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf420_shared_palette_target-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
   }
 ]

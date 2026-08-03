@@ -1,4 +1,5 @@
 import type { ProcessOptions } from "../../src/core/processor";
+import type { DitherMode } from "../../src/shared/types";
 
 export const QUALITY_REPORT_VERSION = "2";
 export const QUALITY_BENCHMARK_VERSION = "2";
@@ -46,6 +47,12 @@ export type QualityImageCase = {
 	inputKind: string;
 	degradationPatterns: string[];
 	options: ProcessOptions;
+	sharedPalette?: {
+		inputs: string[];
+		colorCount: number;
+		ditherMode: DitherMode;
+		ditherStrength: number;
+	};
 	input: string;
 	expected: string;
 	assertions: string[];
@@ -130,7 +137,9 @@ export type QualityCaseResult = {
 		confidence: number;
 	}>;
 	expectation: QualityExpectation;
-	options: ProcessOptions;
+	options: ProcessOptions & {
+		sharedPalette?: QualityImageCase["sharedPalette"];
+	};
 	metrics: QualityMetrics;
 	baselineMetrics: QualityBaselineCase | null;
 	files: {
