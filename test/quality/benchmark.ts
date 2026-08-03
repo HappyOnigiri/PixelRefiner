@@ -2,6 +2,7 @@ import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { processImage } from "../../src/core/processor";
+import { LEGACY_PROCESS_OPTIONS_V1 } from "../../src/shared/config";
 import { baselineImagePath, loadBaseline } from "./baseline";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
 import { imagesEqual, readPng, writePng } from "./image";
@@ -20,11 +21,6 @@ import type {
 import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
-
-// [Intended] 既存ケースはV1の背景抽出を固定し、Autoの品質ケースと分離する。
-const LEGACY_PROCESS_OPTIONS_V1 = {
-	bgExtractionMethod: "top-left",
-} as const;
 
 const metadataFromEnvironment = (): QualityMetadata => {
 	const repository =

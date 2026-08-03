@@ -20,6 +20,10 @@ import { createModalControllerFactory } from "./modal-controller";
 import { showError } from "./notifications";
 import { setupPresetControls } from "./preset-controls";
 import { createRunProcessing } from "./processing-controller";
+import {
+	processingModeForPipeline,
+	resolveProcessingPipeline,
+} from "./processing-rollout";
 import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
 import { ImageSession } from "./session";
@@ -27,6 +31,9 @@ import { setupSettingsControls } from "./settings-controls";
 
 export const initApp = (): void => {
 	const els = getElements();
+	const processingMode = processingModeForPipeline(
+		resolveProcessingPipeline(window.location.search, window.localStorage),
+	);
 	const createModalController = createModalControllerFactory(
 		document.querySelector(".app"),
 	);
@@ -240,6 +247,7 @@ export const initApp = (): void => {
 		updateGrid: () => updateGrid(),
 		updateBgColorFromMethod: () => updateBgColorFromMethod(),
 		candidateChooser,
+		processingMode,
 	});
 	const {
 		updateRgbInputs,

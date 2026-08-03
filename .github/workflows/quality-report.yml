@@ -57,6 +57,17 @@ jobs:
           QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
 
+      - name: Publish quality summary
+        if: always()
+        run: |
+          summary_file="tmp/quality-report/latest/summary.md"
+          if [ -f "$summary_file" ]; then
+            cat "$summary_file" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Quality report" >> "$GITHUB_STEP_SUMMARY"
+            echo "Comparison report generation did not produce a summary." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Run quality gate
         id: quality-gate
         continue-on-error: true
