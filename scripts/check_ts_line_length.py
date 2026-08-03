@@ -54,6 +54,9 @@ def main() -> int:
     for path in find_typescript_files():
         if path in EXCLUDED_FILES:
             continue
+        # [Intended] コミット前の削除済みファイルはindexに残っていても検査対象にしない。
+        if not path.is_file():
+            continue
         try:
             errors.extend(check_file(path))
         except (OSError, UnicodeError) as error:

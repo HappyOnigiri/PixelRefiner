@@ -394,8 +394,7 @@ export const RETRO_PALETTES: Record<
 };
 
 export const PROCESS_DEFAULTS = {
-	// [Policy] Auto のUI導入までは既存利用者の出力互換性を優先する。
-	processingMode: "refine",
+	processingMode: "auto",
 	detailLevel: CONVERT_DEFAULTS.detailLevel,
 	preRemoveBackground: true,
 	postRemoveBackground: true,

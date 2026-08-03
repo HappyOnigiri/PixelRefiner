@@ -75,6 +75,17 @@ pnpm build   # Create a production build
 pnpm test    # Run tests
 ```
 
+### Auto pipeline
+
+Auto is the default processing pipeline. It classifies each image and selects
+grid refinement, continuous-tone conversion, or safe preservation when the
+result is uncertain. Low-confidence grid results open the candidate chooser
+instead of forcing an extreme reduction.
+
+Run `pnpm test:quality:report` to compare the current output with the base
+baseline. Pull requests publish the quality-gate result and the comparison
+summary in GitHub Actions.
+
 ## Note
 
 Please note that this tool is designed primarily for automatic image conversion and optimization. Therefore, we do not plan to implement manual pixel-by-pixel editing features similar to paint software.

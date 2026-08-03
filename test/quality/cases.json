@@ -1746,6 +1746,7 @@
     "inputKind": "uncertain",
     "degradationPatterns": ["one-axis-periodicity"],
     "options": {
+      "processingMode": "refine",
       "cellSamplingMode": "legacy-median",
       "autoGridFromTrimmed": false,
       "backgroundMask": false,
@@ -1789,11 +1790,12 @@
   {
     "id": "show-ui-default-candidates",
     "featureIds": ["PRF-400"],
-    "optionNames": ["floatingMaxPixels"],
+    "optionNames": ["processingMode", "floatingMaxPixels"],
     "profile": "smoke",
     "inputKind": "uncertain",
     "degradationPatterns": ["ambiguous-detail"],
     "options": {
+      "processingMode": "auto",
       "floatingMaxPixels": 123
     },
     "input": "test/fixtures/quality_prf400_ui_low_confidence.png",

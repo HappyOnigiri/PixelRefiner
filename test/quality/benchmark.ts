@@ -2,6 +2,8 @@ import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { processImage } from "../../src/core/processor";
+import type { ProcessOptions } from "../../src/core/processor-options";
+import { PROCESS_DEFAULTS } from "../../src/shared/config";
 import { baselineImagePath, loadBaseline } from "./baseline";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
 import { imagesEqual, readPng, writePng } from "./image";
@@ -21,10 +23,22 @@ import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
 
-// [Intended] 既存ケースはV1の背景抽出を固定し、Autoの品質ケースと分離する。
-const LEGACY_PROCESS_OPTIONS_V1 = {
+// [Intended] 背景抽出だけは fixture 作成時の方式に固定する。処理経路は固定しない。
+// 経路まで固定すると出荷される既定経路（auto）が品質ゲートの検証対象から外れるため、
+// 特定経路の出力を固定したいケースは cases.json 側で processingMode を明示する。
+const QUALITY_FIXTURE_OPTIONS = {
 	bgExtractionMethod: "top-left",
 } as const;
+
+// [Intended] 省略時に効く既定経路をレポートへ明示的に残すため、既定値も展開して返す。
+// 値は PROCESS_DEFAULTS から取るので、既定が変わればケースの実行経路も追随する。
+const effectiveCaseOptions = (
+	qualityCase: QualityImageCase,
+): ProcessOptions => ({
+	...QUALITY_FIXTURE_OPTIONS,
+	processingMode: PROCESS_DEFAULTS.processingMode,
+	...qualityCase.options,
+});
 
 const metadataFromEnvironment = (): QualityMetadata => {
 	const repository =
@@ -106,11 +120,8 @@ export const runQualityCase = (
 	const expectedPath = path.resolve(qualityCase.expected);
 	const input = readPng(inputPath);
 	const expected = readPng(expectedPath);
-	const options = {
-		...LEGACY_PROCESS_OPTIONS_V1,
-		...qualityCase.options,
-		debug: false,
-	};
+	const effectiveOptions = effectiveCaseOptions(qualityCase);
+	const options = { ...effectiveOptions, debug: false };
 
 	const start = performance.now();
 	const currentRun = processImage(input, options);
@@ -221,7 +232,10 @@ export const runQualityCase = (
 			confidence: candidate.confidence,
 		})),
 		expectation: qualityCase.expectation,
-		options: qualityCase.options,
+		// [Intended] レポートには実行に使った合成後のオプションを載せる。ケース定義だけを
+		// 載せると fixture 既定や省略時の既定経路が抜け、表示された値での再実行が
+		// レポートの測定結果を再現しない。
+		options: effectiveOptions,
 		metrics,
 		baselineMetrics,
 		files,
@@ -233,11 +247,7 @@ export const writeQualityBaselineImage = (
 	outputPath: string,
 ): void => {
 	const input = readPng(path.resolve(qualityCase.input));
-	const options = {
-		...LEGACY_PROCESS_OPTIONS_V1,
-		...qualityCase.options,
-		debug: false,
-	};
+	const options = { ...effectiveCaseOptions(qualityCase), debug: false };
 	writePng(outputPath, processImage(input, options).result);
 };
 
