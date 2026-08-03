@@ -429,7 +429,10 @@ describe("processImage", () => {
 	});
 
 	describe("logical small-component removal", () => {
-		const createScaledInput = (scale: number): RawImage => {
+		const createScaledInput = (
+			scale: number,
+			includeNoise = true,
+		): RawImage => {
 			const logicalSize = 8;
 			const width = logicalSize * scale;
 			const height = logicalSize * scale;
@@ -440,7 +443,7 @@ describe("processImage", () => {
 					const logicalY = Math.floor(y / scale);
 					const main =
 						logicalX >= 2 && logicalX <= 4 && logicalY >= 2 && logicalY <= 4;
-					const noise = logicalX === 7 && logicalY === 7;
+					const noise = includeNoise && logicalX === 7 && logicalY === 7;
 					const offset = (y * width + x) * 4;
 					const value = main ? 20 : noise ? 240 : 255;
 					data[offset] = value;
@@ -477,6 +480,26 @@ describe("processImage", () => {
 			);
 		});
 
+		it("excludes removed noise when deriving forced conversion bounds", () => {
+			const options = {
+				forcePixelsW: 8,
+				forcePixelsH: 8,
+				preRemoveBackground: false,
+				postRemoveBackground: true,
+				bgExtractionMethod: "top-left" as const,
+				bgRemovalScope: "outer" as const,
+				backgroundTolerance: 0,
+				trimToContent: true,
+				smallComponentMode: "auto" as const,
+			};
+			const noisy = processImage(createScaledInput(2), options);
+			const clean = processImage(createScaledInput(2, false), options);
+
+			expect(noisy.result.data).toEqual(clean.result.data);
+			expect(noisy.grid.cellW).toBe(clean.grid.cellW);
+			expect(noisy.grid.cellH).toBe(clean.grid.cellH);
+		});
+
 		it("reports a skipped removal for an uncertain automatic background", () => {
 			const width = 20;
 			const height = 20;
@@ -508,6 +531,24 @@ describe("processImage", () => {
 				skippedReason: "low-background-confidence",
 				removedComponents: 0,
 				removedPixels: 0,
+			});
+		});
+
+		it("estimates automatic background for removal diagnostics alone", () => {
+			const processed = processImage(createScaledInput(2), {
+				processingMode: "preserve",
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				trimToContent: false,
+				bgExtractionMethod: "auto",
+				bgRemovalScope: "outer",
+				smallComponentMode: "auto",
+			});
+
+			expect(processed.analysis.backgroundConfidence).toBeDefined();
+			expect(processed.analysis.smallComponentRemoval).toMatchObject({
+				applied: true,
+				skippedReason: undefined,
 			});
 		});
 	});

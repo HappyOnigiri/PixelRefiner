@@ -89,6 +89,37 @@ describe("safe small-component removal", () => {
 		expect(result.diagnostic.removedComponents).toBe(0);
 	});
 
+	it("counts the largest component when only two repeated marks exist", () => {
+		const transparent = [0, 0, 0, 0] as const;
+		const mask = imageFrom(6, 3, (x, y) =>
+			(x === 0 || x === 5) && y === 1 ? [120, 80, 40, 80] : transparent,
+		);
+		const result = run(mask, mask);
+
+		expect(alphaAt(result.image, 0, 1)).toBe(80);
+		expect(alphaAt(result.image, 5, 1)).toBe(80);
+		expect(result.diagnostic.removedComponents).toBe(0);
+	});
+
+	it("ignores hidden RGB values in fully transparent neighbors", () => {
+		const transparentBlack = [0, 0, 0, 0] as const;
+		const transparentWhite = [255, 255, 255, 0] as const;
+		const mask = basicImages((x, y) =>
+			x === 10 && y === 8 ? [20, 20, 20, 32] : transparentBlack,
+		).mask;
+		const blackEvidence = basicImages((x, y) =>
+			x === 10 && y === 8 ? [20, 20, 20, 32] : transparentBlack,
+		).evidence;
+		const whiteEvidence = basicImages((x, y) =>
+			x === 10 && y === 8 ? [20, 20, 20, 32] : transparentWhite,
+		).evidence;
+
+		const blackResult = run(mask, blackEvidence);
+		const whiteResult = run(mask, whiteEvidence);
+		expect(blackResult.image.data).toEqual(whiteResult.image.data);
+		expect(blackResult.diagnostic).toEqual(whiteResult.diagnostic);
+	});
+
 	it("keeps differently colored components in symmetric positions", () => {
 		const transparent = [0, 0, 0, 0] as const;
 		const { mask, evidence } = basicImages((x, y) => {

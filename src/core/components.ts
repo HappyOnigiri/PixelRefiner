@@ -62,14 +62,30 @@ const luminanceAt = (data: Uint8ClampedArray, pixel: number): number => {
 	);
 };
 
+const premultipliedLuminanceAt = (
+	data: Uint8ClampedArray,
+	pixel: number,
+): number => Math.round((luminanceAt(data, pixel) * data[pixel * 4 + 3]) / 255);
+
 const edgeDelta = (
 	evidence: RawImage,
 	pixel: number,
 	neighbor: number,
-): number =>
-	Math.abs(
-		luminanceAt(evidence.data, pixel) - luminanceAt(evidence.data, neighbor),
+): number => {
+	const pixelAlpha = evidence.data[pixel * 4 + 3];
+	const neighborAlpha = evidence.data[neighbor * 4 + 3];
+	// [Intended] 両画素が可視なら色差を使い、透明画素が絡む境界だけアルファを反映する。
+	// これにより不可視RGBへ依存せず、弱いノイズと不透明背景の色差も過大評価しない。
+	if (pixelAlpha > 0 && neighborAlpha > 0) {
+		return Math.abs(
+			luminanceAt(evidence.data, pixel) - luminanceAt(evidence.data, neighbor),
+		);
+	}
+	return Math.abs(
+		premultipliedLuminanceAt(evidence.data, pixel) -
+			premultipliedLuminanceAt(evidence.data, neighbor),
 	);
+};
 
 const componentCenterX2 = (component: Component): number =>
 	component.minX + component.maxX;
@@ -376,10 +392,14 @@ export const removeSmallComponents = (
 	);
 	const repeated = new Map<string, number>();
 	const byPosition = new Map<string, Component>();
-	for (let index = 0; index < candidates.length; index += 1) {
-		const component = candidates[index];
+	// [Intended] 最大成分も反復パターンの片方になり得るため、保護証拠の集計には全成分を使う。
+	for (let index = 0; index < components.length; index += 1) {
+		const component = components[index];
 		const repeatedKey = shapeColorKey(component);
 		repeated.set(repeatedKey, (repeated.get(repeatedKey) ?? 0) + 1);
+	}
+	for (let index = 0; index < candidates.length; index += 1) {
+		const component = candidates[index];
 		byPosition.set(
 			`${componentCenterX2(component)}:${componentCenterY2(component)}:${shapeKey(component)}`,
 			component,
