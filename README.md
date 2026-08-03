@@ -75,17 +75,17 @@ pnpm build   # Create a production build
 pnpm test    # Run tests
 ```
 
-### Experimental Auto pipeline
+### Auto pipeline
 
-The legacy pipeline remains the default during the staged rollout. Developers can
-open the app with `?pipeline=next` to enable the new Auto routing; the choice is
-saved in local storage for later visits. Use `?pipeline=legacy` to roll back, or
-run `localStorage.removeItem("pixel-refiner-pipeline")` in the browser console to
-return to the default.
+Auto is the default processing pipeline. It classifies each image and selects
+grid refinement, continuous-tone conversion, or safe preservation when the
+result is uncertain. Low-confidence grid results open the candidate chooser
+instead of forcing an extreme reduction.
 
 Run `pnpm test:quality:report` to compare the current output with the base
-baseline for the same fixtures. Pull requests also publish this comparison and
-its quality-gate summary in GitHub Actions.
+baseline and to compare the default Auto route with the Legacy compatibility
+settings for the same fixtures. Pull requests publish the quality-gate summary
+in GitHub Actions.
 
 ## Note
 

@@ -75,17 +75,15 @@ pnpm build   # 本番用にビルド
 pnpm test    # テストを実行
 ```
 
-### 試験提供中の Auto パイプライン
+### Auto パイプライン
 
-段階導入中は従来パイプラインが既定です。開発者はアプリを
-`?pipeline=next` 付きで開くと新しい Auto ルーティングを有効化でき、選択は
-localStorage に保存されます。ロールバックするには `?pipeline=legacy` で開くか、
-ブラウザーコンソールで `localStorage.removeItem("pixel-refiner-pipeline")` を実行して
-既定値へ戻してください。
+Autoが既定の処理パイプラインです。画像ごとに入力を分類し、グリッド復元、
+通常画像の変換、安全な原寸維持から処理経路を選びます。グリッド判定の信頼度が
+低い場合は、極端な縮小を確定せず候補選択を表示します。
 
 `pnpm test:quality:report` を実行すると、同じ fixture に対する現在の出力と
-ベースラインを比較できます。Pull Request でも比較レポートと品質ゲートの要約を
-GitHub Actions に掲載します。
+ベースライン、および既定AutoとLegacy互換設定を比較できます。Pull Requestでも
+品質ゲートの要約をGitHub Actionsに掲載します。
 
 ## 補足
 
