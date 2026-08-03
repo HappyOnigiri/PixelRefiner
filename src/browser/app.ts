@@ -250,6 +250,7 @@ export const initApp = (): void => {
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateBgColorFromMethod,
+		applyQuickSettings,
 	} = setupSettingsControls({
 		els,
 		processingState,
@@ -570,5 +571,6 @@ export const initApp = (): void => {
 		updateBgDisabledStates,
 		updateProcessButtonVisibility,
 		triggerAutoProcess,
+		applyQuickSettings,
 	});
 };

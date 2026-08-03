@@ -404,722 +404,974 @@
             </section>
 
             <div class="quick-settings">
-              <div class="settings-group">
-                <h3
-                  class="settings-group-title"
-                  data-i18n="setting.color_reduction"
-                >
-                  Color Reduction
+              <div class="settings-group primary-settings-group">
+                <h3 class="settings-group-title" data-i18n="setting.quick">
+                  Quick Settings
                 </h3>
-                <!-- …設定内容… -->
-                <div class="grid-settings">
-                  <label
-                    id="color-mode-setting"
-                    class="setting-item full-width"
-                  >
-                    <span class="label-text">
-                      <span data-i18n="setting.color_mode">Reduction Mode</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.color_mode"
-                        data-tooltip="Limits the number of colors in the output.&#10;&#10;Useful for achieving a classic pixel art look.&#10;None: No color reduction.&#10;Game Boy / PICO-8 / NES: Uses specific console palettes.&#10;Auto: Automatically reduces to the specified number of colors."
-                        >?</span
-                      >
-                    </span>
-                    <div class="input-with-button">
-                      <select id="reduce-color-mode">
-                        <option value="none" data-i18n="option.none" selected>
-                          None
-                        </option>
-                        <option value="mono" data-i18n="option.mono">
-                          Monochrome
-                        </option>
-                        <option value="gb_legacy" data-i18n="option.gb_legacy">
-                          Game Boy (Original)
-                        </option>
-                        <option value="gb_pocket" data-i18n="option.gb_pocket">
-                          Game Boy (Pocket)
-                        </option>
-                        <option value="gb_light" data-i18n="option.gb_light">
-                          Game Boy (Light)
-                        </option>
-                        <option value="pico8" data-i18n="option.pico8">
-                          PICO-8
-                        </option>
-                        <option value="nes" data-i18n="option.nes">NES</option>
-                        <option value="pc98" data-i18n="option.pc98">
-                          PC-9801
-                        </option>
-                        <option value="msx" data-i18n="option.msx">MSX1</option>
-                        <option value="c64" data-i18n="option.c64">
-                          Commodore 64
-                        </option>
-                        <option value="arne16" data-i18n="option.arne16">
-                          Arne 16
-                        </option>
-                        <option
-                          value="sfc_sprite"
-                          data-i18n="option.sfc_sprite"
-                        >
-                          SFC Style (16 colors/Sprite)
-                        </option>
-                        <option value="sfc_bg" data-i18n="option.sfc_bg">
-                          SFC Style (256 colors/BG)
-                        </option>
-                        <option value="auto" data-i18n="option.auto">
-                          Custom Count
-                        </option>
-                        <option value="fixed" data-i18n="option.fixed">
-                          Fixed / Custom Palette
-                        </option>
-                      </select>
-                      <button
-                        id="fixed-palette-import-button"
-                        type="button"
-                        class="action-button small-button outline-button"
-                        style="display: none"
-                        data-i18n="ui.import_palette"
-                      >
-                        Import
-                      </button>
-                      <button
-                        id="show-palette-button"
-                        type="button"
-                        class="action-button small-button outline-button accent-outline-button"
-                        style="display: none"
-                        data-i18n="ui.show_palette"
-                      >
-                        Palette
-                      </button>
-                    </div>
+                <div class="quick-settings-grid">
+                  <label class="setting-item quick-preset-setting">
+                    <span class="label-text" data-i18n="setting.preset"
+                      >Preset</span
+                    >
+                    <select id="built-in-preset"></select>
                   </label>
-
-                  <label
-                    id="color-count-setting"
-                    class="setting-item full-width"
-                  >
-                    <span class="label-text">
-                      <span data-i18n="setting.color_count">Color Count</span>
-                      <span
-                        id="help-color-count"
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.color_count"
-                        data-tooltip="Specifies the maximum number of colors in the output.&#10;&#10;Range: {min} to {max} (Default: {default})"
-                        >?</span
-                      >
-                    </span>
-                    <div class="input-with-slider">
-                      <input id="color-count-slider" type="range" />
-                      <input id="color-count" type="number" />
-                    </div>
-                  </label>
-
-                  <label
-                    id="dither-mode-setting"
-                    class="setting-item full-width"
-                  >
-                    <span class="label-text">
-                      <span data-i18n="setting.dither_mode">Dithering</span>
-                    </span>
-                    <select id="dither-mode">
-                      <option
-                        value="none"
-                        data-i18n="option.dither_none"
-                        selected
-                      >
-                        None
+                  <label class="setting-item">
+                    <span class="label-text" data-i18n="setting.processing_mode"
+                      >Processing</span
+                    >
+                    <select id="quick-processing-mode">
+                      <option value="auto" data-i18n="option.processing_auto">
+                        Auto
                       </option>
                       <option
-                        value="floyd-steinberg"
-                        data-i18n="option.dither_floyd"
+                        value="refine"
+                        data-i18n="option.processing_refine"
                       >
-                        Floyd-Steinberg
+                        Refine
                       </option>
                       <option
-                        value="bayer-2x2"
-                        data-i18n="option.dither_bayer2"
+                        value="convert"
+                        data-i18n="option.processing_convert"
                       >
-                        Bayer 2x2
+                        Convert
                       </option>
                       <option
-                        value="bayer-4x4"
-                        data-i18n="option.dither_bayer4"
+                        value="preserve"
+                        data-i18n="option.processing_preserve"
                       >
-                        Bayer 4x4
-                      </option>
-                      <option
-                        value="bayer-8x8"
-                        data-i18n="option.dither_bayer8"
-                      >
-                        Bayer 8x8
-                      </option>
-                      <option value="ordered" data-i18n="option.dither_ordered">
-                        Ordered
+                        Preserve
                       </option>
                     </select>
                   </label>
-
-                  <label
-                    id="dither-strength-setting"
-                    class="setting-item full-width"
-                  >
-                    <span class="label-text">
-                      <span data-i18n="setting.dither_strength"
-                        >Dither Strength</span
+                  <label class="setting-item">
+                    <span class="label-text" data-i18n="setting.detail"
+                      >Detail</span
+                    >
+                    <select id="quick-detail-level">
+                      <option value="coarse" data-i18n="option.detail_coarse">
+                        Coarse
+                      </option>
+                      <option
+                        value="balanced"
+                        data-i18n="option.detail_balanced"
                       >
-                      <span
-                        id="help-dither-strength"
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.dither_strength"
-                        data-tooltip="Applies dithering (error diffusion) during color reduction.&#10;&#10;100%: Full error diffusion.&#10;0%: No dithering (None).&#10;&#10;Allows for smoother gradients with fewer colors, but introduces characteristic pixel noise."
-                        >?</span
+                        Balanced
+                      </option>
+                      <option
+                        value="detailed"
+                        data-i18n="option.detail_detailed"
                       >
-                    </span>
-                    <div class="input-with-slider">
-                      <input id="dither-strength-slider" type="range" />
-                      <input id="dither-strength" type="number" />
+                        Detailed
+                      </option>
+                    </select>
+                  </label>
+                  <label class="setting-item">
+                    <span class="label-text" data-i18n="setting.colors"
+                      >Colors</span
+                    >
+                    <select id="quick-colors">
+                      <option value="auto" data-i18n="option.colors_auto">
+                        Auto
+                      </option>
+                      <option value="16" data-i18n="option.colors_16">
+                        16 colors
+                      </option>
+                      <option value="32" data-i18n="option.colors_32">
+                        32 colors
+                      </option>
+                      <option value="64" data-i18n="option.colors_64">
+                        64 colors
+                      </option>
+                      <option value="custom" data-i18n="option.custom" hidden>
+                        Custom
+                      </option>
+                    </select>
+                  </label>
+                  <label class="setting-item">
+                    <span class="label-text" data-i18n="setting.background"
+                      >Background</span
+                    >
+                    <select id="quick-background">
+                      <option value="keep" data-i18n="option.background_keep">
+                        Keep
+                      </option>
+                      <option value="auto" data-i18n="option.background_auto">
+                        Auto transparent
+                      </option>
+                      <option value="pick" data-i18n="option.background_pick">
+                        Pick color
+                      </option>
+                      <option value="custom" data-i18n="option.custom" hidden>
+                        Custom
+                      </option>
+                    </select>
+                    <div
+                      id="quick-background-picker"
+                      class="quick-background-picker"
+                    >
+                      <input
+                        id="quick-background-color"
+                        type="color"
+                        value="#ffffff"
+                      />
+                      <button
+                        type="button"
+                        id="quick-eyedropper-button"
+                        class="action-button small-button outline-button"
+                        data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
+                      >
+                        ◉
+                      </button>
                     </div>
                   </label>
-                </div>
-              </div>
-
-              <div class="settings-group">
-                <h3 class="settings-group-title" data-i18n="setting.outline">
-                  Outline
-                </h3>
-                <div class="grid-settings">
-                  <label class="setting-item full-width">
-                    <span class="label-text">
-                      <span data-i18n="setting.outline_style">Style</span>
-                    </span>
-                    <select id="outline-style">
+                  <label class="setting-item">
+                    <span class="label-text" data-i18n="setting.dithering"
+                      >Dithering</span
+                    >
+                    <select id="quick-dithering">
+                      <option value="off" data-i18n="option.dithering_off">
+                        Off
+                      </option>
                       <option
-                        value="none"
-                        data-i18n="option.outline_none"
-                        selected
+                        value="subtle"
+                        data-i18n="option.dithering_subtle"
                       >
-                        None
+                        Subtle
+                      </option>
+                      <option
+                        value="strong"
+                        data-i18n="option.dithering_strong"
+                      >
+                        Strong
+                      </option>
+                      <option value="custom" data-i18n="option.custom" hidden>
+                        Custom
+                      </option>
+                    </select>
+                  </label>
+                  <label class="setting-item">
+                    <span class="label-text" data-i18n="setting.outline"
+                      >Outline</span
+                    >
+                    <select id="quick-outline-style">
+                      <option value="none" data-i18n="option.outline_none">
+                        Off
                       </option>
                       <option
                         value="rounded"
                         data-i18n="option.outline_rounded"
                       >
-                        Rounded (8-way)
+                        Rounded
                       </option>
                       <option value="sharp" data-i18n="option.outline_sharp">
-                        Sharp (4-way)
+                        Sharp
                       </option>
                     </select>
                   </label>
-
-                  <div class="setting-item full-width">
-                    <span class="label-text">
-                      <span data-i18n="setting.outline_color">Color</span>
-                    </span>
-                    <div class="rgb-input-group">
-                      <input
-                        id="outline-color"
-                        type="color"
-                        value="#ffffff"
-                        style="
-                          width: 100%;
-                          height: 32px;
-                          padding: 0;
-                          border: none;
-                          background: none;
-                        "
-                      />
-                    </div>
-                  </div>
+                  <label class="setting-item quick-checkbox-setting">
+                    <span class="label-text" data-i18n="setting.auto_trim"
+                      >Auto Trim</span
+                    >
+                    <input id="quick-auto-trim" type="checkbox" checked />
+                  </label>
                 </div>
               </div>
 
-              <div class="settings-group">
-                <h3
-                  class="settings-group-title"
-                  data-i18n="setting.grid_detection"
-                >
-                  Grid Detection
-                </h3>
-                <div class="grid-settings">
-                  <label class="setting-item full-width">
-                    <span class="label-text">
-                      <span data-i18n="setting.grid_mode"
-                        >Grid Detection Mode</span
+              <details id="advanced-settings" class="advanced-settings">
+                <summary data-i18n="setting.advanced">
+                  Advanced Settings
+                </summary>
+                <div class="advanced-settings-content">
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.color_reduction"
+                    >
+                      Color Reduction
+                    </h3>
+                    <!-- …設定内容… -->
+                    <div class="grid-settings">
+                      <label
+                        id="color-mode-setting"
+                        class="setting-item full-width"
                       >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.grid_mode"
-                        data-tooltip="Select how grid detection behaves.&#10;&#10;Auto: Automatically detects the pixel grid (default).&#10;Pixel + Auto: Uses the specified pixel size as a hint and starts fine search near it.&#10;Pixel Only: Forces conversion to the specified size (no auto detection).&#10;Off: Skips grid detection and reduction (useful for 1:1 pixel art)."
-                        >?</span
-                      >
-                    </span>
-                    <div class="input-with-button">
-                      <select id="grid-detection-mode">
-                        <option
-                          value="auto"
-                          data-i18n="option.grid_mode_auto"
-                          selected
-                        >
-                          Auto (Default)
-                        </option>
-                        <option value="hint" data-i18n="option.grid_mode_hint">
-                          Pixel + Auto
-                        </option>
-                        <option
-                          value="force"
-                          data-i18n="option.grid_mode_force"
-                        >
-                          Pixel Only
-                        </option>
-                        <option value="off" data-i18n="option.grid_mode_off">
-                          Off
-                        </option>
-                      </select>
-                    </div>
-                  </label>
+                        <span class="label-text">
+                          <span data-i18n="setting.color_mode"
+                            >Reduction Mode</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.color_mode"
+                            data-tooltip="Limits the number of colors in the output.&#10;&#10;Useful for achieving a classic pixel art look.&#10;None: No color reduction.&#10;Game Boy / PICO-8 / NES: Uses specific console palettes.&#10;Auto: Automatically reduces to the specified number of colors."
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-button">
+                          <select id="reduce-color-mode">
+                            <option
+                              value="none"
+                              data-i18n="option.none"
+                              selected
+                            >
+                              None
+                            </option>
+                            <option value="mono" data-i18n="option.mono">
+                              Monochrome
+                            </option>
+                            <option
+                              value="gb_legacy"
+                              data-i18n="option.gb_legacy"
+                            >
+                              Game Boy (Original)
+                            </option>
+                            <option
+                              value="gb_pocket"
+                              data-i18n="option.gb_pocket"
+                            >
+                              Game Boy (Pocket)
+                            </option>
+                            <option
+                              value="gb_light"
+                              data-i18n="option.gb_light"
+                            >
+                              Game Boy (Light)
+                            </option>
+                            <option value="pico8" data-i18n="option.pico8">
+                              PICO-8
+                            </option>
+                            <option value="nes" data-i18n="option.nes">
+                              NES
+                            </option>
+                            <option value="pc98" data-i18n="option.pc98">
+                              PC-9801
+                            </option>
+                            <option value="msx" data-i18n="option.msx">
+                              MSX1
+                            </option>
+                            <option value="c64" data-i18n="option.c64">
+                              Commodore 64
+                            </option>
+                            <option value="arne16" data-i18n="option.arne16">
+                              Arne 16
+                            </option>
+                            <option
+                              value="sfc_sprite"
+                              data-i18n="option.sfc_sprite"
+                            >
+                              SFC Style (16 colors/Sprite)
+                            </option>
+                            <option value="sfc_bg" data-i18n="option.sfc_bg">
+                              SFC Style (256 colors/BG)
+                            </option>
+                            <option value="auto" data-i18n="option.auto">
+                              Custom Count
+                            </option>
+                            <option value="fixed" data-i18n="option.fixed">
+                              Fixed / Custom Palette
+                            </option>
+                          </select>
+                          <button
+                            id="fixed-palette-import-button"
+                            type="button"
+                            class="action-button small-button outline-button"
+                            style="display: none"
+                            data-i18n="ui.import_palette"
+                          >
+                            Import
+                          </button>
+                          <button
+                            id="show-palette-button"
+                            type="button"
+                            class="action-button small-button outline-button accent-outline-button"
+                            style="display: none"
+                            data-i18n="ui.show_palette"
+                          >
+                            Palette
+                          </button>
+                        </div>
+                      </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.quant_step"
-                        >Quantization Step</span
+                      <label
+                        id="color-count-setting"
+                        class="setting-item full-width"
                       >
-                      <span
-                        id="help-quant-step"
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quant_step"
-                        data-tooltip="Sets the color reduction level for grid detection.&#10;&#10;High: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.&#10;Low: Picks up fine color boundaries, but increases the risk of false noise detection.&#10;&#10;Range: {min} to {max} (Default: {default})"
-                        >?</span
-                      >
-                    </span>
-                    <div class="input-with-slider">
-                      <input id="quant-step-slider" type="range" />
-                      <input id="quant-step" type="number" />
-                    </div>
-                  </label>
+                        <span class="label-text">
+                          <span data-i18n="setting.color_count"
+                            >Color Count</span
+                          >
+                          <span
+                            id="help-color-count"
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.color_count"
+                            data-tooltip="Specifies the maximum number of colors in the output.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-slider">
+                          <input id="color-count-slider" type="range" />
+                          <input id="color-count" type="number" />
+                        </div>
+                      </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.sample_window"
-                        >Grid Sampling Window</span
+                      <label
+                        id="dither-mode-setting"
+                        class="setting-item full-width"
                       >
-                      <span
-                        id="help-sample-window"
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.sample_window"
-                        data-tooltip="The reference range (in pixels) used to compare grid-size candidates in Auto and Hint modes.&#10;&#10;High: Grid detection is more resistant to noise, but fine boundaries may be overlooked.&#10;Low: Grid detection follows fine boundaries, but is more affected by misalignment and noise.&#10;&#10;Range: {min} to {max} (Default: {default})"
-                        >?</span
+                        <span class="label-text">
+                          <span data-i18n="setting.dither_mode">Dithering</span>
+                        </span>
+                        <select id="dither-mode">
+                          <option
+                            value="none"
+                            data-i18n="option.dither_none"
+                            selected
+                          >
+                            None
+                          </option>
+                          <option
+                            value="floyd-steinberg"
+                            data-i18n="option.dither_floyd"
+                          >
+                            Floyd-Steinberg
+                          </option>
+                          <option
+                            value="bayer-2x2"
+                            data-i18n="option.dither_bayer2"
+                          >
+                            Bayer 2x2
+                          </option>
+                          <option
+                            value="bayer-4x4"
+                            data-i18n="option.dither_bayer4"
+                          >
+                            Bayer 4x4
+                          </option>
+                          <option
+                            value="bayer-8x8"
+                            data-i18n="option.dither_bayer8"
+                          >
+                            Bayer 8x8
+                          </option>
+                          <option
+                            value="ordered"
+                            data-i18n="option.dither_ordered"
+                          >
+                            Ordered
+                          </option>
+                        </select>
+                      </label>
+
+                      <label
+                        id="dither-strength-setting"
+                        class="setting-item full-width"
                       >
-                    </span>
-                    <div class="input-with-slider">
-                      <input id="sample-window-slider" type="range" />
-                      <div class="input-unit-wrapper">
-                        <input id="sample-window" type="number" />
-                        <span class="unit-text">px</span>
+                        <span class="label-text">
+                          <span data-i18n="setting.dither_strength"
+                            >Dither Strength</span
+                          >
+                          <span
+                            id="help-dither-strength"
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.dither_strength"
+                            data-tooltip="Applies dithering (error diffusion) during color reduction.&#10;&#10;100%: Full error diffusion.&#10;0%: No dithering (None).&#10;&#10;Allows for smoother gradients with fewer colors, but introduces characteristic pixel noise."
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-slider">
+                          <input id="dither-strength-slider" type="range" />
+                          <input id="dither-strength" type="number" />
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.outline"
+                    >
+                      Outline
+                    </h3>
+                    <div class="grid-settings">
+                      <label class="setting-item full-width">
+                        <span class="label-text">
+                          <span data-i18n="setting.outline_style">Style</span>
+                        </span>
+                        <select id="outline-style">
+                          <option
+                            value="none"
+                            data-i18n="option.outline_none"
+                            selected
+                          >
+                            None
+                          </option>
+                          <option
+                            value="rounded"
+                            data-i18n="option.outline_rounded"
+                          >
+                            Rounded (8-way)
+                          </option>
+                          <option
+                            value="sharp"
+                            data-i18n="option.outline_sharp"
+                          >
+                            Sharp (4-way)
+                          </option>
+                        </select>
+                      </label>
+
+                      <div class="setting-item full-width">
+                        <span class="label-text">
+                          <span data-i18n="setting.outline_color">Color</span>
+                        </span>
+                        <div class="rgb-input-group">
+                          <input
+                            id="outline-color"
+                            type="color"
+                            value="#ffffff"
+                            style="
+                              width: 100%;
+                              height: 32px;
+                              padding: 0;
+                              border: none;
+                              background: none;
+                            "
+                          />
+                        </div>
                       </div>
                     </div>
-                  </label>
+                  </div>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.force_width"
-                        >Force Width (px)</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.force_width"
-                        data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
-                        >?</span
-                      >
-                    </span>
-                    <input
-                      id="force-pixels-w"
-                      type="number"
-                      placeholder="Auto"
-                      data-i18n-attr="placeholder:attr.placeholder.auto"
-                    />
-                  </label>
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.grid_detection"
+                    >
+                      Grid Detection
+                    </h3>
+                    <div class="grid-settings">
+                      <label class="setting-item full-width">
+                        <span class="label-text">
+                          <span data-i18n="setting.grid_mode"
+                            >Grid Detection Mode</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.grid_mode"
+                            data-tooltip="Select how grid detection behaves.&#10;&#10;Auto: Automatically detects the pixel grid (default).&#10;Pixel + Auto: Uses the specified pixel size as a hint and starts fine search near it.&#10;Pixel Only: Forces conversion to the specified size (no auto detection).&#10;Off: Skips grid detection and reduction (useful for 1:1 pixel art)."
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-button">
+                          <select id="grid-detection-mode">
+                            <option
+                              value="auto"
+                              data-i18n="option.grid_mode_auto"
+                              selected
+                            >
+                              Auto (Default)
+                            </option>
+                            <option
+                              value="hint"
+                              data-i18n="option.grid_mode_hint"
+                            >
+                              Pixel + Auto
+                            </option>
+                            <option
+                              value="force"
+                              data-i18n="option.grid_mode_force"
+                            >
+                              Pixel Only
+                            </option>
+                            <option
+                              value="off"
+                              data-i18n="option.grid_mode_off"
+                            >
+                              Off
+                            </option>
+                          </select>
+                        </div>
+                      </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.force_height"
-                        >Force Height (px)</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.force_height"
-                        data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
-                        >?</span
-                      >
-                    </span>
-                    <input
-                      id="force-pixels-h"
-                      type="number"
-                      placeholder="Auto"
-                      data-i18n-attr="placeholder:attr.placeholder.auto"
-                    />
-                  </label>
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.quant_step"
+                            >Quantization Step</span
+                          >
+                          <span
+                            id="help-quant-step"
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.quant_step"
+                            data-tooltip="Sets the color reduction level for grid detection.&#10;&#10;High: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.&#10;Low: Picks up fine color boundaries, but increases the risk of false noise detection.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-slider">
+                          <input id="quant-step-slider" type="range" />
+                          <input id="quant-step" type="number" />
+                        </div>
+                      </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.fast_mode">Fast Mode</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.fast_mode"
-                        data-tooltip="When ON, uses an efficient algorithm to speed up the search.&#10;When OFF, performs a more comprehensive and precise search.&#10;&#10;If automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy."
-                        >?</span
-                      >
-                    </span>
-                    <input id="fast-auto-grid-from-trimmed" type="checkbox" />
-                  </label>
-                </div>
-              </div>
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.sample_window"
+                            >Grid Sampling Window</span
+                          >
+                          <span
+                            id="help-sample-window"
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.sample_window"
+                            data-tooltip="The reference range (in pixels) used to compare grid-size candidates in Auto and Hint modes.&#10;&#10;High: Grid detection is more resistant to noise, but fine boundaries may be overlooked.&#10;Low: Grid detection follows fine boundaries, but is more affected by misalignment and noise.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-slider">
+                          <input id="sample-window-slider" type="range" />
+                          <div class="input-unit-wrapper">
+                            <input id="sample-window" type="number" />
+                            <span class="unit-text">px</span>
+                          </div>
+                        </div>
+                      </label>
 
-              <div class="settings-group">
-                <h3 class="settings-group-title" data-i18n="setting.bg_removal">
-                  Background Removal
-                </h3>
-                <div class="grid-settings">
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.bg_method"
-                        >Extraction Method</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.bg_method"
-                        data-tooltip="Select where to extract the background color from.&#10;&#10;Auto: Estimates the background from the full image border.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
-                        >?</span
-                      >
-                    </span>
-                    <select id="bg-extraction-method">
-                      <option value="none" data-i18n="option.bg_none">
-                        None
-                      </option>
-                      <option value="auto" data-i18n="option.bg_auto" selected>
-                        Auto (Default)
-                      </option>
-                      <option value="top-left" data-i18n="option.bg_top_left">
-                        Top-Left
-                      </option>
-                      <option
-                        value="bottom-left"
-                        data-i18n="option.bg_bottom_left"
-                      >
-                        Bottom-Left
-                      </option>
-                      <option value="top-right" data-i18n="option.bg_top_right">
-                        Top-Right
-                      </option>
-                      <option
-                        value="bottom-right"
-                        data-i18n="option.bg_bottom_right"
-                      >
-                        Bottom-Right
-                      </option>
-                      <option value="rgb" data-i18n="option.bg_rgb">
-                        RGB Specification
-                      </option>
-                    </select>
-                  </label>
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.force_width"
+                            >Force Width (px)</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.force_width"
+                            data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="force-pixels-w"
+                          type="number"
+                          placeholder="Auto"
+                          data-i18n-attr="placeholder:attr.placeholder.auto"
+                        />
+                      </label>
 
-                  <div id="rgb-picker-container" class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.bg_rgb"
-                        >Background Color (RGB)</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.bg_rgb"
-                        data-tooltip="Specify the color to be treated as the background in hex format (e.g., #ffffff).&#10;When a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button."
-                        >?</span
-                      >
-                    </span>
-                    <div class="rgb-input-group">
-                      <input
-                        id="bg-rgb-input"
-                        type="text"
-                        placeholder="#ffffff"
-                      />
-                      <input
-                        id="bg-color-input"
-                        type="color"
-                        style="
-                          width: 40px;
-                          height: 32px;
-                          padding: 0;
-                          border: none;
-                          background: none;
-                        "
-                      />
-                      <button
-                        id="eyedropper-button"
-                        type="button"
-                        class="icon-button"
-                        data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
-                        title="Pick color from image"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        >
-                          <path d="m2 22 1-1h3l9-9"></path>
-                          <path d="M3 21v-3l9-9"></path>
-                          <path
-                            d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l-3-3Z"
-                          ></path>
-                        </svg>
-                      </button>
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.force_height"
+                            >Force Height (px)</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.force_height"
+                            data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="force-pixels-h"
+                          type="number"
+                          placeholder="Auto"
+                          data-i18n-attr="placeholder:attr.placeholder.auto"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.fast_mode">Fast Mode</span>
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.fast_mode"
+                            data-tooltip="When ON, uses an efficient algorithm to speed up the search.&#10;When OFF, performs a more comprehensive and precise search.&#10;&#10;If automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="fast-auto-grid-from-trimmed"
+                          type="checkbox"
+                        />
+                      </label>
                     </div>
                   </div>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.bg_tolerance"
-                        >Color Tolerance</span
-                      >
-                      <span
-                        id="help-tolerance"
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.bg_tolerance"
-                        data-tooltip="The similarity (error range) for determining the background color.&#10;&#10;High: Can remove background even if colors are slightly distorted by compression noise, but may also remove intended colors.&#10;Low: Strictly removes only the exact background color, but noise may remain.&#10;&#10;Range: {min} to {max} (Default: {default})"
-                        >?</span
-                      >
-                    </span>
-                    <div class="input-with-slider">
-                      <input id="tolerance-slider" type="range" />
-                      <input id="tolerance" type="number" />
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.bg_removal"
+                    >
+                      Background Removal
+                    </h3>
+                    <div class="grid-settings">
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.bg_method"
+                            >Extraction Method</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.bg_method"
+                            data-tooltip="Select where to extract the background color from.&#10;&#10;Auto: Estimates the background from the full image border.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
+                            >?</span
+                          >
+                        </span>
+                        <select id="bg-extraction-method">
+                          <option value="none" data-i18n="option.bg_none">
+                            None
+                          </option>
+                          <option
+                            value="auto"
+                            data-i18n="option.bg_auto"
+                            selected
+                          >
+                            Auto (Default)
+                          </option>
+                          <option
+                            value="top-left"
+                            data-i18n="option.bg_top_left"
+                          >
+                            Top-Left
+                          </option>
+                          <option
+                            value="bottom-left"
+                            data-i18n="option.bg_bottom_left"
+                          >
+                            Bottom-Left
+                          </option>
+                          <option
+                            value="top-right"
+                            data-i18n="option.bg_top_right"
+                          >
+                            Top-Right
+                          </option>
+                          <option
+                            value="bottom-right"
+                            data-i18n="option.bg_bottom_right"
+                          >
+                            Bottom-Right
+                          </option>
+                          <option value="rgb" data-i18n="option.bg_rgb">
+                            RGB Specification
+                          </option>
+                        </select>
+                      </label>
+
+                      <div id="rgb-picker-container" class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.bg_rgb"
+                            >Background Color (RGB)</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.bg_rgb"
+                            data-tooltip="Specify the color to be treated as the background in hex format (e.g., #ffffff).&#10;When a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button."
+                            >?</span
+                          >
+                        </span>
+                        <div class="rgb-input-group">
+                          <input
+                            id="bg-rgb-input"
+                            type="text"
+                            placeholder="#ffffff"
+                          />
+                          <input
+                            id="bg-color-input"
+                            type="color"
+                            style="
+                              width: 40px;
+                              height: 32px;
+                              padding: 0;
+                              border: none;
+                              background: none;
+                            "
+                          />
+                          <button
+                            id="eyedropper-button"
+                            type="button"
+                            class="icon-button"
+                            data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
+                            title="Pick color from image"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            >
+                              <path d="m2 22 1-1h3l9-9"></path>
+                              <path d="M3 21v-3l9-9"></path>
+                              <path
+                                d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l-3-3Z"
+                              ></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.bg_tolerance"
+                            >Color Tolerance</span
+                          >
+                          <span
+                            id="help-tolerance"
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.bg_tolerance"
+                            data-tooltip="The similarity (error range) for determining the background color.&#10;&#10;High: Can remove background even if colors are slightly distorted by compression noise, but may also remove intended colors.&#10;Low: Strictly removes only the exact background color, but noise may remain.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-slider">
+                          <input id="tolerance-slider" type="range" />
+                          <input id="tolerance" type="number" />
+                        </div>
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.pre_remove"
+                            >Pre-process Transparency</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.pre_remove"
+                            data-tooltip="Ignores the background color BEFORE performing grid detection.&#10;&#10;Benefit: Makes it easier to correctly detect the grid for the main subject even in images with large margins.&#10;Note: If the background color exists within the character, detection accuracy may decrease."
+                            >?</span
+                          >
+                        </span>
+                        <input id="pre-remove" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.post_remove"
+                            >Post-process Transparency</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.post_remove"
+                            data-tooltip="Replaces the background color with transparency AFTER processing is complete.&#10;&#10;Benefit: Allows saving as a PNG with a transparent background.&#10;Note: Does not affect the grid detection process itself."
+                            >?</span
+                          >
+                        </span>
+                        <input id="post-remove" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.bg_removal_scope"
+                            >Background Removal Scope</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
+                            data-tooltip="Range of background to make transparent.&#10;&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + inner holes (e.g. donut hole)."
+                            >?</span
+                          >
+                        </span>
+                        <select id="bg-removal-scope">
+                          <option
+                            value="selected"
+                            data-i18n="option.bg_scope_selected"
+                          >
+                            Selected only
+                          </option>
+                          <option
+                            value="outer"
+                            data-i18n="option.bg_scope_outer"
+                            selected
+                          >
+                            Outer all
+                          </option>
+                          <option value="all" data-i18n="option.bg_scope_all">
+                            All
+                          </option>
+                        </select>
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.bg_connectivity"
+                            >Connectivity</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.bg_connectivity"
+                            data-tooltip="Whether diagonal neighbors are considered connected.&#10;&#10;4-way: Strict (no diagonals).&#10;8-way: Includes diagonals."
+                            >?</span
+                          >
+                        </span>
+                        <select id="bg-connectivity">
+                          <option
+                            value="4"
+                            data-i18n="option.bg_connectivity_4"
+                            selected
+                          >
+                            4-way
+                          </option>
+                          <option
+                            value="8"
+                            data-i18n="option.bg_connectivity_8"
+                          >
+                            8-way
+                          </option>
+                        </select>
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.floating_max"
+                            >Max Noise Size (%)</span
+                          >
+                          <span
+                            id="help-floating-max-percent"
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.floating_max"
+                            data-tooltip="The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.&#10;When set to 0%, floating noise removal is skipped.&#10;Example: 1% -> (Width * Height * 0.01) px&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-with-slider">
+                          <input
+                            id="floating-max-percent-slider"
+                            type="range"
+                            step="0.1"
+                          />
+                          <input
+                            id="floating-max-percent"
+                            type="number"
+                            step="0.1"
+                          />
+                        </div>
+                      </label>
                     </div>
-                  </label>
+                  </div>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.pre_remove"
-                        >Pre-process Transparency</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.pre_remove"
-                        data-tooltip="Ignores the background color BEFORE performing grid detection.&#10;&#10;Benefit: Makes it easier to correctly detect the grid for the main subject even in images with large margins.&#10;Note: If the background color exists within the character, detection accuracy may decrease."
-                        >?</span
-                      >
-                    </span>
-                    <input id="pre-remove" type="checkbox" />
-                  </label>
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.trimming"
+                    >
+                      Trimming
+                    </h3>
+                    <div class="grid-settings">
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.auto_trim">Auto Trim</span>
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
+                            data-tooltip="Automatically trims the output to fit the range containing the content.&#10;&#10;Useful for correctly detecting the number of vertical and horizontal cells in images with large margins (background)."
+                            >?</span
+                          >
+                        </span>
+                        <input id="trim-to-content" type="checkbox" />
+                      </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.post_remove"
-                        >Post-process Transparency</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.post_remove"
-                        data-tooltip="Replaces the background color with transparency AFTER processing is complete.&#10;&#10;Benefit: Allows saving as a PNG with a transparent background.&#10;Note: Does not affect the grid detection process itself."
-                        >?</span
-                      >
-                    </span>
-                    <input id="post-remove" type="checkbox" />
-                  </label>
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.make_square"
+                            >Make Square</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.make_square"
+                            data-tooltip="Pads the image with transparent pixels to make it perfectly square.&#10;&#10;The original content is placed in the center."
+                            >?</span
+                          >
+                        </span>
+                        <input id="make-square" type="checkbox" />
+                      </label>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.bg_removal_scope"
-                        >Background Removal Scope</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
-                        data-tooltip="Range of background to make transparent.&#10;&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + inner holes (e.g. donut hole)."
-                        >?</span
-                      >
-                    </span>
-                    <select id="bg-removal-scope">
-                      <option
-                        value="selected"
-                        data-i18n="option.bg_scope_selected"
-                      >
-                        Selected only
-                      </option>
-                      <option
-                        value="outer"
-                        data-i18n="option.bg_scope_outer"
-                        selected
-                      >
-                        Outer all
-                      </option>
-                      <option value="all" data-i18n="option.bg_scope_all">
-                        All
-                      </option>
-                    </select>
-                  </label>
-
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.bg_connectivity"
-                        >Connectivity</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.bg_connectivity"
-                        data-tooltip="Whether diagonal neighbors are considered connected.&#10;&#10;4-way: Strict (no diagonals).&#10;8-way: Includes diagonals."
-                        >?</span
-                      >
-                    </span>
-                    <select id="bg-connectivity">
-                      <option
-                        value="4"
-                        data-i18n="option.bg_connectivity_4"
-                        selected
-                      >
-                        4-way
-                      </option>
-                      <option value="8" data-i18n="option.bg_connectivity_8">
-                        8-way
-                      </option>
-                    </select>
-                  </label>
-
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.floating_max"
-                        >Max Noise Size (%)</span
-                      >
-                      <span
-                        id="help-floating-max-percent"
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.floating_max"
-                        data-tooltip="The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.&#10;When set to 0%, floating noise removal is skipped.&#10;Example: 1% -> (Width * Height * 0.01) px&#10;&#10;Range: {min} to {max} (Default: {default})"
-                        >?</span
-                      >
-                    </span>
-                    <div class="input-with-slider">
-                      <input
-                        id="floating-max-percent-slider"
-                        type="range"
-                        step="0.1"
-                      />
-                      <input
-                        id="floating-max-percent"
-                        type="number"
-                        step="0.1"
-                      />
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.keep_aspect_ratio"
+                            >Keep Aspect Ratio</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.keep_aspect_ratio"
+                            data-tooltip="Pads the output with transparent pixels to preserve the original image's aspect ratio.&#10;&#10;Useful for maintaining sprite canvas proportions after trimming."
+                            >?</span
+                          >
+                        </span>
+                        <input id="keep-aspect-ratio" type="checkbox" />
+                      </label>
                     </div>
-                  </label>
-                </div>
-              </div>
+                  </div>
 
-              <div class="settings-group">
-                <h3 class="settings-group-title" data-i18n="setting.trimming">
-                  Trimming
-                </h3>
-                <div class="grid-settings">
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.auto_trim">Auto Trim</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
-                        data-tooltip="Automatically trims the output to fit the range containing the content.&#10;&#10;Useful for correctly detecting the number of vertical and horizontal cells in images with large margins (background)."
-                        >?</span
-                      >
-                    </span>
-                    <input id="trim-to-content" type="checkbox" />
-                  </label>
+                  <!-- 自動変換の設定 -->
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.processing"
+                    >
+                      Processing
+                    </h3>
+                    <div class="grid-settings">
+                      <label class="setting-item full-width">
+                        <span class="label-text">
+                          <span data-i18n="setting.auto_process"
+                            >Auto Process</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.auto_process"
+                            data-tooltip="Automatically runs processing when settings are changed.&#10;&#10;Turn OFF if you prefer to manually click the Process button."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="auto-process-toggle"
+                          type="checkbox"
+                          checked
+                        />
+                      </label>
+                    </div>
+                  </div>
 
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.make_square">Make Square</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.make_square"
-                        data-tooltip="Pads the image with transparent pixels to make it perfectly square.&#10;&#10;The original content is placed in the center."
-                        >?</span
-                      >
-                    </span>
-                    <input id="make-square" type="checkbox" />
-                  </label>
-
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.keep_aspect_ratio"
-                        >Keep Aspect Ratio</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.keep_aspect_ratio"
-                        data-tooltip="Pads the output with transparent pixels to preserve the original image's aspect ratio.&#10;&#10;Useful for maintaining sprite canvas proportions after trimming."
-                        >?</span
-                      >
-                    </span>
-                    <input id="keep-aspect-ratio" type="checkbox" />
-                  </label>
-                </div>
-              </div>
-
-              <!-- 自動変換の設定 -->
-              <div class="settings-group">
-                <h3 class="settings-group-title" data-i18n="setting.processing">
-                  Processing
-                </h3>
-                <div class="grid-settings">
-                  <label class="setting-item full-width">
-                    <span class="label-text">
-                      <span data-i18n="setting.auto_process">Auto Process</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.auto_process"
-                        data-tooltip="Automatically runs processing when settings are changed.&#10;&#10;Turn OFF if you prefer to manually click the Process button."
-                        >?</span
-                      >
-                    </span>
-                    <input id="auto-process-toggle" type="checkbox" checked />
-                  </label>
-                </div>
-              </div>
-
-              <!-- プリセット管理 -->
-              <div class="settings-group">
-                <h3 class="settings-group-title" data-i18n="section.presets">
-                  Presets
-                </h3>
-                <div class="grid-settings">
-                  <div class="setting-item full-width">
-                    <div class="input-with-button">
-                      <input
-                        id="preset-name-input"
-                        type="text"
-                        placeholder="Preset Name"
-                        data-i18n-attr="placeholder:ui.preset_name"
-                        style="flex: 1"
-                      />
-                      <button
-                        id="save-preset-button"
-                        type="button"
-                        class="action-button small-button"
-                        data-i18n="ui.save_preset"
-                      >
-                        Save
-                      </button>
-                      <button
-                        id="load-preset-modal-button"
-                        type="button"
-                        class="action-button small-button outline-button"
-                        data-i18n="ui.load_preset"
-                      >
-                        Load
-                      </button>
+                  <!-- プリセット管理 -->
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="section.presets"
+                    >
+                      Presets
+                    </h3>
+                    <div class="grid-settings">
+                      <div class="setting-item full-width">
+                        <div class="input-with-button">
+                          <input
+                            id="preset-name-input"
+                            type="text"
+                            placeholder="Preset Name"
+                            data-i18n-attr="placeholder:ui.preset_name"
+                            style="flex: 1"
+                          />
+                          <button
+                            id="save-preset-button"
+                            type="button"
+                            class="action-button small-button"
+                            data-i18n="ui.save_preset"
+                          >
+                            Save
+                          </button>
+                          <button
+                            id="load-preset-modal-button"
+                            type="button"
+                            class="action-button small-button outline-button"
+                            data-i18n="ui.load_preset"
+                          >
+                            Load
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </details>
             </div>
           </div>
 
@@ -1136,6 +1388,9 @@
                 <div class="status-text">
                   <span data-i18n="ui.size">Size</span>:
                   <span id="output-size" class="js-output-size">-</span>
+                  <span
+                    class="processing-analysis js-processing-analysis"
+                  ></span>
                 </div>
                 <div class="controls-right">
                   <!-- 注:
@@ -1482,6 +1737,7 @@
             <div class="status-text">
               <span data-i18n="ui.size">Size</span>:
               <span class="js-output-size">-</span>
+              <span class="processing-analysis js-processing-analysis"></span>
             </div>
             <div class="controls-right">
               <div class="bg-selector js-bg-selector">

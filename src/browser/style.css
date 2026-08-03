@@ -818,6 +818,62 @@ select:focus {
   margin-top: 40px;
 }
 
+.primary-settings-group {
+  margin-bottom: 24px;
+}
+
+.quick-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.quick-preset-setting {
+  grid-column: 1 / -1;
+}
+
+.quick-checkbox-setting input {
+  align-self: flex-start;
+}
+
+.quick-background-picker {
+  display: none;
+  gap: 8px;
+}
+
+.quick-background-picker input[type="color"] {
+  flex: 1;
+  height: 36px;
+}
+
+.quick-background-picker .action-button {
+  flex: 0 0 44px;
+  padding: 8px;
+}
+
+.advanced-settings {
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.advanced-settings > summary {
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  list-style-position: outside;
+  margin-left: 16px;
+}
+
+.advanced-settings[open] > summary {
+  color: var(--text-main);
+  margin-bottom: 28px;
+}
+
+.advanced-settings-content {
+  padding-top: 4px;
+}
+
 
 
 /* ボタン */
@@ -1116,6 +1172,17 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.processing-analysis {
+  display: block;
+  color: var(--text-muted);
+  font-family: inherit;
+  margin-top: 4px;
+}
+
+.processing-analysis:empty {
+  display: none;
 }
 
 .controls-right {

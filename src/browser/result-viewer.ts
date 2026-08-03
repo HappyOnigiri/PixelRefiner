@@ -19,6 +19,7 @@ export class ResultViewer {
 	private canvas: HTMLCanvasElement;
 	private gridCanvas: HTMLCanvasElement;
 	private sizeLabel: HTMLElement;
+	private analysisLabel: HTMLElement;
 	private bgSelector: HTMLElement;
 	private zoomCheck: HTMLInputElement;
 	private gridCheck: HTMLInputElement;
@@ -39,6 +40,7 @@ export class ResultViewer {
 		this.canvas = this.get<HTMLCanvasElement>(".js-result-canvas");
 		this.gridCanvas = this.get<HTMLCanvasElement>(".js-grid-canvas");
 		this.sizeLabel = this.get<HTMLElement>(".js-output-size");
+		this.analysisLabel = this.get<HTMLElement>(".js-processing-analysis");
 		this.bgSelector = this.get<HTMLElement>(".js-bg-selector");
 		this.zoomCheck = this.get<HTMLInputElement>(".js-zoom-output");
 		this.gridCheck = this.get<HTMLInputElement>(".js-grid-output");
@@ -263,6 +265,10 @@ export class ResultViewer {
 		this.loadingOverlay.style.display = "none";
 		this.updateZoomState();
 		this.drawGrid();
+	}
+
+	public updateAnalysis(text: string) {
+		this.analysisLabel.textContent = text;
 	}
 
 	public setLoading(isLoading: boolean) {
