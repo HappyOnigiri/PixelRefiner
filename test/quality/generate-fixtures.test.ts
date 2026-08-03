@@ -61,9 +61,9 @@ const createSharedPaletteCompanion = (): RawImage => {
 		for (let x = 0; x < width; x += 1) {
 			const offset = (y * width + x) * 4;
 			const left = x < width / 2;
-			data[offset] = left ? 245 : 120;
-			data[offset + 1] = left ? 210 : 40;
-			data[offset + 2] = left ? 30 : 170;
+			data[offset] = left ? 230 : 40;
+			data[offset + 1] = left ? 50 : 50;
+			data[offset + 2] = left ? 35 : 210;
 			data[offset + 3] = 255;
 		}
 	}
@@ -513,7 +513,7 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 			],
 			{
 				sharedPalette: true,
-				colorCount: 5,
+				colorCount: 4,
 				ditherMode: "none",
 				ditherStrength: 0,
 			},
@@ -522,9 +522,35 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		if (!sharedPalettePrimary || sharedPalettePrimary.status === "error") {
 			throw new Error("Failed to generate PRF-420 shared-palette fixture");
 		}
+		const sharedPaletteExpected = sharedPalettePrimary.processResult.result;
+		let changed = false;
+		for (
+			let offset = 0;
+			offset < sharedPaletteTarget.data.length;
+			offset += 1
+		) {
+			if (
+				sharedPaletteTarget.data[offset] !== sharedPaletteExpected.data[offset]
+			) {
+				changed = true;
+				break;
+			}
+		}
+		if (!changed) {
+			throw new Error("PRF-420 fixture must exercise palette clustering");
+		}
+		const accentOffset = (4 * sharedPaletteTarget.width + 11) * 4;
+		for (let channel = 0; channel < 4; channel += 1) {
+			if (
+				sharedPaletteTarget.data[accentOffset + channel] !==
+				sharedPaletteExpected.data[accentOffset + channel]
+			) {
+				throw new Error("PRF-420 fixture must retain the target accent color");
+			}
+		}
 		writePng(
 			fixturePath("quality_prf420_shared_palette_target-expect.png"),
-			sharedPalettePrimary.processResult.result,
+			sharedPaletteExpected,
 		);
 
 		const quantizationInput = createQuantizationInput();

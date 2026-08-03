@@ -29,6 +29,12 @@ const image = (value: number): RawImage => ({
 	]),
 });
 
+const solidPixel = (r: number, g: number, b: number): RawImage => ({
+	width: 1,
+	height: 1,
+	data: new Uint8ClampedArray([r, g, b, 255]),
+});
+
 const resultFor = (source: RawImage): ProcessResult => ({
 	result: source,
 	grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 1 },
@@ -124,13 +130,17 @@ describe("batch processing", () => {
 		});
 	});
 
-	it("uses pre-reduction route results before applying a shared palette", () => {
-		const seenOptions: Array<{ reduceColors?: boolean; hasPalette: boolean }> =
-			[];
+	it("derives a shared palette before reduction and reapplies the same route", () => {
+		const seenOptions: Array<{
+			reduceColors?: boolean;
+			hasPalette: boolean;
+			outlineStyle?: string;
+		}> = [];
 		const process: BatchImageProcessor = (source, options) => {
 			seenOptions.push({
 				reduceColors: options.reduceColors,
 				hasPalette: options.fixedPalette !== undefined,
+				outlineStyle: options.outlineStyle,
 			});
 			return resultFor(source);
 		};
@@ -145,11 +155,48 @@ describe("batch processing", () => {
 		);
 
 		expect(seenOptions).toEqual([
-			{ reduceColors: false, hasPalette: false },
-			{ reduceColors: false, hasPalette: false },
+			{ reduceColors: false, hasPalette: false, outlineStyle: "none" },
+			{ reduceColors: false, hasPalette: false, outlineStyle: "none" },
+			{ reduceColors: true, hasPalette: true, outlineStyle: undefined },
+			{ reduceColors: true, hasPalette: true, outlineStyle: undefined },
 		]);
 		expect(result.sharedPalette).toHaveLength(2);
 		expect(result.items.every((item) => item.status === "done")).toBe(true);
+	});
+
+	it("adds an explicit outline after applying the shared palette", () => {
+		const result = processBatchImages(
+			[
+				{
+					id: "outlined",
+					image: solidPixel(0, 0, 0),
+					options: {
+						processingMode: "preserve",
+						enableGridDetection: false,
+						outlineStyle: "sharp",
+						outlineColor: { r: 255, g: 255, b: 255 },
+					},
+				},
+				{
+					id: "companion",
+					image: solidPixel(255, 0, 0),
+					options: { processingMode: "preserve", enableGridDetection: false },
+				},
+			],
+			{ ...batchOptions, sharedPalette: true },
+		);
+		const outlined = result.items[0];
+		if (outlined.status === "error") throw new Error(outlined.error);
+		const colors = new Set<string>();
+		for (
+			let offset = 0;
+			offset < outlined.processResult.result.data.length;
+			offset += 4
+		) {
+			const data = outlined.processResult.result.data;
+			colors.add(`${data[offset]},${data[offset + 1]},${data[offset + 2]}`);
+		}
+		expect(colors).toContain("255,255,255");
 	});
 
 	it("marks only low-confidence analyses for attention", () => {

@@ -2220,7 +2220,7 @@
     },
     "sharedPalette": {
       "inputs": ["test/fixtures/quality_prf420_shared_palette_companion.png"],
-      "colorCount": 5,
+      "colorCount": 4,
       "ditherMode": "none",
       "ditherStrength": 0
     },

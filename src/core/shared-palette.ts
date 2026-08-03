@@ -8,13 +8,6 @@ import { applyColorReduction } from "./color-reduction";
 import { OklabKMeans } from "./oklab-kmeans";
 import type { WeightedPaletteColor } from "./weighted-colors";
 
-type ColorCount = {
-	r: number;
-	g: number;
-	b: number;
-	count: number;
-};
-
 export const createSharedPalette = (
 	images: readonly RawImage[],
 	requestedColorCount: number,
@@ -22,9 +15,21 @@ export const createSharedPalette = (
 	const weights = new Map<number, WeightedPaletteColor>();
 	for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
 		const image = images[imageIndex];
-		const imageColors = new Map<number, ColorCount>();
+		const imageColors = new Map<number, number>();
 		let opaquePixels = 0;
-		for (let offset = 0; offset < image.data.length; offset += 4) {
+		const pixelCount = image.data.length / 4;
+		const sampleCount = Math.min(
+			pixelCount,
+			BATCH_PALETTE_DEFAULTS.maxSamplesPerImage,
+		);
+		// [Policy] 写真入力でも一意色オブジェクトが無制限に増えないよう、
+		// 先頭と末尾を含む等間隔サンプルだけをパレット生成へ使う。
+		for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex += 1) {
+			const pixelIndex =
+				sampleCount === pixelCount || sampleCount === 1
+					? sampleIndex
+					: Math.floor((sampleIndex * (pixelCount - 1)) / (sampleCount - 1));
+			const offset = pixelIndex * 4;
 			if (image.data[offset + 3] === 0) continue;
 			opaquePixels += 1;
 			const r = image.data[offset];
@@ -32,8 +37,7 @@ export const createSharedPalette = (
 			const b = image.data[offset + 2];
 			const key = (r << 16) | (g << 8) | b;
 			const existing = imageColors.get(key);
-			if (existing) existing.count += 1;
-			else imageColors.set(key, { r, g, b, count: 1 });
+			imageColors.set(key, existing === undefined ? 1 : existing + 1);
 		}
 		if (opaquePixels === 0 || imageColors.size === 0) continue;
 
@@ -47,13 +51,20 @@ export const createSharedPalette = (
 			colorIndex < sortedColors.length;
 			colorIndex += 1
 		) {
-			const [key, color] = sortedColors[colorIndex];
+			const [key, count] = sortedColors[colorIndex];
 			const weight =
-				BATCH_PALETTE_DEFAULTS.frequencyWeight * (color.count / opaquePixels) +
+				BATCH_PALETTE_DEFAULTS.frequencyWeight * (count / opaquePixels) +
 				uniformWeight;
 			const existing = weights.get(key);
 			if (existing) existing.weight += weight;
-			else weights.set(key, { r: color.r, g: color.g, b: color.b, weight });
+			else {
+				weights.set(key, {
+					r: (key >> 16) & 0xff,
+					g: (key >> 8) & 0xff,
+					b: key & 0xff,
+					weight,
+				});
+			}
 		}
 	}
 

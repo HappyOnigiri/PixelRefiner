@@ -5,10 +5,9 @@ import type {
 	RawImage,
 	RGB,
 } from "../shared/types";
-import { extractUsedColors } from "./color-reduction";
 import type { ProcessOptions } from "./processor";
 import { processImage } from "./processor";
-import { applySharedPalette, createSharedPalette } from "./shared-palette";
+import { createSharedPalette } from "./shared-palette";
 
 export type BatchProcessInput = {
 	id: string;
@@ -65,7 +64,12 @@ export const processBatchImages = (
 		const input = inputs[index];
 		try {
 			const options = batchOptions.sharedPalette
-				? { ...input.options, reduceColors: false, fixedPalette: undefined }
+				? {
+						...input.options,
+						reduceColors: false,
+						fixedPalette: undefined,
+						outlineStyle: "none" as const,
+					}
 				: input.options;
 			items.push({
 				id: input.id,
@@ -89,17 +93,21 @@ export const processBatchImages = (
 		const item = items[index];
 		if (item.status !== "done") continue;
 		try {
-			const result = applySharedPalette(
-				item.processResult.result,
-				sharedPalette,
-				batchOptions.ditherMode,
-				batchOptions.ditherStrength,
+			// [Intended] 共通パレットは通常経路の減色段階で適用し、
+			// 明示指定されたアウトライン色などの後処理を量子化しない。
+			item.processResult = process(
+				inputs[index].image,
+				sharedPalette.length === 0
+					? inputs[index].options
+					: {
+							...inputs[index].options,
+							reduceColors: true,
+							fixedPalette: sharedPalette,
+							colorCount: sharedPalette.length,
+							ditherMode: batchOptions.ditherMode,
+							ditherStrength: batchOptions.ditherStrength,
+						},
 			);
-			item.processResult = {
-				...item.processResult,
-				result,
-				extractedPalette: extractUsedColors(result),
-			};
 		} catch (error) {
 			items[index] = {
 				id: item.id,

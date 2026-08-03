@@ -67,6 +67,8 @@ export const BATCH_PALETTE_DEFAULTS = {
 	frequencyWeight: 0.75,
 	/** 小さなアクセント色を保護するため、一意色へ均等に割り当てる比率。 */
 	uniformColorWeight: 0.25,
+	/** 1画像から共通パレットへ渡す決定論的サンプル数の上限。 */
+	maxSamplesPerImage: 65_536,
 } as const;
 
 export const INPUT_CLASSIFIER_THRESHOLDS = {
