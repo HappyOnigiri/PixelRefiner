@@ -1,5 +1,10 @@
 import { GRID_SEARCH_LIMITS } from "../shared/config";
-import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
+import type {
+	PixelGrid,
+	ProcessResult,
+	RawImage,
+	SmallComponentRemovalDiagnostic,
+} from "../shared/types";
 import {
 	getBackgroundTargets,
 	removeBackground,
@@ -8,6 +13,7 @@ import {
 } from "./background-removal";
 import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
+import { removeSmallComponents } from "./components";
 import { detectGrid } from "./detector";
 import { rankGridCandidates } from "./grid-candidates";
 import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
@@ -38,6 +44,7 @@ import {
 	processExplicitSimpleRoute,
 	processForcedRoute,
 	processGridDisabledRoute,
+	type SimpleRouteContext,
 } from "./processor-simple-routes";
 import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
@@ -150,7 +157,8 @@ export const processImage = (
 	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(img) : 0;
 	const trimAlphaThreshold = o.trimAlphaThreshold;
 
-	const simpleRouteContext = {
+	let smallComponentRemoval: SmallComponentRemovalDiagnostic | undefined;
+	const simpleRouteContext: SimpleRouteContext = {
 		img,
 		o,
 		working,
@@ -160,6 +168,7 @@ export const processImage = (
 		log,
 		backgroundDiagnostic,
 		backgroundModel,
+		smallComponentRemoval,
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return forcedResult;
@@ -221,6 +230,14 @@ export const processImage = (
 			`Floating components removed in ${(performance.now() - floatingStart).toFixed(2)}ms`,
 			{ removedComponents, removedPixels },
 		);
+		smallComponentRemoval = {
+			mode: "legacy",
+			applied: true,
+			removedComponents,
+			removedPixels,
+			pixelBasis: "source",
+		};
+		simpleRouteContext.smallComponentRemoval = smallComponentRemoval;
 		if (o.debugHook && removedPixels > 0) {
 			o.debugHook("01b-working-ignore-floating", working, {
 				floatingMaxPixels: o.floatingMaxPixels,
@@ -415,29 +432,52 @@ export const processImage = (
 	// 「処理前（補正済み）」比較: 同じグリッドとセルサンプリングで元画像をダウンサンプリングする。
 	let compareBeforeSanitized = downsample(img, grid, getDownsampleOptions(o));
 
-	let trimmed = down;
+	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
+	const logicalMask = needsLogicalMask
+		? removeBackground(
+				down,
+				o.backgroundTolerance,
+				o.bgRemovalScope,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+				backgroundModel,
+			)
+		: down;
+	const componentResult = removeSmallComponents(
+		down,
+		logicalMask,
+		compareBeforeSanitized,
+		{
+			mode: o.smallComponentMode,
+			alphaThreshold: trimAlphaThreshold,
+			backgroundEnabled:
+				o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
+			automaticBackground: o.bgExtractionMethod === "auto",
+			backgroundConfidence: backgroundDiagnostic?.confidence,
+		},
+	);
+	if (o.smallComponentMode !== "off") {
+		smallComponentRemoval = componentResult.diagnostic;
+	}
+	let trimmed = componentResult.image;
 	let trimmedGrid = grid;
 	if (trimToContent) {
 		const trimStart = performance.now();
 		// 背景を除去（角からの塗りつぶし）後、セル単位でコンテンツ BBox によりトリミングする。
 		// これにより余白が大きい画像でも、outW/outH を「コンテンツ」に合わせられる。
 		const bgTol = o.backgroundTolerance;
-		const masked = removeBackground(
-			down,
-			bgTol,
-			o.bgRemovalScope,
-			o.bgConnectivity,
-			bgTargets,
-			o.bgExtractionMethod,
-			backgroundModel,
-		);
+		const masked = componentResult.mask;
 		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
 		if (
 			b &&
-			(b.x !== 0 || b.y !== 0 || b.w !== down.width || b.h !== down.height)
+			(b.x !== 0 ||
+				b.y !== 0 ||
+				b.w !== componentResult.image.width ||
+				b.h !== componentResult.image.height)
 		) {
-			trimmed = cropRawImage(down, b.x, b.y, b.w, b.h);
+			trimmed = cropRawImage(componentResult.image, b.x, b.y, b.w, b.h);
 
 			const baseCropX = grid.cropX ?? grid.offsetX;
 			const baseCropY = grid.cropY ?? grid.offsetY;
@@ -665,6 +705,9 @@ export const processImage = (
 		rankedGridCandidates,
 		backgroundDiagnostic,
 		classificationResult,
+		[],
+		undefined,
+		smallComponentRemoval,
 	);
 	log("Processing analysis", analysis);
 	return {

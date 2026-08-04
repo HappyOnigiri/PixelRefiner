@@ -151,11 +151,6 @@ export const setupSettingsControls = ({
 			PROCESS_RANGES.backgroundTolerance,
 		);
 		setNumberInput(
-			els.floatingMaxPercentInput,
-			els.floatingMaxPercentSlider,
-			PROCESS_RANGES.floatingMaxPercent,
-		);
-		setNumberInput(
 			els.colorCountInput,
 			els.colorCountSlider,
 			PROCESS_RANGES.colorCount,
@@ -175,6 +170,7 @@ export const setupSettingsControls = ({
 		els.postRemoveCheck.checked = PROCESS_DEFAULTS.postRemoveBackground;
 		els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
 		els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
+		els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
@@ -206,10 +202,6 @@ export const setupSettingsControls = ({
 		applyTooltipRange("help-quant-step", PROCESS_RANGES.detectionQuantStep);
 		applyTooltipRange("help-sample-window", PROCESS_RANGES.sampleWindow);
 		applyTooltipRange("help-tolerance", PROCESS_RANGES.backgroundTolerance);
-		applyTooltipRange(
-			"help-floating-max-percent",
-			PROCESS_RANGES.floatingMaxPercent,
-		);
 		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
 		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
 
@@ -281,7 +273,6 @@ export const setupSettingsControls = ({
 	syncSliderAndInput(els.quantStepSlider, els.quantStepInput);
 	syncSliderAndInput(els.sampleWindowSlider, els.sampleWindowInput);
 	syncSliderAndInput(els.toleranceSlider, els.toleranceInput);
-	syncSliderAndInput(els.floatingMaxPercentSlider, els.floatingMaxPercentInput);
 	syncSliderAndInput(els.colorCountSlider, els.colorCountInput);
 	syncSliderAndInput(els.ditherStrengthSlider, els.ditherStrengthInput);
 
@@ -402,8 +393,7 @@ export const setupSettingsControls = ({
 			els.postRemoveCheck,
 			els.bgRemovalScopeSelect,
 			els.bgConnectivitySelect,
-			els.floatingMaxPercentInput,
-			els.floatingMaxPercentSlider,
+			els.smallComponentModeSelect,
 		].forEach((el) => {
 			const item = el.closest(".setting-item");
 			if (item) {
@@ -490,6 +480,7 @@ export const setupSettingsControls = ({
 		els.postRemoveCheck,
 		els.bgRemovalScopeSelect,
 		els.bgConnectivitySelect,
+		els.smallComponentModeSelect,
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
 		els.makeSquareCheck,

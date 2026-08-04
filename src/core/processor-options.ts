@@ -16,6 +16,7 @@ import type {
 	ProcessingMode,
 	RawImage,
 	RGB,
+	SmallComponentRemovalMode,
 } from "../shared/types";
 import type { CellSamplingMode } from "./cell-sampler";
 import type { DetectOptions } from "./detector";
@@ -71,9 +72,12 @@ export type ProcessOptions = DetectOptions & {
 	preserveThinFeatures?: boolean;
 	trimToContent?: boolean;
 	trimAlphaThreshold?: number;
+	/** 論理ピクセル単位で小成分を安全に除去する強度。 */
+	smallComponentMode?: SmallComponentRemovalMode;
 	/**
 	 * 除去対象とみなす最大ピクセル数（元画像のピクセル数）。
 	 * 0 の場合は浮遊ノイズを除去しない。
+	 * @deprecated smallComponentMode を使用する。
 	 */
 	floatingMaxPixels?: number;
 	/**
@@ -190,6 +194,7 @@ export const normalizeProcessOptions = (
 	preserveThinFeatures: boolean;
 	trimToContent: boolean;
 	trimAlphaThreshold: number;
+	smallComponentMode: SmallComponentRemovalMode;
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	gridSignals: GridSignalOptions;
@@ -283,6 +288,13 @@ export const normalizeProcessOptions = (
 		raw.trimAlphaThreshold ?? PROCESS_RANGES.trimAlphaThreshold.default,
 		PROCESS_RANGES.trimAlphaThreshold,
 	);
+	// [Intended] 新旧オプションが同時に渡された場合は新方式を優先する。
+	// 旧オプションだけを明示した呼び出しは従来結果を維持する。
+	const useLegacyFloatingRemoval =
+		raw.smallComponentMode === undefined && raw.floatingMaxPixels !== undefined;
+	const smallComponentMode = useLegacyFloatingRemoval
+		? "off"
+		: (raw.smallComponentMode ?? PROCESS_DEFAULTS.smallComponentMode);
 	const autoGridFromTrimmed =
 		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
@@ -313,7 +325,9 @@ export const normalizeProcessOptions = (
 	const outlineColor = raw.outlineColor ?? PROCESS_DEFAULTS.outlineColor;
 
 	const floatingMaxPixels = clampInt(
-		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
+		useLegacyFloatingRemoval
+			? (raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels)
+			: 0,
 		PROCESS_RANGES.floatingMaxPixels,
 	);
 	const bgExtractionMethod =
@@ -347,6 +361,7 @@ export const normalizeProcessOptions = (
 		preserveThinFeatures,
 		trimToContent,
 		trimAlphaThreshold,
+		smallComponentMode,
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		gridSignals,
