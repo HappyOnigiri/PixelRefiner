@@ -163,7 +163,8 @@ export const findCandidateIndexForGrid = (
 			candidate.grid.cellW === grid.cellW &&
 			candidate.grid.cellH === grid.cellH &&
 			candidate.grid.offsetX === grid.offsetX &&
-			candidate.grid.offsetY === grid.offsetY,
+			candidate.grid.offsetY === grid.offsetY &&
+			(candidate.angle ?? 0) === (grid.angle ?? 0),
 	);
 
 export const createProcessingAnalysis = (

@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
+import { findOpaqueBounds } from "./image-operations";
 import { processImage } from "./processor";
 import { readPngAsRawImage } from "./processor-test-helpers";
 
@@ -47,6 +48,45 @@ const safeOptions = {
 } as const;
 
 describe("processing router", () => {
+	it("removes a selected corner background before applying an explicit deskew", () => {
+		const width = 80;
+		const height = 64;
+		const data = new Uint8ClampedArray(width * height * 4);
+		for (let y = 0; y < height; y += 1) {
+			for (let x = 0; x < width; x += 1) {
+				const index = (y * width + x) * 4;
+				const content = x >= 16 && x < 64 && y >= 16 && y < 48;
+				data[index] = content ? 32 : 255;
+				data[index + 1] = content ? 64 : 255;
+				data[index + 2] = content ? 96 : 255;
+				data[index + 3] = 255;
+			}
+		}
+		let working: RawImage | undefined;
+		processImage(
+			{ width, height, data },
+			{
+				processingMode: "refine",
+				deskewAngle: 1,
+				forcePixelsW: 8,
+				forcePixelsH: 8,
+				preRemoveBackground: true,
+				postRemoveBackground: false,
+				bgRemovalScope: "selected",
+				bgExtractionMethod: "top-left",
+				backgroundTolerance: 0,
+				trimToContent: true,
+				debugHook: (stage, image) => {
+					if (stage === "01-working") working = image;
+				},
+			},
+		);
+		expect(working).toBeDefined();
+		const bounds = working ? findOpaqueBounds(working, 16) : null;
+		expect(bounds?.w).toBeLessThan(60);
+		expect(bounds?.h).toBeLessThan(44);
+	});
+
 	it("uses automatic routing when processingMode is omitted", () => {
 		const { processingMode: _processingMode, ...defaultOptions } = safeOptions;
 		const processed = processImage(createContinuousImage(), defaultOptions);

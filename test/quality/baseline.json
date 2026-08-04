@@ -518,6 +518,72 @@
       "backgroundMaskIou": 1,
       "smallComponentRetention": 1,
       "catastrophicFailure": false
+    },
+    {
+      "id": "restore-neg-3-degree-rotation",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 31.25,
+      "edgeF1": 0.357143,
+      "backgroundMaskIou": 0.277778,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-neg-1-degree-rotation",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 23.945313,
+      "edgeF1": 0.411765,
+      "backgroundMaskIou": 0.388889,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-neg-quarter-degree-rotation",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 6.144531,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-pos-quarter-degree-rotation",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 6.144531,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-pos-1-degree-rotation",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 26.074219,
+      "edgeF1": 0.411765,
+      "backgroundMaskIou": 0.388889,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-pos-3-degree-rotation",
+      "status": "passed",
+      "outputWidth": 8,
+      "outputHeight": 8,
+      "meanRgbaError": 29.605469,
+      "edgeF1": 0.357143,
+      "backgroundMaskIou": 0.277778,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
     }
   ]
 }

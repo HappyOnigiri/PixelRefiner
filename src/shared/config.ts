@@ -32,6 +32,8 @@ export const PROCESS_RANGES = {
 	ditherStrength: { min: 0, max: 100, default: 0 } as const,
 	// アウトライン
 	outlineColor: { r: 255, g: 255, b: 255 }, // デフォルトの白
+	// 自動傾き補正で扱う角度（度）
+	deskewAngle: { min: -3, max: 3, default: 0 } as const,
 } as const satisfies Record<string, IntRange | RGB>;
 
 export const PROCESS_ANALYSIS_THRESHOLDS = {
@@ -201,6 +203,18 @@ export const GRID_SEARCH_LIMITS = {
 	localRegionCount: 4,
 	minimumAutocorrelationSamples: 3,
 	fullResolutionSampleLimit: 16384,
+} as const;
+
+export const DESKEW_LIMITS = {
+	angleStep: 0.25,
+	maxAnalysisDimension: 256,
+	minimumInputDimension: 64,
+	maximumInputPixels: 1_000_000,
+	fullResolutionCandidateLimit: 3,
+	minimumConfidence: 0.3,
+	minimumConfidenceGain: 0.005,
+	// 0度から満点までの残り幅に対して必要な、絶対スコア改善量の割合。
+	minimumScoreHeadroomGain: 0.001,
 } as const;
 
 export const RETRO_PALETTES: Record<
@@ -432,6 +446,8 @@ export const PROCESS_DEFAULTS = {
 	// [Intended] UIにはアルゴリズム名を出さず、Autoで頑健なセル復元を使う。
 	cellSamplingMode: "alpha-aware-medoid",
 	preserveThinFeatures: true,
+	// [Intended] UIに専門パラメータを増やさず、Auto経路だけで微小な傾きを補正する。
+	enableDeskew: true,
 	smallComponentMode: "auto",
 
 	// [Intended] 公開済みの旧オプション用。新しい既定処理には使用しない。

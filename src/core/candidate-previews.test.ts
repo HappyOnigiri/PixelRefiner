@@ -9,7 +9,9 @@ import { resizeRawImageNearest } from "./image-operations";
 import { processImage } from "./processor";
 import { readPngAsRawImage } from "./processor-test-helpers";
 
-const analysis = (classification: ProcessingAnalysis["classification"]) =>
+const analysis = (
+	classification: ProcessingAnalysis["classification"],
+): ProcessingAnalysis =>
 	({
 		classification,
 		route: "preserve",
@@ -129,6 +131,14 @@ describe("candidate previews", () => {
 			forcePixelsH: 16,
 		});
 		expect(options.hintPixelsW).toBeUndefined();
+	});
+
+	it("傾き補正候補の角度を再処理オプションへ引き継ぐ", () => {
+		const value = analysis("scaled-pixel");
+		value.gridCandidates[0].angle = -1;
+		const selection = selectCandidatePlans(value)[0];
+		expect(selection.angle).toBe(-1);
+		expect(candidateProcessOptions({}, selection).deskewAngle).toBe(-1);
 	});
 
 	it("大画像の候補は先に軽量なプレビューへ縮小する", () => {

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { describe, it } from "vitest";
+import { rotateRawImageExpanded } from "../../src/core/deskew";
 import { processImage } from "../../src/core/processor";
 import type { RawImage } from "../../src/shared/types";
 import {
@@ -339,6 +340,20 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		}
 
 		const nearest4x = resizeNearest(reference, 4);
+		const nearest16x = resizeNearest(reference, 16);
+		for (const [label, angle] of [
+			["neg-3", -3],
+			["neg-1", -1],
+			["neg-0-25", -0.25],
+			["pos-0-25", 0.25],
+			["pos-1", 1],
+			["pos-3", 3],
+		] as const) {
+			writePng(
+				fixturePath(`quality-prf500-rotated-${label}.png`),
+				rotateRawImageExpanded(nearest16x, angle),
+			);
+		}
 		const opaqueGrid = createOpaqueGrid();
 		writePng(fixturePath("quality_transparent_rgb_expected.png"), opaqueGrid);
 		writePng(
