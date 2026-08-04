@@ -200,6 +200,8 @@ export const DESKEW_LIMITS = {
 	fullResolutionCandidateLimit: 3,
 	minimumConfidence: 0.3,
 	minimumConfidenceGain: 0.005,
+	// 0度から満点までの残り幅に対して必要な、絶対スコア改善量の割合。
+	minimumScoreHeadroomGain: 0.001,
 } as const;
 
 export const RETRO_PALETTES: Record<

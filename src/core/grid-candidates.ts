@@ -271,6 +271,12 @@ export const rankGridCandidates = (
 		report.totalScore = weightedScore(reportSubscores);
 	}
 
+	return rerankGridCandidateReports(reports);
+};
+
+export const rerankGridCandidateReports = (
+	reports: GridCandidateReport[],
+): GridCandidateReport[] => {
 	reports.sort(
 		(left, right) =>
 			right.totalScore - left.totalScore ||

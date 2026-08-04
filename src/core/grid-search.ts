@@ -601,6 +601,13 @@ const compareDeskewCandidates = (
 	Math.abs(left.angle) - Math.abs(right.angle) ||
 	left.angle - right.angle;
 
+export const hasMeaningfulDeskewScoreGain = (
+	bestScore: number,
+	zeroScore: number,
+): boolean =>
+	bestScore - zeroScore >=
+	Math.max(1e-9, 1 - zeroScore) * DESKEW_LIMITS.minimumScoreHeadroomGain;
+
 const compareDeskewAngles = (
 	left: Pick<DeskewGridCandidate, "angle" | "alignmentScore">,
 	right: Pick<DeskewGridCandidate, "angle" | "alignmentScore">,
@@ -643,6 +650,14 @@ export const searchDeskewedGrid = (
 		: 1;
 	if (coarse[0].angle === 0) return null;
 	if (coarseGain < DESKEW_LIMITS.minimumConfidenceGain) return null;
+	if (
+		zeroCoarse &&
+		!hasMeaningfulDeskewScoreGain(
+			coarse[0].alignmentScore,
+			zeroCoarse.alignmentScore,
+		)
+	)
+		return null;
 	const selectedCoarse = coarse.slice(
 		0,
 		DESKEW_LIMITS.fullResolutionCandidateLimit,
@@ -658,7 +673,11 @@ export const searchDeskewedGrid = (
 	for (let index = 0; index < selectedCoarse.length; index += 1) {
 		const coarseCandidate = selectedCoarse[index];
 		const rotatedImage = rotateRawImageExpanded(image, coarseCandidate.angle);
-		const rotatedMask = rotateRawImageExpanded(mask, coarseCandidate.angle);
+		// [Intended] 同じ画像をマスクとして使う通常経路では、フル解像度の回転結果を共有する。
+		const rotatedMask =
+			mask === image
+				? rotatedImage
+				: rotateRawImageExpanded(mask, coarseCandidate.angle);
 		const bounds = findOpaqueBounds(rotatedMask, 16);
 		const searchImage = bounds
 			? cropRawImage(rotatedImage, bounds.x, bounds.y, bounds.w, bounds.h)
