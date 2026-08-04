@@ -1,7 +1,7 @@
 import { wrap } from "comlink";
 import type { ProcessOptions } from "../core/processor";
 import type { ProcessorWorker } from "../core/worker";
-import { clampInt, clampNumber, PROCESS_RANGES } from "../shared/config";
+import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
 	CandidateSelection,
 	DitherMode,
@@ -135,22 +135,13 @@ export const createRunProcessing = ({
 				Number(els.toleranceInput.value),
 				PROCESS_RANGES.backgroundTolerance,
 			);
-			const floatingMaxPercent = clampNumber(
-				Number(els.floatingMaxPercentInput.value),
-				PROCESS_RANGES.floatingMaxPercent,
-			);
-			const totalPixels = currentImage.width * currentImage.height;
 			const method = els.bgExtractionMethod
 				.value as ProcessOptions["bgExtractionMethod"];
 			const bgEnabled = method !== "none";
-			const floatingMaxPixels = bgEnabled
-				? floatingMaxPercent <= 0
-					? 0
-					: Math.min(
-							totalPixels,
-							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
-						)
-				: 0;
+			const smallComponentMode = bgEnabled
+				? (els.smallComponentModeSelect
+						.value as ProcessOptions["smallComponentMode"])
+				: "off";
 
 			const colorCount = clampInt(
 				Number(els.colorCountInput.value),
@@ -213,7 +204,7 @@ export const createRunProcessing = ({
 				ditherMode,
 				colorCount,
 				ditherStrength,
-				floatingMaxPixels,
+				smallComponentMode,
 				outlineStyle,
 				outlineColor,
 				bgExtractionMethod: method,

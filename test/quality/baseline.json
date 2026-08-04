@@ -487,6 +487,39 @@
       "catastrophicFailure": false
     },
     {
+      "id": "retain-protected-small-details",
+      "status": "passed",
+      "outputWidth": 16,
+      "outputHeight": 16,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "remove-isolated-small-noise",
+      "status": "passed",
+      "outputWidth": 16,
+      "outputHeight": 16,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "skip-small-removal-on-uncertain-background",
+      "status": "passed",
+      "outputWidth": 20,
+      "outputHeight": 20,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "restore-neg-3-degree-rotation",
       "status": "passed",
       "outputWidth": 8,

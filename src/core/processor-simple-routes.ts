@@ -7,6 +7,7 @@ import type {
 	ProcessingWarningCode,
 	ProcessResult,
 	RawImage,
+	SmallComponentRemovalDiagnostic,
 } from "../shared/types";
 import type { BackgroundModel } from "./background";
 import {
@@ -14,6 +15,7 @@ import {
 	removeSmallFloatingComponentsInPlace,
 } from "./background-removal";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
+import { removeSmallComponents } from "./components";
 import {
 	cropRawImage,
 	cropRawImageNearestFromGrid,
@@ -45,10 +47,11 @@ export type SimpleRouteContext = {
 	classificationResult?: InputClassificationResult;
 	additionalWarnings?: ProcessingWarningCode[];
 	rankedCandidates?: GridCandidateReport[];
+	smallComponentRemoval?: SmallComponentRemovalDiagnostic;
 	/**
 	 * 呼び出し元で算出済みの背景マスク。
-	 * [Policy] これを渡す場合、孤立成分の除去も呼び出し元で済ませていること。
-	 * 渡された側は背景除去も孤立成分除去も繰り返さない。
+	 * [Policy] これを渡す場合、元画像基準の旧孤立成分除去は呼び出し元で済んでいる。
+	 * 論理ピクセル基準の除去は各出力経路で一度だけ行う。
 	 */
 	preparedMask?: RawImage;
 	/**
@@ -88,6 +91,7 @@ export const processForcedRoute = (
 		o.bgExtractionMethod,
 		backgroundModel,
 	);
+	let smallComponentRemoval = context.smallComponentRemoval;
 	if (o.floatingMaxPixels > 0) {
 		const floatingStart = performance.now();
 		const { removedComponents, removedPixels } =
@@ -97,6 +101,13 @@ export const processForcedRoute = (
 				trimAlphaThreshold,
 				o.floatingMaxPixels,
 			);
+		smallComponentRemoval = {
+			mode: "legacy",
+			applied: true,
+			removedComponents,
+			removedPixels,
+			pixelBasis: "source",
+		};
 		log(
 			`Floating components removed in ${(performance.now() - floatingStart).toFixed(2)}ms`,
 			{ removedComponents, removedPixels },
@@ -115,47 +126,145 @@ export const processForcedRoute = (
 		forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
 	});
 	const boundsStart = performance.now();
-	const b = findOpaqueBounds(masked, trimAlphaThreshold);
+	let b = findOpaqueBounds(masked, trimAlphaThreshold);
 	if (!b) {
 		throw new Error(
 			"Specified pixel conversion failed because no content was found.",
 		);
 	}
+	const outW = o.forcePixelsW;
+	const outH = o.forcePixelsH;
+	const downsampleStart = performance.now();
+	const createLogicalPass = (bounds: NonNullable<typeof b>) => {
+		const cropped = cropRawImage(
+			working,
+			bounds.x,
+			bounds.y,
+			bounds.w,
+			bounds.h,
+		);
+		const cellW = cropped.width / outW;
+		const cellH = cropped.height / outH;
+		const g: PixelGrid = {
+			cellW,
+			cellH,
+			offsetX: 0,
+			offsetY: 0,
+			outW,
+			outH,
+			cropX: 0,
+			cropY: 0,
+			cropW: cropped.width,
+			cropH: cropped.height,
+			score: 0,
+		};
+		const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
+		const down2 = downsample(cropped, g, getDownsampleOptions(o, sw));
+		const croppedOriginal = cropRawImage(
+			img,
+			bounds.x,
+			bounds.y,
+			bounds.w,
+			bounds.h,
+		);
+		const compareBeforeSanitized = downsample(
+			croppedOriginal,
+			g,
+			getDownsampleOptions(o, sw),
+		);
+		const logicalMask = removeBackground(
+			down2,
+			o.backgroundTolerance,
+			o.bgRemovalScope,
+			o.bgConnectivity,
+			bgTargets,
+			o.bgExtractionMethod,
+			backgroundModel,
+		);
+		const componentResult = removeSmallComponents(
+			down2,
+			logicalMask,
+			compareBeforeSanitized,
+			{
+				mode: o.smallComponentMode,
+				alphaThreshold: trimAlphaThreshold,
+				backgroundEnabled:
+					o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
+				automaticBackground: o.bgExtractionMethod === "auto",
+				backgroundConfidence: backgroundDiagnostic?.confidence,
+			},
+		);
+		return { cropped, g, sw, down2, compareBeforeSanitized, componentResult };
+	};
+
+	let logicalPass = createLogicalPass(b);
+	const removalDiagnostic = logicalPass.componentResult.diagnostic;
+	if (
+		o.smallComponentMode !== "off" &&
+		logicalPass.componentResult.diagnostic.removedPixels > 0
+	) {
+		const survivingBounds = findOpaqueBounds(
+			logicalPass.componentResult.mask,
+			trimAlphaThreshold,
+		);
+		if (
+			survivingBounds &&
+			(survivingBounds.x !== 0 ||
+				survivingBounds.y !== 0 ||
+				survivingBounds.w !== outW ||
+				survivingBounds.h !== outH)
+		) {
+			const mappedX = b.x + Math.floor(survivingBounds.x * logicalPass.g.cellW);
+			const mappedY = b.y + Math.floor(survivingBounds.y * logicalPass.g.cellH);
+			const mappedRight = Math.min(
+				b.x + b.w,
+				b.x +
+					Math.ceil(
+						(survivingBounds.x + survivingBounds.w) * logicalPass.g.cellW,
+					),
+			);
+			const mappedBottom = Math.min(
+				b.y + b.h,
+				b.y +
+					Math.ceil(
+						(survivingBounds.y + survivingBounds.h) * logicalPass.g.cellH,
+					),
+			);
+			const mappedMask = cropRawImage(
+				masked,
+				mappedX,
+				mappedY,
+				mappedRight - mappedX,
+				mappedBottom - mappedY,
+			);
+			const exactBounds = findOpaqueBounds(mappedMask, trimAlphaThreshold);
+			if (exactBounds) {
+				b = {
+					x: mappedX + exactBounds.x,
+					y: mappedY + exactBounds.y,
+					w: exactBounds.w,
+					h: exactBounds.h,
+				};
+				// [Intended] 除去済み成分が強制変換のセル倍率へ影響しないよう、
+				// 生存成分のソース境界から最終グリッドを一度だけ再構築する。
+				logicalPass = createLogicalPass(b);
+			}
+		}
+	}
+
+	const { cropped, g, sw, down2, componentResult } = logicalPass;
+	let { compareBeforeSanitized } = logicalPass;
 	log(
 		`Opaque bounds found in ${(performance.now() - boundsStart).toFixed(2)}ms`,
 		b,
 	);
-	const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
 	o.debugHook?.("03-pre-downsample-bg-trimmed", cropped, {
 		bounds: b,
 		forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
 	});
-
-	const outW = o.forcePixelsW;
-	const outH = o.forcePixelsH;
-	const cellW = cropped.width / outW;
-	const cellH = cropped.height / outH;
 	log(
-		`Forced pixel size mode: ${outW}x${outH} (cell: ${cellW.toFixed(2)}x${cellH.toFixed(2)})`,
+		`Forced pixel size mode: ${outW}x${outH} (cell: ${g.cellW.toFixed(2)}x${g.cellH.toFixed(2)})`,
 	);
-	const g: PixelGrid = {
-		cellW,
-		cellH,
-		offsetX: 0,
-		offsetY: 0,
-		outW,
-		outH,
-		cropX: 0,
-		cropY: 0,
-		cropW: cropped.width,
-		cropH: cropped.height,
-		score: 0,
-	};
-
-	// 2. ダウンサンプリング / 補正
-	const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
-	const downsampleStart = performance.now();
-	const down2 = downsample(cropped, g, getDownsampleOptions(o, sw));
 	log(
 		`Downsampling (forced) done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
 	);
@@ -165,11 +274,15 @@ export const processForcedRoute = (
 		forced: true,
 	});
 
+	if (o.smallComponentMode !== "off") {
+		smallComponentRemoval = removalDiagnostic;
+	}
+
 	// 3. 後処理の透明化（背景除去）
 	const postBgStart = performance.now();
 	const result2 = o.postRemoveBackground
 		? removeBackground(
-				down2,
+				componentResult.image,
 				o.backgroundTolerance,
 				o.bgRemovalScope,
 				o.bgConnectivity,
@@ -178,7 +291,7 @@ export const processForcedRoute = (
 				backgroundModel,
 				backgroundDiagnostic,
 			)
-		: down2;
+		: componentResult.image;
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
@@ -212,13 +325,6 @@ export const processForcedRoute = (
 	);
 
 	// 補正済み比較: パイプラインと同じセルサンプリングを使用する。
-	const croppedOriginal = cropRawImage(img, b.x, b.y, b.w, b.h);
-	let compareBeforeSanitized = downsample(
-		croppedOriginal,
-		g,
-		getDownsampleOptions(o, sw),
-	);
-
 	let finalGridForForce = g;
 	if (o.makeSquare) {
 		const w = finalResult.width;
@@ -290,6 +396,8 @@ export const processForcedRoute = (
 		backgroundDiagnostic,
 		context.classificationResult,
 		context.additionalWarnings,
+		undefined,
+		smallComponentRemoval,
 	);
 	log("Processing analysis", analysis);
 	return {
@@ -336,19 +444,38 @@ export const processGridDisabledRoute = (
 			o.bgExtractionMethod,
 			backgroundModel,
 		);
+	let smallComponentRemoval = context.smallComponentRemoval;
 	if (!context.preparedMask && o.floatingMaxPixels > 0) {
-		removeSmallFloatingComponentsInPlace(
+		const legacy = removeSmallFloatingComponentsInPlace(
 			working,
 			masked,
 			trimAlphaThreshold,
 			o.floatingMaxPixels,
 		);
+		smallComponentRemoval = {
+			mode: "legacy",
+			applied: true,
+			removedComponents: legacy.removedComponents,
+			removedPixels: legacy.removedPixels,
+			pixelBasis: "source",
+		};
+	}
+	const componentResult = removeSmallComponents(working, masked, img, {
+		mode: o.smallComponentMode,
+		alphaThreshold: trimAlphaThreshold,
+		backgroundEnabled:
+			o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
+		automaticBackground: o.bgExtractionMethod === "auto",
+		backgroundConfidence: backgroundDiagnostic?.confidence,
+	});
+	if (o.smallComponentMode !== "off") {
+		smallComponentRemoval = componentResult.diagnostic;
 	}
 
 	const base =
 		context.applyFinalAdjustments && o.postRemoveBackground
 			? removeBackground(
-					working,
+					componentResult.image,
 					bgTol,
 					o.bgRemovalScope,
 					o.bgConnectivity,
@@ -357,7 +484,7 @@ export const processGridDisabledRoute = (
 					backgroundModel,
 					backgroundDiagnostic,
 				)
-			: working;
+			: componentResult.image;
 
 	let finalResult = base;
 	let compareBefore = img;
@@ -380,7 +507,7 @@ export const processGridDisabledRoute = (
 	}
 
 	if (o.trimToContent) {
-		const b = findOpaqueBounds(masked, trimAlphaThreshold);
+		const b = findOpaqueBounds(componentResult.mask, trimAlphaThreshold);
 		if (b) {
 			finalResult = cropRawImage(finalResult, b.x, b.y, b.w, b.h);
 			compareBefore = cropRawImage(compareBefore, b.x, b.y, b.w, b.h);
@@ -542,6 +669,8 @@ export const processGridDisabledRoute = (
 		backgroundDiagnostic,
 		context.classificationResult,
 		context.additionalWarnings,
+		undefined,
+		smallComponentRemoval,
 	);
 	log("Processing analysis", analysis);
 	return {

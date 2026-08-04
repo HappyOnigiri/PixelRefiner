@@ -273,6 +273,50 @@ const createCellSamplingFixtures = (): {
 	};
 };
 
+const createSmallComponentInput = (
+	includeProtectedDetails: boolean,
+	includeNoise: boolean,
+): RawImage => {
+	const width = 16;
+	const height = 16;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const subject = x >= 5 && x <= 10 && y >= 5 && y <= 11;
+			const eyes = includeProtectedDetails && y === 3 && (x === 6 || x === 9);
+			const dakuten =
+				includeProtectedDetails && y === 7 && (x === 12 || x === 14);
+			const star = includeProtectedDetails && x === 2 && y === 2;
+			const spark = includeProtectedDetails && x === 3 && y === 13;
+			const noise = includeNoise && x === 14 && y === 14;
+			const foreground = subject || eyes || dakuten || star || spark || noise;
+			const value = noise ? 240 : subject ? 40 : 224;
+			data[offset] = foreground ? value : 255;
+			data[offset + 1] = foreground ? (noise ? 240 : 80) : 255;
+			data[offset + 2] = foreground ? (noise ? 240 : 120) : 255;
+			data[offset + 3] = noise ? 32 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const createUncertainSmallComponentInput = (): RawImage => {
+	const width = 20;
+	const height = 20;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			data[offset] = (x * 73 + y * 41) % 256;
+			data[offset + 1] = (x * 19 + y * 101) % 256;
+			data[offset + 2] = (x * 151 + y * 7) % 256;
+			data[offset + 3] = x === 18 && y === 18 ? 32 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
 		const reference = createReferenceSprite();
@@ -457,6 +501,53 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		writePng(
 			fixturePath("quality_prf200_gradient_background-expect.png"),
 			automaticBackgroundExpected,
+		);
+
+		const protectedDetails = createSmallComponentInput(true, false);
+		writePng(
+			fixturePath("quality_prf210_protected_details.png"),
+			protectedDetails,
+		);
+		const commonSmallComponentOptions = {
+			processingMode: "preserve" as const,
+			preRemoveBackground: false,
+			postRemoveBackground: true,
+			trimToContent: false,
+			bgRemovalScope: "outer" as const,
+			bgExtractionMethod: "top-left" as const,
+			backgroundTolerance: 0,
+		};
+		const { result: protectedDetailsExpected } = processImage(
+			protectedDetails,
+			{
+				...commonSmallComponentOptions,
+				smallComponentMode: "off",
+			},
+		);
+		writePng(
+			fixturePath("quality_prf210_protected_details-expect.png"),
+			protectedDetailsExpected,
+		);
+
+		const isolatedNoise = createSmallComponentInput(false, true);
+		writePng(fixturePath("quality_prf210_isolated_noise.png"), isolatedNoise);
+		const { result: isolatedNoiseExpected } = processImage(
+			createSmallComponentInput(false, false),
+			{ ...commonSmallComponentOptions, smallComponentMode: "off" },
+		);
+		writePng(
+			fixturePath("quality_prf210_isolated_noise-expect.png"),
+			isolatedNoiseExpected,
+		);
+
+		const uncertainBackground = createUncertainSmallComponentInput();
+		writePng(
+			fixturePath("quality_prf210_uncertain_background.png"),
+			uncertainBackground,
+		);
+		writePng(
+			fixturePath("quality_prf210_uncertain_background-expect.png"),
+			uncertainBackground,
 		);
 
 		const quantizationInput = createQuantizationInput();

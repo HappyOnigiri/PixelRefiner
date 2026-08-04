@@ -38,8 +38,7 @@ export type Elements = {
 	outlineStyleSelect: HTMLSelectElement;
 	outlineColorInput: HTMLInputElement;
 
-	floatingMaxPercentInput: HTMLInputElement;
-	floatingMaxPercentSlider: HTMLInputElement;
+	smallComponentModeSelect: HTMLSelectElement;
 	zoomOutputCheck: HTMLInputElement;
 	gridOutputCheck: HTMLInputElement;
 	outputPanel: HTMLElement;
@@ -149,10 +148,7 @@ export const getElements = (): Elements => {
 		outlineStyleSelect: get<HTMLSelectElement>("outline-style"),
 		outlineColorInput: get<HTMLInputElement>("outline-color"),
 
-		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
-		floatingMaxPercentSlider: get<HTMLInputElement>(
-			"floating-max-percent-slider",
-		),
+		smallComponentModeSelect: get<HTMLSelectElement>("small-component-mode"),
 		zoomOutputCheck: get<HTMLInputElement>("zoom-output"),
 		gridOutputCheck: get<HTMLInputElement>("grid-output"),
 		outputPanel: get<HTMLElement>("output-panel"),
