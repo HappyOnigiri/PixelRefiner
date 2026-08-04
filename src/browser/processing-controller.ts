@@ -4,8 +4,10 @@ import type { ProcessorWorker } from "../core/worker";
 import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
 	CandidateSelection,
+	DetailLevel,
 	DitherMode,
 	OutlineStyle,
+	ProcessingMode,
 } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
@@ -15,10 +17,17 @@ import type { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError, showWarning } from "./notifications";
+import { formatProcessingAnalysis } from "./processing-analysis-display";
 import {
 	shouldNotifyProcessingWarnings,
 	translateProcessingWarnings,
 } from "./processing-warnings";
+import {
+	applyQuickSettingsToOptions,
+	type QuickBackground,
+	type QuickColors,
+	type QuickDithering,
+} from "./quick-settings";
 import type { ResultViewer } from "./result-viewer";
 import type { ImageSession } from "./session";
 
@@ -102,7 +111,7 @@ export const createProcessOptions = (
 	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
 	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
 
-	return {
+	const advancedOptions: ProcessOptions = {
 		detectionQuantStep,
 		forcePixelsW: gridMode === "force" && usePixels ? pixelsW : undefined,
 		forcePixelsH: gridMode === "force" && usePixels ? pixelsH : undefined,
@@ -139,6 +148,15 @@ export const createProcessOptions = (
 		bgRgb: els.bgRgbInput.value,
 		fixedPalette: processingState.currentFixedPalette,
 	};
+	return applyQuickSettingsToOptions(advancedOptions, {
+		processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
+		detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
+		colors: els.quickColorsSelect.value as QuickColors,
+		background: els.quickBackgroundSelect.value as QuickBackground,
+		dithering: els.quickDitheringSelect.value as QuickDithering,
+		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
+		trimToContent: els.quickAutoTrimCheck.checked,
+	});
 };
 
 export const createRunProcessing = ({
@@ -235,6 +253,11 @@ export const createRunProcessing = ({
 
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);
+			const analysisText = formatProcessingAnalysis(analysis, (key, params) =>
+				i18n.t(key as Parameters<typeof i18n.t>[0], params),
+			);
+			mainResultViewer.updateAnalysis(analysisText);
+			modalResultViewer.updateAnalysis(analysisText);
 			mainResultViewer.setLoading(false);
 
 			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。

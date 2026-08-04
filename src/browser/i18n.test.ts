@@ -158,6 +158,24 @@ describe("I18nManager", () => {
 		expect(i18n.t("non.existent.key")).toBe("non.existent.key");
 	});
 
+	it("should translate quick settings and processing analysis in every language", () => {
+		const i18n = new I18nManager();
+		for (const lang of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(lang);
+			expect(i18n.t("preset.photo_to_pixel")).not.toBe("preset.photo_to_pixel");
+			expect(i18n.t("classification.scaled-pixel")).not.toBe(
+				"classification.scaled-pixel",
+			);
+			expect(
+				i18n.t("result.analysis", {
+					classification: "Image",
+					route: "Convert",
+					confidence: 80,
+				}),
+			).toContain("80");
+		}
+	});
+
 	it("registers small-component controls in every language", () => {
 		const i18n = new I18nManager();
 		for (const language of ["ja", "en", "zh-CN"] as const) {

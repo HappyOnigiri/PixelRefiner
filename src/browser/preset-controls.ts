@@ -3,6 +3,7 @@ import { i18n } from "./i18n";
 import type { ModalController } from "./modal-controller";
 import { showInfo } from "./notifications";
 import { PresetManager } from "./presets";
+import { BUILT_IN_PRESETS, type QuickSettingsState } from "./quick-settings";
 
 type PresetControlsOptions = {
 	els: Elements;
@@ -12,6 +13,9 @@ type PresetControlsOptions = {
 	updateBgDisabledStates: () => void;
 	updateProcessButtonVisibility: () => void;
 	triggerAutoProcess: () => void;
+	applyQuickSettings: (settings: QuickSettingsState, presetId?: string) => void;
+	clearCandidateSelections: () => void;
+	clearFixedPalette: () => void;
 };
 
 export const migrateSmallComponentMode = (
@@ -33,7 +37,27 @@ export const setupPresetControls = ({
 	updateBgDisabledStates,
 	updateProcessButtonVisibility,
 	triggerAutoProcess,
+	applyQuickSettings,
+	clearCandidateSelections,
+	clearFixedPalette,
 }: PresetControlsOptions): void => {
+	els.builtInPresetSelect.innerHTML = "";
+	for (const preset of BUILT_IN_PRESETS) {
+		const option = document.createElement("option");
+		option.value = preset.id;
+		option.dataset.i18n = preset.labelKey;
+		option.textContent = i18n.t(
+			preset.labelKey as Parameters<typeof i18n.t>[0],
+		);
+		els.builtInPresetSelect.appendChild(option);
+	}
+	const customOption = document.createElement("option");
+	customOption.value = "custom";
+	customOption.dataset.i18n = "option.custom";
+	customOption.textContent = i18n.t("option.custom");
+	customOption.hidden = true;
+	els.builtInPresetSelect.appendChild(customOption);
+
 	const getUiState = (): Record<string, string | number | boolean> => {
 		const state: Record<string, string | number | boolean> = {};
 		const inputs = [
@@ -52,6 +76,7 @@ export const setupPresetControls = ({
 			els.trimToContentCheck,
 			els.fastAutoGridFromTrimmedCheck,
 			els.makeSquareCheck,
+			els.keepAspectRatioCheck,
 			els.gridDetectionModeSelect,
 			els.reduceColorModeSelect,
 			els.ditherModeSelect,
@@ -66,6 +91,14 @@ export const setupPresetControls = ({
 			els.bgRgbInput,
 			els.bgColorInput,
 			els.autoProcessToggle,
+			els.quickProcessingModeSelect,
+			els.quickDetailLevelSelect,
+			els.quickColorsSelect,
+			els.quickBackgroundSelect,
+			els.quickBackgroundColorInput,
+			els.quickDitheringSelect,
+			els.quickOutlineStyleSelect,
+			els.quickAutoTrimCheck,
 		];
 
 		for (const input of inputs) {
@@ -128,22 +161,45 @@ export const setupPresetControls = ({
 
 			if (el instanceof HTMLInputElement) {
 				if (el.type === "checkbox") {
-					el.checked = value as boolean;
+					if (typeof value !== "boolean") continue;
+					el.checked = value;
 				} else {
 					el.value = String(value);
 				}
 			} else if (el instanceof HTMLSelectElement) {
-				el.value = String(value);
+				const next = String(value);
+				if (!Array.from(el.options).some((option) => option.value === next)) {
+					continue;
+				}
+				el.value = next;
 			}
-			// UI の依存状態を更新するため change イベントを発火
-			el.dispatchEvent(new Event("change"));
 		}
+		clearCandidateSelections();
+		if (els.reduceColorModeSelect.value !== "fixed") {
+			clearFixedPalette();
+		}
+		els.builtInPresetSelect.value = "custom";
+		els.quickBackgroundColorInput.value = els.bgColorInput.value;
+		els.quickBackgroundPicker.style.display =
+			els.quickBackgroundSelect.value === "pick" ? "flex" : "none";
 		updateDisabledStates();
 		updateReduceColorsDisabledStates();
 		updateBgDisabledStates();
 		updateProcessButtonVisibility();
 		triggerAutoProcess();
 	};
+
+	els.builtInPresetSelect.addEventListener("change", () => {
+		const preset = BUILT_IN_PRESETS.find(
+			(entry) => entry.id === els.builtInPresetSelect.value,
+		);
+		if (!preset) return;
+		applyQuickSettings(preset.settings, preset.id);
+		updateDisabledStates();
+		updateReduceColorsDisabledStates();
+		updateBgDisabledStates();
+		triggerAutoProcess();
+	});
 
 	const updatePresetList = () => {
 		const presets = PresetManager.loadPresets();

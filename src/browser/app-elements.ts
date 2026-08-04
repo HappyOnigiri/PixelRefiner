@@ -53,6 +53,17 @@ export type Elements = {
 	eyedropperCanvas: HTMLCanvasElement;
 
 	autoProcessToggle: HTMLInputElement;
+	builtInPresetSelect: HTMLSelectElement;
+	quickProcessingModeSelect: HTMLSelectElement;
+	quickDetailLevelSelect: HTMLSelectElement;
+	quickColorsSelect: HTMLSelectElement;
+	quickBackgroundSelect: HTMLSelectElement;
+	quickBackgroundPicker: HTMLElement;
+	quickBackgroundColorInput: HTMLInputElement;
+	quickEyedropperButton: HTMLButtonElement;
+	quickDitheringSelect: HTMLSelectElement;
+	quickOutlineStyleSelect: HTMLSelectElement;
+	quickAutoTrimCheck: HTMLInputElement;
 
 	// パレット UI
 	// パレット UI
@@ -164,6 +175,17 @@ export const getElements = (): Elements => {
 		closeEyedropperModal: get<HTMLButtonElement>("close-eyedropper-modal"),
 		eyedropperCanvas: get<HTMLCanvasElement>("eyedropper-canvas"),
 		autoProcessToggle: get<HTMLInputElement>("auto-process-toggle"),
+		builtInPresetSelect: get<HTMLSelectElement>("built-in-preset"),
+		quickProcessingModeSelect: get<HTMLSelectElement>("quick-processing-mode"),
+		quickDetailLevelSelect: get<HTMLSelectElement>("quick-detail-level"),
+		quickColorsSelect: get<HTMLSelectElement>("quick-colors"),
+		quickBackgroundSelect: get<HTMLSelectElement>("quick-background"),
+		quickBackgroundPicker: get<HTMLElement>("quick-background-picker"),
+		quickBackgroundColorInput: get<HTMLInputElement>("quick-background-color"),
+		quickEyedropperButton: get<HTMLButtonElement>("quick-eyedropper-button"),
+		quickDitheringSelect: get<HTMLSelectElement>("quick-dithering"),
+		quickOutlineStyleSelect: get<HTMLSelectElement>("quick-outline-style"),
+		quickAutoTrimCheck: get<HTMLInputElement>("quick-auto-trim"),
 		paletteColors: get<HTMLElement>("palette-colors"),
 		exportGPLButton: get<HTMLButtonElement>("export-gpl-button"),
 		exportPNGButton: get<HTMLButtonElement>("export-png-button"),

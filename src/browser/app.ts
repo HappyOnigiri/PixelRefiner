@@ -1,4 +1,5 @@
 import { PROCESS_DEFAULTS } from "../shared/config";
+import type { ProcessingAnalysis } from "../shared/types";
 import {
 	extractColorsFromImage,
 	generateGPL,
@@ -22,6 +23,7 @@ import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { createModalControllerFactory } from "./modal-controller";
 import { showError } from "./notifications";
 import { setupPresetControls } from "./preset-controls";
+import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { createRunProcessing } from "./processing-controller";
 import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
@@ -41,6 +43,15 @@ export const initApp = (): void => {
 	const modalResultViewer = new ResultViewer(
 		els.resultModal.querySelector(".result-modal-body") as HTMLElement,
 	);
+	const updateProcessingAnalysis = (analysis?: ProcessingAnalysis) => {
+		const text = analysis
+			? formatProcessingAnalysis(analysis, (key, params) =>
+					i18n.t(key as Parameters<typeof i18n.t>[0], params),
+				)
+			: "";
+		mainResultViewer.updateAnalysis(text);
+		modalResultViewer.updateAnalysis(text);
+	};
 	const candidateChooser = new CandidateChooser(
 		els.candidateModal,
 		// 閉じるボタンのフォーカスは CandidateChooser 側で先頭カードへ移すため渡さない。
@@ -82,6 +93,7 @@ export const initApp = (): void => {
 		},
 		onActiveChange: (item) => {
 			candidateChooser.dismiss();
+			updateProcessingAnalysis(item?.analysis);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -230,12 +242,15 @@ export const initApp = (): void => {
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateBgColorFromMethod,
+		applyQuickSettings,
 	} = setupSettingsControls({
 		els,
 		processingState,
 		imageSession,
 		runProcessing,
 		saveSettings,
+		onLanguageChange: () =>
+			updateProcessingAnalysis(imageSession.getActiveImage()?.analysis),
 	});
 	els.sharedPaletteToggle.addEventListener(
 		"change",
@@ -554,5 +569,10 @@ export const initApp = (): void => {
 		updateBgDisabledStates,
 		updateProcessButtonVisibility,
 		triggerAutoProcess,
+		applyQuickSettings,
+		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
+		clearFixedPalette: () => {
+			processingState.currentFixedPalette = undefined;
+		},
 	});
 };

@@ -6,6 +6,8 @@ import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError } from "./notifications";
 import type { RunProcessingOptions } from "./processing-controller";
+import type { QuickSettingsState } from "./quick-settings";
+import { setupQuickSettingsControls } from "./quick-settings-controls";
 import type { ImageSession } from "./session";
 
 type SettingsControlsOptions = {
@@ -14,6 +16,7 @@ type SettingsControlsOptions = {
 	imageSession: ImageSession;
 	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
 	saveSettings: () => void;
+	onLanguageChange: () => void;
 };
 
 export type SettingsControls = {
@@ -25,6 +28,8 @@ export type SettingsControls = {
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
 	updateBgColorFromMethod: () => void;
+	getQuickSettings: () => QuickSettingsState;
+	applyQuickSettings: (settings: QuickSettingsState, presetId?: string) => void;
 };
 
 export const setupSettingsControls = ({
@@ -33,6 +38,7 @@ export const setupSettingsControls = ({
 	imageSession,
 	runProcessing,
 	saveSettings,
+	onLanguageChange,
 }: SettingsControlsOptions): SettingsControls => {
 	const openEyedropperModal = () => {
 		const img = imageSession.getActiveImage()?.original;
@@ -45,13 +51,39 @@ export const setupSettingsControls = ({
 		els.eyedropperModal.style.display = "none";
 	};
 
+	const quickSettingsControls = setupQuickSettingsControls({
+		els,
+		processingState,
+		triggerAutoProcess: () => triggerAutoProcess(),
+		updateReduceColorsDisabledStates: () => updateReduceColorsDisabledStates(),
+		updateBgDisabledStates: () => updateBgDisabledStates(),
+		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
+	});
+	const {
+		getQuickSettings,
+		applyQuickSettings,
+		setBackgroundColor,
+		syncQuickSettingsToAdvanced,
+	} = quickSettingsControls;
+
 	// RGB 入力を同期
 	const updateRgbInputs = (hex: string) => {
 		els.bgRgbInput.value = hex;
 		els.bgColorInput.value = hex;
+		setBackgroundColor(hex);
 	};
 
 	els.closeEyedropperModal.addEventListener("click", closeEyedropperModal);
+	els.quickBackgroundColorInput.addEventListener("input", () => {
+		updateRgbInputs(els.quickBackgroundColorInput.value);
+		els.quickBackgroundSelect.value = "pick";
+		els.builtInPresetSelect.value = "custom";
+		syncQuickSettingsToAdvanced();
+		triggerAutoProcess();
+	});
+	els.quickEyedropperButton.addEventListener("click", () => {
+		els.eyedropperButton.click();
+	});
 
 	els.bgRgbInput.addEventListener("input", () => {
 		let val = els.bgRgbInput.value.trim();
@@ -63,6 +95,8 @@ export const setupSettingsControls = ({
 				els.bgExtractionMethod.value = "rgb";
 				updateBgDisabledStates();
 			}
+			els.quickBackgroundSelect.value = "pick";
+			els.builtInPresetSelect.value = "custom";
 		}
 	});
 
@@ -73,6 +107,8 @@ export const setupSettingsControls = ({
 			els.bgExtractionMethod.value = "rgb";
 			updateBgDisabledStates();
 		}
+		els.quickBackgroundSelect.value = "pick";
+		els.builtInPresetSelect.value = "custom";
 	});
 
 	els.eyedropperButton.addEventListener("click", (e) => {
@@ -113,6 +149,8 @@ export const setupSettingsControls = ({
 			updateRgbInputs(hex);
 			// スポイトで色を選択したときに RGB モードへ切り替え
 			els.bgExtractionMethod.value = "rgb";
+			els.quickBackgroundSelect.value = "pick";
+			els.builtInPresetSelect.value = "custom";
 			updateBgDisabledStates();
 			closeEyedropperModal();
 			triggerAutoProcess();
@@ -183,6 +221,15 @@ export const setupSettingsControls = ({
 		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
 
 		els.bgExtractionMethod.value = PROCESS_DEFAULTS.bgExtractionMethod;
+		els.quickProcessingModeSelect.value = PROCESS_DEFAULTS.processingMode;
+		els.quickDetailLevelSelect.value = PROCESS_DEFAULTS.detailLevel;
+		els.quickColorsSelect.value = "auto";
+		els.quickBackgroundSelect.value = "auto";
+		els.quickDitheringSelect.value = "off";
+		els.quickOutlineStyleSelect.value = PROCESS_DEFAULTS.outlineStyle;
+		els.quickAutoTrimCheck.checked = PROCESS_DEFAULTS.trimToContent;
+		els.builtInPresetSelect.value = "auto";
+		syncQuickSettingsToAdvanced();
 
 		const applyTooltipRange = (
 			id: string,
@@ -210,7 +257,10 @@ export const setupSettingsControls = ({
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
 				const lang = el.getAttribute("data-lang-btn") as Language | null;
-				if (lang) i18n.setLanguage(lang);
+				if (lang) {
+					i18n.setLanguage(lang);
+					onLanguageChange();
+				}
 			});
 		});
 
@@ -515,5 +565,7 @@ export const setupSettingsControls = ({
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateBgColorFromMethod,
+		getQuickSettings,
+		applyQuickSettings,
 	};
 };

@@ -37,7 +37,8 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 - **Outline generation** — Automatically adds an outline (stroke) to the sprite.
   - **Styles** — Rounded (8-way) or Sharp (4-way).
   - **Custom color** — Choose any color for the outline.
-- **Preset management** — Save and load your favorite processing configurations to reuse them across different images.
+- **Auto-centered settings** — Start with purpose-based controls for processing, detail, colors, background, dithering, and outline; technical controls remain available under Advanced Settings.
+- **Purpose presets** — Choose Auto, Crisp Sprite, Keep Fine Details, Transparent Icon, Limited Colors, or Photo to Pixel, and save custom configurations for reuse.
 - **Auto trim** — Strips transparent margins and crops to content bounds.
 - **Forced resize** — Resizes to an exact pixel dimension you specify.
 - **Scaled export** — Download at x2, x4, … up to x32 for use in game engines and other tools.
@@ -55,14 +56,12 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 2. Drag & drop images onto the drop zone (or click to browse). Multiple images are supported.
 3. Use the **"Images"** list to switch between uploaded images.
 4. Hit **"Process"** (or enable **"Auto"**) to generate optimized pixel art sprites.
-5. Fine-tune settings as needed:
-    - **Grid Detection** — Mode selection (Auto/Hint/Force/Off), candidate selection, and fast mode toggle
-    - **Colors & Palette** — Preset selection, color count, dithering
-    - **Background** — Transparency mode (auto/manual), tolerance, cleanup options
-    - **Outline** — Add an outline to the sprite
-5. Use the **"Compare"** view to check the difference between the original and processed image with a slider.
-6. When you're happy with the result, click **"Download"** (use the ▼ dropdown to choose a scale factor).
-7. For multiple images, use **"Download All (ZIP)"** to export all processed sprites at once.
+5. Start with a purpose preset or adjust **Processing**, **Detail**, **Colors**, **Background**, **Dithering**, **Outline**, and **Auto Trim**.
+6. Open **Advanced Settings** only when you need exact grid, palette, tolerance, connectivity, or forced-size controls.
+7. Check the detected image type, selected route, and confidence beside the result size. A result chooser opens only when grid confidence is low.
+8. Use the **"Compare"** view to check the difference between the original and processed image with a slider.
+9. When you're happy with the result, click **"Download"** (use the ▼ dropdown to choose a scale factor).
+10. For multiple images, use **"Download All (ZIP)"** to export all processed sprites at once.
 
 ## 🛠️ Development
 
