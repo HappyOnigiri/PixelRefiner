@@ -70,7 +70,7 @@ export const setupBatchController = ({
 					id: item.id,
 					image: item.original,
 					options: createBatchItemOptions(
-						createProcessOptions(els, processingState, item.original),
+						createProcessOptions(els, processingState),
 						item.candidateSelection,
 					),
 				})),

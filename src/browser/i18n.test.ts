@@ -157,4 +157,21 @@ describe("I18nManager", () => {
 		// @ts-expect-error
 		expect(i18n.t("non.existent.key")).toBe("non.existent.key");
 	});
+
+	it("registers small-component controls in every language", () => {
+		const i18n = new I18nManager();
+		for (const language of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(language);
+			for (const key of [
+				"setting.small_component_mode",
+				"tooltip.help.small_component_mode",
+				"option.small_component_off",
+				"option.small_component_light",
+				"option.small_component_auto",
+				"option.small_component_strong",
+			] as const) {
+				expect(i18n.t(key)).not.toBe(key);
+			}
+		}
+	});
 });

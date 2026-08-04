@@ -2266,5 +2266,471 @@
         "acquiredOrGeneratedAt": "2026-08-04"
       }
     ]
+  },
+  {
+    "id": "retain-protected-small-details",
+    "featureIds": ["PRF-210"],
+    "optionNames": ["smallComponentMode"],
+    "profile": "smoke",
+    "inputKind": "native-pixel-art",
+    "degradationPatterns": ["disconnected-small-component"],
+    "options": {
+      "processingMode": "preserve",
+      "preRemoveBackground": false,
+      "postRemoveBackground": true,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "top-left",
+      "backgroundTolerance": 0,
+      "smallComponentMode": "auto"
+    },
+    "input": "test/fixtures/quality_prf210_protected_details.png",
+    "expected": "test/fixtures/quality_prf210_protected_details-expect.png",
+    "assertions": [
+      "exact image",
+      "paired eyes retained",
+      "dakuten retained",
+      "star and spark retained",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 16, "expectedHeight": 16 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf210_protected_details.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf210_protected_details-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "remove-isolated-small-noise",
+    "featureIds": ["PRF-210"],
+    "optionNames": ["smallComponentMode"],
+    "profile": "smoke",
+    "inputKind": "native-pixel-art",
+    "degradationPatterns": ["isolated-noise"],
+    "options": {
+      "processingMode": "preserve",
+      "preRemoveBackground": false,
+      "postRemoveBackground": true,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "top-left",
+      "backgroundTolerance": 0,
+      "smallComponentMode": "auto"
+    },
+    "input": "test/fixtures/quality_prf210_isolated_noise.png",
+    "expected": "test/fixtures/quality_prf210_isolated_noise-expect.png",
+    "assertions": [
+      "exact image",
+      "isolated weak noise removed",
+      "subject retained",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 16, "expectedHeight": 16 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf210_isolated_noise.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf210_isolated_noise-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "skip-small-removal-on-uncertain-background",
+    "featureIds": ["PRF-210"],
+    "optionNames": ["smallComponentMode", "bgExtractionMethod"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["low-background-confidence"],
+    "options": {
+      "processingMode": "preserve",
+      "preRemoveBackground": false,
+      "postRemoveBackground": true,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "auto",
+      "backgroundTolerance": 64,
+      "smallComponentMode": "strong"
+    },
+    "input": "test/fixtures/quality_prf210_uncertain_background.png",
+    "expected": "test/fixtures/quality_prf210_uncertain_background-expect.png",
+    "assertions": [
+      "exact image",
+      "low background confidence",
+      "small-component removal skipped",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 20, "expectedHeight": 20 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf210_uncertain_background.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf210_uncertain_background-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "restore-neg-3-degree-rotation",
+    "featureIds": ["PRF-500"],
+    "optionNames": ["enableDeskew"],
+    "profile": "full",
+    "inputKind": "rotated-pixel-art",
+    "degradationPatterns": ["rotation-neg-3-degree"],
+    "options": {
+      "processingMode": "refine",
+      "enableDeskew": true,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality-prf500-rotated-neg-3.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": ["deskew applied", "output size", "no excessive crop", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 32,
+      "minEdgeF1": 0.3,
+      "minBackgroundMaskIou": 0.25,
+      "minSmallComponentRetention": 0.75,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality-prf500-rotated-neg-3.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-neg-1-degree-rotation",
+    "featureIds": ["PRF-500"],
+    "optionNames": ["enableDeskew"],
+    "profile": "smoke",
+    "inputKind": "rotated-pixel-art",
+    "degradationPatterns": ["rotation-neg-1-degree"],
+    "options": {
+      "processingMode": "refine",
+      "enableDeskew": true,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality-prf500-rotated-neg-1.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": ["deskew applied", "output size", "no excessive crop", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 32,
+      "minEdgeF1": 0.3,
+      "minBackgroundMaskIou": 0.25,
+      "minSmallComponentRetention": 0.75,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality-prf500-rotated-neg-1.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-neg-quarter-degree-rotation",
+    "featureIds": ["PRF-500"],
+    "optionNames": ["enableDeskew"],
+    "profile": "full",
+    "inputKind": "rotated-pixel-art",
+    "degradationPatterns": ["rotation-neg-quarter-degree"],
+    "options": {
+      "processingMode": "refine",
+      "enableDeskew": true,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality-prf500-rotated-neg-0-25.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": ["deskew applied", "output size", "no excessive crop", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 32,
+      "minEdgeF1": 0.3,
+      "minBackgroundMaskIou": 0.25,
+      "minSmallComponentRetention": 0.75,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality-prf500-rotated-neg-0-25.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-pos-quarter-degree-rotation",
+    "featureIds": ["PRF-500"],
+    "optionNames": ["enableDeskew"],
+    "profile": "full",
+    "inputKind": "rotated-pixel-art",
+    "degradationPatterns": ["rotation-pos-quarter-degree"],
+    "options": {
+      "processingMode": "refine",
+      "enableDeskew": true,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality-prf500-rotated-pos-0-25.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": ["deskew applied", "output size", "no excessive crop", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 32,
+      "minEdgeF1": 0.3,
+      "minBackgroundMaskIou": 0.25,
+      "minSmallComponentRetention": 0.75,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality-prf500-rotated-pos-0-25.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-pos-1-degree-rotation",
+    "featureIds": ["PRF-500"],
+    "optionNames": ["enableDeskew"],
+    "profile": "smoke",
+    "inputKind": "rotated-pixel-art",
+    "degradationPatterns": ["rotation-pos-1-degree"],
+    "options": {
+      "processingMode": "refine",
+      "enableDeskew": true,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality-prf500-rotated-pos-1.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": ["deskew applied", "output size", "no excessive crop", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 32,
+      "minEdgeF1": 0.3,
+      "minBackgroundMaskIou": 0.25,
+      "minSmallComponentRetention": 0.75,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality-prf500-rotated-pos-1.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-pos-3-degree-rotation",
+    "featureIds": ["PRF-500"],
+    "optionNames": ["enableDeskew"],
+    "profile": "full",
+    "inputKind": "rotated-pixel-art",
+    "degradationPatterns": ["rotation-pos-3-degree"],
+    "options": {
+      "processingMode": "refine",
+      "enableDeskew": true,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality-prf500-rotated-pos-3.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": ["deskew applied", "output size", "no excessive crop", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 32,
+      "minEdgeF1": 0.3,
+      "minBackgroundMaskIou": 0.25,
+      "minSmallComponentRetention": 0.75,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality-prf500-rotated-pos-3.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
   }
 ]

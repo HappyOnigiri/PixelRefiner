@@ -11,6 +11,7 @@ import type {
 	ProcessingRoute,
 	ProcessingWarningCode,
 	RawImage,
+	SmallComponentRemovalDiagnostic,
 } from "../shared/types";
 
 const clampUnit = (value: number): number => Math.min(1, Math.max(0, value));
@@ -162,7 +163,8 @@ export const findCandidateIndexForGrid = (
 			candidate.grid.cellW === grid.cellW &&
 			candidate.grid.cellH === grid.cellH &&
 			candidate.grid.offsetX === grid.offsetX &&
-			candidate.grid.offsetY === grid.offsetY,
+			candidate.grid.offsetY === grid.offsetY &&
+			(candidate.angle ?? 0) === (grid.angle ?? 0),
 	);
 
 export const createProcessingAnalysis = (
@@ -183,6 +185,7 @@ export const createProcessingAnalysis = (
 	 * 呼び出し元が採用位置を知っている経路はここで明示する。
 	 */
 	knownSelectedCandidateIndex?: number,
+	smallComponentRemoval?: SmallComponentRemovalDiagnostic,
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
@@ -261,5 +264,6 @@ export const createProcessingAnalysis = (
 		foregroundRatioAfter: after,
 		contentLossRatio,
 		backgroundConfidence: backgroundDiagnostic?.confidence,
+		smallComponentRemoval,
 	};
 };

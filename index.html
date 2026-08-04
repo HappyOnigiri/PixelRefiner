@@ -1001,29 +1001,43 @@
 
                   <label class="setting-item">
                     <span class="label-text">
-                      <span data-i18n="setting.floating_max"
-                        >Max Noise Size (%)</span
+                      <span data-i18n="setting.small_component_mode"
+                        >Small Detail Cleanup</span
                       >
                       <span
-                        id="help-floating-max-percent"
                         class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.floating_max"
-                        data-tooltip="The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.&#10;When set to 0%, floating noise removal is skipped.&#10;Example: 1% -> (Width * Height * 0.01) px&#10;&#10;Range: {min} to {max} (Default: {default})"
+                        data-i18n-attr="data-tooltip:tooltip.help.small_component_mode"
+                        data-tooltip="Removes isolated noise using the restored logical pixel grid while protecting repeated, symmetric, nearby, outlined, and high-confidence details."
                         >?</span
                       >
                     </span>
-                    <div class="input-with-slider">
-                      <input
-                        id="floating-max-percent-slider"
-                        type="range"
-                        step="0.1"
-                      />
-                      <input
-                        id="floating-max-percent"
-                        type="number"
-                        step="0.1"
-                      />
-                    </div>
+                    <select id="small-component-mode">
+                      <option
+                        value="off"
+                        data-i18n="option.small_component_off"
+                      >
+                        Off
+                      </option>
+                      <option
+                        value="light"
+                        data-i18n="option.small_component_light"
+                      >
+                        Light (Keep Details)
+                      </option>
+                      <option
+                        value="auto"
+                        data-i18n="option.small_component_auto"
+                        selected
+                      >
+                        Auto
+                      </option>
+                      <option
+                        value="strong"
+                        data-i18n="option.small_component_strong"
+                      >
+                        Strong
+                      </option>
+                    </select>
                   </label>
                 </div>
               </div>

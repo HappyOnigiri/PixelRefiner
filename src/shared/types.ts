@@ -25,6 +25,8 @@ export type PixelGrid = {
 	candidates?: PixelGrid[];
 	detectionFailedAxes?: Axis[];
 	signalScores?: GridSignalScores;
+	/** 入力へ適用する傾き補正角度（度）。 */
+	angle?: number;
 };
 
 export type GridSignalOptions = {
@@ -89,6 +91,17 @@ export type ProcessingRoute = "refine" | "convert" | "preserve";
 export type ProcessingMode = "auto" | ProcessingRoute;
 
 export type DetailLevel = "coarse" | "balanced" | "detailed";
+
+export type SmallComponentRemovalMode = "off" | "light" | "auto" | "strong";
+
+export type SmallComponentRemovalDiagnostic = {
+	mode: SmallComponentRemovalMode | "legacy";
+	applied: boolean;
+	skippedReason?: "off" | "background-disabled" | "low-background-confidence";
+	removedComponents: number;
+	removedPixels: number;
+	pixelBasis: "logical" | "source";
+};
 
 export type ConvertCandidate = {
 	label: DetailLevel;
@@ -204,6 +217,8 @@ export type ProcessingAnalysis = {
 	contentLossRatio?: number;
 	/** 自動背景モデルの信頼度。手動背景指定では省略する。 */
 	backgroundConfidence?: number;
+	/** 小成分除去の適用結果。 */
+	smallComponentRemoval?: SmallComponentRemovalDiagnostic;
 };
 
 export type ProcessResult = {
@@ -232,6 +247,7 @@ export type CandidateSelection = {
 	outW?: number;
 	outH?: number;
 	detailLevel?: DetailLevel;
+	angle?: number;
 };
 
 export type CandidatePreview = CandidateSelection & {

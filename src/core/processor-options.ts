@@ -1,6 +1,7 @@
 import {
 	CONVERT_DEFAULTS,
 	clampInt,
+	clampNumber,
 	clampOptionalInt,
 	GRID_SIGNAL_DEFAULTS,
 	PROCESS_DEFAULTS,
@@ -16,6 +17,7 @@ import type {
 	ProcessingMode,
 	RawImage,
 	RGB,
+	SmallComponentRemovalMode,
 } from "../shared/types";
 import type { CellSamplingMode } from "./cell-sampler";
 import type { DetectOptions } from "./detector";
@@ -28,6 +30,10 @@ export type ProcessOptions = DetectOptions & {
 	detailLevel?: DetailLevel;
 	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
 	gridSignals?: Partial<GridSignalOptions>;
+	/** Auto経路で微小な傾き補正を試みる。 */
+	enableDeskew?: boolean;
+	/** 候補プレビュー再処理で明示適用する補正角度（度）。 */
+	deskewAngle?: number;
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
@@ -71,9 +77,12 @@ export type ProcessOptions = DetectOptions & {
 	preserveThinFeatures?: boolean;
 	trimToContent?: boolean;
 	trimAlphaThreshold?: number;
+	/** 論理ピクセル単位で小成分を安全に除去する強度。 */
+	smallComponentMode?: SmallComponentRemovalMode;
 	/**
 	 * 除去対象とみなす最大ピクセル数（元画像のピクセル数）。
 	 * 0 の場合は浮遊ノイズを除去しない。
+	 * @deprecated smallComponentMode を使用する。
 	 */
 	floatingMaxPixels?: number;
 	/**
@@ -190,9 +199,12 @@ export const normalizeProcessOptions = (
 	preserveThinFeatures: boolean;
 	trimToContent: boolean;
 	trimAlphaThreshold: number;
+	smallComponentMode: SmallComponentRemovalMode;
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	gridSignals: GridSignalOptions;
+	enableDeskew: boolean;
+	deskewAngle: number;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
 	keepAspectRatio: boolean;
@@ -283,6 +295,13 @@ export const normalizeProcessOptions = (
 		raw.trimAlphaThreshold ?? PROCESS_RANGES.trimAlphaThreshold.default,
 		PROCESS_RANGES.trimAlphaThreshold,
 	);
+	// [Intended] 新旧オプションが同時に渡された場合は新方式を優先する。
+	// 旧オプションだけを明示した呼び出しは従来結果を維持する。
+	const useLegacyFloatingRemoval =
+		raw.smallComponentMode === undefined && raw.floatingMaxPixels !== undefined;
+	const smallComponentMode = useLegacyFloatingRemoval
+		? "off"
+		: (raw.smallComponentMode ?? PROCESS_DEFAULTS.smallComponentMode);
 	const autoGridFromTrimmed =
 		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
@@ -291,6 +310,11 @@ export const normalizeProcessOptions = (
 		...GRID_SIGNAL_DEFAULTS,
 		...raw.gridSignals,
 	};
+	const enableDeskew = raw.enableDeskew ?? PROCESS_DEFAULTS.enableDeskew;
+	const deskewAngle = clampNumber(
+		raw.deskewAngle ?? PROCESS_RANGES.deskewAngle.default,
+		PROCESS_RANGES.deskewAngle,
+	);
 	const makeSquare = raw.makeSquare ?? PROCESS_DEFAULTS.makeSquare;
 	const keepAspectRatio =
 		raw.keepAspectRatio ?? PROCESS_DEFAULTS.keepAspectRatio;
@@ -313,7 +337,9 @@ export const normalizeProcessOptions = (
 	const outlineColor = raw.outlineColor ?? PROCESS_DEFAULTS.outlineColor;
 
 	const floatingMaxPixels = clampInt(
-		raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels,
+		useLegacyFloatingRemoval
+			? (raw.floatingMaxPixels ?? PROCESS_DEFAULTS.floatingMaxPixels)
+			: 0,
 		PROCESS_RANGES.floatingMaxPixels,
 	);
 	const bgExtractionMethod =
@@ -347,9 +373,12 @@ export const normalizeProcessOptions = (
 		preserveThinFeatures,
 		trimToContent,
 		trimAlphaThreshold,
+		smallComponentMode,
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		gridSignals,
+		enableDeskew,
+		deskewAngle,
 		enableGridDetection,
 		makeSquare,
 		keepAspectRatio,

@@ -21,6 +21,7 @@ const isSimilar = (
 	left: GridCandidateReport,
 	right: GridCandidateReport,
 ): boolean => {
+	if ((left.angle ?? 0) !== (right.angle ?? 0)) return false;
 	const leftArea = area(left);
 	const rightArea = area(right);
 	const areaThreshold = Math.max(
@@ -39,12 +40,13 @@ const selectionForGrid = (
 	kind: CandidateSelection["kind"],
 	recommended = false,
 ): CandidateSelection => ({
-	id: `${kind}:${candidate.outW}x${candidate.outH}`,
+	id: `${kind}:${candidate.outW}x${candidate.outH}:${candidate.angle ?? 0}`,
 	kind,
 	recommended,
 	processingMode: "refine",
 	outW: candidate.outW,
 	outH: candidate.outH,
+	angle: candidate.angle,
 });
 
 export const selectCandidatePlans = (
@@ -113,6 +115,7 @@ export const candidateProcessOptions = (
 	if (selection.processingMode === "refine") {
 		options.forcePixelsW = selection.outW;
 		options.forcePixelsH = selection.outH;
+		options.deskewAngle = selection.angle;
 	}
 	if (selection.processingMode === "convert") {
 		options.detailLevel = selection.detailLevel;

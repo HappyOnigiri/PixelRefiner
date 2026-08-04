@@ -29,7 +29,7 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
   - **Eyedropper tool** — Click to pick the exact background color
   - Adjustable tolerance
   - Interior hole filling (e.g. the inside of a donut shape)
-  - Isolated noise pixel cleanup
+  - Safe logical-pixel noise cleanup with Off, Light (Keep Details), Auto, and Strong modes
 - **Color reduction & palette mapping**:
   - **Retro console palettes** — NES, Game Boy, SNES, PC-9801, MSX1, PICO-8, and more.
   - **Custom quantization** — High-quality color reduction using Oklab color space and K-means clustering.

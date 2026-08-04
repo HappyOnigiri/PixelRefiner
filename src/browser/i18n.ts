@@ -99,7 +99,7 @@ const resources = {
 		"setting.bg_removal_scope": "背景透過の範囲",
 		"setting.bg_connectivity": "連結判定",
 
-		"setting.floating_max": "浮きノイズ上限(%)",
+		"setting.small_component_mode": "小さな要素の整理",
 		"setting.trimming": "トリミング",
 		"setting.auto_trim": "自動トリム",
 		"setting.outline": "アウトライン",
@@ -153,8 +153,8 @@ const resources = {
 			"背景をどこまで透過するかの範囲です。\n\n選択部分のみ: 選択した角から繋がる背景だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 外側に加え、ドーナツ穴などの内側も透過。",
 		"tooltip.help.bg_connectivity":
 			"「繋がっている」の判定方法です。\n\n4方向: 斜めを含めない厳しい判定。\n8方向: 斜めも繋がりとみなします。",
-		"tooltip.help.floating_max":
-			"背景に囲まれて浮きノイズとみなす最大面積（元画像の総ピクセル数に対する割合）です。\n0%のときは浮きノイズ除去を行いません。\n例: 1% → (幅×高さ×0.01) px\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.small_component_mode":
+			"復元後の論理ピクセルを基準に孤立ノイズを整理します。近接・反復・対称・輪郭の延長・強いエッジ・高い不透明度を持つ細部は保護します。背景判定が不確かな場合は自動削除しません。",
 		"tooltip.help.auto_trim":
 			"出力後に内容物が存在する範囲で自動的にトリミング（余白削除）を行います。\n\n余白（背景）が大きい画像に対して、これをONにすることで正しい縦横のマス数が検出されやすくなります。",
 		"tooltip.help.make_square":
@@ -198,6 +198,10 @@ const resources = {
 		"option.bg_scope_all": "外周＋内側（穴）も含む",
 		"option.bg_connectivity_4": "4方向（斜めなし）",
 		"option.bg_connectivity_8": "8方向（斜め含む）",
+		"option.small_component_off": "無効",
+		"option.small_component_light": "弱（細部を保持）",
+		"option.small_component_auto": "自動",
+		"option.small_component_strong": "強",
 		"option.bg_top_left": "左上",
 		"option.bg_bottom_left": "左下",
 		"option.bg_top_right": "右上",
@@ -330,7 +334,7 @@ const resources = {
 		"setting.bg_removal_scope": "背景透明化范围",
 		"setting.bg_connectivity": "连通判定",
 
-		"setting.floating_max": "漂浮噪点上限 (%)",
+		"setting.small_component_mode": "小组件清理",
 		"setting.trimming": "裁剪",
 		"setting.auto_trim": "自动裁剪",
 		"setting.outline": "描边",
@@ -383,8 +387,8 @@ const resources = {
 			"决定背景透明化的范围。\n\n仅选中部分：只透明化从所选角落连通的背景。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：外侧背景加上内部孔洞也一起透明化。",
 		"tooltip.help.bg_connectivity":
 			"决定相邻区域是否算作连通。\n\n4 方向：更严格，不包含斜向。\n8 方向：包含斜向相邻。",
-		"tooltip.help.floating_max":
-			"被视为漂浮噪点并移除的最大面积，占原图总像素数的百分比。\n设为 0% 时不移除漂浮噪点。\n示例：1% -> (宽度 x 高度 x 0.01) px\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.small_component_mode":
+			"根据恢复后的逻辑像素清理孤立噪点。会保护邻近、重复、对称、位于轮廓延长线、边缘清晰或高不透明度的细节。背景判断不确定时不会自动删除。",
 		"tooltip.help.auto_trim":
 			"处理后自动裁剪到包含内容的范围。\n\n对于留白（背景）较大的图片，开启后更容易检测到正确的横纵格数。",
 		"tooltip.help.make_square":
@@ -428,6 +432,10 @@ const resources = {
 		"option.bg_scope_all": "外侧 + 内部孔洞",
 		"option.bg_connectivity_4": "4 方向（不含斜向）",
 		"option.bg_connectivity_8": "8 方向（含斜向）",
+		"option.small_component_off": "关闭",
+		"option.small_component_light": "轻度（保留细节）",
+		"option.small_component_auto": "自动",
+		"option.small_component_strong": "强力",
 		"option.bg_top_left": "左上",
 		"option.bg_bottom_left": "左下",
 		"option.bg_top_right": "右上",
@@ -559,7 +567,7 @@ const resources = {
 		"setting.bg_removal_scope": "Background Removal Scope",
 		"setting.bg_connectivity": "Connectivity",
 
-		"setting.floating_max": "Max Noise Size (%)",
+		"setting.small_component_mode": "Small Detail Cleanup",
 		"setting.trimming": "Trimming",
 		"setting.auto_trim": "Auto Trim",
 		"setting.outline": "Outline",
@@ -613,8 +621,8 @@ const resources = {
 			"Range of background to make transparent.\n\nSelected only: Only background connected from the chosen corner.\nOuter all: All background connected to the image border.\nAll: Outer + inner holes (e.g. donut hole).",
 		"tooltip.help.bg_connectivity":
 			"Whether diagonal neighbors are considered connected.\n\n4-way: Strict (no diagonals).\n8-way: Includes diagonals.",
-		"tooltip.help.floating_max":
-			"The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.\nWhen set to 0%, floating noise removal is skipped.\nExample: 1% → (Width × Height × 0.01) px\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.small_component_mode":
+			"Cleans isolated noise using restored logical pixels. Nearby, repeated, symmetric, outline-aligned, strongly edged, and highly opaque details are protected. Automatic removal is skipped when the background estimate is uncertain.",
 		"tooltip.help.auto_trim":
 			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
 		"tooltip.help.make_square":
@@ -658,6 +666,10 @@ const resources = {
 		"option.bg_scope_all": "Outer + inner holes",
 		"option.bg_connectivity_4": "4-way (no diagonals)",
 		"option.bg_connectivity_8": "8-way (with diagonals)",
+		"option.small_component_off": "Off",
+		"option.small_component_light": "Light (Keep Details)",
+		"option.small_component_auto": "Auto",
+		"option.small_component_strong": "Strong",
 		"option.bg_top_left": "Top-Left",
 		"option.bg_bottom_left": "Bottom-Left",
 		"option.bg_top_right": "Top-Right",
