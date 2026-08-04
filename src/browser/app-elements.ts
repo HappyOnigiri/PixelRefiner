@@ -38,8 +38,7 @@ export type Elements = {
 	outlineStyleSelect: HTMLSelectElement;
 	outlineColorInput: HTMLInputElement;
 
-	floatingMaxPercentInput: HTMLInputElement;
-	floatingMaxPercentSlider: HTMLInputElement;
+	smallComponentModeSelect: HTMLSelectElement;
 	zoomOutputCheck: HTMLInputElement;
 	gridOutputCheck: HTMLInputElement;
 	outputPanel: HTMLElement;
@@ -100,6 +99,8 @@ export type Elements = {
 	downloadAllButton: HTMLButtonElement;
 	downloadAllDropdownButton: HTMLButtonElement;
 	downloadAllMenu: HTMLElement;
+	sharedPaletteToggle: HTMLInputElement;
+	includeDiagnosticsToggle: HTMLInputElement;
 
 	// プリセット
 	presetNameInput: HTMLInputElement;
@@ -160,10 +161,7 @@ export const getElements = (): Elements => {
 		outlineStyleSelect: get<HTMLSelectElement>("outline-style"),
 		outlineColorInput: get<HTMLInputElement>("outline-color"),
 
-		floatingMaxPercentInput: get<HTMLInputElement>("floating-max-percent"),
-		floatingMaxPercentSlider: get<HTMLInputElement>(
-			"floating-max-percent-slider",
-		),
+		smallComponentModeSelect: get<HTMLSelectElement>("small-component-mode"),
 		zoomOutputCheck: get<HTMLInputElement>("zoom-output"),
 		gridOutputCheck: get<HTMLInputElement>("grid-output"),
 		outputPanel: get<HTMLElement>("output-panel"),
@@ -228,6 +226,10 @@ export const getElements = (): Elements => {
 			"download-all-dropdown-button",
 		),
 		downloadAllMenu: get<HTMLElement>("download-all-menu"),
+		sharedPaletteToggle: get<HTMLInputElement>("shared-palette-toggle"),
+		includeDiagnosticsToggle: get<HTMLInputElement>(
+			"include-diagnostics-toggle",
+		),
 
 		presetNameInput: get<HTMLInputElement>("preset-name-input"),
 		savePresetButton: get<HTMLButtonElement>("save-preset-button"),

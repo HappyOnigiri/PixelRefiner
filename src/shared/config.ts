@@ -1,4 +1,4 @@
-import type { DetailLevel, RGB } from "./types";
+import type { DetailLevel, RGB, SmallComponentRemovalMode } from "./types";
 
 export type IntRange = {
 	min: number;
@@ -21,8 +21,6 @@ export const PROCESS_RANGES = {
 	backgroundTolerance: { min: 0, max: 255, default: 64 } as const,
 	// トリミング用の境界ボックスしきい値
 	trimAlphaThreshold: { min: 1, max: 255, default: 16 } as const,
-	// UI: 小さな孤立領域を除去するしきい値（総ピクセル数に対する割合）
-	floatingMaxPercent: { min: 0, max: 100, default: 3 } as const,
 	// 小さな孤立領域（連結成分）を背景として除去する
 	floatingMaxPixels: { min: 0, max: 1000000, default: 0 } as const,
 	// 出力ピクセルサイズを強制する（境界ボックスのトリミング後）
@@ -34,6 +32,8 @@ export const PROCESS_RANGES = {
 	ditherStrength: { min: 0, max: 100, default: 0 } as const,
 	// アウトライン
 	outlineColor: { r: 255, g: 255, b: 255 }, // デフォルトの白
+	// 自動傾き補正で扱う角度（度）
+	deskewAngle: { min: -3, max: 3, default: 0 } as const,
 } as const satisfies Record<string, IntRange | RGB>;
 
 export const PROCESS_ANALYSIS_THRESHOLDS = {
@@ -60,6 +60,15 @@ export const CANDIDATE_PREVIEW_LIMITS = {
 	minSimilarAreaDiff: 2,
 	/** セルサイズ差がこの px 未満なら、候補として区別できないほど近いとみなす。 */
 	similarCellDelta: 0.2,
+} as const;
+
+export const BATCH_PALETTE_DEFAULTS = {
+	/** 画像ごとの総寄与を揃えたうえで、画像内の画素頻度へ割り当てる比率。 */
+	frequencyWeight: 0.75,
+	/** 小さなアクセント色を保護するため、一意色へ均等に割り当てる比率。 */
+	uniformColorWeight: 0.25,
+	/** 1画像から共通パレットへ渡す決定論的サンプル数の上限。 */
+	maxSamplesPerImage: 65_536,
 } as const;
 
 export const INPUT_CLASSIFIER_THRESHOLDS = {
@@ -149,6 +158,21 @@ export const BACKGROUND_MODEL_LIMITS = {
 	dehaloInteriorBlend: 0.65,
 } as const;
 
+export const SMALL_COMPONENT_LIMITS = {
+	maxLogicalPixels: {
+		off: 0,
+		light: 1,
+		auto: 2,
+		strong: 4,
+	} satisfies Record<SmallComponentRemovalMode, number>,
+	proximityGap: 1,
+	matchingColorChannelTolerance: 16,
+	symmetryTolerance: 1,
+	strongEdgeDelta: 64,
+	highOpacity: 224,
+	outlineMinLength: 2,
+} as const;
+
 export const GRID_CANDIDATE_SCORE_WEIGHTS = {
 	colorBoundary: 0.08,
 	luminanceGradient: 0.08,
@@ -188,6 +212,18 @@ export const GRID_SEARCH_LIMITS = {
 	localRegionCount: 4,
 	minimumAutocorrelationSamples: 3,
 	fullResolutionSampleLimit: 16384,
+} as const;
+
+export const DESKEW_LIMITS = {
+	angleStep: 0.25,
+	maxAnalysisDimension: 256,
+	minimumInputDimension: 64,
+	maximumInputPixels: 1_000_000,
+	fullResolutionCandidateLimit: 3,
+	minimumConfidence: 0.3,
+	minimumConfidenceGain: 0.005,
+	// 0度から満点までの残り幅に対して必要な、絶対スコア改善量の割合。
+	minimumScoreHeadroomGain: 0.001,
 } as const;
 
 export const RETRO_PALETTES: Record<
@@ -419,7 +455,11 @@ export const PROCESS_DEFAULTS = {
 	// [Intended] UIにはアルゴリズム名を出さず、Autoで頑健なセル復元を使う。
 	cellSamplingMode: "alpha-aware-medoid",
 	preserveThinFeatures: true,
+	// [Intended] UIに専門パラメータを増やさず、Auto経路だけで微小な傾きを補正する。
+	enableDeskew: true,
+	smallComponentMode: "auto",
 
+	// [Intended] 公開済みの旧オプション用。新しい既定処理には使用しない。
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
 	reduceColors: false,
 	reduceColorMode: "none", // "none" | "auto" | "gb_legacy" | "gb_pocket" | "gb_light" | "pico8" | "nes" | "mono" | "custom"
@@ -428,6 +468,8 @@ export const PROCESS_DEFAULTS = {
 	ditherStrength: PROCESS_RANGES.ditherStrength.default,
 	outlineStyle: "none",
 	outlineColor: PROCESS_RANGES.outlineColor,
+	sharedPalette: false,
+	includeDiagnosticSummary: false,
 	debug: import.meta.env.DEV,
 } as const;
 

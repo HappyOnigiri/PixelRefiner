@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
-import { normalizeGridPhase, searchPhaseAwareGrid } from "./grid-search";
+import { rotateRawImageExpanded } from "./deskew";
+import {
+	hasMeaningfulDeskewScoreGain,
+	normalizeGridPhase,
+	searchDeskewedGrid,
+	searchPhaseAwareGrid,
+} from "./grid-search";
 import { processImage } from "./processor";
 
 const createScaledGrid = (
@@ -267,5 +273,53 @@ describe("phase-aware grid search", () => {
 			localPhaseStability: expect.any(Number),
 			methodAgreement: expect.any(Number),
 		});
+	});
+
+	it.each([-3, -1, -0.25, 0.25, 1, 3])(
+		"detects a correction for a %s degree input rotation",
+		(angle) => {
+			const source = createScaledGrid(8, 7, 16, 16);
+			const rotated = rotateRawImageExpanded(source, angle);
+			const result = searchDeskewedGrid(rotated, rotated);
+			expect(result).not.toBeNull();
+			expect(Math.abs((result?.angle ?? 0) + angle)).toBeLessThanOrEqual(0.5);
+			expect(
+				result?.candidates.every(
+					(candidate) => candidate.image === candidate.mask,
+				),
+			).toBe(true);
+		},
+	);
+
+	it("rejects a noise-level score improvement without rejecting quarter-degree fixtures", () => {
+		expect(hasMeaningfulDeskewScoreGain(0.310317, 0.309961)).toBe(false);
+		expect(hasMeaningfulDeskewScoreGain(0.9069384, 0.9067131)).toBe(true);
+	});
+
+	it("keeps deskew candidates globally sorted after merging angles", () => {
+		const source = createScaledGrid(8, 7, 16, 16);
+		const rotated = rotateRawImageExpanded(source, -3);
+		const { analysis } = processImage(rotated, {
+			processingMode: "refine",
+			enableDeskew: true,
+			autoGridFromTrimmed: true,
+			fastAutoGridFromTrimmed: true,
+			bgRemovalScope: "off",
+			bgExtractionMethod: "none",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: true,
+			sampleWindow: 1,
+		});
+		const scores = analysis.gridCandidates.map(
+			(candidate) => candidate.totalScore,
+		);
+		expect(scores).toEqual([...scores].sort((left, right) => right - left));
+	});
+
+	it("keeps an unrotated grid at zero degrees", () => {
+		const source = createScaledGrid(8, 7, 4, 4);
+		const result = searchDeskewedGrid(source, source);
+		expect(result).toBeNull();
 	});
 });

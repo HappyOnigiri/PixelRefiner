@@ -270,6 +270,8 @@ export const removeSmallFloatingComponentsInPlace = (
 	alphaThreshold: number,
 	maxPixels: number,
 ): { removedComponents: number; removedPixels: number } => {
+	// [Intended] 公開済み floatingMaxPixels の旧仕様互換専用。
+	// 新しい自動処理は components.ts で論理ピクセルへ変換した後に行う。
 	if (maxPixels <= 0) return { removedComponents: 0, removedPixels: 0 };
 	if (working.width !== masked.width || working.height !== masked.height) {
 		throw new Error("working and masked sizes do not match.");

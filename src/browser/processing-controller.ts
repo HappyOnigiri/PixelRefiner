@@ -1,7 +1,7 @@
 import { wrap } from "comlink";
 import type { ProcessOptions } from "../core/processor";
 import type { ProcessorWorker } from "../core/worker";
-import { clampInt, clampNumber, PROCESS_RANGES } from "../shared/config";
+import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
 	CandidateSelection,
 	DetailLevel,
@@ -35,7 +35,7 @@ const workerInstance = new Worker(
 	new URL("../core/worker.ts", import.meta.url),
 	{ type: "module" },
 );
-const processor = wrap<ProcessorWorker>(workerInstance);
+export const processor = wrap<ProcessorWorker>(workerInstance);
 
 type ProcessingControllerOptions = {
 	els: Elements;
@@ -52,6 +52,111 @@ type ProcessingControllerOptions = {
 
 export type RunProcessingOptions = {
 	showCandidates?: boolean;
+};
+
+const parseOptionalInt = (
+	input: HTMLInputElement,
+	range: { min: number; max: number; default: number },
+): number | undefined => {
+	const value = input.value.trim();
+	if (value === "") return undefined;
+	const number = Number(value);
+	if (!Number.isFinite(number)) return undefined;
+	return clampInt(number, range);
+};
+
+export const createProcessOptions = (
+	els: Elements,
+	processingState: ProcessingState,
+): ProcessOptions => {
+	const detectionQuantStep = clampInt(
+		Number(els.quantStepInput.value),
+		PROCESS_RANGES.detectionQuantStep,
+	);
+	const pixelsW = parseOptionalInt(
+		els.forcePixelsWInput,
+		PROCESS_RANGES.forcePixelsW,
+	);
+	const pixelsH = parseOptionalInt(
+		els.forcePixelsHInput,
+		PROCESS_RANGES.forcePixelsH,
+	);
+	const sampleWindow = clampInt(
+		Number(els.sampleWindowInput.value),
+		PROCESS_RANGES.sampleWindow,
+	);
+	const tolerance = clampInt(
+		Number(els.toleranceInput.value),
+		PROCESS_RANGES.backgroundTolerance,
+	);
+	const method = els.bgExtractionMethod
+		.value as ProcessOptions["bgExtractionMethod"];
+	const bgEnabled = method !== "none";
+	const smallComponentMode = bgEnabled
+		? (els.smallComponentModeSelect
+				.value as ProcessOptions["smallComponentMode"])
+		: "off";
+	const colorCount = clampInt(
+		Number(els.colorCountInput.value),
+		PROCESS_RANGES.colorCount,
+	);
+	const reduceColorMode = els.reduceColorModeSelect.value;
+	const ditherMode = els.ditherModeSelect.value as DitherMode;
+	const ditherStrength = clampInt(
+		Number(els.ditherStrengthInput.value),
+		PROCESS_RANGES.ditherStrength,
+	);
+	const outlineHex = els.outlineColorInput.value;
+	type GridDetectionMode = "auto" | "hint" | "force" | "off";
+	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
+	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
+
+	const advancedOptions: ProcessOptions = {
+		detectionQuantStep,
+		forcePixelsW: gridMode === "force" && usePixels ? pixelsW : undefined,
+		forcePixelsH: gridMode === "force" && usePixels ? pixelsH : undefined,
+		hintPixelsW: gridMode === "hint" && usePixels ? pixelsW : undefined,
+		hintPixelsH: gridMode === "hint" && usePixels ? pixelsH : undefined,
+		preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
+		postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
+		bgRemovalScope: bgEnabled
+			? (els.bgRemovalScopeSelect.value as ProcessOptions["bgRemovalScope"])
+			: "off",
+		bgConnectivity: bgEnabled
+			? (els.bgConnectivitySelect.value as ProcessOptions["bgConnectivity"])
+			: "4",
+		backgroundTolerance: tolerance,
+		sampleWindow,
+		trimToContent: els.trimToContentCheck.checked,
+		fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
+		makeSquare: els.makeSquareCheck.checked,
+		keepAspectRatio: els.keepAspectRatioCheck.checked,
+		enableGridDetection: gridMode !== "off",
+		reduceColors: reduceColorMode !== "none",
+		reduceColorMode,
+		ditherMode,
+		colorCount,
+		ditherStrength,
+		smallComponentMode,
+		outlineStyle: els.outlineStyleSelect.value as OutlineStyle,
+		outlineColor: {
+			r: parseInt(outlineHex.slice(1, 3), 16),
+			g: parseInt(outlineHex.slice(3, 5), 16),
+			b: parseInt(outlineHex.slice(5, 7), 16),
+		},
+		bgExtractionMethod: method,
+		bgRgb: els.bgRgbInput.value,
+		fixedPalette: processingState.currentFixedPalette,
+	};
+	return applyQuickSettingsToOptions(advancedOptions, {
+		processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
+		detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
+		colors: els.quickColorsSelect.value as QuickColors,
+		background: els.quickBackgroundSelect.value as QuickBackground,
+		dithering: els.quickDitheringSelect.value as QuickDithering,
+		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
+		trimToContent: els.quickAutoTrimCheck.checked,
+	});
 };
 
 export const createRunProcessing = ({
@@ -113,131 +218,7 @@ export const createRunProcessing = ({
 		imageSession.setImageStatus(currentItem.id, "processing");
 
 		try {
-			const parseOptionalInt = (
-				input: HTMLInputElement,
-				range: { min: number; max: number; default: number },
-			): number | undefined => {
-				const s = input.value.trim();
-				if (s === "") return undefined;
-				const n = Number(s);
-				if (!Number.isFinite(n)) return undefined;
-				return clampInt(n, range);
-			};
-
-			const detectionQuantStep = clampInt(
-				Number(els.quantStepInput.value),
-				PROCESS_RANGES.detectionQuantStep,
-			);
-			const pixelsW = parseOptionalInt(
-				els.forcePixelsWInput,
-				PROCESS_RANGES.forcePixelsW,
-			);
-			const pixelsH = parseOptionalInt(
-				els.forcePixelsHInput,
-				PROCESS_RANGES.forcePixelsH,
-			);
-			const sampleWindow = clampInt(
-				Number(els.sampleWindowInput.value),
-				PROCESS_RANGES.sampleWindow,
-			);
-			const tolerance = clampInt(
-				Number(els.toleranceInput.value),
-				PROCESS_RANGES.backgroundTolerance,
-			);
-			const floatingMaxPercent = clampNumber(
-				Number(els.floatingMaxPercentInput.value),
-				PROCESS_RANGES.floatingMaxPercent,
-			);
-			const totalPixels = currentImage.width * currentImage.height;
-			const method = els.bgExtractionMethod
-				.value as ProcessOptions["bgExtractionMethod"];
-			const bgEnabled = method !== "none";
-			const floatingMaxPixels = bgEnabled
-				? floatingMaxPercent <= 0
-					? 0
-					: Math.min(
-							totalPixels,
-							Math.max(1, Math.ceil((floatingMaxPercent / 100) * totalPixels)),
-						)
-				: 0;
-
-			const colorCount = clampInt(
-				Number(els.colorCountInput.value),
-				PROCESS_RANGES.colorCount,
-			);
-
-			const reduceColorMode = els.reduceColorModeSelect.value;
-			const reduceColors = reduceColorMode !== "none";
-			const ditherMode = els.ditherModeSelect.value as DitherMode;
-
-			const ditherStrength = clampInt(
-				Number(els.ditherStrengthInput.value),
-				PROCESS_RANGES.ditherStrength,
-			);
-
-			const outlineStyle = els.outlineStyleSelect.value as OutlineStyle;
-			const outlineHex = els.outlineColorInput.value;
-			const outlineColor = {
-				r: parseInt(outlineHex.slice(1, 3), 16),
-				g: parseInt(outlineHex.slice(3, 5), 16),
-				b: parseInt(outlineHex.slice(5, 7), 16),
-			};
-
-			type GridDetectionMode = "auto" | "hint" | "force" | "off";
-			const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
-			const usePixels = pixelsW !== undefined && pixelsH !== undefined;
-			const forcePixelsW =
-				gridMode === "force" && usePixels ? pixelsW : undefined;
-			const forcePixelsH =
-				gridMode === "force" && usePixels ? pixelsH : undefined;
-			const hintPixelsW =
-				gridMode === "hint" && usePixels ? pixelsW : undefined;
-			const hintPixelsH =
-				gridMode === "hint" && usePixels ? pixelsH : undefined;
-			const enableGridDetection = gridMode !== "off";
-
-			const advancedOptions: ProcessOptions = {
-				detectionQuantStep,
-				forcePixelsW,
-				forcePixelsH,
-				hintPixelsW,
-				hintPixelsH,
-				preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
-				postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
-				bgRemovalScope: bgEnabled
-					? (els.bgRemovalScopeSelect.value as ProcessOptions["bgRemovalScope"])
-					: "off",
-				bgConnectivity: bgEnabled
-					? (els.bgConnectivitySelect.value as ProcessOptions["bgConnectivity"])
-					: "4",
-				backgroundTolerance: tolerance,
-				sampleWindow,
-				trimToContent: els.trimToContentCheck.checked,
-				fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
-				makeSquare: els.makeSquareCheck.checked,
-				keepAspectRatio: els.keepAspectRatioCheck.checked,
-				enableGridDetection,
-				reduceColors,
-				reduceColorMode,
-				ditherMode,
-				colorCount,
-				ditherStrength,
-				floatingMaxPixels,
-				outlineStyle,
-				outlineColor,
-				bgExtractionMethod: method,
-				bgRgb: els.bgRgbInput.value,
-				fixedPalette: processingState.currentFixedPalette,
-			};
-			const processOptions = applyQuickSettingsToOptions(advancedOptions, {
-				processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
-				detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
-				colors: els.quickColorsSelect.value as QuickColors,
-				background: els.quickBackgroundSelect.value as QuickBackground,
-				dithering: els.quickDitheringSelect.value as QuickDithering,
-				outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
-				trimToContent: els.quickAutoTrimCheck.checked,
-			});
+			const processOptions = createProcessOptions(els, processingState);
 
 			const {
 				result,
@@ -261,12 +242,14 @@ export const createRunProcessing = ({
 			// 簡潔にするためコピーとして保持する。
 			const resultImage = result;
 			// currentResult = resultImage; // 直接使用しなくなった
-			imageSession.updateImageResult(
-				currentItem.id,
-				resultImage,
+			imageSession.updateImageResult(currentItem.id, {
+				result,
 				grid,
+				extractedPalette,
+				compareBefore,
+				compareBeforeSanitized,
 				analysis,
-			);
+			});
 
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);

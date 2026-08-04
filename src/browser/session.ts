@@ -1,7 +1,9 @@
+import { needsBatchAttention } from "../core/batch";
 import type {
 	CandidateSelection,
 	PixelGrid,
 	ProcessingAnalysis,
+	ProcessResult,
 	RawImage,
 } from "../shared/types";
 import { drawRawImageToCanvas } from "./io";
@@ -12,10 +14,12 @@ export interface ImageItem {
 	original: RawImage;
 	result?: RawImage;
 	grid?: PixelGrid;
-	processingAnalysis?: ProcessingAnalysis;
 	thumbnail: string;
 	status: "pending" | "processing" | "done" | "error";
 	error?: string;
+	analysis?: ProcessingAnalysis;
+	attention?: boolean;
+	outputFilename?: string;
 	/**
 	 * 候補プレビューで選んだ処理方針。設定変更で再処理しても自動判定へ戻らないよう保持する。
 	 * UI の設定値は書き換えないため、保持先はこの画像単位の状態になる。
@@ -103,20 +107,28 @@ export class ImageSession {
 
 	public updateImageResult(
 		id: string,
-		result: RawImage,
-		grid?: PixelGrid,
-		processingAnalysis?: ProcessingAnalysis,
+		processed: ProcessResult,
 	): PixelGrid | undefined {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
-			img.result = result;
-			img.grid = grid;
-			img.processingAnalysis = processingAnalysis;
+			img.result = processed.result;
+			img.grid = processed.grid;
+			img.analysis = processed.analysis;
+			img.attention = needsBatchAttention(processed.analysis);
 			img.status = "done";
+			img.error = undefined;
 			this.onUpdate();
 			return img.grid;
 		}
-		return grid;
+		return processed.grid;
+	}
+
+	public setOutputFilename(
+		id: string,
+		outputFilename: string | undefined,
+	): void {
+		const img = this.images.find((item) => item.id === id);
+		if (img) img.outputFilename = outputFilename;
 	}
 
 	public setCandidateSelection(
@@ -141,7 +153,12 @@ export class ImageSession {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.status = status;
-			if (error) img.error = error;
+			img.error = error;
+			if (status === "processing") {
+				img.analysis = undefined;
+				img.attention = false;
+				img.outputFilename = undefined;
+			}
 			this.onUpdate();
 		}
 	}

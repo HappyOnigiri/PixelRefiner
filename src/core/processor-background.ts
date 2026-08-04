@@ -18,7 +18,9 @@ export const prepareAutomaticBackground = (
 	if (
 		options.bgExtractionMethod !== "auto" ||
 		options.bgRemovalScope === "off" ||
-		(!options.preRemoveBackground && !options.postRemoveBackground)
+		(!options.preRemoveBackground &&
+			!options.postRemoveBackground &&
+			options.smallComponentMode === "off")
 	) {
 		return {};
 	}

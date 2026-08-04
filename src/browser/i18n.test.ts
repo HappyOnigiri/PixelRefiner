@@ -79,6 +79,21 @@ describe("I18nManager", () => {
 		expect(i18n.t("error.process_failed")).toBe("处理失败");
 	});
 
+	it("provides batch labels in every supported language", () => {
+		const i18n = new I18nManager();
+		for (const language of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(language);
+			expect(i18n.t("ui.shared_palette")).not.toBe("ui.shared_palette");
+			expect(i18n.t("ui.include_diagnostics")).not.toBe(
+				"ui.include_diagnostics",
+			);
+			expect(i18n.t("batch.route.convert")).not.toBe("batch.route.convert");
+			expect(
+				i18n.t("warning.batch_partial_failure", { failed: 1, total: 3 }),
+			).toContain("1");
+		}
+	});
+
 	it("should interpolate parameters", () => {
 		const i18n = new I18nManager();
 		i18n.setLanguage("en");
@@ -158,6 +173,23 @@ describe("I18nManager", () => {
 					confidence: 80,
 				}),
 			).toContain("80");
+		}
+	});
+
+	it("registers small-component controls in every language", () => {
+		const i18n = new I18nManager();
+		for (const language of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(language);
+			for (const key of [
+				"setting.small_component_mode",
+				"tooltip.help.small_component_mode",
+				"option.small_component_off",
+				"option.small_component_light",
+				"option.small_component_auto",
+				"option.small_component_strong",
+			] as const) {
+				expect(i18n.t(key)).not.toBe(key);
+			}
 		}
 	});
 });

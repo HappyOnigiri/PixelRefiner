@@ -35,6 +35,8 @@ const resources = {
 		"ui.clear_all": "すべてクリア",
 		"ui.download_all": "一括ダウンロード",
 		"ui.download_all_zip": "一括ダウンロード (ZIP)",
+		"ui.shared_palette": "共通パレット",
+		"ui.include_diagnostics": "診断サマリーを含める",
 		"ui.remove_image": "画像を削除",
 		"ui.confirm_clear_all": "すべての画像を削除してもよろしいですか？",
 		"ui.size": "サイズ",
@@ -64,6 +66,13 @@ const resources = {
 		"candidate.description.preserve":
 			"縮小せず、安全に元の解像度を維持します。",
 		"candidate.description.convert": "通常画像としてドット絵風に変換します。",
+		"batch.route.refine": "復元",
+		"batch.route.convert": "変換",
+		"batch.route.preserve": "原寸維持",
+		"batch.status.pending": "未処理",
+		"batch.status.processing": "処理中",
+		"batch.status.done": "完了",
+		"batch.status.error": "エラー",
 
 		// 設定
 		"setting.quick": "かんたん設定",
@@ -132,7 +141,7 @@ const resources = {
 		"setting.bg_removal_scope": "背景透過の範囲",
 		"setting.bg_connectivity": "連結判定",
 
-		"setting.floating_max": "浮きノイズ上限(%)",
+		"setting.small_component_mode": "小さな要素の整理",
 		"setting.trimming": "トリミング",
 		"setting.auto_trim": "自動トリム",
 		"setting.outline": "アウトライン",
@@ -186,8 +195,8 @@ const resources = {
 			"背景をどこまで透過するかの範囲です。\n\n選択部分のみ: 選択した角から繋がる背景だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 外側に加え、ドーナツ穴などの内側も透過。",
 		"tooltip.help.bg_connectivity":
 			"「繋がっている」の判定方法です。\n\n4方向: 斜めを含めない厳しい判定。\n8方向: 斜めも繋がりとみなします。",
-		"tooltip.help.floating_max":
-			"背景に囲まれて浮きノイズとみなす最大面積（元画像の総ピクセル数に対する割合）です。\n0%のときは浮きノイズ除去を行いません。\n例: 1% → (幅×高さ×0.01) px\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.small_component_mode":
+			"復元後の論理ピクセルを基準に孤立ノイズを整理します。近接・反復・対称・輪郭の延長・強いエッジ・高い不透明度を持つ細部は保護します。背景判定が不確かな場合は自動削除しません。",
 		"tooltip.help.auto_trim":
 			"出力後に内容物が存在する範囲で自動的にトリミング（余白削除）を行います。\n\n余白（背景）が大きい画像に対して、これをONにすることで正しい縦横のマス数が検出されやすくなります。",
 		"tooltip.help.make_square":
@@ -231,6 +240,10 @@ const resources = {
 		"option.bg_scope_all": "外周＋内側（穴）も含む",
 		"option.bg_connectivity_4": "4方向（斜めなし）",
 		"option.bg_connectivity_8": "8方向（斜め含む）",
+		"option.small_component_off": "無効",
+		"option.small_component_light": "弱（細部を保持）",
+		"option.small_component_auto": "自動",
+		"option.small_component_strong": "強",
 		"option.bg_top_left": "左上",
 		"option.bg_bottom_left": "左下",
 		"option.bg_top_right": "右上",
@@ -253,6 +266,8 @@ const resources = {
 		"warning.extreme_output_size": "出力サイズが非常に大きくなっています。",
 		"warning.no_content": "処理対象の内容を検出できませんでした。",
 		"warning.fallback_to_preserve": "安全のため元のサイズを維持しました。",
+		"warning.batch_partial_failure":
+			"{total}件中{failed}件を処理できませんでした。成功した画像はZIPに含まれています。",
 		"warning.unknown": "不明な処理警告です（{code}）。",
 
 		"error.palette_limit":
@@ -301,6 +316,8 @@ const resources = {
 		"ui.clear_all": "全部清除",
 		"ui.download_all": "全部下载",
 		"ui.download_all_zip": "全部下载 (ZIP)",
+		"ui.shared_palette": "共用调色板",
+		"ui.include_diagnostics": "包含诊断摘要",
 		"ui.remove_image": "移除图片",
 		"ui.confirm_clear_all": "确定要清除所有图片吗？",
 		"ui.size": "尺寸",
@@ -327,6 +344,13 @@ const resources = {
 		"candidate.description.coarser": "将图像整理为更大像素块的方案。",
 		"candidate.description.preserve": "不缩小图像，安全保留原始分辨率。",
 		"candidate.description.convert": "按普通图像转换为像素画风格。",
+		"batch.route.refine": "还原",
+		"batch.route.convert": "转换",
+		"batch.route.preserve": "保持原尺寸",
+		"batch.status.pending": "待处理",
+		"batch.status.processing": "处理中",
+		"batch.status.done": "完成",
+		"batch.status.error": "错误",
 
 		// 設定
 		"setting.quick": "快速设置",
@@ -395,7 +419,7 @@ const resources = {
 		"setting.bg_removal_scope": "背景透明化范围",
 		"setting.bg_connectivity": "连通判定",
 
-		"setting.floating_max": "漂浮噪点上限 (%)",
+		"setting.small_component_mode": "小组件清理",
 		"setting.trimming": "裁剪",
 		"setting.auto_trim": "自动裁剪",
 		"setting.outline": "描边",
@@ -448,8 +472,8 @@ const resources = {
 			"决定背景透明化的范围。\n\n仅选中部分：只透明化从所选角落连通的背景。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：外侧背景加上内部孔洞也一起透明化。",
 		"tooltip.help.bg_connectivity":
 			"决定相邻区域是否算作连通。\n\n4 方向：更严格，不包含斜向。\n8 方向：包含斜向相邻。",
-		"tooltip.help.floating_max":
-			"被视为漂浮噪点并移除的最大面积，占原图总像素数的百分比。\n设为 0% 时不移除漂浮噪点。\n示例：1% -> (宽度 x 高度 x 0.01) px\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.small_component_mode":
+			"根据恢复后的逻辑像素清理孤立噪点。会保护邻近、重复、对称、位于轮廓延长线、边缘清晰或高不透明度的细节。背景判断不确定时不会自动删除。",
 		"tooltip.help.auto_trim":
 			"处理后自动裁剪到包含内容的范围。\n\n对于留白（背景）较大的图片，开启后更容易检测到正确的横纵格数。",
 		"tooltip.help.make_square":
@@ -493,6 +517,10 @@ const resources = {
 		"option.bg_scope_all": "外侧 + 内部孔洞",
 		"option.bg_connectivity_4": "4 方向（不含斜向）",
 		"option.bg_connectivity_8": "8 方向（含斜向）",
+		"option.small_component_off": "关闭",
+		"option.small_component_light": "轻度（保留细节）",
+		"option.small_component_auto": "自动",
+		"option.small_component_strong": "强力",
 		"option.bg_top_left": "左上",
 		"option.bg_bottom_left": "左下",
 		"option.bg_top_right": "右上",
@@ -512,6 +540,8 @@ const resources = {
 		"warning.extreme_output_size": "输出尺寸非常大。",
 		"warning.no_content": "未检测到可处理的内容。",
 		"warning.fallback_to_preserve": "为安全起见，已保留原始尺寸。",
+		"warning.batch_partial_failure":
+			"{total} 张图片中有 {failed} 张处理失败。成功的图片已包含在 ZIP 中。",
 		"warning.unknown": "未知处理警告（{code}）。",
 
 		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
@@ -558,6 +588,8 @@ const resources = {
 		"ui.clear_all": "Clear All",
 		"ui.download_all": "Download All",
 		"ui.download_all_zip": "Download All (ZIP)",
+		"ui.shared_palette": "Shared palette",
+		"ui.include_diagnostics": "Include diagnostic summary",
 		"ui.remove_image": "Remove Image",
 		"ui.confirm_clear_all": "Are you sure you want to clear all images?",
 		"ui.size": "Size",
@@ -588,6 +620,13 @@ const resources = {
 			"Avoids downscaling and safely keeps the original resolution.",
 		"candidate.description.convert":
 			"Treats the input as a regular image and converts it to pixel art.",
+		"batch.route.refine": "Refine",
+		"batch.route.convert": "Convert",
+		"batch.route.preserve": "Preserve",
+		"batch.status.pending": "Pending",
+		"batch.status.processing": "Processing",
+		"batch.status.done": "Done",
+		"batch.status.error": "Error",
 
 		// 設定
 		"setting.quick": "Quick Settings",
@@ -656,7 +695,7 @@ const resources = {
 		"setting.bg_removal_scope": "Background Removal Scope",
 		"setting.bg_connectivity": "Connectivity",
 
-		"setting.floating_max": "Max Noise Size (%)",
+		"setting.small_component_mode": "Small Detail Cleanup",
 		"setting.trimming": "Trimming",
 		"setting.auto_trim": "Auto Trim",
 		"setting.outline": "Outline",
@@ -710,8 +749,8 @@ const resources = {
 			"Range of background to make transparent.\n\nSelected only: Only background connected from the chosen corner.\nOuter all: All background connected to the image border.\nAll: Outer + inner holes (e.g. donut hole).",
 		"tooltip.help.bg_connectivity":
 			"Whether diagonal neighbors are considered connected.\n\n4-way: Strict (no diagonals).\n8-way: Includes diagonals.",
-		"tooltip.help.floating_max":
-			"The maximum area (as a percentage of the total pixels in the original image) to be considered for removal as floating noise.\nWhen set to 0%, floating noise removal is skipped.\nExample: 1% → (Width × Height × 0.01) px\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.small_component_mode":
+			"Cleans isolated noise using restored logical pixels. Nearby, repeated, symmetric, outline-aligned, strongly edged, and highly opaque details are protected. Automatic removal is skipped when the background estimate is uncertain.",
 		"tooltip.help.auto_trim":
 			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
 		"tooltip.help.make_square":
@@ -755,6 +794,10 @@ const resources = {
 		"option.bg_scope_all": "Outer + inner holes",
 		"option.bg_connectivity_4": "4-way (no diagonals)",
 		"option.bg_connectivity_8": "8-way (with diagonals)",
+		"option.small_component_off": "Off",
+		"option.small_component_light": "Light (Keep Details)",
+		"option.small_component_auto": "Auto",
+		"option.small_component_strong": "Strong",
 		"option.bg_top_left": "Top-Left",
 		"option.bg_bottom_left": "Bottom-Left",
 		"option.bg_top_right": "Top-Right",
@@ -778,6 +821,8 @@ const resources = {
 		"warning.no_content": "No processable content was detected.",
 		"warning.fallback_to_preserve":
 			"The original size was preserved for safety.",
+		"warning.batch_partial_failure":
+			"{failed} of {total} images could not be processed. Successful images are included in the ZIP.",
 		"warning.unknown": "Unknown processing warning ({code}).",
 
 		"error.palette_limit":

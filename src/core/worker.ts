@@ -8,6 +8,12 @@ import type {
 	RawImage,
 } from "../shared/types";
 import {
+	type BatchProcessInput,
+	type BatchProcessingOptions,
+	type BatchProcessResult,
+	processBatchImages,
+} from "./batch";
+import {
 	candidateProcessOptions,
 	createCandidatePreview,
 	selectCandidatePlans,
@@ -18,6 +24,10 @@ import { processImage } from "./processor";
 
 export type ProcessorWorker = {
 	process: (img: RawImage, options: ProcessOptions) => ProcessResult;
+	processBatch: (
+		inputs: BatchProcessInput[],
+		options: BatchProcessingOptions,
+	) => BatchProcessResult;
 	previewCandidates: (
 		img: RawImage,
 		options: ProcessOptions,
@@ -37,6 +47,7 @@ const worker: ProcessorWorker = {
 	process: (img, options) => {
 		return processImage(img, options);
 	},
+	processBatch: (inputs, options) => processBatchImages(inputs, options),
 	previewCandidates: (img, options, analysis, cacheKey) => {
 		const cached = candidateCache.get(cacheKey);
 		if (cached) return cached;

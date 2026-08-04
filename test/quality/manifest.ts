@@ -117,7 +117,11 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		}
 		for (const pattern of qualityCase.degradationPatterns)
 			degradations.add(pattern);
-		for (const file of [qualityCase.input, qualityCase.expected]) {
+		for (const file of [
+			qualityCase.input,
+			qualityCase.expected,
+			...(qualityCase.sharedPalette?.inputs ?? []),
+		]) {
 			referencedFiles.add(file);
 			if (!qualityCase.assets.some((asset) => asset.file === file)) {
 				errors.push(`${qualityCase.id}: missing provenance for ${file}`);

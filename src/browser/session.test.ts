@@ -34,8 +34,15 @@ describe("ImageSession", () => {
 		(session as unknown as { images: ImageItem[] }).images.push(item);
 		const processingAnalysis = analysis();
 
-		session.updateImageResult(item.id, original, undefined, processingAnalysis);
+		session.updateImageResult(item.id, {
+			result: original,
+			grid: undefined,
+			extractedPalette: [],
+			compareBefore: original,
+			compareBeforeSanitized: original,
+			analysis: processingAnalysis,
+		});
 
-		expect(session.getImages()[0].processingAnalysis).toBe(processingAnalysis);
+		expect(session.getImages()[0].analysis).toBe(processingAnalysis);
 	});
 });

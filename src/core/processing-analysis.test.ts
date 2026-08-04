@@ -393,4 +393,41 @@ describe("processing analysis", () => {
 		expect(cloned.analysis).toEqual(processed.analysis);
 		expect(cloned.result.data).toBeInstanceOf(Uint8ClampedArray);
 	});
+
+	it("reports small-component removal counts", () => {
+		const image = solidImage(4, 4, [20, 30, 40, 255]);
+		const grid = {
+			cellW: 1,
+			cellH: 1,
+			offsetX: 0,
+			offsetY: 0,
+			outW: 4,
+			outH: 4,
+			score: 1,
+		};
+		const componentDiagnostic = {
+			mode: "auto" as const,
+			applied: true,
+			removedComponents: 2,
+			removedPixels: 3,
+			pixelBasis: "logical" as const,
+		};
+		const analysis = createProcessingAnalysis(
+			image,
+			image,
+			image,
+			grid,
+			"preserve",
+			"test",
+			16,
+			undefined,
+			undefined,
+			undefined,
+			[],
+			undefined,
+			componentDiagnostic,
+		);
+
+		expect(analysis.smallComponentRemoval).toEqual(componentDiagnostic);
+	});
 });

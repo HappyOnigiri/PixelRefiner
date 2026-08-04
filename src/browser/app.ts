@@ -1,3 +1,4 @@
+import { PROCESS_DEFAULTS } from "../shared/config";
 import type { ProcessingAnalysis } from "../shared/types";
 import {
 	extractColorsFromImage,
@@ -7,6 +8,8 @@ import {
 } from "../utils/palette";
 import { getElements } from "./app-elements";
 import { createProcessingState } from "./app-state";
+import { setupBatchController } from "./batch-controller";
+import { renderBatchImageList } from "./batch-image-list";
 import { CandidateChooser } from "./candidate-chooser";
 import { ImageComparer } from "./compare";
 import { setupCompareControls } from "./compare-controls";
@@ -29,6 +32,9 @@ import { setupSettingsControls } from "./settings-controls";
 
 export const initApp = (): void => {
 	const els = getElements();
+	els.sharedPaletteToggle.checked = PROCESS_DEFAULTS.sharedPalette;
+	els.includeDiagnosticsToggle.checked =
+		PROCESS_DEFAULTS.includeDiagnosticSummary;
 	const createModalController = createModalControllerFactory(
 		document.querySelector(".app"),
 	);
@@ -87,7 +93,7 @@ export const initApp = (): void => {
 		},
 		onActiveChange: (item) => {
 			candidateChooser.dismiss();
-			updateProcessingAnalysis(item?.processingAnalysis);
+			updateProcessingAnalysis(item?.analysis);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -171,38 +177,12 @@ export const initApp = (): void => {
 		}
 		els.imageListPanel.style.display = "block";
 
-		els.imageListContainer.innerHTML = "";
-		const activeId = imageSession.getActiveImage()?.id;
-
-		images.forEach((img) => {
-			const item = document.createElement("div");
-			item.className = `image-item ${img.id === activeId ? "active" : ""}`;
-			item.dataset.status = img.status;
-			item.title = img.file.name;
-
-			const thumb = document.createElement("img");
-			thumb.src = img.thumbnail;
-			item.appendChild(thumb);
-
-			const statusInd = document.createElement("div");
-			statusInd.className = "status-indicator";
-			item.appendChild(statusInd);
-
-			const removeBtn = document.createElement("button");
-			removeBtn.className = "remove-btn";
-			removeBtn.innerHTML = "x";
-			removeBtn.title = i18n.t("ui.remove_image") || "Remove";
-			removeBtn.onclick = (e) => {
-				e.stopPropagation();
-				imageSession.removeImage(img.id);
-			};
-			item.appendChild(removeBtn);
-
-			item.onclick = () => {
-				imageSession.setActiveImage(img.id);
-			};
-
-			els.imageListContainer.appendChild(item);
+		renderBatchImageList({
+			container: els.imageListContainer,
+			images,
+			activeId: imageSession.getActiveImage()?.id,
+			onSelect: (id) => imageSession.setActiveImage(id),
+			onRemove: (id) => imageSession.removeImage(id),
 		});
 	};
 
@@ -270,10 +250,12 @@ export const initApp = (): void => {
 		runProcessing,
 		saveSettings,
 		onLanguageChange: () =>
-			updateProcessingAnalysis(
-				imageSession.getActiveImage()?.processingAnalysis,
-			),
+			updateProcessingAnalysis(imageSession.getActiveImage()?.analysis),
 	});
+	els.sharedPaletteToggle.addEventListener(
+		"change",
+		updateReduceColorsDisabledStates,
+	);
 	const updateGrid = () => {
 		mainResultViewer.drawGrid();
 		modalResultViewer.drawGrid();
@@ -563,11 +545,11 @@ export const initApp = (): void => {
 		mainResultViewer,
 		modalResultViewer,
 		resultModalController,
-		runProcessing,
 		openCompareModal,
 		closeResultModal,
 		syncViewers,
 	});
+	setupBatchController({ els, processingState, imageSession });
 
 	// アプリの準備完了時に表示
 	document.body.classList.add("loaded");

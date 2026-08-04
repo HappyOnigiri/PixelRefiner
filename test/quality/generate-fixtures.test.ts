@@ -1,5 +1,7 @@
 import path from "node:path";
 import { describe, it } from "vitest";
+import { processBatchImages } from "../../src/core/batch";
+import { rotateRawImageExpanded } from "../../src/core/deskew";
 import { processImage } from "../../src/core/processor";
 import type { RawImage } from "../../src/shared/types";
 import {
@@ -29,6 +31,41 @@ const createQuantizationInput = (): RawImage => {
 			data[offset + 1] = (x * 17 + y * 53 + 29) % 256;
 			data[offset + 2] = (x * 71 + y * 23 + 83) % 256;
 			data[offset + 3] = (x + y) % 13 === 0 ? 0 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const createSharedPaletteTarget = (): RawImage => {
+	const width = 16;
+	const height = 16;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const subject = x >= 4 && x < 12 && y >= 4 && y < 12;
+			const accent = x === 11 && y === 4;
+			data[offset] = accent ? 20 : subject ? 30 : 220;
+			data[offset + 1] = accent ? 235 : 40;
+			data[offset + 2] = accent ? 40 : subject ? 220 : 30;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const createSharedPaletteCompanion = (): RawImage => {
+	const width = 96;
+	const height = 96;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const left = x < width / 2;
+			data[offset] = left ? 230 : 40;
+			data[offset + 1] = left ? 50 : 50;
+			data[offset + 2] = left ? 35 : 210;
+			data[offset + 3] = 255;
 		}
 	}
 	return { width, height, data };
@@ -272,6 +309,50 @@ const createCellSamplingFixtures = (): {
 	};
 };
 
+const createSmallComponentInput = (
+	includeProtectedDetails: boolean,
+	includeNoise: boolean,
+): RawImage => {
+	const width = 16;
+	const height = 16;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const subject = x >= 5 && x <= 10 && y >= 5 && y <= 11;
+			const eyes = includeProtectedDetails && y === 3 && (x === 6 || x === 9);
+			const dakuten =
+				includeProtectedDetails && y === 7 && (x === 12 || x === 14);
+			const star = includeProtectedDetails && x === 2 && y === 2;
+			const spark = includeProtectedDetails && x === 3 && y === 13;
+			const noise = includeNoise && x === 14 && y === 14;
+			const foreground = subject || eyes || dakuten || star || spark || noise;
+			const value = noise ? 240 : subject ? 40 : 224;
+			data[offset] = foreground ? value : 255;
+			data[offset + 1] = foreground ? (noise ? 240 : 80) : 255;
+			data[offset + 2] = foreground ? (noise ? 240 : 120) : 255;
+			data[offset + 3] = noise ? 32 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const createUncertainSmallComponentInput = (): RawImage => {
+	const width = 20;
+	const height = 20;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			data[offset] = (x * 73 + y * 41) % 256;
+			data[offset + 1] = (x * 19 + y * 101) % 256;
+			data[offset + 2] = (x * 151 + y * 7) % 256;
+			data[offset + 3] = x === 18 && y === 18 ? 32 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
 describe.skipIf(!enabled)("quality fixture generator", () => {
 	it("writes deterministic generated-code fixtures", () => {
 		const reference = createReferenceSprite();
@@ -295,6 +376,20 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		}
 
 		const nearest4x = resizeNearest(reference, 4);
+		const nearest16x = resizeNearest(reference, 16);
+		for (const [label, angle] of [
+			["neg-3", -3],
+			["neg-1", -1],
+			["neg-0-25", -0.25],
+			["pos-0-25", 0.25],
+			["pos-1", 1],
+			["pos-3", 3],
+		] as const) {
+			writePng(
+				fixturePath(`quality-prf500-rotated-${label}.png`),
+				rotateRawImageExpanded(nearest16x, angle),
+			);
+		}
 		const opaqueGrid = createOpaqueGrid();
 		writePng(fixturePath("quality_transparent_rgb_expected.png"), opaqueGrid);
 		writePng(
@@ -442,6 +537,126 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		writePng(
 			fixturePath("quality_prf200_gradient_background-expect.png"),
 			automaticBackgroundExpected,
+		);
+
+		const sharedPaletteTarget = createSharedPaletteTarget();
+		const sharedPaletteCompanion = createSharedPaletteCompanion();
+		writePng(
+			fixturePath("quality_prf420_shared_palette_target.png"),
+			sharedPaletteTarget,
+		);
+		writePng(
+			fixturePath("quality_prf420_shared_palette_companion.png"),
+			sharedPaletteCompanion,
+		);
+		const sharedPaletteOptions = {
+			processingMode: "preserve" as const,
+			enableGridDetection: false,
+			bgExtractionMethod: "none" as const,
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		};
+		const sharedPaletteBatch = processBatchImages(
+			[
+				{
+					id: "target",
+					image: sharedPaletteTarget,
+					options: sharedPaletteOptions,
+				},
+				{
+					id: "companion",
+					image: sharedPaletteCompanion,
+					options: sharedPaletteOptions,
+				},
+			],
+			{
+				sharedPalette: true,
+				colorCount: 4,
+				ditherMode: "none",
+				ditherStrength: 0,
+			},
+		);
+		const sharedPalettePrimary = sharedPaletteBatch.items[0];
+		if (!sharedPalettePrimary || sharedPalettePrimary.status === "error") {
+			throw new Error("Failed to generate PRF-420 shared-palette fixture");
+		}
+		const sharedPaletteExpected = sharedPalettePrimary.processResult.result;
+		let changed = false;
+		for (
+			let offset = 0;
+			offset < sharedPaletteTarget.data.length;
+			offset += 1
+		) {
+			if (
+				sharedPaletteTarget.data[offset] !== sharedPaletteExpected.data[offset]
+			) {
+				changed = true;
+				break;
+			}
+		}
+		if (!changed) {
+			throw new Error("PRF-420 fixture must exercise palette clustering");
+		}
+		const accentOffset = (4 * sharedPaletteTarget.width + 11) * 4;
+		for (let channel = 0; channel < 4; channel += 1) {
+			if (
+				sharedPaletteTarget.data[accentOffset + channel] !==
+				sharedPaletteExpected.data[accentOffset + channel]
+			) {
+				throw new Error("PRF-420 fixture must retain the target accent color");
+			}
+		}
+		writePng(
+			fixturePath("quality_prf420_shared_palette_target-expect.png"),
+			sharedPaletteExpected,
+		);
+
+		const protectedDetails = createSmallComponentInput(true, false);
+		writePng(
+			fixturePath("quality_prf210_protected_details.png"),
+			protectedDetails,
+		);
+		const commonSmallComponentOptions = {
+			processingMode: "preserve" as const,
+			preRemoveBackground: false,
+			postRemoveBackground: true,
+			trimToContent: false,
+			bgRemovalScope: "outer" as const,
+			bgExtractionMethod: "top-left" as const,
+			backgroundTolerance: 0,
+		};
+		const { result: protectedDetailsExpected } = processImage(
+			protectedDetails,
+			{
+				...commonSmallComponentOptions,
+				smallComponentMode: "off",
+			},
+		);
+		writePng(
+			fixturePath("quality_prf210_protected_details-expect.png"),
+			protectedDetailsExpected,
+		);
+
+		const isolatedNoise = createSmallComponentInput(false, true);
+		writePng(fixturePath("quality_prf210_isolated_noise.png"), isolatedNoise);
+		const { result: isolatedNoiseExpected } = processImage(
+			createSmallComponentInput(false, false),
+			{ ...commonSmallComponentOptions, smallComponentMode: "off" },
+		);
+		writePng(
+			fixturePath("quality_prf210_isolated_noise-expect.png"),
+			isolatedNoiseExpected,
+		);
+
+		const uncertainBackground = createUncertainSmallComponentInput();
+		writePng(
+			fixturePath("quality_prf210_uncertain_background.png"),
+			uncertainBackground,
+		);
+		writePng(
+			fixturePath("quality_prf210_uncertain_background-expect.png"),
+			uncertainBackground,
 		);
 
 		const quantizationInput = createQuantizationInput();

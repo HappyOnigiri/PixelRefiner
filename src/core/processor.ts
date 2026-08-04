@@ -1,5 +1,10 @@
-import { GRID_SEARCH_LIMITS } from "../shared/config";
-import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
+import { DESKEW_LIMITS, GRID_SEARCH_LIMITS } from "../shared/config";
+import type {
+	PixelGrid,
+	ProcessResult,
+	RawImage,
+	SmallComponentRemovalDiagnostic,
+} from "../shared/types";
 import {
 	getBackgroundTargets,
 	removeBackground,
@@ -8,9 +13,19 @@ import {
 } from "./background-removal";
 import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
+import { removeSmallComponents } from "./components";
+import { rotateRawImageExpanded } from "./deskew";
 import { detectGrid } from "./detector";
-import { rankGridCandidates } from "./grid-candidates";
-import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
+import {
+	rankGridCandidates,
+	rerankGridCandidateReports,
+} from "./grid-candidates";
+import {
+	type DeskewGridSearchResult,
+	resolveGridEstimate,
+	searchDeskewedGrid,
+	searchPhaseAwareGrid,
+} from "./grid-search";
 import {
 	cloneImage,
 	cropRawImage,
@@ -38,6 +53,7 @@ import {
 	processExplicitSimpleRoute,
 	processForcedRoute,
 	processGridDisabledRoute,
+	type SimpleRouteContext,
 } from "./processor-simple-routes";
 import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
@@ -71,10 +87,110 @@ export {
 } from "./trimmed-grid-search";
 
 export const processImage = (
-	img: RawImage,
+	inputImage: RawImage,
 	options: ProcessOptions = {},
 ): ProcessResult => {
 	const o = normalizeProcessOptions(options);
+	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(inputImage) : 0;
+	const bgTargetsStart = performance.now();
+	// [Intended] 回転で生じる透明な拡張角ではなく、利用者が指定した元画像の角から背景色を取得する。
+	const bgTargets =
+		o.bgRemovalScope !== "off"
+			? getBackgroundTargets(inputImage, o.bgExtractionMethod, o.bgRgb, 16)
+			: [];
+	const { automaticBackground, backgroundModel, backgroundDiagnostic } =
+		prepareAutomaticBackground(inputImage, o);
+	let backgroundMaskedInput: RawImage | undefined;
+	let preRemovedInput: RawImage | undefined;
+	const getBackgroundMaskedInput = (): RawImage => {
+		if (backgroundMaskedInput) return backgroundMaskedInput;
+		if (automaticBackground) {
+			backgroundMaskedInput = automaticBackground.image;
+		} else if (
+			o.bgRemovalScope === "off" ||
+			o.bgExtractionMethod === "none" ||
+			(o.bgExtractionMethod === "auto" && !backgroundModel)
+		) {
+			backgroundMaskedInput = cloneImage(inputImage);
+		} else {
+			backgroundMaskedInput = removeBackground(
+				inputImage,
+				o.backgroundTolerance,
+				o.bgRemovalScope,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+				backgroundModel,
+			);
+		}
+		return backgroundMaskedInput;
+	};
+	const getPreRemovedInput = (): RawImage => {
+		if (preRemovedInput) return preRemovedInput;
+		if (automaticBackground) {
+			preRemovedInput = automaticBackground.image;
+		} else if (o.bgExtractionMethod === "auto") {
+			preRemovedInput = cloneImage(inputImage);
+		} else if (o.bgRemovalScope === "outer") {
+			preRemovedInput = removeBackground(
+				inputImage,
+				o.backgroundTolerance,
+				"outer",
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+			);
+		} else if (o.bgRemovalScope === "selected") {
+			preRemovedInput = removeBackgroundByFloodFillLegacy(
+				inputImage,
+				o.backgroundTolerance,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+			);
+		} else if (o.bgRemovalScope === "all") {
+			preRemovedInput = removeBackgroundByFloodFillLegacy(
+				inputImage,
+				o.backgroundTolerance,
+				"4",
+				bgTargets,
+				o.bgExtractionMethod,
+			);
+		} else {
+			preRemovedInput = cloneImage(inputImage);
+		}
+		return preRemovedInput;
+	};
+	let deskewSearch: DeskewGridSearchResult | null = null;
+	let appliedDeskewAngle = o.deskewAngle;
+	let img = inputImage;
+	if (appliedDeskewAngle !== 0) {
+		img = rotateRawImageExpanded(inputImage, appliedDeskewAngle);
+	} else if (
+		o.enableDeskew &&
+		o.enableGridDetection &&
+		o.autoGridFromTrimmed &&
+		o.fastAutoGridFromTrimmed &&
+		o.hintPixelsW === undefined &&
+		o.hintPixelsH === undefined &&
+		o.forcePixelsW === undefined &&
+		o.forcePixelsH === undefined &&
+		(o.processingMode === "auto" || o.processingMode === "refine") &&
+		Math.min(inputImage.width, inputImage.height) >=
+			DESKEW_LIMITS.minimumInputDimension &&
+		// [Policy] 上位角度のフル解像度評価が処理時間を占有しないよう、自動補正の画素数を制限する。
+		inputImage.width * inputImage.height <= DESKEW_LIMITS.maximumInputPixels
+	) {
+		const deskewMask =
+			o.bgRemovalScope === "off" || o.bgExtractionMethod === "none"
+				? inputImage
+				: getBackgroundMaskedInput();
+		deskewSearch = searchDeskewedGrid(inputImage, deskewMask, o.gridSignals);
+		if (deskewSearch) {
+			appliedDeskewAngle = deskewSearch.angle;
+			img = deskewSearch.image;
+		}
+	}
 	const startTime = performance.now();
 	const log = (...args: unknown[]) => {
 		if (o.debug) {
@@ -88,13 +204,6 @@ export const processImage = (
 		options: o,
 	});
 
-	const bgTargetsStart = performance.now();
-	const bgTargets =
-		o.bgRemovalScope !== "off"
-			? getBackgroundTargets(img, o.bgExtractionMethod, o.bgRgb, 16)
-			: [];
-	const { automaticBackground, backgroundModel, backgroundDiagnostic } =
-		prepareAutomaticBackground(img, o);
 	log(
 		`Background targets extracted in ${(performance.now() - bgTargetsStart).toFixed(2)}ms`,
 		bgTargets,
@@ -104,37 +213,20 @@ export const processImage = (
 	let working: RawImage;
 	if (!o.preRemoveBackground) {
 		working = cloneImage(img);
-	} else if (automaticBackground) {
-		working = automaticBackground.image;
+	} else if (
+		o.bgRemovalScope !== "off" &&
+		o.bgExtractionMethod !== "none" &&
+		!(o.bgExtractionMethod === "auto" && !backgroundModel)
+	) {
+		const maskedInput = getPreRemovedInput();
+		working =
+			appliedDeskewAngle === 0
+				? cloneImage(maskedInput)
+				: rotateRawImageExpanded(maskedInput, appliedDeskewAngle);
 	} else if (o.bgExtractionMethod === "auto") {
 		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
 		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
 		working = cloneImage(img);
-	} else if (o.bgRemovalScope === "outer") {
-		working = removeBackground(
-			img,
-			o.backgroundTolerance,
-			"outer",
-			o.bgConnectivity,
-			bgTargets,
-			o.bgExtractionMethod,
-		);
-	} else if (o.bgRemovalScope === "selected") {
-		working = removeBackgroundByFloodFillLegacy(
-			img,
-			o.backgroundTolerance,
-			o.bgConnectivity,
-			bgTargets,
-			o.bgExtractionMethod,
-		);
-	} else if (o.bgRemovalScope === "all") {
-		working = removeBackgroundByFloodFillLegacy(
-			img,
-			o.backgroundTolerance,
-			"4",
-			bgTargets,
-			o.bgExtractionMethod,
-		);
 	} else {
 		working = cloneImage(img);
 	}
@@ -147,10 +239,10 @@ export const processImage = (
 		preRemoveBackground: o.preRemoveBackground,
 	});
 	const trimToContent = o.trimToContent;
-	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(img) : 0;
 	const trimAlphaThreshold = o.trimAlphaThreshold;
 
-	const simpleRouteContext = {
+	let smallComponentRemoval: SmallComponentRemovalDiagnostic | undefined;
+	const simpleRouteContext: SimpleRouteContext = {
 		img,
 		o,
 		working,
@@ -160,6 +252,7 @@ export const processImage = (
 		log,
 		backgroundDiagnostic,
 		backgroundModel,
+		smallComponentRemoval,
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return forcedResult;
@@ -192,15 +285,24 @@ export const processImage = (
 	const maskedStart = performance.now();
 	const maskedForDebugOrAuto =
 		o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0
-			? removeBackground(
-					working,
-					bgTol,
-					o.bgRemovalScope,
-					o.bgConnectivity,
-					bgTargets,
-					o.bgExtractionMethod,
-					backgroundModel,
-				)
+			? appliedDeskewAngle !== 0 &&
+				o.bgRemovalScope !== "off" &&
+				o.bgExtractionMethod !== "none"
+				? o.preRemoveBackground
+					? cloneImage(working)
+					: rotateRawImageExpanded(
+							getBackgroundMaskedInput(),
+							appliedDeskewAngle,
+						)
+				: removeBackground(
+						working,
+						bgTol,
+						o.bgRemovalScope,
+						o.bgConnectivity,
+						bgTargets,
+						o.bgExtractionMethod,
+						backgroundModel,
+					)
 			: null;
 	if (maskedForDebugOrAuto) {
 		log(
@@ -221,6 +323,14 @@ export const processImage = (
 			`Floating components removed in ${(performance.now() - floatingStart).toFixed(2)}ms`,
 			{ removedComponents, removedPixels },
 		);
+		smallComponentRemoval = {
+			mode: "legacy",
+			applied: true,
+			removedComponents,
+			removedPixels,
+			pixelBasis: "source",
+		};
+		simpleRouteContext.smallComponentRemoval = smallComponentRemoval;
 		if (o.debugHook && removedPixels > 0) {
 			o.debugHook("01b-working-ignore-floating", working, {
 				floatingMaxPixels: o.floatingMaxPixels,
@@ -278,6 +388,7 @@ export const processImage = (
 			);
 			if (est) {
 				const phaseAwareReliable =
+					appliedDeskewAngle === 0 &&
 					phaseAwareEstimate !== null &&
 					(phaseAwareEstimate.scoreX ?? 0) >=
 						GRID_SEARCH_LIMITS.axisConfidenceThreshold &&
@@ -286,9 +397,13 @@ export const processImage = (
 				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
 				gridMethod = phaseAwareReliable
 					? "phase-aware-grid-search"
-					: o.fastAutoGridFromTrimmed
-						? "trimmed-reconstruction-fast"
-						: "trimmed-reconstruction";
+					: appliedDeskewAngle !== 0
+						? "deskewed-trimmed-reconstruction-fast"
+						: o.fastAutoGridFromTrimmed
+							? "trimmed-reconstruction-fast"
+							: "trimmed-reconstruction";
+				// [Intended] 回転後の拡張余白は元画像のグリッド位相ではないため、
+				// 傾き補正時はコンテンツ BBox のセル数推定を優先する。
 				// 注記:
 				// - トリミングが OFF でも、つぶれを防ぐため「コンテンツ BBox から推定したグリッド」を使用する。
 				// - ただしトリミング OFF は背景（余白）を残すだけなので、画像全体にダウンサンプリングを適用する。
@@ -315,9 +430,13 @@ export const processImage = (
 						? searchCandidates?.map((entry) => {
 								const c = "candidate" in entry ? entry.candidate : entry;
 								const phaseAware = "phaseAware" in entry;
-								return resolveGridEstimate(c, working, b, phaseAware);
+								return {
+									...resolveGridEstimate(c, working, b, phaseAware),
+									angle: appliedDeskewAngle,
+								};
 							})
 						: undefined,
+					angle: appliedDeskewAngle,
 				};
 				o.debugHook?.("04-grid-crop", working, {
 					grid,
@@ -331,6 +450,7 @@ export const processImage = (
 	if (!grid) {
 		const detectStart = performance.now();
 		grid = detectGrid(working, { ...o.detect, debug: o.debug });
+		grid.angle = appliedDeskewAngle;
 		log(
 			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
 			grid,
@@ -339,7 +459,26 @@ export const processImage = (
 			grid,
 		});
 	}
-	const rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	let rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	if (deskewSearch) {
+		const additional = deskewSearch.candidates
+			.filter((candidate) => candidate.angle !== appliedDeskewAngle)
+			.flatMap((candidate) =>
+				rankGridCandidates(
+					candidate.image,
+					{
+						...candidate.estimate,
+						angle: candidate.angle,
+						candidates: undefined,
+					},
+					"deskewed-phase-aware-grid-search",
+				).filter((report) => report.method !== "preserve"),
+			);
+		rankedGridCandidates = rerankGridCandidateReports([
+			...rankedGridCandidates,
+			...additional,
+		]);
+	}
 	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
 	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
@@ -415,29 +554,52 @@ export const processImage = (
 	// 「処理前（補正済み）」比較: 同じグリッドとセルサンプリングで元画像をダウンサンプリングする。
 	let compareBeforeSanitized = downsample(img, grid, getDownsampleOptions(o));
 
-	let trimmed = down;
+	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
+	const logicalMask = needsLogicalMask
+		? removeBackground(
+				down,
+				o.backgroundTolerance,
+				o.bgRemovalScope,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+				backgroundModel,
+			)
+		: down;
+	const componentResult = removeSmallComponents(
+		down,
+		logicalMask,
+		compareBeforeSanitized,
+		{
+			mode: o.smallComponentMode,
+			alphaThreshold: trimAlphaThreshold,
+			backgroundEnabled:
+				o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
+			automaticBackground: o.bgExtractionMethod === "auto",
+			backgroundConfidence: backgroundDiagnostic?.confidence,
+		},
+	);
+	if (o.smallComponentMode !== "off") {
+		smallComponentRemoval = componentResult.diagnostic;
+	}
+	let trimmed = componentResult.image;
 	let trimmedGrid = grid;
 	if (trimToContent) {
 		const trimStart = performance.now();
 		// 背景を除去（角からの塗りつぶし）後、セル単位でコンテンツ BBox によりトリミングする。
 		// これにより余白が大きい画像でも、outW/outH を「コンテンツ」に合わせられる。
 		const bgTol = o.backgroundTolerance;
-		const masked = removeBackground(
-			down,
-			bgTol,
-			o.bgRemovalScope,
-			o.bgConnectivity,
-			bgTargets,
-			o.bgExtractionMethod,
-			backgroundModel,
-		);
+		const masked = componentResult.mask;
 		o.debugHook?.("06-post-downsample-masked", masked, { bgTol });
 		const b = findOpaqueBounds(masked, trimAlphaThreshold);
 		if (
 			b &&
-			(b.x !== 0 || b.y !== 0 || b.w !== down.width || b.h !== down.height)
+			(b.x !== 0 ||
+				b.y !== 0 ||
+				b.w !== componentResult.image.width ||
+				b.h !== componentResult.image.height)
 		) {
-			trimmed = cropRawImage(down, b.x, b.y, b.w, b.h);
+			trimmed = cropRawImage(componentResult.image, b.x, b.y, b.w, b.h);
 
 			const baseCropX = grid.cropX ?? grid.offsetX;
 			const baseCropY = grid.cropY ?? grid.offsetY;
@@ -665,6 +827,9 @@ export const processImage = (
 		rankedGridCandidates,
 		backgroundDiagnostic,
 		classificationResult,
+		[],
+		undefined,
+		smallComponentRemoval,
 	);
 	log("Processing analysis", analysis);
 	return {
