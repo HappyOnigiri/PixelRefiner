@@ -23,7 +23,7 @@ const profile = qualityProfileFromEnvironment();
 const selectedCases = selectCasesForProfile(allCases, profile);
 // [Policy] 画像全体を対象とする品質ケースは、競合の激しい共有 CI ランナー上で
 // 実行される可能性があるため、正しさの検証には短い単体テストのタイムアウトを使用しない。
-const QUALITY_CASE_TIMEOUT_MS = 120_000;
+const QUALITY_CASE_TIMEOUT_MS = 300_000;
 const resultCache = new Map<string, ReturnType<typeof runQualityCase>>();
 const getResult = (
 	qualityCase: (typeof selectedCases)[number],

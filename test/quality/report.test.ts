@@ -247,5 +247,5 @@ describe.skipIf(!enabled)("quality report", () => {
 				);
 			}
 		}
-	}, 300_000);
+	}, 1_200_000);
 });
