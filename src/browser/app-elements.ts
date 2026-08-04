@@ -88,6 +88,8 @@ export type Elements = {
 	downloadAllButton: HTMLButtonElement;
 	downloadAllDropdownButton: HTMLButtonElement;
 	downloadAllMenu: HTMLElement;
+	sharedPaletteToggle: HTMLInputElement;
+	includeDiagnosticsToggle: HTMLInputElement;
 
 	// プリセット
 	presetNameInput: HTMLInputElement;
@@ -202,6 +204,10 @@ export const getElements = (): Elements => {
 			"download-all-dropdown-button",
 		),
 		downloadAllMenu: get<HTMLElement>("download-all-menu"),
+		sharedPaletteToggle: get<HTMLInputElement>("shared-palette-toggle"),
+		includeDiagnosticsToggle: get<HTMLInputElement>(
+			"include-diagnostics-toggle",
+		),
 
 		presetNameInput: get<HTMLInputElement>("preset-name-input"),
 		savePresetButton: get<HTMLButtonElement>("save-preset-button"),

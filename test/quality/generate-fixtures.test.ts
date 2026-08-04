@@ -1,5 +1,6 @@
 import path from "node:path";
 import { describe, it } from "vitest";
+import { processBatchImages } from "../../src/core/batch";
 import { rotateRawImageExpanded } from "../../src/core/deskew";
 import { processImage } from "../../src/core/processor";
 import type { RawImage } from "../../src/shared/types";
@@ -30,6 +31,41 @@ const createQuantizationInput = (): RawImage => {
 			data[offset + 1] = (x * 17 + y * 53 + 29) % 256;
 			data[offset + 2] = (x * 71 + y * 23 + 83) % 256;
 			data[offset + 3] = (x + y) % 13 === 0 ? 0 : 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const createSharedPaletteTarget = (): RawImage => {
+	const width = 16;
+	const height = 16;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const subject = x >= 4 && x < 12 && y >= 4 && y < 12;
+			const accent = x === 11 && y === 4;
+			data[offset] = accent ? 20 : subject ? 30 : 220;
+			data[offset + 1] = accent ? 235 : 40;
+			data[offset + 2] = accent ? 40 : subject ? 220 : 30;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
+const createSharedPaletteCompanion = (): RawImage => {
+	const width = 96;
+	const height = 96;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const offset = (y * width + x) * 4;
+			const left = x < width / 2;
+			data[offset] = left ? 230 : 40;
+			data[offset + 1] = left ? 50 : 50;
+			data[offset + 2] = left ? 35 : 210;
+			data[offset + 3] = 255;
 		}
 	}
 	return { width, height, data };
@@ -501,6 +537,79 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		writePng(
 			fixturePath("quality_prf200_gradient_background-expect.png"),
 			automaticBackgroundExpected,
+		);
+
+		const sharedPaletteTarget = createSharedPaletteTarget();
+		const sharedPaletteCompanion = createSharedPaletteCompanion();
+		writePng(
+			fixturePath("quality_prf420_shared_palette_target.png"),
+			sharedPaletteTarget,
+		);
+		writePng(
+			fixturePath("quality_prf420_shared_palette_companion.png"),
+			sharedPaletteCompanion,
+		);
+		const sharedPaletteOptions = {
+			processingMode: "preserve" as const,
+			enableGridDetection: false,
+			bgExtractionMethod: "none" as const,
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimToContent: false,
+		};
+		const sharedPaletteBatch = processBatchImages(
+			[
+				{
+					id: "target",
+					image: sharedPaletteTarget,
+					options: sharedPaletteOptions,
+				},
+				{
+					id: "companion",
+					image: sharedPaletteCompanion,
+					options: sharedPaletteOptions,
+				},
+			],
+			{
+				sharedPalette: true,
+				colorCount: 4,
+				ditherMode: "none",
+				ditherStrength: 0,
+			},
+		);
+		const sharedPalettePrimary = sharedPaletteBatch.items[0];
+		if (!sharedPalettePrimary || sharedPalettePrimary.status === "error") {
+			throw new Error("Failed to generate PRF-420 shared-palette fixture");
+		}
+		const sharedPaletteExpected = sharedPalettePrimary.processResult.result;
+		let changed = false;
+		for (
+			let offset = 0;
+			offset < sharedPaletteTarget.data.length;
+			offset += 1
+		) {
+			if (
+				sharedPaletteTarget.data[offset] !== sharedPaletteExpected.data[offset]
+			) {
+				changed = true;
+				break;
+			}
+		}
+		if (!changed) {
+			throw new Error("PRF-420 fixture must exercise palette clustering");
+		}
+		const accentOffset = (4 * sharedPaletteTarget.width + 11) * 4;
+		for (let channel = 0; channel < 4; channel += 1) {
+			if (
+				sharedPaletteTarget.data[accentOffset + channel] !==
+				sharedPaletteExpected.data[accentOffset + channel]
+			) {
+				throw new Error("PRF-420 fixture must retain the target accent color");
+			}
+		}
+		writePng(
+			fixturePath("quality_prf420_shared_palette_target-expect.png"),
+			sharedPaletteExpected,
 		);
 
 		const protectedDetails = createSmallComponentInput(true, false);

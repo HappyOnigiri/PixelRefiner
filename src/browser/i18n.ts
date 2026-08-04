@@ -35,6 +35,8 @@ const resources = {
 		"ui.clear_all": "すべてクリア",
 		"ui.download_all": "一括ダウンロード",
 		"ui.download_all_zip": "一括ダウンロード (ZIP)",
+		"ui.shared_palette": "共通パレット",
+		"ui.include_diagnostics": "診断サマリーを含める",
 		"ui.remove_image": "画像を削除",
 		"ui.confirm_clear_all": "すべての画像を削除してもよろしいですか？",
 		"ui.size": "サイズ",
@@ -64,6 +66,13 @@ const resources = {
 		"candidate.description.preserve":
 			"縮小せず、安全に元の解像度を維持します。",
 		"candidate.description.convert": "通常画像としてドット絵風に変換します。",
+		"batch.route.refine": "復元",
+		"batch.route.convert": "変換",
+		"batch.route.preserve": "原寸維持",
+		"batch.status.pending": "未処理",
+		"batch.status.processing": "処理中",
+		"batch.status.done": "完了",
+		"batch.status.error": "エラー",
 
 		// 設定
 		"setting.color_reduction": "減色",
@@ -215,6 +224,8 @@ const resources = {
 		"warning.extreme_output_size": "出力サイズが非常に大きくなっています。",
 		"warning.no_content": "処理対象の内容を検出できませんでした。",
 		"warning.fallback_to_preserve": "安全のため元のサイズを維持しました。",
+		"warning.batch_partial_failure":
+			"{total}件中{failed}件を処理できませんでした。成功した画像はZIPに含まれています。",
 		"warning.unknown": "不明な処理警告です（{code}）。",
 
 		"error.palette_limit":
@@ -262,6 +273,8 @@ const resources = {
 		"ui.clear_all": "全部清除",
 		"ui.download_all": "全部下载",
 		"ui.download_all_zip": "全部下载 (ZIP)",
+		"ui.shared_palette": "共用调色板",
+		"ui.include_diagnostics": "包含诊断摘要",
 		"ui.remove_image": "移除图片",
 		"ui.confirm_clear_all": "确定要清除所有图片吗？",
 		"ui.size": "尺寸",
@@ -288,6 +301,13 @@ const resources = {
 		"candidate.description.coarser": "将图像整理为更大像素块的方案。",
 		"candidate.description.preserve": "不缩小图像，安全保留原始分辨率。",
 		"candidate.description.convert": "按普通图像转换为像素画风格。",
+		"batch.route.refine": "还原",
+		"batch.route.convert": "转换",
+		"batch.route.preserve": "保持原尺寸",
+		"batch.status.pending": "待处理",
+		"batch.status.processing": "处理中",
+		"batch.status.done": "完成",
+		"batch.status.error": "错误",
 
 		// 設定
 		"setting.color_reduction": "减色",
@@ -435,6 +455,8 @@ const resources = {
 		"warning.extreme_output_size": "输出尺寸非常大。",
 		"warning.no_content": "未检测到可处理的内容。",
 		"warning.fallback_to_preserve": "为安全起见，已保留原始尺寸。",
+		"warning.batch_partial_failure":
+			"{total} 张图片中有 {failed} 张处理失败。成功的图片已包含在 ZIP 中。",
 		"warning.unknown": "未知处理警告（{code}）。",
 
 		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
@@ -480,6 +502,8 @@ const resources = {
 		"ui.clear_all": "Clear All",
 		"ui.download_all": "Download All",
 		"ui.download_all_zip": "Download All (ZIP)",
+		"ui.shared_palette": "Shared palette",
+		"ui.include_diagnostics": "Include diagnostic summary",
 		"ui.remove_image": "Remove Image",
 		"ui.confirm_clear_all": "Are you sure you want to clear all images?",
 		"ui.size": "Size",
@@ -510,6 +534,13 @@ const resources = {
 			"Avoids downscaling and safely keeps the original resolution.",
 		"candidate.description.convert":
 			"Treats the input as a regular image and converts it to pixel art.",
+		"batch.route.refine": "Refine",
+		"batch.route.convert": "Convert",
+		"batch.route.preserve": "Preserve",
+		"batch.status.pending": "Pending",
+		"batch.status.processing": "Processing",
+		"batch.status.done": "Done",
+		"batch.status.error": "Error",
 
 		// 設定
 		"setting.color_reduction": "Color Reduction",
@@ -662,6 +693,8 @@ const resources = {
 		"warning.no_content": "No processable content was detected.",
 		"warning.fallback_to_preserve":
 			"The original size was preserved for safety.",
+		"warning.batch_partial_failure":
+			"{failed} of {total} images could not be processed. Successful images are included in the ZIP.",
 		"warning.unknown": "Unknown processing warning ({code}).",
 
 		"error.palette_limit":

@@ -1,12 +1,13 @@
 import type { DitherMode, Oklab, PixelData, RGB } from "../shared/types";
 import { oklabToRgb, rgbToOklab } from "./colorUtils";
 import { getDitherMatrix } from "./dither-matrix";
+import {
+	type PreparedWeightedColor,
+	prepareWeightedColors,
+	type WeightedPaletteColor,
+} from "./weighted-colors";
 
-type WeightedColor = {
-	key: number;
-	lab: Oklab;
-	count: number;
-};
+type WeightedColor = PreparedWeightedColor;
 
 type FittedPalette = {
 	rgb: RGB[];
@@ -19,6 +20,21 @@ export class OklabKMeans {
 		private maxIterations: number = 20,
 		private tolerance: number = 0.001,
 	) {}
+
+	/**
+	 * 既に集約された色と重みから、決定論的なパレットを生成する。
+	 */
+	createPalette(colors: readonly WeightedPaletteColor[]): RGB[] {
+		const weighted = prepareWeightedColors(colors);
+		if (weighted.length <= this.maxColors) {
+			return weighted.map((color) => ({
+				r: (color.key >> 16) & 255,
+				g: (color.key >> 8) & 255,
+				b: color.key & 255,
+			}));
+		}
+		return this.buildUniquePalette(this.fitCentroids(weighted)).rgb;
+	}
 
 	/**
 	 * K-means クラスタリングによる色削減
