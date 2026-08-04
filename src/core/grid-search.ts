@@ -723,7 +723,9 @@ export const searchDeskewedGrid = (
 		best.angle !== 0 &&
 		best.confidence >= DESKEW_LIMITS.minimumConfidence &&
 		alignmentGain >= DESKEW_LIMITS.minimumConfidenceGain;
-	const selected = canApply ? best : (zero ?? best);
+	const selected = canApply ? best : zero;
+	// [Policy] 信頼度を満たさない非ゼロ候補は、自動補正として適用しない。
+	if (!selected) return null;
 	return {
 		angle: selected.angle,
 		image: selected.image,
