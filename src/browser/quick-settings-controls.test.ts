@@ -48,8 +48,7 @@ const controlNames = [
 	"keepAspectRatioCheck",
 	"gridDetectionModeSelect",
 	"outlineColorInput",
-	"floatingMaxPercentInput",
-	"floatingMaxPercentSlider",
+	"smallComponentModeSelect",
 ] as const;
 
 type MockElements = Record<(typeof controlNames)[number], MockControl>;
@@ -138,5 +137,6 @@ describe("quick settings controls", () => {
 		);
 
 		expect(clearCandidateSelections).toHaveBeenCalledOnce();
+		expect(els.smallComponentModeSelect.value).toBe("auto");
 	});
 });

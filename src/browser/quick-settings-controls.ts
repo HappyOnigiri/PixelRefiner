@@ -107,10 +107,6 @@ export const setupQuickSettingsControls = ({
 				PROCESS_RANGES.backgroundTolerance.default,
 			);
 			els.toleranceSlider.value = els.toleranceInput.value;
-			els.floatingMaxPercentInput.value = String(
-				PROCESS_RANGES.floatingMaxPercent.default,
-			);
-			els.floatingMaxPercentSlider.value = els.floatingMaxPercentInput.value;
 			els.forcePixelsWInput.value = "";
 			els.forcePixelsHInput.value = "";
 			els.gridDetectionModeSelect.value = "auto";
@@ -118,6 +114,7 @@ export const setupQuickSettingsControls = ({
 			els.postRemoveCheck.checked = PROCESS_DEFAULTS.postRemoveBackground;
 			els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
 			els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
+			els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
 			els.fastAutoGridFromTrimmedCheck.checked =
 				PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 			els.makeSquareCheck.checked = PROCESS_DEFAULTS.makeSquare;
@@ -230,8 +227,7 @@ export const setupQuickSettingsControls = ({
 		els.ditherStrengthSlider,
 		els.outlineStyleSelect,
 		els.outlineColorInput,
-		els.floatingMaxPercentInput,
-		els.floatingMaxPercentSlider,
+		els.smallComponentModeSelect,
 		els.bgExtractionMethod,
 		els.bgRgbInput,
 		els.bgColorInput,
