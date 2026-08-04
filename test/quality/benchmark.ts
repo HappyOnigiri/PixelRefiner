@@ -5,10 +5,11 @@ import { processBatchImages } from "../../src/core/batch";
 import { processImage } from "../../src/core/processor";
 import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
+import { AUTO_CASE_OPTIONS } from "./auto-cases";
 import { baselineImagePath, loadBaseline } from "./baseline";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
 import { imagesEqual, readPng, writePng } from "./image";
-import { qualityCaseDirectory } from "./manifest";
+import { caseParameterMode, qualityCaseDirectory } from "./manifest";
 import {
 	calculateMetrics,
 	createBackgroundMaskImage,
@@ -35,11 +36,17 @@ const QUALITY_FIXTURE_OPTIONS = {
 // 値は PROCESS_DEFAULTS から取るので、既定が変わればケースの実行経路も追随する。
 const effectiveCaseOptions = (
 	qualityCase: QualityImageCase,
-): ProcessOptions => ({
-	...QUALITY_FIXTURE_OPTIONS,
-	processingMode: PROCESS_DEFAULTS.processingMode,
-	...qualityCase.options,
-});
+): ProcessOptions => {
+	// [Intended] 自動判定ケースは UI 既定だけで処理する。fixture 用の背景抽出指定すら
+	// 混ぜないのは、UI を触らずに 1 枚渡した場合の判定精度を測るのが目的だから。
+	if (caseParameterMode(qualityCase) === "auto")
+		return { ...AUTO_CASE_OPTIONS };
+	return {
+		...QUALITY_FIXTURE_OPTIONS,
+		processingMode: PROCESS_DEFAULTS.processingMode,
+		...qualityCase.options,
+	};
+};
 
 const processQualityCase = (
 	qualityCase: QualityImageCase,
@@ -149,10 +156,9 @@ export const runQualityCase = (
 	qualityCase: QualityImageCase,
 	writeArtifacts = false,
 ): QualityCaseResult => {
+	const parameterMode = caseParameterMode(qualityCase);
 	const inputPath = path.resolve(qualityCase.input);
-	const expectedPath = path.resolve(qualityCase.expected);
 	const input = readPng(inputPath);
-	const expected = readPng(expectedPath);
 	const effectiveOptions = effectiveCaseOptions(qualityCase);
 	const options = { ...effectiveOptions, debug: false };
 
@@ -160,6 +166,23 @@ export const runQualityCase = (
 	const currentRun = processQualityCase(qualityCase, input, options);
 	const runtime = performance.now() - start;
 	const repeatRun = processQualityCase(qualityCase, input, options);
+
+	const storedBaselinePath = baselineImagePath(qualityCase.id);
+	const baselineImage = existsSync(storedBaselinePath)
+		? readPng(storedBaselinePath)
+		: null;
+	// [Intended] 自動判定ケースの基準は承認済みベースライン画像。正解画像を持たないため、
+	// ベースライン未登録の初回だけは自身の出力を基準にして「新規」として扱う。
+	const expectedPath =
+		parameterMode === "auto"
+			? baselineImage === null
+				? null
+				: storedBaselinePath
+			: path.resolve(qualityCase.expected ?? "");
+	const expected =
+		parameterMode === "auto"
+			? (baselineImage ?? currentRun.result)
+			: readPng(expectedPath ?? "");
 
 	const metrics = calculateMetrics(
 		currentRun.result,
@@ -179,10 +202,6 @@ export const runQualityCase = (
 	const baselineMetrics =
 		baseline.cases.find((baselineCase) => baselineCase.id === qualityCase.id) ??
 		null;
-	const storedBaselinePath = baselineImagePath(qualityCase.id);
-	const baselineImage = existsSync(storedBaselinePath)
-		? readPng(storedBaselinePath)
-		: null;
 	const imageComparison = compareImages(currentRun.result, baselineImage);
 	const metricComparison = compareMetrics(metrics, baselineMetrics, status);
 	const changeStatus = classifyChange(
@@ -193,7 +212,8 @@ export const runQualityCase = (
 	);
 	const caseDirectory = qualityCaseDirectory(qualityCase.id);
 	const files = {
-		groundTruth: `${caseDirectory}/ground-truth.png`,
+		groundTruth:
+			expectedPath === null ? null : `${caseDirectory}/ground-truth.png`,
 		input: `${caseDirectory}/input.png`,
 		baseline: baselineImage === null ? null : `${caseDirectory}/baseline.png`,
 		result: `${caseDirectory}/result.png`,
@@ -218,7 +238,9 @@ export const runQualityCase = (
 	if (writeArtifacts) {
 		const outputDirectory = path.join(REPORT_ROOT, caseDirectory);
 		mkdirSync(outputDirectory, { recursive: true });
-		cpSync(expectedPath, path.join(REPORT_ROOT, files.groundTruth));
+		if (expectedPath !== null && files.groundTruth) {
+			cpSync(expectedPath, path.join(REPORT_ROOT, files.groundTruth));
+		}
 		cpSync(inputPath, path.join(REPORT_ROOT, files.input));
 		if (files.baseline && baselineImage) {
 			writePng(path.join(REPORT_ROOT, files.baseline), baselineImage);
@@ -242,6 +264,7 @@ export const runQualityCase = (
 	return {
 		id: qualityCase.id,
 		featureIds: qualityCase.featureIds,
+		parameterMode,
 		inputKind: qualityCase.inputKind,
 		degradationPatterns: qualityCase.degradationPatterns,
 		status,
@@ -342,6 +365,9 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 				result.changeStatus === "regressed" ||
 				(result.changeStatus === "new" && result.status === "failed"),
 		).length,
+		explicitCases: cases.filter((result) => result.parameterMode === "explicit")
+			.length,
+		autoCases: cases.filter((result) => result.parameterMode === "auto").length,
 		top1SizeAccuracy: average((result) => Number(result.metrics.sizeCorrect)),
 		top3SizeAccuracy: average((result) =>
 			Number(result.metrics.top3SizeCorrect),

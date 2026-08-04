@@ -15,7 +15,9 @@ jobs:
   build:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # [Policy] 自動判定ケース（fixture 全点をAuto+既定設定で処理）が加わり、
+    # 比較レポート生成と品質ゲートで各 1 周ずつ全ケースを流すため時間を確保する。
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
 

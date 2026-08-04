@@ -39,11 +39,19 @@ export type QualityExpectation = {
 	expectedHeight?: number;
 };
 
+/**
+ * ケースが処理オプションをどう決めるか。
+ * explicit はケース定義のオプション指定あり、auto は UI 既定のみで自動判定に任せる。
+ */
+export type QualityParameterMode = "explicit" | "auto";
+
 export type QualityImageCase = {
 	id: string;
 	featureIds: string[];
 	optionNames?: string[];
 	profile: "smoke" | "full";
+	/** 省略時は explicit。cases.json の既存ケースは指定不要。 */
+	parameterMode?: QualityParameterMode;
 	inputKind: string;
 	degradationPatterns: string[];
 	options: ProcessOptions;
@@ -54,7 +62,8 @@ export type QualityImageCase = {
 		ditherStrength: number;
 	};
 	input: string;
-	expected: string;
+	/** auto ケースは正解画像を持たず、承認済みベースラインを基準に測る。 */
+	expected?: string;
 	assertions: string[];
 	expectation: QualityExpectation;
 	assets: FixtureAssetProvenance[];
@@ -109,6 +118,7 @@ export type QualityBaseline = {
 export type QualityCaseResult = {
 	id: string;
 	featureIds: string[];
+	parameterMode: QualityParameterMode;
 	inputKind: string;
 	degradationPatterns: string[];
 	status: "passed" | "failed";
@@ -143,7 +153,8 @@ export type QualityCaseResult = {
 	metrics: QualityMetrics;
 	baselineMetrics: QualityBaselineCase | null;
 	files: {
-		groundTruth: string;
+		/** auto ケースでベースライン未登録のときは基準画像が存在しない。 */
+		groundTruth: string | null;
 		input: string;
 		baseline: string | null;
 		result: string;
@@ -165,6 +176,10 @@ export type QualityResults = {
 		unchanged: number;
 		newCases: number;
 		blockingFailures: number;
+		/** オプション指定ありのケース数 */
+		explicitCases: number;
+		/** 自動判定（UI 既定のみ）のケース数 */
+		autoCases: number;
 		top1SizeAccuracy: number;
 		top3SizeAccuracy: number;
 		confidenceCorrectnessCorrelation: number | null;

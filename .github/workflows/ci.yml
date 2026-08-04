@@ -15,7 +15,9 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # [Policy] make ci は品質ケースを全件実行する。自動判定ケースの追加で
+    # テスト時間が伸びたため上限を広げる。
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
