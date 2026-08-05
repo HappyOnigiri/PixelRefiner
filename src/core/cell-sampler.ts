@@ -471,16 +471,25 @@ const hasThinContinuity = (
 	);
 };
 
-const findMedoid = (
-	image: RawImage,
+type CorePopulation = {
+	/** true なら不透明サンプルが無く、母集団をアルファ無視で全域に戻す。 */
+	allowAll: boolean;
+	/** true なら代表色の母集団をコア内サンプルへ絞る。 */
+	coreOnly: boolean;
+};
+
+/**
+ * 代表色の候補と距離計算に使う母集団（コア優先・アルファ有効サンプル優先）を求める。
+ * findMedoid とコア平均色の算出（computeCoreAverageColor）で同じ母集団定義を共有する。
+ */
+const resolveCorePopulation = (
 	workspace: Workspace,
 	count: number,
-	bounds: CellBounds,
-	options: CellSamplerOptions,
-): number => {
+	alphaThreshold: number,
+): CorePopulation => {
 	let eligibleCount = 0;
 	for (let index = 0; index < count; index += 1) {
-		if (workspace.a[index] >= options.alphaThreshold) eligibleCount += 1;
+		if (workspace.a[index] >= alphaThreshold) eligibleCount += 1;
 	}
 	const allowAll = eligibleCount === 0;
 	// [Intended] コアに使えるサンプルがあるときは、代表色の候補と距離の母集団を
@@ -490,12 +499,53 @@ const findMedoid = (
 	for (let index = 0; index < count; index += 1) {
 		if (
 			workspace.inCore[index] !== 0 &&
-			(allowAll || workspace.a[index] >= options.alphaThreshold)
+			(allowAll || workspace.a[index] >= alphaThreshold)
 		) {
 			coreCount += 1;
 		}
 	}
-	const coreOnly = coreCount > 0;
+	return { allowAll, coreOnly: coreCount > 0 };
+};
+
+/**
+ * medoid と同じ母集団（コア優先）で重み付き平均色を求める。
+ * 母集団が完全に一色ならこの平均は medoid と一致するため、ドット絵の
+ * 均一セルでは合成しても値が変わらない。
+ */
+const computeCoreAverageColor = (
+	workspace: Workspace,
+	count: number,
+	alphaThreshold: number,
+	population: CorePopulation,
+): { r: number; g: number; b: number } => {
+	const { allowAll, coreOnly } = population;
+	let sumR = 0;
+	let sumG = 0;
+	let sumB = 0;
+	let sumWeight = 0;
+	for (let index = 0; index < count; index += 1) {
+		if (!allowAll && workspace.a[index] < alphaThreshold) continue;
+		if (coreOnly && workspace.inCore[index] === 0) continue;
+		const alphaWeight = allowAll ? 1 : workspace.a[index] / 255;
+		const weight = workspace.weight[index] * alphaWeight;
+		sumR += workspace.r[index] * weight;
+		sumG += workspace.g[index] * weight;
+		sumB += workspace.b[index] * weight;
+		sumWeight += weight;
+	}
+	if (sumWeight <= 0) return { r: 0, g: 0, b: 0 };
+	return { r: sumR / sumWeight, g: sumG / sumWeight, b: sumB / sumWeight };
+};
+
+const findMedoid = (
+	image: RawImage,
+	workspace: Workspace,
+	count: number,
+	bounds: CellBounds,
+	options: CellSamplerOptions,
+	population: CorePopulation,
+): number => {
+	const { allowAll, coreOnly } = population;
 	let bestIndex = 0;
 	let bestScore = Number.POSITIVE_INFINITY;
 	workspace.thinContinuity.fill(0, 0, count);
@@ -594,10 +644,50 @@ export const createCellSampler = (options: CellSamplerOptions): CellSampler => {
 			writeAreaWeighted(workspace, count, output, offset);
 			return;
 		}
-		const medoid = findMedoid(image, workspace, count, bounds, options);
-		output[offset] = workspace.r[medoid];
-		output[offset + 1] = workspace.g[medoid];
-		output[offset + 2] = workspace.b[medoid];
+		const population = resolveCorePopulation(
+			workspace,
+			count,
+			options.alphaThreshold,
+		);
+		const medoid = findMedoid(
+			image,
+			workspace,
+			count,
+			bounds,
+			options,
+			population,
+		);
+		const medoidR = workspace.r[medoid];
+		const medoidG = workspace.g[medoid];
+		const medoidB = workspace.b[medoid];
+		// [Intended] medoid（選択）はドット絵の exact ケースに必須だが、ブラー・補間
+		// セルでは境界の理論限界に達している。コア平均との距離が小さいときだけ
+		// 平均へ差し替える。ディザ柄など離散色が混在するセルは距離が大きく保たれ、
+		// medoid のまま保持される（一様セルでは平均が medoid と一致し無変化）。
+		const average = computeCoreAverageColor(
+			workspace,
+			count,
+			options.alphaThreshold,
+			population,
+		);
+		const deltaR = average.r - medoidR;
+		const deltaG = average.g - medoidG;
+		const deltaB = average.b - medoidB;
+		const averageDistanceSquared =
+			deltaR * deltaR + deltaG * deltaG + deltaB * deltaB;
+		if (
+			averageDistanceSquared > 0 &&
+			averageDistanceSquared <=
+				CELL_COLOR_CORE_LIMITS.maxAverageBlendDistanceSquared
+		) {
+			output[offset] = Math.round(average.r);
+			output[offset + 1] = Math.round(average.g);
+			output[offset + 2] = Math.round(average.b);
+		} else {
+			output[offset] = medoidR;
+			output[offset + 1] = medoidG;
+			output[offset + 2] = medoidB;
+		}
 		output[offset + 3] = coverage;
 	};
 	return {

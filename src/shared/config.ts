@@ -95,6 +95,16 @@ export const CELL_COLOR_CORE_LIMITS = {
 	 * 有効なセル内部まで捨てて、代表色が極小の窓だけで決まってしまう。
 	 */
 	maxMarginPixels: 6,
+	/**
+	 * コア平均色と medoid の sRGB 二乗距離がこの値以下のときだけ、
+	 * 平均色を代表色として採用する（合成色の許可条件）。
+	 * [Intended] ブラー・補間セルでは、コアが依然として複数の中間色にまたがるため
+	 * medoid の選択だけでは理論限界に届かない。平均は量子化ノイズを均すが、
+	 * ディザ柄など離散した2色以上が混在するセルでは平均が両者から離れた中間色に
+	 * なるため、距離が大きく保たれてこの条件で弾かれ、medoid（実在色）のまま残る。
+	 * 一様なセルでは平均が medoid と厳密に一致し差分 0 になるため無条件で安全。
+	 */
+	maxAverageBlendDistanceSquared: 100,
 } as const;
 
 export const PROCESS_ANALYSIS_THRESHOLDS = {
