@@ -231,6 +231,14 @@ export const GRID_SEARCH_LIMITS = {
 	axisConfidenceThreshold: 0.55,
 	/** 周期として信用するために必要な繰り返し回数。これ未満の周期は整合スコアを減衰させる。 */
 	minGridPeriods: 3,
+	/**
+	 * 位相考慮探索を行う領域の画素数上限。
+	 * [Policy] セル候補数は辺の長さに比例して増え、位相走査と合わせると探索時間が
+	 * 辺の長さの二乗order で伸びる。実測で 2816x1536 の領域は 1 枚 19 秒を要し、
+	 * それでも軸信頼度のしきい値には届かず結果は捨てられていた。処理時間の上限を
+	 * 守るため、これを超える領域は再構成ベースの探索だけで判断する。
+	 */
+	maxPhaseAwarePixels: 1_048_576,
 	localRegionCount: 4,
 	minimumAutocorrelationSamples: 3,
 	fullResolutionSampleLimit: 16384,

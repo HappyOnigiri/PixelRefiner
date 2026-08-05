@@ -242,6 +242,12 @@ export const scoreAxisSignals = (
 	phase: number,
 	options: GridSignalOptions,
 	normalizePhase: (value: number, cell: number) => number,
+	/**
+	 * セル幅ごとに一度だけ求めた自己相関スコア。
+	 * [Intended] 自己相関は位相に依存しないため、同じセル幅で位相だけを変える
+	 * 探索では再計算が無駄になる。呼び出し元が使い回せるよう受け取れるようにする。
+	 */
+	precomputedAutocorrelation?: number,
 ): AxisSignalScores => {
 	const colorBoundary = options.colorBoundary
 		? gridAlignmentScore(profile.colorBoundary, cell, phase, normalizePhase)
@@ -253,7 +259,7 @@ export const scoreAxisSignals = (
 		? gridAlignmentScore(profile.alphaGradient, cell, phase, normalizePhase)
 		: 0;
 	const autocorrelation = options.autocorrelation
-		? autocorrelationScore(combined, cell)
+		? (precomputedAutocorrelation ?? autocorrelationScore(combined, cell))
 		: 0;
 	let localPhaseStability = 0;
 	if (options.localPhaseStability) {
