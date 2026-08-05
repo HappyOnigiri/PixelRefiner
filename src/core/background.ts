@@ -103,12 +103,20 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 	const band = getBandSize(width, height);
 	let opaqueCount = 0;
 	let transparentCount = 0;
+	// [Intended] 境界帯ガード専用の「透明とみなす」画素数。完全透明に加え、ブラーや
+	// リサイズで生じる半透明のにじみ画素（アンチエイリアシング縁）も含める。にじみ画素は
+	// alpha 自身がすでに被写体がそこで薄れて消えていることを表しており、境界帯の大半が
+	// これで占められる画像は「被写体の輪郭が画像端に達しただけ」であって、色クラスタ推定は
+	// その輪郭色を背景と誤認するリスクが高い。色サンプリングや confidence の重みには従来通り
+	// opaqueCount/transparentCount（完全透明のみを透明扱い）を使い、この値はガード判定にのみ使う。
+	let guardTransparentCount = 0;
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
 			if (!isInBorderBand(x, y, width, height, band)) continue;
 			const alpha = img.data[(y * width + x) * 4 + 3];
 			if (alpha === 0) transparentCount += 1;
 			else opaqueCount += 1;
+			if (alpha !== 255) guardTransparentCount += 1;
 		}
 	}
 	const totalBorderCount = opaqueCount + transparentCount;
@@ -119,12 +127,13 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 			borderBandRatio: BACKGROUND_MODEL_LIMITS.borderBandRatio,
 		};
 	}
-	// [Intended] 境界帯の相当部分がすでに透明なら、その画像はアルファで背景を表現済みとみなし、
-	// 色による背景推定を行わない。切り抜き済み画像に残る不透明な境界画素は「画像端に接した被写体」
-	// であり、色クラスタとして背景に採用すると被写体の外縁（アウトライン）を削ってしまう。
-	// アルファが背景を確定させている状況なので confidence は最大とし、後段の小領域除去は許可する。
+	// [Intended] 境界帯の相当部分がすでに透明（半透明のにじみを含む）なら、その画像はアルファで
+	// 背景を表現済みとみなし、色による背景推定を行わない。切り抜き済み画像に残る不透明な境界画素は
+	// 「画像端に接した被写体」であり、色クラスタとして背景に採用すると被写体の外縁（アウトライン）を
+	// 削ってしまう。アルファが背景を確定させている状況なので confidence は最大とし、
+	// 後段の小領域除去は許可する。
 	if (
-		transparentCount / totalBorderCount >=
+		guardTransparentCount / totalBorderCount >=
 		BACKGROUND_MODEL_LIMITS.alphaBackgroundBorderRatio
 	) {
 		return {
