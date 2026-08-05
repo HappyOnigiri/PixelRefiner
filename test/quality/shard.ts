@@ -1,12 +1,21 @@
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { assertBaselineUpdateIsSafe, loadBaseline } from "./baseline";
+import {
+	assertBaselineUpdateIsSafe,
+	isBaselineImageDeclaredUpdated,
+	loadBaseline,
+} from "./baseline";
 import {
 	runQualityCase,
 	toBaselineCaseEntry,
 	writeQualityBaselineImage,
 } from "./benchmark";
 import { compareMetrics } from "./comparison";
+import {
+	allowDeclaredAutoChangesFromEnvironment,
+	shouldWarnInsteadOfFail,
+} from "./gate";
+import { writeQualityGateWarningPartial } from "./gate/partial";
 import { pngPixelCount } from "./image";
 import {
 	caseParameterMode,
@@ -18,6 +27,7 @@ import { writeQualityReportPartial } from "./report/partial";
 import type {
 	QualityBaselineCase,
 	QualityCaseResult,
+	QualityGateWarning,
 	QualityImageCase,
 } from "./types";
 import {
@@ -92,10 +102,17 @@ export const shardCases = (
 	return buckets;
 };
 
-const registerGateShard = (cases: QualityImageCase[]): void => {
+const registerGateShard = (
+	cases: QualityImageCase[],
+	shardIndex: number,
+): void => {
 	const baselineById = new Map(
 		loadBaseline().cases.map((baselineCase) => [baselineCase.id, baselineCase]),
 	);
+	// [Intended] CI のゲートステップだけが立てる環境変数。ローカル実行では常に false になり、
+	// 従来どおりすべての regression がゲート失敗になる。
+	const allowDeclaredAutoChanges = allowDeclaredAutoChangesFromEnvironment();
+	const declaredAutoRegressions: QualityGateWarning[] = [];
 	it.each(cases)(
 		"evaluates $id",
 		(qualityCase) => {
@@ -121,13 +138,47 @@ const registerGateShard = (cases: QualityImageCase[]): void => {
 				);
 				return;
 			}
+			const { regressed } = compareMetrics(
+				result.metrics,
+				expected,
+				result.status,
+			);
+			// [Intended] auto ケースの改善で参照画像（＝旧 auto 出力）そのものが変わると、
+			// 意図的な改善でも指標比較上は必ず regressed になる。head でベースライン画像を
+			// 更新済み（＝劣化を宣言済み。PR diff と比較レポートの diff で可視化される）の
+			// ときだけ「要人間レビューの警告」に降格し、ゲートは落とさない。
+			// catastrophicFailure の false→true と explicit ケースは対象外で必ずゲートを落とす
+			// （「変更を隠せない」設計は維持する）。
+			if (regressed.length > 0) {
+				const baselineImageDeclaredUpdated =
+					allowDeclaredAutoChanges && isAutoCase
+						? isBaselineImageDeclaredUpdated(qualityCase.id)
+						: false;
+				if (
+					shouldWarnInsteadOfFail({
+						isAutoCase,
+						regressedMetrics: regressed,
+						allowDeclaredAutoChanges,
+						baselineImageDeclaredUpdated,
+					})
+				) {
+					declaredAutoRegressions.push({
+						id: qualityCase.id,
+						regressedMetrics: regressed,
+					});
+					return;
+				}
+			}
 			expect(
-				compareMetrics(result.metrics, expected, result.status).regressed,
+				regressed,
 				`${qualityCase.id} regressed against the stored quality baseline`,
 			).toEqual([]);
 		},
 		QUALITY_CASE_TIMEOUT_MS,
 	);
+	afterAll(() => {
+		writeQualityGateWarningPartial(shardIndex, declaredAutoRegressions);
+	});
 };
 
 /**
@@ -205,6 +256,6 @@ export const runCasesShard = (shardIndex: number): void => {
 			registerReportShard(assignedCases, shardIndex);
 			return;
 		}
-		registerGateShard(assignedCases);
+		registerGateShard(assignedCases, shardIndex);
 	});
 };

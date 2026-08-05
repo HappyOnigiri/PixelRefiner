@@ -55,13 +55,31 @@ export const baselineRoot = (): string =>
 export const baselineFile = (): string =>
 	path.resolve(process.env.QUALITY_BASELINE_FILE ?? DEFAULT_BASELINE_FILE);
 
-export const baselineImagePath = (caseId: string): string => {
-	const currentPath = path.join(baselineRoot(), `${caseId}.png`);
+const resolveBaselineImagePath = (root: string, caseId: string): string => {
+	const currentPath = path.join(root, `${caseId}.png`);
 	if (existsSync(currentPath)) return currentPath;
-	return path.join(
-		baselineRoot(),
-		`${PREVIOUS_CASE_IDS[caseId] ?? caseId}.png`,
-	);
+	return path.join(root, `${PREVIOUS_CASE_IDS[caseId] ?? caseId}.png`);
+};
+
+export const baselineImagePath = (caseId: string): string =>
+	resolveBaselineImagePath(baselineRoot(), caseId);
+
+/**
+ * [Intended] head 側でこのケースのベースライン画像が更新済み（＝劣化が宣言済み）かを判定する。
+ * QUALITY_BASELINE_ROOT が指す PR ベース時点の旧ベースラインと、リポジトリにチェックイン
+ * された（＝ head の）ベースライン画像のバイト列を比較する。auto ケースの regression を
+ * 「要人間レビューの警告」に降格してよいかの判定材料に使う（shard.ts）。
+ * QUALITY_BASELINE_ROOT が未設定のローカル実行では比較対象の「旧」が存在しないため、
+ * 常に false を返す（＝降格条件を満たさず、従来どおりゲートは厳格に働く）。
+ */
+export const isBaselineImageDeclaredUpdated = (caseId: string): boolean => {
+	const overrideRoot = process.env.QUALITY_BASELINE_ROOT;
+	if (overrideRoot === undefined) return false;
+	const oldPath = resolveBaselineImagePath(path.resolve(overrideRoot), caseId);
+	const headPath = resolveBaselineImagePath(DEFAULT_BASELINE_ROOT, caseId);
+	if (!existsSync(oldPath)) return true;
+	if (!existsSync(headPath)) return false;
+	return !readFileSync(oldPath).equals(readFileSync(headPath));
 };
 
 export const assertBaselineUpdateIsSafe = (profile: string): void => {
