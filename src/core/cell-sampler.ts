@@ -152,6 +152,14 @@ export const isAlphaBleedOnlyCell = (
 	peakAlpha < SOFT_ALPHA_CELL_LIMITS.maxBleedPeak &&
 	coverage < SOFT_ALPHA_CELL_LIMITS.maxBleedCoverage;
 
+/** セルの片側から代表色の候補を除外する幅（px）を求める。 */
+const coreMargin = (span: number): number =>
+	Math.min(
+		span * CELL_COLOR_CORE_LIMITS.marginRatio,
+		CELL_COLOR_CORE_LIMITS.maxMarginPixels,
+		Math.max(0, (span - CELL_COLOR_CORE_LIMITS.minCoreSpan) / 2),
+	);
+
 const collectSamples = (
 	image: RawImage,
 	bounds: CellBounds,
@@ -175,12 +183,10 @@ const collectSamples = (
 	const columns = Math.min(width, Math.max(1, Math.floor(count / rows)));
 	const sampledCount = rows * columns;
 	const data = image.data;
-	// [Intended] セル中央 50% をコアとし、境界の混色画素を代表色の候補から外す。
+	// [Intended] セル中心寄りのコアを求め、境界の混色画素を代表色の候補から外す。
 	// 中心はつねに含まれるため、どのセルでもコアに 1 サンプル以上が入る。
-	const marginX =
-		(bounds.x1 - bounds.x0) * CELL_COLOR_CORE_LIMITS.marginRatio;
-	const marginY =
-		(bounds.y1 - bounds.y0) * CELL_COLOR_CORE_LIMITS.marginRatio;
+	const marginX = coreMargin(bounds.x1 - bounds.x0);
+	const marginY = coreMargin(bounds.y1 - bounds.y0);
 	const coreX0 = bounds.x0 + marginX;
 	const coreX1 = bounds.x1 - marginX;
 	const coreY0 = bounds.y0 + marginY;
