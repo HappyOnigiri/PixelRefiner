@@ -20,24 +20,28 @@ export type GateRegressionInput = {
 	allowDeclaredAutoChanges: boolean;
 	/** head でこのケースのベースライン画像が更新済み（＝劣化が宣言済み）かどうか。 */
 	baselineImageDeclaredUpdated: boolean;
+	/** PR ベース時点のケース状態。passed の explicit ケースは降格対象外にする。 */
+	baselineStatus: "passed" | "failed";
 };
 
 /**
- * [Intended] auto ケースの regression を「要人間レビューの警告」に降格してよいかを判定する。
+ * [Intended] 対象ケースの regression を「要人間レビューの警告」に降格してよいかを判定する。
  * 「変更を隠せない」設計を保つため、以下はすべて満たさない限り false（＝ゲート失敗のまま）:
  * - 降格自体が有効化されている（CI のゲートステップでのみ有効）
- * - auto ケースである（explicit ケースは正解画像を持つため常にゲート失敗）
+ * - auto ケース、または PR ベース時点から既に failed の explicit ケースである
  * - regression が実際にある
- * - catastrophicFailure が false→true になっていない（破局的劣化は宣言の有無を問わず失敗）
  * - head でベースライン画像が更新済み（＝劣化が宣言済み。PR diff と比較レポートの
  *   画像で可視化されるため、警告に降格しても隠蔽にはならない）
+ *
+ * auto ケースの各指標は旧ベースライン画像を正解として計算される。そのため、出力サイズを
+ * 意図的に直した場合も status や catastrophicFailure が悪化として現れうる。画像更新による
+ * 宣言を優先し、これらの指標名だけを理由に降格を拒否しない。
  */
 export const shouldWarnInsteadOfFail = (
 	input: GateRegressionInput,
 ): boolean => {
 	if (!input.allowDeclaredAutoChanges) return false;
-	if (!input.isAutoCase) return false;
 	if (input.regressedMetrics.length === 0) return false;
-	if (input.regressedMetrics.includes("catastrophicFailure")) return false;
-	return input.baselineImageDeclaredUpdated;
+	if (!input.baselineImageDeclaredUpdated) return false;
+	return input.isAutoCase || input.baselineStatus === "failed";
 };

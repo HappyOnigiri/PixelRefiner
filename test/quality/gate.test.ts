@@ -24,6 +24,7 @@ describe("shouldWarnInsteadOfFail", () => {
 		regressedMetrics: ["meanRgbaError"],
 		allowDeclaredAutoChanges: true,
 		baselineImageDeclaredUpdated: true,
+		baselineStatus: "passed" as const,
 	};
 
 	it("downgrades a declared auto-case regression to a warning", () => {
@@ -36,8 +37,18 @@ describe("shouldWarnInsteadOfFail", () => {
 		).toBe(false);
 	});
 
-	it("keeps failing for explicit cases regardless of declared updates", () => {
+	it("keeps failing for explicit cases that previously passed", () => {
 		expect(shouldWarnInsteadOfFail({ ...base, isAutoCase: false })).toBe(false);
+	});
+
+	it("downgrades declared metric tradeoffs for an already-failing explicit case", () => {
+		expect(
+			shouldWarnInsteadOfFail({
+				...base,
+				isAutoCase: false,
+				baselineStatus: "failed",
+			}),
+		).toBe(true);
 	});
 
 	it("keeps failing when there is no regression to downgrade", () => {
@@ -46,13 +57,13 @@ describe("shouldWarnInsteadOfFail", () => {
 		);
 	});
 
-	it("keeps failing on a catastrophic false-to-true flip even if declared", () => {
+	it("downgrades contextual catastrophic metrics for a declared auto change", () => {
 		expect(
 			shouldWarnInsteadOfFail({
 				...base,
 				regressedMetrics: ["meanRgbaError", "catastrophicFailure"],
 			}),
-		).toBe(false);
+		).toBe(true);
 	});
 
 	it("keeps failing when the baseline image was not updated on head (undeclared)", () => {

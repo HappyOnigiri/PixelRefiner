@@ -112,7 +112,7 @@ const registerGateShard = (
 	// [Intended] CI のゲートステップだけが立てる環境変数。ローカル実行では常に false になり、
 	// 従来どおりすべての regression がゲート失敗になる。
 	const allowDeclaredAutoChanges = allowDeclaredAutoChangesFromEnvironment();
-	const declaredAutoRegressions: QualityGateWarning[] = [];
+	const declaredRegressions: QualityGateWarning[] = [];
 	it.each(cases)(
 		"evaluates $id",
 		(qualityCase) => {
@@ -147,22 +147,22 @@ const registerGateShard = (
 			// 意図的な改善でも指標比較上は必ず regressed になる。head でベースライン画像を
 			// 更新済み（＝劣化を宣言済み。PR diff と比較レポートの diff で可視化される）の
 			// ときだけ「要人間レビューの警告」に降格し、ゲートは落とさない。
-			// catastrophicFailure の false→true と explicit ケースは対象外で必ずゲートを落とす
-			// （「変更を隠せない」設計は維持する）。
+			// 従来 passed の explicit ケースは対象外で必ずゲートを落とす。従来 failed の
+			// explicit ケースは、画像更新で指標トレードオフを宣言した場合だけ降格できる。
 			if (regressed.length > 0) {
-				const baselineImageDeclaredUpdated =
-					allowDeclaredAutoChanges && isAutoCase
-						? isBaselineImageDeclaredUpdated(qualityCase.id)
-						: false;
+				const baselineImageDeclaredUpdated = allowDeclaredAutoChanges
+					? isBaselineImageDeclaredUpdated(qualityCase.id)
+					: false;
 				if (
 					shouldWarnInsteadOfFail({
 						isAutoCase,
 						regressedMetrics: regressed,
 						allowDeclaredAutoChanges,
 						baselineImageDeclaredUpdated,
+						baselineStatus: expected.status,
 					})
 				) {
-					declaredAutoRegressions.push({
+					declaredRegressions.push({
 						id: qualityCase.id,
 						regressedMetrics: regressed,
 					});
@@ -177,7 +177,7 @@ const registerGateShard = (
 		QUALITY_CASE_TIMEOUT_MS,
 	);
 	afterAll(() => {
-		writeQualityGateWarningPartial(shardIndex, declaredAutoRegressions);
+		writeQualityGateWarningPartial(shardIndex, declaredRegressions);
 	});
 };
 
