@@ -1,10 +1,11 @@
+import { BACKGROUND_RAMP_LIMITS } from "../shared/config";
 import type {
 	BackgroundRemovalScope,
 	Connectivity,
 	RawImage,
 } from "../shared/types";
 import { type BackgroundModel, removeAutomaticBackground } from "./background";
-import { floodFillTransparent } from "./floodfill";
+import { type FloodFillRamp, floodFillTransparent } from "./floodfill";
 import { cloneImage } from "./image-operations";
 
 const isCandidate = (
@@ -24,6 +25,131 @@ const isCandidate = (
 		}
 	}
 	return false;
+};
+
+/**
+ * 最外周を一周する画素の並び。隣り合う要素が必ず空間的な隣接画素になるので、
+ * 「背景の色がなめらかに変化しているか」を段差の連続として測れる。
+ */
+const buildBorderRing = (w: number, h: number): Uint32Array => {
+	const ring = new Uint32Array(2 * (w + h) - 4);
+	let cursor = 0;
+	for (let x = 0; x < w; x += 1) {
+		ring[cursor] = x;
+		cursor += 1;
+	}
+	for (let y = 1; y < h; y += 1) {
+		ring[cursor] = y * w + w - 1;
+		cursor += 1;
+	}
+	for (let x = w - 2; x >= 0; x -= 1) {
+		ring[cursor] = (h - 1) * w + x;
+		cursor += 1;
+	}
+	for (let y = h - 2; y >= 1; y -= 1) {
+		ring[cursor] = y * w;
+		cursor += 1;
+	}
+	return ring;
+};
+
+/**
+ * 背景がなめらかなグラデーションかどうかを最外周から判定し、必要ならランプ許容を返す。
+ *
+ * - 隣接ペアの段差がほぼすべて小さい: 強いエッジ（被写体や模様）が混ざっていない。
+ * - リング内のチャンネル値レンジが tolerance を超える: 絶対差だけでは覆いきれない。
+ *
+ * [Intended] この 2 条件が揃うときだけランプ許容を使う。単色パディングや模様のある
+ * 写真では条件を満たさないため、従来の絶対差だけの塗りつぶしと完全に同じ結果になる。
+ */
+export const detectBackgroundRamp = (
+	img: RawImage,
+	tolerance: number,
+): FloodFillRamp | undefined => {
+	const w = img.width;
+	const h = img.height;
+	if (tolerance <= 0 || w < 3 || h < 3) return undefined;
+	const ring = buildBorderRing(w, h);
+	const data = img.data;
+	let pairs = 0;
+	let smoothPairs = 0;
+	let minR = 255;
+	let minG = 255;
+	let minB = 255;
+	let maxR = 0;
+	let maxG = 0;
+	let maxB = 0;
+	for (let i = 0; i < ring.length; i += 1) {
+		const offset = ring[i] * 4;
+		if (data[offset + 3] !== 255) continue;
+		const r = data[offset];
+		const g = data[offset + 1];
+		const b = data[offset + 2];
+		if (r < minR) minR = r;
+		if (r > maxR) maxR = r;
+		if (g < minG) minG = g;
+		if (g > maxG) maxG = g;
+		if (b < minB) minB = b;
+		if (b > maxB) maxB = b;
+		const nextOffset = ring[(i + 1) % ring.length] * 4;
+		if (data[nextOffset + 3] !== 255) continue;
+		pairs += 1;
+		const step = Math.max(
+			Math.abs(r - data[nextOffset]),
+			Math.abs(g - data[nextOffset + 1]),
+			Math.abs(b - data[nextOffset + 2]),
+		);
+		if (step <= BACKGROUND_RAMP_LIMITS.maxSmoothStep) smoothPairs += 1;
+	}
+	if (pairs < BACKGROUND_RAMP_LIMITS.minRingPairs) return undefined;
+	if (smoothPairs < pairs * BACKGROUND_RAMP_LIMITS.minSmoothRatio) {
+		return undefined;
+	}
+	const range = Math.max(maxR - minR, maxG - minG, maxB - minB);
+	if (range <= tolerance) return undefined;
+	return {
+		stepTolerance: Math.min(BACKGROUND_RAMP_LIMITS.maxSmoothStep, tolerance),
+		// 背景自身の広がり（リングのレンジ）に tolerance 分の余裕を足した範囲までしか
+		// 開始色から離れさせない。
+		seedLimit: range + tolerance,
+	};
+};
+
+const countOpaquePixels = (img: RawImage): number => {
+	let opaque = 0;
+	for (let pixel = 0; pixel < img.width * img.height; pixel += 1) {
+		if (img.data[pixel * 4 + 3] !== 0) opaque += 1;
+	}
+	return opaque;
+};
+
+/**
+ * ランプ許容付きの塗りつぶしを試し、削りすぎた場合は絶対差のみの結果へ巻き戻す。
+ *
+ * [Intended] 段差の小ささだけでは、被写体側へなめらかにつながる経路があると
+ * 回り込んで削りすぎる。最終的な除去率でも歯止めをかける二段構えにする。
+ */
+const fillWithRampFallback = (
+	img: RawImage,
+	tolerance: number,
+	fill: (target: RawImage, ramp: FloodFillRamp | undefined) => void,
+): RawImage => {
+	const ramp = detectBackgroundRamp(img, tolerance);
+	if (ramp !== undefined) {
+		const opaqueBefore = countOpaquePixels(img);
+		const ramped = cloneImage(img);
+		fill(ramped, ramp);
+		const removed = opaqueBefore - countOpaquePixels(ramped);
+		if (
+			opaqueBefore === 0 ||
+			removed <= opaqueBefore * BACKGROUND_RAMP_LIMITS.maxRemovalRatio
+		) {
+			return ramped;
+		}
+	}
+	const strict = cloneImage(img);
+	fill(strict, undefined);
+	return strict;
 };
 
 const getBorderPixels = (w: number, h: number): Array<[number, number]> => {
@@ -62,37 +188,45 @@ export const removeBackgroundByFloodFillLegacy = (
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 
-	const out = cloneImage(img);
 	const w = img.width;
 	const h = img.height;
 
 	// RGB: すべてのピクセルを走査し、一致したピクセルをフラッドフィルのシードにする。
 	// 重複したフラッドフィルを避けるため共有の訪問済みマップを使用する（旧来の挙動）。
 	if (method === "rgb") {
-		if (bgTargets.length === 0) return out;
-		const visited = new Uint8Array(w * h);
+		if (bgTargets.length === 0) return cloneImage(img);
 		const src32 = new Uint32Array(img.data.buffer);
-		for (let y = 0; y < h; y += 1) {
-			const row = y * w;
-			for (let x = 0; x < w; x += 1) {
-				const idx = row + x;
-				if (visited[idx]) continue;
+		return fillWithRampFallback(img, tolerance, (out, ramp) => {
+			const visited = new Uint8Array(w * h);
+			for (let y = 0; y < h; y += 1) {
+				const row = y * w;
+				for (let x = 0; x < w; x += 1) {
+					const idx = row + x;
+					if (visited[idx]) continue;
 
-				const pixel = src32[idx];
-				const r = pixel & 0xff;
-				const g = (pixel >> 8) & 0xff;
-				const b = (pixel >> 16) & 0xff;
+					const pixel = src32[idx];
+					const r = pixel & 0xff;
+					const g = (pixel >> 8) & 0xff;
+					const b = (pixel >> 16) & 0xff;
 
-				if (isCandidate(r, g, b, bgTargets, tolerance)) {
-					const a = out.data[idx * 4 + 3];
-					if (a !== 0) {
-						floodFillTransparent(out, x, y, tolerance, visited, connectivity);
+					if (isCandidate(r, g, b, bgTargets, tolerance)) {
+						const a = out.data[idx * 4 + 3];
+						if (a !== 0) {
+							floodFillTransparent(
+								out,
+								x,
+								y,
+								tolerance,
+								visited,
+								connectivity,
+								ramp,
+							);
+						}
 					}
+					visited[idx] = 1;
 				}
-				visited[idx] = 1;
 			}
-		}
-		return out;
+		});
 	}
 
 	// 角の方式: 選択した角からのみフラッドフィルする（旧来の挙動）。
@@ -106,8 +240,9 @@ export const removeBackgroundByFloodFillLegacy = (
 		sx = w - 1;
 		sy = h - 1;
 	}
-	floodFillTransparent(out, sx, sy, tolerance, undefined, connectivity);
-	return out;
+	return fillWithRampFallback(img, tolerance, (out, ramp) => {
+		floodFillTransparent(out, sx, sy, tolerance, undefined, connectivity, ramp);
+	});
 };
 
 export const removeBackground = (
@@ -155,41 +290,49 @@ export const removeBackground = (
 	}
 
 	if (bgRemovalScope === "outer") {
-		const out = cloneImage(img);
 		const w = img.width;
 		const h = img.height;
-		const visited = new Uint8Array(w * h);
-		const data = out.data;
 		const border = getBorderPixels(w, h);
+		return fillWithRampFallback(img, tolerance, (out, ramp) => {
+			const visited = new Uint8Array(w * h);
+			const data = out.data;
 
-		const fillFrom = (sx: number, sy: number): void => {
-			if (sx < 0 || sy < 0 || sx >= w || sy >= h) return;
-			const idx = sy * w + sx;
-			if (visited[idx]) return;
-			const i = idx * 4;
-			if (data[i + 3] === 0) return;
-			if (bgTargets.length > 0) {
-				const r = data[i];
-				const g = data[i + 1];
-				const b = data[i + 2];
-				if (!isCandidate(r, g, b, bgTargets, tolerance)) return;
-			}
-			floodFillTransparent(out, sx, sy, tolerance, visited, bgConnectivity);
-		};
+			const fillFrom = (sx: number, sy: number): void => {
+				if (sx < 0 || sy < 0 || sx >= w || sy >= h) return;
+				const idx = sy * w + sx;
+				if (visited[idx]) return;
+				const i = idx * 4;
+				if (data[i + 3] === 0) return;
+				if (bgTargets.length > 0) {
+					const r = data[i];
+					const g = data[i + 1];
+					const b = data[i + 2];
+					if (!isCandidate(r, g, b, bgTargets, tolerance)) return;
+				}
+				floodFillTransparent(
+					out,
+					sx,
+					sy,
+					tolerance,
+					visited,
+					bgConnectivity,
+					ramp,
+				);
+			};
 
-		for (const [x, y] of border) {
-			const idx = y * w + x;
-			const i = idx * 4;
-			if (data[i + 3] === 0) continue;
-			if (
-				bgTargets.length > 0 &&
-				!isCandidate(data[i], data[i + 1], data[i + 2], bgTargets, tolerance)
-			) {
-				continue;
+			for (const [x, y] of border) {
+				const idx = y * w + x;
+				const i = idx * 4;
+				if (data[i + 3] === 0) continue;
+				if (
+					bgTargets.length > 0 &&
+					!isCandidate(data[i], data[i + 1], data[i + 2], bgTargets, tolerance)
+				) {
+					continue;
+				}
+				fillFrom(x, y);
 			}
-			fillFrom(x, y);
-		}
-		return out;
+		});
 	}
 
 	// bgRemovalScope === "all": 旧仕様互換の挙動

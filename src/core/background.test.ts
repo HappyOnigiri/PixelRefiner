@@ -4,7 +4,11 @@ import {
 	estimateBackgroundModel,
 	removeAutomaticBackground,
 } from "./background";
-import { getBackgroundTargets, removeBackground } from "./background-removal";
+import {
+	detectBackgroundRamp,
+	getBackgroundTargets,
+	removeBackground,
+} from "./background-removal";
 
 const createImage = (
 	width: number,
@@ -52,7 +56,10 @@ describe("automatic background model", () => {
 		expect(first.model.confidence).toBeGreaterThan(0.55);
 		expect(alphaAt(first.image, 0, 0)).toBe(0);
 		expect(alphaAt(first.image, 23, 23)).toBe(0);
-		expect(alphaAt(legacy, 23, 23)).toBe(255);
+		// [Intended] ランプ許容の導入で、旧来のフラッドフィルも緩やかな階調の背景を
+		// 反対側の角まで落とせる。被写体は段差の大きさで守られるため残る。
+		expect(alphaAt(legacy, 23, 23)).toBe(0);
+		expect(alphaAt(legacy, 12, 12)).toBe(255);
 		expect(alphaAt(first.image, 12, 12)).toBe(255);
 		expect(second.image.data).toEqual(first.image.data);
 	});
@@ -200,6 +207,82 @@ describe("automatic background model", () => {
 		expect(alphaAt(result.image, 0, 5)).toBe(255);
 		expect(alphaAt(result.image, 5, 0)).toBe(255);
 		expect(result.image.data).toEqual(image.data);
+	});
+
+	it("removes a gradient padding whose range exceeds the tolerance", () => {
+		// 48x48 の直線グラデーションが 32x32 のアートを 8px 囲む構成。
+		const image = createImage(48, 48, (x, y) => {
+			if (x >= 8 && x <= 39 && y >= 8 && y <= 39) {
+				const edge = x === 8 || x === 39 || y === 8 || y === 39;
+				return edge ? [35, 28, 44, 255] : [218, 74, 72, 255];
+			}
+			return [
+				Math.round((x / 47) * 90) + 120,
+				Math.round((y / 47) * 80) + 130,
+				180,
+				255,
+			];
+		});
+		const ramp = detectBackgroundRamp(image, 48);
+		const result = removeBackground(
+			image,
+			48,
+			"all",
+			"4",
+			getBackgroundTargets(image, "top-left"),
+			"top-left",
+		);
+
+		expect(ramp).not.toBeUndefined();
+		// パディングは四隅から反対側まで全て落ち、アートだけが残る。
+		expect(alphaAt(result, 0, 0)).toBe(0);
+		expect(alphaAt(result, 47, 47)).toBe(0);
+		expect(alphaAt(result, 47, 0)).toBe(0);
+		expect(alphaAt(result, 0, 47)).toBe(0);
+		expect(alphaAt(result, 8, 8)).toBe(255);
+		expect(alphaAt(result, 39, 39)).toBe(255);
+		expect(alphaAt(result, 20, 20)).toBe(255);
+	});
+
+	it("does not enable the ramp for flat padding or a textured border", () => {
+		const flat = createImage(48, 48, (x, y) => {
+			if (x >= 8 && x <= 39 && y >= 8 && y <= 39) return [218, 74, 72, 255];
+			return [255, 255, 255, 255];
+		});
+		const textured = createImage(48, 48, (x, y) => {
+			if (x >= 8 && x <= 39 && y >= 8 && y <= 39) return [218, 74, 72, 255];
+			return [(x * 71 + y * 37) % 256, (x * 13 + y * 97) % 256, 180, 255];
+		});
+
+		expect(detectBackgroundRamp(flat, 48)).toBeUndefined();
+		expect(detectBackgroundRamp(textured, 48)).toBeUndefined();
+		// 許容差 0 は「完全一致のみ」の意図なのでランプも使わない。
+		expect(detectBackgroundRamp(flat, 0)).toBeUndefined();
+	});
+
+	it("rolls back the ramp when it would erase almost the whole image", () => {
+		// 全面がなめらかなグラデーションで、被写体との強い境界が無い画像。
+		// ランプ許容だと全部消えるため、絶対差のみの結果へ巻き戻す。
+		const image = createImage(48, 48, (x, y) => [
+			Math.round(((x + y) / 94) * 200) + 30,
+			120,
+			180,
+			255,
+		]);
+		const ramp = detectBackgroundRamp(image, 48);
+		const result = removeBackground(
+			image,
+			48,
+			"all",
+			"4",
+			getBackgroundTargets(image, "top-left"),
+			"top-left",
+		);
+
+		expect(ramp).not.toBeUndefined();
+		// 巻き戻した結果は絶対差の届く範囲だけが落ち、遠い側は残る。
+		expect(alphaAt(result, 0, 0)).toBe(0);
+		expect(alphaAt(result, 47, 47)).toBe(255);
 	});
 
 	it("still removes a solid background when only a few border pixels are transparent", () => {

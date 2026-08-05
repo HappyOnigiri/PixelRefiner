@@ -161,6 +161,18 @@ export const BACKGROUND_MODEL_LIMITS = {
 	dehaloInteriorBlend: 0.65,
 } as const;
 
+// フラッドフィルの背景除去で、なめらかな階調（グラデーション背景）をたどる判定の基準。
+export const BACKGROUND_RAMP_LIMITS = {
+	/** なめらかとみなす隣接画素間のチャンネル差。被写体の輪郭はこれを大きく超える。 */
+	maxSmoothStep: 8,
+	/** 最外周の隣接ペアのうち、なめらかである必要のある割合。 */
+	minSmoothRatio: 0.9,
+	/** 最外周の評価に必要な最小ペア数。これ未満は判定材料が足りないとみなす。 */
+	minRingPairs: 16,
+	/** ランプ許容で不透明画素をこの比率より多く削った場合は絶対差のみの結果へ巻き戻す。 */
+	maxRemovalRatio: 0.9,
+} as const;
+
 export const SMALL_COMPONENT_LIMITS = {
 	maxLogicalPixels: {
 		off: 0,
