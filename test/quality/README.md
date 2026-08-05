@@ -32,9 +32,17 @@ back into manifest order and writes `results.json`, `summary.md`, and the HTML
 report. Because ordering is restored from the manifest, the report is identical
 to a serial run apart from the measured runtime and memory values.
 
-`pnpm test:quality:update` stays serial: it runs every case in `cases.test.ts`
-so the recorded metrics are measured against the baseline images that the same
-test then replaces.
+`pnpm test:quality:update` also runs Vitest twice. The first run
+(`quality:update:generate`) executes the shards with
+`UPDATE_QUALITY_BASELINE=1`: each case is measured against the still-unchanged
+baseline images (read-only, so parallel shards cannot race each other) and the
+resulting metrics and output image are written to
+`tmp/quality-baseline-update`. The second run (`quality:update:apply`)
+executes `cases.test.ts`, which merges the staged results back into manifest
+order and performs the only write to `test/quality/baseline.json` and
+`test/quality/baseline/`. Splitting the write from the measurement keeps the
+"measure against the old baseline, then replace it" requirement intact while
+letting the measurement itself run in parallel.
 
 Open `tmp/quality-report/latest/index.html` directly in a browser after
 generating a report. The report includes JSON and Markdown summaries plus

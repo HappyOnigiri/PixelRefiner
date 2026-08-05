@@ -1,16 +1,29 @@
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { loadBaseline } from "./baseline";
-import { runQualityCase } from "./benchmark";
+import { assertBaselineUpdateIsSafe, loadBaseline } from "./baseline";
+import {
+	runQualityCase,
+	toBaselineCaseEntry,
+	writeQualityBaselineImage,
+} from "./benchmark";
 import { compareMetrics } from "./comparison";
 import { pngPixelCount } from "./image";
 import {
 	caseParameterMode,
 	loadCases,
+	qualityProfileFromEnvironment,
 	selectCasesForProfile,
 } from "./manifest";
 import { writeQualityReportPartial } from "./report/partial";
-import type { QualityCaseResult, QualityImageCase } from "./types";
+import type {
+	QualityBaselineCase,
+	QualityCaseResult,
+	QualityImageCase,
+} from "./types";
+import {
+	stagingBaselineImagePath,
+	writeQualityUpdatePartial,
+} from "./update/partial";
 
 /**
  * ケースを分配するシャード数。
@@ -24,6 +37,7 @@ const QUALITY_CASE_TIMEOUT_MS = 300_000;
 
 const reportMode = process.env.QUALITY_REPORT === "1";
 const updateMode = process.env.UPDATE_QUALITY_BASELINE === "1";
+const profile = qualityProfileFromEnvironment();
 
 // [Intended] 実行コストは入力の画素数にほぼ比例するため、これを重みに使う。
 // 寸法は PNG の先頭 24 バイトに入っているので、全ケースをデコードせずに済む。
@@ -116,6 +130,35 @@ const registerGateShard = (cases: QualityImageCase[]): void => {
 	);
 };
 
+/**
+ * ベースライン更新の stage1（並列生成）。各ケースを書き換え前の既存ベースラインに
+ * 対して測定し、指標と新しい出力画像をステージング領域へ書き出す。全シャードが
+ * 読むのは同じ既存ベースラインだけなので、この段階は読み取り専用で並列安全。
+ * test/quality/baseline.json と baseline/ 本体の置き換えは stage2（cases.test.ts の
+ * 更新ブロック）が集約後に一括で行う。
+ */
+const registerUpdateShard = (
+	cases: QualityImageCase[],
+	shardIndex: number,
+): void => {
+	const entries: QualityBaselineCase[] = [];
+	it.each(cases)(
+		"stages baseline update for $id",
+		(qualityCase) => {
+			const result = runQualityCase(qualityCase);
+			entries.push(toBaselineCaseEntry(result));
+			writeQualityBaselineImage(
+				qualityCase,
+				stagingBaselineImagePath(qualityCase.id),
+			);
+		},
+		QUALITY_CASE_TIMEOUT_MS,
+	);
+	afterAll(() => {
+		writeQualityUpdatePartial(shardIndex, entries);
+	});
+};
+
 const registerReportShard = (
 	cases: QualityImageCase[],
 	shardIndex: number,
@@ -136,31 +179,32 @@ const registerReportShard = (
 
 /**
  * シャードファイルから呼ぶ入口。1 始まりのシャード番号を受け取る。
+ * UPDATE_QUALITY_BASELINE=1 のときはベースライン更新の並列生成、
  * QUALITY_REPORT=1 のときはレポート成果物の生成、それ以外は品質ゲートを担う。
  */
 export const runCasesShard = (shardIndex: number): void => {
 	const selectedCases = selectCasesForProfile(loadCases());
 	const cases = shardCases(selectedCases, QUALITY_SHARD_COUNT)[shardIndex - 1];
 	const assignedCases = cases ?? [];
-	// [Intended] ベースライン更新時は cases.test.ts が全ケースを直列で処理する。
-	// ここでも走らせるとケースを二重実行し、更新中のベースラインと突き合わせてしまう。
-	describe.skipIf(updateMode)(
-		`quality cases shard ${shardIndex}/${QUALITY_SHARD_COUNT}`,
-		() => {
-			it(`owns ${assignedCases.length} of ${selectedCases.length} cases`, () => {
-				const selectedIds = new Set(
-					selectedCases.map((qualityCase) => qualityCase.id),
-				);
-				for (const qualityCase of assignedCases) {
-					expect(selectedIds.has(qualityCase.id)).toBe(true);
-				}
-			});
-			if (assignedCases.length === 0) return;
-			if (reportMode) {
-				registerReportShard(assignedCases, shardIndex);
-				return;
+	describe(`quality cases shard ${shardIndex}/${QUALITY_SHARD_COUNT}`, () => {
+		it(`owns ${assignedCases.length} of ${selectedCases.length} cases`, () => {
+			const selectedIds = new Set(
+				selectedCases.map((qualityCase) => qualityCase.id),
+			);
+			for (const qualityCase of assignedCases) {
+				expect(selectedIds.has(qualityCase.id)).toBe(true);
 			}
-			registerGateShard(assignedCases);
-		},
-	);
+		});
+		if (assignedCases.length === 0) return;
+		if (updateMode) {
+			assertBaselineUpdateIsSafe(profile);
+			registerUpdateShard(assignedCases, shardIndex);
+			return;
+		}
+		if (reportMode) {
+			registerReportShard(assignedCases, shardIndex);
+			return;
+		}
+		registerGateShard(assignedCases);
+	});
 };

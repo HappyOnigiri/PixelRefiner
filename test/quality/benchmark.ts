@@ -15,7 +15,11 @@ import {
 	createBackgroundMaskImage,
 	createDiffImage,
 } from "./metrics";
-import type { QualityCaseResult, QualityImageCase } from "./types";
+import type {
+	QualityBaselineCase,
+	QualityCaseResult,
+	QualityImageCase,
+} from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
 
@@ -272,6 +276,25 @@ export const runQualityCase = (
 		files,
 	};
 };
+
+// [Intended] QualityCaseResult からベースラインへ書き込むフィールドだけを取り出す。
+// ベースライン更新の並列生成側（shard.ts）から呼ぶ。抽出ロジックを1箇所にまとめ、
+// 書き込むフィールドの定義がベースラインの型定義から離れて重複しないようにする。
+export const toBaselineCaseEntry = (
+	result: QualityCaseResult,
+): QualityBaselineCase => ({
+	id: result.id,
+	status: result.status,
+	outputWidth: result.metrics.outputWidth,
+	outputHeight: result.metrics.outputHeight,
+	meanRgbaError: Number(result.metrics.meanRgbaError.toFixed(6)),
+	edgeF1: Number(result.metrics.edgeF1.toFixed(6)),
+	backgroundMaskIou: Number(result.metrics.backgroundMaskIou.toFixed(6)),
+	smallComponentRetention: Number(
+		result.metrics.smallComponentRetention.toFixed(6),
+	),
+	catastrophicFailure: result.metrics.catastrophicFailure,
+});
 
 export const writeQualityBaselineImage = (
 	qualityCase: QualityImageCase,
