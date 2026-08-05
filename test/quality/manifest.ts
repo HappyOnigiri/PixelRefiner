@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { QualityImageCase } from "./types";
+import { buildAutoCases } from "./auto-cases";
+import type { QualityImageCase, QualityParameterMode } from "./types";
 
 export type QualityProfile = QualityImageCase["profile"];
 
@@ -10,8 +11,19 @@ export const MANIFEST_PATH = path.join(QUALITY_ROOT, "cases.json");
 const CHECKED_IN_BASELINE_ROOT = path.join(QUALITY_ROOT, "baseline");
 const SAFE_CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export const loadCases = (): QualityImageCase[] =>
+export const caseParameterMode = (
+	qualityCase: QualityImageCase,
+): QualityParameterMode => qualityCase.parameterMode ?? "explicit";
+
+export const loadExplicitCases = (): QualityImageCase[] =>
 	JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as QualityImageCase[];
+
+// [Intended] 自動判定ケースは fixture ディレクトリから生成して連結する。
+// cases.json に書き並べると fixture 追加時に取りこぼしが起きるため。
+export const loadCases = (): QualityImageCase[] => {
+	const explicitCases = loadExplicitCases();
+	return [...explicitCases, ...buildAutoCases(explicitCases, FIXTURE_ROOT)];
+};
 
 export const qualityProfileFromEnvironment = (): QualityProfile => {
 	const profile = process.env.QUALITY_PROFILE ?? "full";
@@ -92,7 +104,20 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 			errors.push(`${qualityCase.id}: assertions must not be empty`);
 		}
 		const expectation = qualityCase.expectation;
-		if (expectation.exact) {
+		if (caseParameterMode(qualityCase) === "auto") {
+			// [Intended] 自動判定ケースは正解画像を持たないので、正解比較の目標値は課さない。
+			// 判定の妥当性は承認済みベースラインからの変化で見る。
+			if (qualityCase.expected !== undefined) {
+				errors.push(`${qualityCase.id}: auto cases must not define expected`);
+			}
+			if (Object.keys(expectation).length > 0) {
+				errors.push(
+					`${qualityCase.id}: auto cases must not define expectation targets`,
+				);
+			}
+		} else if (qualityCase.expected === undefined) {
+			errors.push(`${qualityCase.id}: explicit cases require expected`);
+		} else if (expectation.exact) {
 			if (
 				expectation.maxMeanRgbaError !== undefined ||
 				expectation.minEdgeF1 !== undefined ||
@@ -119,7 +144,7 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 			degradations.add(pattern);
 		for (const file of [
 			qualityCase.input,
-			qualityCase.expected,
+			...(qualityCase.expected === undefined ? [] : [qualityCase.expected]),
 			...(qualityCase.sharedPalette?.inputs ?? []),
 		]) {
 			referencedFiles.add(file);

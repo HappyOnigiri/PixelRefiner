@@ -28,6 +28,16 @@ const describeCase = (
 	result: QualityCaseResult,
 ): { en: string; ja: string } => {
 	const options = result.options;
+	if (result.parameterMode === "auto") {
+		return {
+			en:
+				"Process the fixture with Auto and the default settings only, with no case-specific options, " +
+				"and keep the automatic classification, route, and output grid identical to the approved baseline.",
+			ja:
+				"ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、" +
+				"自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。",
+		};
+	}
 	if (result.id === "restore-thin-features-and-alpha-coverage") {
 		return {
 			en:
@@ -249,6 +259,20 @@ const renderReportSidebar = (results: QualityResults): string => {
 			</div>
 		</fieldset>
 		<fieldset class="filter-group">
+			<legend data-i18n="parameterMode">Parameters</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-parameter-filter="" aria-pressed="true">
+					<span data-i18n="allParameters">All</span>
+				</button>
+				<button class="filter-button" type="button" data-parameter-filter="explicit" aria-pressed="false">
+					<span data-i18n="explicitParameters">explicit options</span>: ${results.summary.explicitCases}
+				</button>
+				<button class="filter-button" type="button" data-parameter-filter="auto" aria-pressed="false">
+					<span data-i18n="autoParameters">auto detection</span>: ${results.summary.autoCases}
+				</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
 			<legend data-i18n="qualityStatus">Quality status</legend>
 			<div class="filter-row">
 				<button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button>
@@ -267,6 +291,7 @@ const renderReportSidebar = (results: QualityResults): string => {
 		<p class="filter-summary" aria-live="polite">
 			<span data-i18n="displayConditions">Showing</span>:
 			<strong id="active-change-label"></strong> &times;
+			<strong id="active-parameter-label"></strong> &times;
 			<strong id="active-status-label"></strong> &mdash;
 			<strong id="visible-count">0</strong> / ${results.summary.caseCount}
 			<span data-i18n="casesShown">cases</span>
@@ -312,6 +337,7 @@ export const renderHtml = (results: QualityResults): string => {
 			const searchable = [
 				result.id,
 				...result.featureIds,
+				result.parameterMode,
 				result.status,
 				result.changeStatus,
 				result.inputKind,
@@ -340,10 +366,13 @@ export const renderHtml = (results: QualityResults): string => {
 				["result", "Result", result.files.result],
 			]);
 			return `<article class="case ${result.status} ${result.changeStatus}"
-			data-status="${result.status}" data-change="${result.changeStatus}" data-search="${escapeHtml(searchable)}">
+			data-status="${result.status}" data-change="${result.changeStatus}"
+			data-parameter="${result.parameterMode}" data-search="${escapeHtml(searchable)}">
 			<h2>
 				${escapeHtml(result.id)}
 				<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
+				<span class="badge parameter-${result.parameterMode}"
+					data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
 				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 				${qualityMeasurement}
 			</h2>

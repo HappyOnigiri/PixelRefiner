@@ -51,13 +51,45 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-change-filter="new"');
 		expect(html).toContain('data-change-filter="regressed"');
 		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
+		const parameterGroupIndex = html.indexOf(
+			'<legend data-i18n="parameterMode">',
+		);
 		const qualityGroupIndex = html.indexOf(
 			'<legend data-i18n="qualityStatus">',
 		);
 		const searchIndex = html.indexOf('class="search-row"');
 		expect(changeGroupIndex).toBeGreaterThan(-1);
-		expect(qualityGroupIndex).toBeGreaterThan(changeGroupIndex);
+		expect(parameterGroupIndex).toBeGreaterThan(changeGroupIndex);
+		expect(qualityGroupIndex).toBeGreaterThan(parameterGroupIndex);
 		expect(searchIndex).toBeGreaterThan(qualityGroupIndex);
+		expect(html).toContain('data-parameter-filter=""');
+		expect(html).toContain('data-parameter-filter="explicit"');
+		expect(html).toContain('data-parameter-filter="auto"');
+		expect(html).toContain('parameterMode":"パラメータ"');
+		expect(html).toContain('explicitParameters":"オプション指定あり"');
+		expect(html).toContain('autoParameters":"自動判定"');
+		expect(html).toContain("card.dataset.parameter === activeParameter");
+		expect(html).toContain('id="active-parameter-label"');
+		const explicitCount = html.match(/data-parameter="explicit"/g)?.length ?? 0;
+		const autoCount = html.match(/data-parameter="auto"/g)?.length ?? 0;
+		expect(explicitCount + autoCount).toBe(selectedCases.length);
+		expect(autoCount).toBe(results.summary.autoCases);
+		expect(explicitCount).toBe(results.summary.explicitCases);
+		expect(autoCount).toBeGreaterThan(0);
+		const autoCaseId = "auto-quality-nearest-4x";
+		const autoCaseIdIndex = html.indexOf(autoCaseId);
+		const autoCase = html.slice(
+			html.lastIndexOf("<article", autoCaseIdIndex),
+			html.indexOf("</article>", autoCaseIdIndex),
+		);
+		expect(autoCase).toContain('data-parameter="auto"');
+		expect(autoCase).toContain(
+			"Process the fixture with Auto and the default settings only",
+		);
+		expect(autoCase).toContain("Autoと既定設定のみでfixtureを処理し");
+		expect(
+			existsSync(path.join(reportRoot, "cases", autoCaseId, "index.html")),
+		).toBe(true);
 		expect(html).toContain('id="active-change-label"');
 		expect(html).toContain('id="visible-count"');
 		expect(html).toContain("unchanged from base branch");
@@ -215,5 +247,5 @@ describe.skipIf(!enabled)("quality report", () => {
 				);
 			}
 		}
-	}, 300_000);
+	}, 1_200_000);
 });

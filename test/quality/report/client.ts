@@ -114,6 +114,11 @@ export const runQualityReportClient = (): void => {
 		const statusButtons = [
 			...document.querySelectorAll<HTMLButtonElement>("[data-status-filter]"),
 		];
+		const parameterButtons = [
+			...document.querySelectorAll<HTMLButtonElement>(
+				"[data-parameter-filter]",
+			),
+		];
 		const cards = [...document.querySelectorAll<HTMLElement>(".case")];
 		const changeLabel = document.querySelector<HTMLElement>(
 			"#active-change-label",
@@ -121,13 +126,17 @@ export const runQualityReportClient = (): void => {
 		const statusLabel = document.querySelector<HTMLElement>(
 			"#active-status-label",
 		);
+		const parameterLabel = document.querySelector<HTMLElement>(
+			"#active-parameter-label",
+		);
 		const visibleCount = document.querySelector<HTMLElement>("#visible-count");
 		let activeChange = "";
 		let activeStatus = "";
+		let activeParameter = "";
 
 		const updateButtons = (
 			buttons: HTMLButtonElement[],
-			attribute: "changeFilter" | "statusFilter",
+			attribute: "changeFilter" | "statusFilter" | "parameterFilter",
 			value: string,
 		): void => {
 			for (const button of buttons) {
@@ -138,7 +147,7 @@ export const runQualityReportClient = (): void => {
 		};
 		const selectedLabel = (
 			buttons: HTMLButtonElement[],
-			attribute: "changeFilter" | "statusFilter",
+			attribute: "changeFilter" | "statusFilter" | "parameterFilter",
 			value: string,
 		): string =>
 			buttons
@@ -154,6 +163,7 @@ export const runQualityReportClient = (): void => {
 				card.hidden = !(
 					(card.dataset.search ?? "").toLowerCase().includes(text) &&
 					(!activeStatus || card.dataset.status === activeStatus) &&
+					(!activeParameter || card.dataset.parameter === activeParameter) &&
 					changeMatches
 				);
 				if (!card.hidden) visible += 1;
@@ -172,6 +182,13 @@ export const runQualityReportClient = (): void => {
 					activeStatus,
 				);
 			}
+			if (parameterLabel) {
+				parameterLabel.textContent = selectedLabel(
+					parameterButtons,
+					"parameterFilter",
+					activeParameter,
+				);
+			}
 			if (visibleCount) visibleCount.textContent = String(visible);
 		};
 		search.addEventListener("input", refreshFilter);
@@ -186,6 +203,13 @@ export const runQualityReportClient = (): void => {
 			button.addEventListener("click", () => {
 				activeStatus = button.dataset.statusFilter ?? "";
 				updateButtons(statusButtons, "statusFilter", activeStatus);
+				refreshFilter();
+			});
+		}
+		for (const button of parameterButtons) {
+			button.addEventListener("click", () => {
+				activeParameter = button.dataset.parameterFilter ?? "";
+				updateButtons(parameterButtons, "parameterFilter", activeParameter);
 				refreshFilter();
 			});
 		}
