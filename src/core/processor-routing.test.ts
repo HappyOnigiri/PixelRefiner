@@ -280,6 +280,74 @@ describe("processing router", () => {
 	});
 
 	it.each([
+		["quality_prf210_isolated_noise.png", 6, 7],
+		["quality_prf210_protected_details.png", 13, 12],
+		["quality_prf420_shared_palette_target.png", 8, 8],
+		["quality_prf200_gradient_background.png", 10, 10],
+	] as const)(
+		"%s は縮退したグリッドを棄却して等倍へフォールバックする",
+		async (fileName, width, height) => {
+			const image = await readPngAsRawImage(
+				fileURLToPath(
+					new URL(`../../test/fixtures/${fileName}`, import.meta.url),
+				),
+			);
+			// UI 既定（Auto プリセット）と同じ、PROCESS_DEFAULTS のままの処理。
+			const processed = processImage(image, { debug: false });
+
+			expect(processed.analysis.route).toBe("preserve");
+			expect(processed.analysis.warnings).toContain("FALLBACK_TO_PRESERVE");
+			// 棄却したグリッドも候補として提示できるよう、低信頼シグナルを残す。
+			expect(processed.analysis.warnings).toContain("LOW_GRID_CONFIDENCE");
+			expect(processed.result.width).toBe(width);
+			expect(processed.result.height).toBe(height);
+		},
+	);
+
+	it("繰り返しの足りない周期を退けて 4 画素セルの格子を復元する", async () => {
+		const image = await readPngAsRawImage(
+			fileURLToPath(
+				new URL(
+					"../../test/fixtures/quality_prf130_cell_sampling.png",
+					import.meta.url,
+				),
+			),
+		);
+		const processed = processImage(image, { debug: false });
+
+		expect(processed.analysis.route).toBe("refine");
+		expect(processed.result.width).toBe(6);
+		expect(processed.result.height).toBe(6);
+	});
+
+	it("整数倍拡大を戻す小さな出力は縮退とみなさない", () => {
+		// 3x3 の論理ドットを 8 倍に拡大した 24x24。出力 3x3 は正しい復元。
+		const scale = 8;
+		const logical = 3;
+		const size = logical * scale;
+		const data = new Uint8ClampedArray(size * size * 4);
+		for (let y = 0; y < size; y += 1) {
+			for (let x = 0; x < size; x += 1) {
+				const logicalX = Math.floor(x / scale);
+				const logicalY = Math.floor(y / scale);
+				const index = (y * size + x) * 4;
+				data[index] = (logicalX * 90 + logicalY * 30) % 256;
+				data[index + 1] = (logicalX * 40 + logicalY * 130) % 256;
+				data[index + 2] = (logicalX * 170 + logicalY * 70) % 256;
+				data[index + 3] = 255;
+			}
+		}
+		const processed = processImage(
+			{ width: size, height: size, data },
+			{ ...safeOptions, sampleWindow: 1 },
+		);
+
+		expect(processed.analysis.route).toBe("refine");
+		expect(processed.result.width).toBe(logical);
+		expect(processed.result.height).toBe(logical);
+	});
+
+	it.each([
 		["quality_reference.png", "native-pixel", "preserve", 8, 8],
 		["quality_nearest_2x.png", "scaled-pixel", "refine", 8, 8],
 		["quality_bilinear.png", "soft-pixel", "refine", 8, 8],

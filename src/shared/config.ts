@@ -50,6 +50,26 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	legacyPreserveCandidateScore: 1_000_000,
 } as const;
 
+// 等倍ドット絵判定（整数倍拡大の格子検出）に使う定数。
+export const NATIVE_SCALE_LIMITS = {
+	/** 遷移とみなす最小のエッジ強度（0〜1 に正規化した平均差）。 */
+	minTransitionStrength: 0.02,
+	/** これを超える画素数の画像は等倍判定を行わない。 */
+	maxAnalysisPixels: 1_048_576,
+} as const;
+
+// auto 経路でグリッドが縮退したときのフォールバック条件。
+export const AUTO_GRID_GUARD_LIMITS = {
+	/** ガードを適用する入力の最大辺。これを超える入力は既存の出力を維持する。 */
+	maxGuardedInputDimension: 32,
+	/** 出力の最小辺がこれ未満なら縮退とみなす。 */
+	minOutputDimension: 4,
+	/** セルの縦横比がこれを超えたら縮退とみなす。 */
+	maxCellAspectRatio: 8,
+	/** 検出した整数倍格子と出力サイズが一致しているとみなす比率。 */
+	nativeLatticeMatchRatio: 0.5,
+} as const;
+
 export const CANDIDATE_PREVIEW_LIMITS = {
 	maxCandidates: 4,
 	maxThumbnailDimension: 192,
@@ -209,6 +229,8 @@ export const GRID_SEARCH_LIMITS = {
 	maxTransitionSamples: 32,
 	maxAnalysisDimension: 256,
 	axisConfidenceThreshold: 0.55,
+	/** 周期として信用するために必要な繰り返し回数。これ未満の周期は整合スコアを減衰させる。 */
+	minGridPeriods: 3,
 	localRegionCount: 4,
 	minimumAutocorrelationSamples: 3,
 	fullResolutionSampleLimit: 16384,

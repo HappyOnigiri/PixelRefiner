@@ -195,6 +195,47 @@ const createPhaseCandidates = (
 	return phases;
 };
 
+/**
+ * 周期の繰り返し回数に応じてスコアを減衰させる係数。
+ *
+ * [Intended] 遷移が数本しかない画像では、セルを大きく取るほど「予測した境界がすべて
+ * 遷移に一致する」状態を作れてしまい、格子整合スコアが満点になる。繰り返しの少ない
+ * 周期は偶然の一致でしかないため、必要な繰り返し回数に届くまで線形に減衰させる。
+ */
+const periodicityConfidence = (length: number, cell: number): number => {
+	if (cell <= 0) return 0;
+	const periods = length / cell;
+	return Math.min(1, periods / GRID_SEARCH_LIMITS.minGridPeriods);
+};
+
+const scoreAxisCandidate = (
+	edges: Float64Array,
+	profile: AxisSignalProfile,
+	options: GridSignalOptions,
+	length: number,
+	cell: number,
+	phase: number,
+): AxisCandidate => {
+	const signals = scoreAxisSignals(
+		profile,
+		edges,
+		cell,
+		phase,
+		options,
+		normalizeGridPhase,
+	);
+	const alignment =
+		gridAlignmentScore(edges, cell, phase, normalizeGridPhase) * 0.75 +
+		signals.autocorrelation * 0.15 +
+		signals.localPhaseStability * 0.1;
+	return {
+		cell,
+		phase,
+		score: alignment * periodicityConfidence(length, cell),
+		signals,
+	};
+};
+
 const findAxisCandidates = (
 	edges: Float64Array,
 	profile: AxisSignalProfile,
@@ -212,23 +253,14 @@ const findAxisCandidates = (
 		let zeroPhase: AxisCandidate | null = null;
 		for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex += 1) {
 			const phase = phases[phaseIndex];
-			const signals = scoreAxisSignals(
-				profile,
+			const candidate = scoreAxisCandidate(
 				edges,
-				cell,
-				phase,
+				profile,
 				options,
-				normalizeGridPhase,
-			);
-			const candidate = {
+				length,
 				cell,
 				phase,
-				score:
-					gridAlignmentScore(edges, cell, phase, normalizeGridPhase) * 0.75 +
-					signals.autocorrelation * 0.15 +
-					signals.localPhaseStability * 0.1,
-				signals,
-			};
+			);
 			if (
 				!best ||
 				candidate.score > best.score ||
@@ -272,44 +304,21 @@ const findAxisCandidates = (
 		let best: AxisCandidate | null = null;
 		for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex += 1) {
 			const phase = phases[phaseIndex];
-			const signals = scoreAxisSignals(
-				profile,
+			const candidate = scoreAxisCandidate(
 				edges,
-				cell,
-				phase,
+				profile,
 				options,
-				normalizeGridPhase,
-			);
-			const candidate = {
+				length,
 				cell,
 				phase,
-				score:
-					gridAlignmentScore(edges, cell, phase, normalizeGridPhase) * 0.75 +
-					signals.autocorrelation * 0.15 +
-					signals.localPhaseStability * 0.1,
-				signals,
-			};
+			);
 			if (!best || candidate.score > best.score) best = candidate;
 		}
 		if (best) selected.push(best);
 		if (best?.phase !== 0) {
-			const signals = scoreAxisSignals(
-				profile,
-				edges,
-				cell,
-				0,
-				options,
-				normalizeGridPhase,
+			selected.push(
+				scoreAxisCandidate(edges, profile, options, length, cell, 0),
 			);
-			selected.push({
-				cell,
-				phase: 0,
-				score:
-					gridAlignmentScore(edges, cell, 0, normalizeGridPhase) * 0.75 +
-					signals.autocorrelation * 0.15 +
-					signals.localPhaseStability * 0.1,
-				signals,
-			});
 		}
 		if (selected.length >= GRID_SEARCH_LIMITS.axisCandidateLimit) break;
 	}
