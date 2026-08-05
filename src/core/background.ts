@@ -67,6 +67,20 @@ const writeOklab = (
 		0.0259040371 * cubeL + 0.7827717662 * cubeM - 0.808675766 * cubeS;
 };
 
+// [Intended] 値が a と b を線形補間した範囲（tolerance の余裕込み）に収まるかを判定する。
+// 真のアンチエイリアシング縁は背景色と内側画素の色の中間になるため、この範囲に収まる。
+// 範囲外なら背景とは無関係な被写体自身の色とみなし、dehalo の補正対象から外す。
+const isWithinBlendRange = (
+	value: number,
+	a: number,
+	b: number,
+	tolerance: number,
+): boolean => {
+	const lower = Math.min(a, b) - tolerance;
+	const upper = Math.max(a, b) + tolerance;
+	return value >= lower && value <= upper;
+};
+
 const distanceSquared = (
 	l: number,
 	a: number,
@@ -103,12 +117,20 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 	const band = getBandSize(width, height);
 	let opaqueCount = 0;
 	let transparentCount = 0;
+	// [Intended] 境界帯ガード専用の「透明とみなす」画素数。完全透明に加え、ブラーや
+	// リサイズで生じる半透明のにじみ画素（アンチエイリアシング縁）も含める。にじみ画素は
+	// alpha 自身がすでに被写体がそこで薄れて消えていることを表しており、境界帯の大半が
+	// これで占められる画像は「被写体の輪郭が画像端に達しただけ」であって、色クラスタ推定は
+	// その輪郭色を背景と誤認するリスクが高い。色サンプリングや confidence の重みには従来通り
+	// opaqueCount/transparentCount（完全透明のみを透明扱い）を使い、この値はガード判定にのみ使う。
+	let guardTransparentCount = 0;
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
 			if (!isInBorderBand(x, y, width, height, band)) continue;
 			const alpha = img.data[(y * width + x) * 4 + 3];
 			if (alpha === 0) transparentCount += 1;
 			else opaqueCount += 1;
+			if (alpha !== 255) guardTransparentCount += 1;
 		}
 	}
 	const totalBorderCount = opaqueCount + transparentCount;
@@ -116,6 +138,21 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 		return {
 			clusters: [],
 			confidence: totalBorderCount === 0 ? 0 : 1,
+			borderBandRatio: BACKGROUND_MODEL_LIMITS.borderBandRatio,
+		};
+	}
+	// [Intended] 境界帯の相当部分がすでに透明（半透明のにじみを含む）なら、その画像はアルファで
+	// 背景を表現済みとみなし、色による背景推定を行わない。切り抜き済み画像に残る不透明な境界画素は
+	// 「画像端に接した被写体」であり、色クラスタとして背景に採用すると被写体の外縁（アウトライン）を
+	// 削ってしまう。アルファが背景を確定させている状況なので confidence は最大とし、
+	// 後段の小領域除去は許可する。
+	if (
+		guardTransparentCount / totalBorderCount >=
+		BACKGROUND_MODEL_LIMITS.alphaBackgroundBorderRatio
+	) {
+		return {
+			clusters: [],
+			confidence: 1,
 			borderBandRatio: BACKGROUND_MODEL_LIMITS.borderBandRatio,
 		};
 	}
@@ -546,6 +583,30 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
 		}
 		const neighborOffset = bestNeighbor * 4;
 		const background = model.clusters[nearestCluster].rgb;
+		// [Intended] 背景色ともう一方の内側参照画素の色を線形補間した範囲に現在の画素が
+		// 収まらないなら、それはアンチエイリアシングの混色ではなく被写体自身が意図した色
+		// （背景と無関係な輪郭色など）である。誤って動かすと輪郭色を壊すので補正を見送る。
+		const tolerance = BACKGROUND_MODEL_LIMITS.dehaloBetweennessTolerance;
+		const isAntiAliasBlend =
+			isWithinBlendRange(
+				source[offset],
+				background.r,
+				source[neighborOffset],
+				tolerance,
+			) &&
+			isWithinBlendRange(
+				source[offset + 1],
+				background.g,
+				source[neighborOffset + 1],
+				tolerance,
+			) &&
+			isWithinBlendRange(
+				source[offset + 2],
+				background.b,
+				source[neighborOffset + 2],
+				tolerance,
+			);
+		if (!isAntiAliasBlend) continue;
 		for (let channel = 0; channel < 3; channel += 1) {
 			const current = source[offset + channel];
 			const interior = source[neighborOffset + channel];

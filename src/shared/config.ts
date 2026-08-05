@@ -160,6 +160,9 @@ export const CONVERT_DEFAULTS = {
 export const BACKGROUND_MODEL_LIMITS = {
 	borderBandRatio: 0.08,
 	minBorderBandPixels: 1,
+	// 境界帯のうち透明画素がこの比率以上なら、アルファがすでに背景を表しているとみなし、
+	// 色による背景クラスタ推定を行わない（被写体が画像端に接している画像の保護）。
+	alphaBackgroundBorderRatio: 0.35,
 	maxClusters: 4,
 	clusterIterations: 6,
 	minClusterWeight: 0.04,
@@ -176,6 +179,21 @@ export const BACKGROUND_MODEL_LIMITS = {
 	dehaloPushStrength: 0.35,
 	dehaloSourceBlend: 0.35,
 	dehaloInteriorBlend: 0.65,
+	// [Intended] 真のアンチエイリアシング縁は背景色と内側画素の色を各チャンネルで線形補間した
+	// 範囲に収まる。この許容幅はノイズ・丸め誤差を吸収するための余裕。
+	dehaloBetweennessTolerance: 6,
+} as const;
+
+// フラッドフィルの背景除去で、なめらかな階調（グラデーション背景）をたどる判定の基準。
+export const BACKGROUND_RAMP_LIMITS = {
+	/** なめらかとみなす隣接画素間のチャンネル差。被写体の輪郭はこれを大きく超える。 */
+	maxSmoothStep: 8,
+	/** 最外周の隣接ペアのうち、なめらかである必要のある割合。 */
+	minSmoothRatio: 0.9,
+	/** 最外周の評価に必要な最小ペア数。これ未満は判定材料が足りないとみなす。 */
+	minRingPairs: 16,
+	/** ランプ許容で不透明画素をこの比率より多く削った場合は絶対差のみの結果へ巻き戻す。 */
+	maxRemovalRatio: 0.9,
 } as const;
 
 export const SMALL_COMPONENT_LIMITS = {
