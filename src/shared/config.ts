@@ -179,6 +179,9 @@ export const BACKGROUND_MODEL_LIMITS = {
 	dehaloPushStrength: 0.35,
 	dehaloSourceBlend: 0.35,
 	dehaloInteriorBlend: 0.65,
+	// [Intended] 真のアンチエイリアシング縁は背景色と内側画素の色を各チャンネルで線形補間した
+	// 範囲に収まる。この許容幅はノイズ・丸め誤差を吸収するための余裕。
+	dehaloBetweennessTolerance: 6,
 } as const;
 
 // フラッドフィルの背景除去で、なめらかな階調（グラデーション背景）をたどる判定の基準。

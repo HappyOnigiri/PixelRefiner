@@ -67,6 +67,20 @@ const writeOklab = (
 		0.0259040371 * cubeL + 0.7827717662 * cubeM - 0.808675766 * cubeS;
 };
 
+// [Intended] 値が a と b を線形補間した範囲（tolerance の余裕込み）に収まるかを判定する。
+// 真のアンチエイリアシング縁は背景色と内側画素の色の中間になるため、この範囲に収まる。
+// 範囲外なら背景とは無関係な被写体自身の色とみなし、dehalo の補正対象から外す。
+const isWithinBlendRange = (
+	value: number,
+	a: number,
+	b: number,
+	tolerance: number,
+): boolean => {
+	const lower = Math.min(a, b) - tolerance;
+	const upper = Math.max(a, b) + tolerance;
+	return value >= lower && value <= upper;
+};
+
 const distanceSquared = (
 	l: number,
 	a: number,
@@ -569,6 +583,30 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
 		}
 		const neighborOffset = bestNeighbor * 4;
 		const background = model.clusters[nearestCluster].rgb;
+		// [Intended] 背景色ともう一方の内側参照画素の色を線形補間した範囲に現在の画素が
+		// 収まらないなら、それはアンチエイリアシングの混色ではなく被写体自身が意図した色
+		// （背景と無関係な輪郭色など）である。誤って動かすと輪郭色を壊すので補正を見送る。
+		const tolerance = BACKGROUND_MODEL_LIMITS.dehaloBetweennessTolerance;
+		const isAntiAliasBlend =
+			isWithinBlendRange(
+				source[offset],
+				background.r,
+				source[neighborOffset],
+				tolerance,
+			) &&
+			isWithinBlendRange(
+				source[offset + 1],
+				background.g,
+				source[neighborOffset + 1],
+				tolerance,
+			) &&
+			isWithinBlendRange(
+				source[offset + 2],
+				background.b,
+				source[neighborOffset + 2],
+				tolerance,
+			);
+		if (!isAntiAliasBlend) continue;
 		for (let channel = 0; channel < 3; channel += 1) {
 			const current = source[offset + channel];
 			const interior = source[neighborOffset + channel];
