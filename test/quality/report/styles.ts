@@ -71,7 +71,14 @@ a { color: #b9a7ff; }
 .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 .images figure { margin: 0; }
 .image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 220px; }
-.image-stage img { display: block; cursor: zoom-in; image-rendering: pixelated; background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px; }
+.image-stage img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	cursor: zoom-in;
+	image-rendering: pixelated;
+	background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px;
+}
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 7px; text-align: right; border-bottom: 1px solid #494151; }
@@ -120,7 +127,14 @@ a { color: #b9a7ff; }
 .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .images figure { margin: 0; }
 .image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 280px; }
-.image-stage img { display: block; cursor: zoom-in; image-rendering: pixelated; background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px; }
+.image-stage img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	cursor: zoom-in;
+	image-rendering: pixelated;
+	background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px;
+}
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 8px; text-align: right; border-bottom: 1px solid #494151; }
