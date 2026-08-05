@@ -1,4 +1,4 @@
-import { clampInt } from "../shared/config";
+import { clampInt, TRIMMED_GRID_SEARCH_WEIGHTS } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 import { downsample } from "./image-operations";
 
@@ -198,7 +198,8 @@ export class FastGridSearchFromTrimmed
 			const reconErr = err / n;
 			// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
 			// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
-			const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
+			const complexityPenalty =
+				TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
 			allResults.push({ outH, outW, score });
 
@@ -407,7 +408,8 @@ const legacySearchGridFromTrimmed = (
 		const reconErr = err / n;
 		// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
 		// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
-		const complexityPenalty = 0.16 * Math.sqrt(outW * outH);
+		const complexityPenalty =
+			TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
 		const score = reconErr + complexityPenalty;
 		allResults.push({ outH, outW, score });
 

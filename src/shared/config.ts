@@ -221,6 +221,21 @@ export const GRID_SIGNAL_DEFAULTS = {
 
 export const GRID_CANDIDATE_CELL_SCALES = [0.5, 2] as const;
 
+// 再構成ベースのグリッドサイズ探索（トリミング済み領域からの探索）の重み。
+export const TRIMMED_GRID_SEARCH_WEIGHTS = {
+	/**
+	 * セル数に比例させる複雑度ペナルティの係数。
+	 *
+	 * 再構成誤差は過分割で単調に下がるため、これが唯一の「細かすぎる格子」への抑制になる。
+	 * [Policy] 写実的な入力では再構成誤差の曲線がほぼ平坦で、この係数を動かしても
+	 * 選ばれる格子は跳ぶだけで狙った倍率には収束しない（実測: auto_grid_detection は
+	 * 0.02〜0.64 の全域で 88x61、resize_with_trimming も全域で 90x26、no_trimming は
+	 * 0.04〜0.16 で 97x53、0.20 以上で 88x48）。倍率の精度を上げるには係数の調整では
+	 * なく内容に応じた指標が必要なので、この値だけを触っても改善しない。
+	 */
+	complexityPenalty: 0.16,
+} as const;
+
 export const GRID_SEARCH_LIMITS = {
 	axisCandidateLimit: 24,
 	pairCandidateLimit: 128,
@@ -231,6 +246,19 @@ export const GRID_SEARCH_LIMITS = {
 	axisConfidenceThreshold: 0.55,
 	/** 周期として信用するために必要な繰り返し回数。これ未満の周期は整合スコアを減衰させる。 */
 	minGridPeriods: 3,
+	/**
+	 * 位相考慮探索を行う領域の画素数上限。
+	 *
+	 * [Policy] セル候補数は辺の長さに比例して増え、位相走査と合わせると探索時間が
+	 * 辺の長さの二乗order で伸びる。実測で 2816x1536 の領域は 1 枚 19 秒を要し、
+	 * それでも軸信頼度のしきい値には届かず結果は捨てられていた。処理時間の上限を
+	 * 守るため、これを超える領域は再構成ベースの探索だけで判断する。
+	 *
+	 * 値は DESKEW_LIMITS.maximumInputPixels に回転で拡張される分の余裕を足して決める。
+	 * 傾き補正は回転後の領域でこの探索を呼ぶため、上限が近すぎると入力が上限内でも
+	 * 回転後だけ超えて角度候補が黙って捨てられる。
+	 */
+	maxPhaseAwarePixels: 1_200_000,
 	localRegionCount: 4,
 	minimumAutocorrelationSamples: 3,
 	fullResolutionSampleLimit: 16384,
