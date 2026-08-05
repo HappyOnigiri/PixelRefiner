@@ -176,6 +176,26 @@ describe("automatic background model", () => {
 		expect(result.image.data[interiorOffset]).toBe(48);
 	});
 
+	it("keeps a subject's own outline color that is not an anti-aliased blend with the background", () => {
+		// 背景色 (72,96,120) と輪郭色 (35,28,44) の RGB 距離は dehaloMaxRgbDistance 以内だが、
+		// 輪郭色は背景と内側の塗り (218,74,72) を結ぶ直線上にはない（被写体自身が意図した色）。
+		// パディング除去後にこの輪郭色を dehalo が誤って動かさないことを確認する。
+		const image = createImage(16, 16, (x, y) => {
+			const inSubject = x >= 4 && x <= 11 && y >= 4 && y <= 11;
+			if (!inSubject) return [72, 96, 120, 255];
+			const edge = x === 4 || x === 11 || y === 4 || y === 11;
+			return edge ? [35, 28, 44, 255] : [218, 74, 72, 255];
+		});
+		const result = removeAutomaticBackground(image, 32, "outer", "4");
+		const edgeOffset = (7 * image.width + 4) * 4;
+
+		expect(result.rolledBack).toBe(false);
+		expect(alphaAt(result.image, 0, 0)).toBe(0);
+		expect(result.image.data[edgeOffset]).toBe(35);
+		expect(result.image.data[edgeOffset + 1]).toBe(28);
+		expect(result.image.data[edgeOffset + 2]).toBe(44);
+	});
+
 	it("treats a fully transparent border as known background", () => {
 		const image = createImage(8, 8, (x, y) => {
 			if (x === 0 || y === 0 || x === 7 || y === 7) return [200, 10, 50, 0];
