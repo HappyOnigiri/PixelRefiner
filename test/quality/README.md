@@ -14,6 +14,36 @@ pnpm test:quality:report   # write tmp/quality-report/latest
 pnpm test:quality:update   # intentionally replace the stored baseline
 ```
 
+## Parallel execution
+
+Vitest parallelizes per test file, so the cases are split across the shard files
+in [`shards/`](./shards). Each file calls `runCasesShard` from
+[`shard.ts`](./shard.ts), which distributes the selected cases over
+`QUALITY_SHARD_COUNT` groups by input pixel count, largest first, so the slowest
+case never shares a shard with another heavy one. `cases.test.ts` fails if the
+number of shard files stops matching `QUALITY_SHARD_COUNT` or if the split no
+longer covers every selected case exactly once.
+
+`pnpm test:quality:report` therefore runs Vitest twice. The first run executes
+the shards, writes the per-case images under `tmp/quality-report/latest`, and
+stores each shard's case results in `tmp/quality-report/partial`. The second run
+executes [`report.test.ts`](./report.test.ts), which merges the partial results
+back into manifest order and writes `results.json`, `summary.md`, and the HTML
+report. Because ordering is restored from the manifest, the report is identical
+to a serial run apart from the measured runtime and memory values.
+
+`pnpm test:quality:update` also runs Vitest twice. The first run
+(`quality:update:generate`) executes the shards with
+`UPDATE_QUALITY_BASELINE=1`: each case is measured against the still-unchanged
+baseline images (read-only, so parallel shards cannot race each other) and the
+resulting metrics and output image are written to
+`tmp/quality-baseline-update`. The second run (`quality:update:apply`)
+executes `cases.test.ts`, which merges the staged results back into manifest
+order and performs the only write to `test/quality/baseline.json` and
+`test/quality/baseline/`. Splitting the write from the measurement keeps the
+"measure against the old baseline, then replace it" requirement intact while
+letting the measurement itself run in parallel.
+
 Open `tmp/quality-report/latest/index.html` directly in a browser after
 generating a report. The report includes JSON and Markdown summaries plus
 ground truth, input, approved baseline, current, ground-truth difference,

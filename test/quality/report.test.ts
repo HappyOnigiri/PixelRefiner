@@ -2,17 +2,19 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
-import { generateQualityReport, reportRoot } from "./benchmark";
+import { reportRoot } from "./benchmark";
 import { loadCases, selectCasesForProfile } from "./manifest";
+import { aggregateQualityReport } from "./report/aggregate";
 
 const enabled = process.env.QUALITY_REPORT === "1";
 
 describe.skipIf(!enabled)("quality report", () => {
-	// [Policy] 共有CIランナーでも全品質ケースの生成を完了できるよう、通常のテストより長く待機する。
+	// [Intended] ケースの実処理は test/quality/shards が済ませている。ここは部分結果を
+	// 集約して成果物を書くだけなので、画像処理ぶんの待機時間は要らない。
 	it("writes JSON, Markdown, HTML, and every case artifact", () => {
 		const allCases = loadCases();
 		const selectedCases = selectCasesForProfile(allCases);
-		const results = generateQualityReport(selectedCases);
+		const results = aggregateQualityReport(selectedCases);
 		expect(results.cases).toHaveLength(selectedCases.length);
 		expect(existsSync(path.join(reportRoot, "index.html"))).toBe(true);
 		expect(existsSync(path.join(reportRoot, "summary.md"))).toBe(true);
@@ -247,5 +249,5 @@ describe.skipIf(!enabled)("quality report", () => {
 				);
 			}
 		}
-	}, 1_200_000);
+	}, 120_000);
 });
