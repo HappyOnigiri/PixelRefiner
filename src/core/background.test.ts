@@ -179,4 +179,40 @@ describe("automatic background model", () => {
 		expect(model.confidence).toBe(1);
 		expect(model.clusters).toEqual([]);
 	});
+
+	it("keeps the outline of a subject that reaches the border of a cut-out image", () => {
+		// 透明背景のうえに菱形の被写体が画像端まで届く画像。境界帯の不透明画素は
+		// すべて被写体のアウトライン色なので、色クラスタに採用してはいけない。
+		const image = createImage(12, 12, (x, y) => {
+			const distance = Math.abs(x - 5.5) + Math.abs(y - 5.5);
+			if (distance > 6) return [0, 0, 0, 0];
+			if (distance > 4.5) return [35, 28, 44, 255];
+			return [218, 74, 72, 255];
+		});
+		const model = estimateBackgroundModel(image);
+		const result = removeAutomaticBackground(image, 64, "outer", "4");
+
+		expect(model.clusters).toEqual([]);
+		// 小領域除去はアルファ背景でも有効にしたいため、信頼度は下げない。
+		expect(model.confidence).toBe(1);
+		expect(result.removedRatio).toBe(0);
+		expect(result.rolledBack).toBe(false);
+		expect(alphaAt(result.image, 0, 5)).toBe(255);
+		expect(alphaAt(result.image, 5, 0)).toBe(255);
+		expect(result.image.data).toEqual(image.data);
+	});
+
+	it("still removes a solid background when only a few border pixels are transparent", () => {
+		const image = createImage(20, 20, (x, y) => {
+			if (y === 0 && x < 10) return [0, 0, 0, 0];
+			if (x >= 6 && x <= 13 && y >= 6 && y <= 13) return [30, 60, 90, 255];
+			return [240, 242, 244, 255];
+		});
+		const model = estimateBackgroundModel(image);
+		const result = removeAutomaticBackground(image, 32, "outer", "4");
+
+		expect(model.clusters.length).toBeGreaterThan(0);
+		expect(alphaAt(result.image, 19, 19)).toBe(0);
+		expect(alphaAt(result.image, 10, 10)).toBe(255);
+	});
 });

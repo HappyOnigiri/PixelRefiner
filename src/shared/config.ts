@@ -160,6 +160,9 @@ export const CONVERT_DEFAULTS = {
 export const BACKGROUND_MODEL_LIMITS = {
 	borderBandRatio: 0.08,
 	minBorderBandPixels: 1,
+	// 境界帯のうち透明画素がこの比率以上なら、アルファがすでに背景を表しているとみなし、
+	// 色による背景クラスタ推定を行わない（被写体が画像端に接している画像の保護）。
+	alphaBackgroundBorderRatio: 0.35,
 	maxClusters: 4,
 	clusterIterations: 6,
 	minClusterWeight: 0.04,
