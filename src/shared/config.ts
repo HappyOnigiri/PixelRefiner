@@ -69,6 +69,22 @@ export const SOFT_ALPHA_CELL_LIMITS = {
 	maxBleedCoverage: 128,
 } as const;
 
+/**
+ * セルの代表色を選ぶときに使う「セル中心寄りの領域（コア）」の定義。
+ *
+ * [Intended] ブラー・補間・非整数倍の拡大では、セル境界の画素が隣接セルの色と
+ * 混ざる。境界画素まで含めて medoid を採ると、混色そのものが代表色として選ばれる。
+ * コアだけで代表色を決めれば、混色比率がもっとも低い画素が残る。
+ * アルファの被覆はセル全域で測り続けるので、面積由来の半透明表現は保たれる。
+ */
+export const CELL_COLOR_CORE_LIMITS = {
+	/**
+	 * セル幅・高さに対して片側から除外する比率。0.25 ならセル中央 50% がコア。
+	 * [Policy] セル中心はつねにコアへ入るので、コアが空になることはない。
+	 */
+	marginRatio: 0.25,
+} as const;
+
 export const PROCESS_ANALYSIS_THRESHOLDS = {
 	contentLossRatio: 0.5,
 	gridScoreScale: 16,

@@ -1,4 +1,7 @@
-import { SOFT_ALPHA_CELL_LIMITS } from "../shared/config";
+import {
+	CELL_COLOR_CORE_LIMITS,
+	SOFT_ALPHA_CELL_LIMITS,
+} from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 
 export type RGBA = [number, number, number, number];
@@ -56,6 +59,8 @@ type Workspace = {
 	labA: Float64Array;
 	labB: Float64Array;
 	thinContinuity: Uint8Array;
+	/** セル中心寄りの領域（コア）に入るサンプルなら 1。代表色の候補と距離計算に使う。 */
+	inCore: Uint8Array;
 };
 
 const createWorkspace = (size: number): Workspace => ({
@@ -70,6 +75,7 @@ const createWorkspace = (size: number): Workspace => ({
 	labA: new Float64Array(size),
 	labB: new Float64Array(size),
 	thinContinuity: new Uint8Array(size),
+	inCore: new Uint8Array(size),
 });
 
 const srgbToLinear = (value: number): number => {
@@ -169,11 +175,22 @@ const collectSamples = (
 	const columns = Math.min(width, Math.max(1, Math.floor(count / rows)));
 	const sampledCount = rows * columns;
 	const data = image.data;
+	// [Intended] セル中央 50% をコアとし、境界の混色画素を代表色の候補から外す。
+	// 中心はつねに含まれるため、どのセルでもコアに 1 サンプル以上が入る。
+	const marginX =
+		(bounds.x1 - bounds.x0) * CELL_COLOR_CORE_LIMITS.marginRatio;
+	const marginY =
+		(bounds.y1 - bounds.y0) * CELL_COLOR_CORE_LIMITS.marginRatio;
+	const coreX0 = bounds.x0 + marginX;
+	const coreX1 = bounds.x1 - marginX;
+	const coreY0 = bounds.y0 + marginY;
+	const coreY1 = bounds.y1 - marginY;
 	let sampleIndex = 0;
 	for (let row = 0; row < rows; row += 1) {
 		const stratumY0 = startY + (row * height) / rows;
 		const stratumY1 = startY + ((row + 1) * height) / rows;
 		const y = Math.min(endY - 1, Math.floor((stratumY0 + stratumY1) / 2));
+		const insideCoreY = y + 0.5 >= coreY0 && y + 0.5 <= coreY1;
 		for (let column = 0; column < columns; column += 1) {
 			// [Intended] 大セルでも全面を覆うため、2次元格子の各領域から中央点を選ぶ。
 			const stratumX0 = startX + (column * width) / columns;
@@ -190,6 +207,8 @@ const collectSamples = (
 			workspace.a[sampleIndex] = a;
 			workspace.x[sampleIndex] = x;
 			workspace.y[sampleIndex] = y;
+			workspace.inCore[sampleIndex] =
+				insideCoreY && x + 0.5 >= coreX0 && x + 0.5 <= coreX1 ? 1 : 0;
 			workspace.weight[sampleIndex] =
 				total <= limit
 					? pixelOverlap(bounds.x0, bounds.x1, x) *
@@ -458,14 +477,29 @@ const findMedoid = (
 		if (workspace.a[index] >= options.alphaThreshold) eligibleCount += 1;
 	}
 	const allowAll = eligibleCount === 0;
+	// [Intended] コアに使えるサンプルがあるときは、代表色の候補と距離の母集団を
+	// そこだけに絞る。境界画素は隣接セルの色と混ざっているため、含めると medoid が
+	// 混色へ引き寄せられる。コアが空（画像外へはみ出したセルなど）のときは全域へ戻す。
+	let coreCount = 0;
+	for (let index = 0; index < count; index += 1) {
+		if (
+			workspace.inCore[index] !== 0 &&
+			(allowAll || workspace.a[index] >= options.alphaThreshold)
+		) {
+			coreCount += 1;
+		}
+	}
+	const coreOnly = coreCount > 0;
 	let bestIndex = 0;
 	let bestScore = Number.POSITIVE_INFINITY;
 	workspace.thinContinuity.fill(0, 0, count);
 	for (let candidate = 0; candidate < count; candidate += 1) {
 		if (!allowAll && workspace.a[candidate] < options.alphaThreshold) continue;
+		if (coreOnly && workspace.inCore[candidate] === 0) continue;
 		let score = 0;
 		for (let other = 0; other < count; other += 1) {
 			if (!allowAll && workspace.a[other] < options.alphaThreshold) continue;
+			if (coreOnly && workspace.inCore[other] === 0) continue;
 			const alphaWeight = allowAll ? 1 : workspace.a[other] / 255;
 			score +=
 				colorDistanceSquared(workspace, candidate, other) *
