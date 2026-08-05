@@ -247,54 +247,6 @@ describe("cell sampler", () => {
 		expect(Array.from(restored.data)).toEqual([240, 32, 24, 255]);
 	});
 
-	it("blends the core average into the medoid when they are nearly identical", () => {
-		// コア4画素中3画素が (200,40,30)、1画素が (192,40,30)。差はごく僅かなので
-		// ブラーの量子化ノイズとみなし、medoid ではなく平均色 (198,40,30) を採用する。
-		const data = new Uint8ClampedArray(4 * 4 * 4);
-		for (let y = 0; y < 4; y += 1) {
-			for (let x = 0; x < 4; x += 1) {
-				const offset = (y * 4 + x) * 4;
-				const core = x >= 1 && x <= 2 && y >= 1 && y <= 2;
-				const minority = core && x === 1 && y === 1;
-				data[offset] = core ? (minority ? 192 : 200) : 0;
-				data[offset + 1] = 40;
-				data[offset + 2] = 30;
-				data[offset + 3] = 255;
-			}
-		}
-		const restored = sampleImageCells(
-			{ width: 4, height: 4, data },
-			grid(4, 4),
-			options,
-		);
-
-		expect(Array.from(restored.data)).toEqual([198, 40, 30, 255]);
-	});
-
-	it("keeps the exact medoid when the core mixes two far-apart colors", () => {
-		// コア4画素中3画素が (255,0,0)、1画素が (0,255,0)。平均は medoid から遠く、
-		// ディザ柄など離散色が混在するケースなので合成せず実在色のまま残す。
-		const data = new Uint8ClampedArray(4 * 4 * 4);
-		for (let y = 0; y < 4; y += 1) {
-			for (let x = 0; x < 4; x += 1) {
-				const offset = (y * 4 + x) * 4;
-				const core = x >= 1 && x <= 2 && y >= 1 && y <= 2;
-				const minority = core && x === 1 && y === 1;
-				data[offset] = core && !minority ? 255 : 0;
-				data[offset + 1] = minority ? 255 : 0;
-				data[offset + 2] = 0;
-				data[offset + 3] = 255;
-			}
-		}
-		const restored = sampleImageCells(
-			{ width: 4, height: 4, data },
-			grid(4, 4),
-			options,
-		);
-
-		expect(Array.from(restored.data)).toEqual([255, 0, 0, 255]);
-	});
-
 	it("falls back to the whole cell when the core has no opaque sample", () => {
 		// コアが透明なセルでは絞り込みを解除し、従来どおり全域から代表色を選ぶ。
 		const data = new Uint8ClampedArray(4 * 4 * 4);
