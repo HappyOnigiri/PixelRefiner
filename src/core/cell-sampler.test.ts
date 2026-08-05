@@ -225,6 +225,50 @@ describe("cell sampler", () => {
 		expect(Array.from(restored.data)).toEqual([240, 32, 24, 96]);
 	});
 
+	it("picks the representative color from the cell core, not the blended rim", () => {
+		// セル境界の 12 画素は隣接セルとの混色。数では多数派だが代表色にしてはいけない。
+		const data = new Uint8ClampedArray(4 * 4 * 4);
+		for (let y = 0; y < 4; y += 1) {
+			for (let x = 0; x < 4; x += 1) {
+				const offset = (y * 4 + x) * 4;
+				const core = x >= 1 && x <= 2 && y >= 1 && y <= 2;
+				data[offset] = core ? 240 : 120;
+				data[offset + 1] = core ? 32 : 120;
+				data[offset + 2] = core ? 24 : 120;
+				data[offset + 3] = 255;
+			}
+		}
+		const restored = sampleImageCells(
+			{ width: 4, height: 4, data },
+			grid(4, 4),
+			options,
+		);
+
+		expect(Array.from(restored.data)).toEqual([240, 32, 24, 255]);
+	});
+
+	it("falls back to the whole cell when the core has no opaque sample", () => {
+		// コアが透明なセルでは絞り込みを解除し、従来どおり全域から代表色を選ぶ。
+		const data = new Uint8ClampedArray(4 * 4 * 4);
+		for (let y = 0; y < 4; y += 1) {
+			for (let x = 0; x < 4; x += 1) {
+				const offset = (y * 4 + x) * 4;
+				const core = x >= 1 && x <= 2 && y >= 1 && y <= 2;
+				data[offset] = core ? 0 : 240;
+				data[offset + 1] = core ? 0 : 32;
+				data[offset + 2] = core ? 0 : 24;
+				data[offset + 3] = core ? 0 : 255;
+			}
+		}
+		const restored = sampleImageCells(
+			{ width: 4, height: 4, data },
+			grid(4, 4),
+			options,
+		);
+
+		expect(Array.from(restored.data)).toEqual([240, 32, 24, 191]);
+	});
+
 	it("keeps a noisy semi-transparent cell that never drops to empty", () => {
 		// 最小値が最大値の半分を超えるため、ランプではなく一様な半透明として扱う。
 		const noisy = alphaCell(4, (x, y) => 88 + ((x + y) % 3) * 8);
