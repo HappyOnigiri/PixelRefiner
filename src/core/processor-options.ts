@@ -37,11 +37,13 @@ export type ProcessOptions = DetectOptions & {
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
-	 * コンテンツ BBox でトリミング後、指定ピクセルサイズ（W x H）へ強制変換する。
+	 * 指定ピクセルサイズ（W x H）へ強制変換する。
 	 * 有効時は自動グリッド検出（detectGrid）を行わない。
 	 *
 	 * 注記:
 	 * - 条件: forcePixelsW/H の両方を指定する必要がある。
+	 * - セル分割の基準領域は trimToContent に従う。false なら元キャンバス全体、
+	 *   true ならコンテンツ BBox を W x H 分割する。
 	 * - アップスケーリングが必要な場合は最近傍法（sampleWindow=1）を使用する。
 	 */
 	forcePixelsW?: number;
