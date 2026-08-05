@@ -89,6 +89,133 @@ describe("processImage", () => {
 			expect(gridIgnore.cropW).toBe(4);
 			expect(gridIgnore.cropH).toBe(4);
 		});
+
+		// 透明余白を持つ 4x4 スプライト。x=1..2 / y=1..2 だけが不透明。
+		const mkSprite = (): RawImage => {
+			const data = new Uint8ClampedArray(4 * 4 * 4);
+			for (let y = 1; y <= 2; y += 1) {
+				for (let x = 1; x <= 2; x += 1) {
+					const idx = (y * 4 + x) * 4;
+					data[idx] = 10 + x * 20;
+					data[idx + 1] = 30 + y * 20;
+					data[idx + 2] = 200;
+					data[idx + 3] = 255;
+				}
+			}
+			return { width: 4, height: 4, data };
+		};
+
+		const upscaleNearest = (img: RawImage, scale: number): RawImage => {
+			const width = img.width * scale;
+			const height = img.height * scale;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const src =
+						(Math.floor(y / scale) * img.width + Math.floor(x / scale)) * 4;
+					const dst = (y * width + x) * 4;
+					data[dst] = img.data[src];
+					data[dst + 1] = img.data[src + 1];
+					data[dst + 2] = img.data[src + 2];
+					data[dst + 3] = img.data[src + 3];
+				}
+			}
+			return { width, height, data };
+		};
+
+		const forceBase = {
+			bgExtractionMethod: "none",
+			bgRemovalScope: "off",
+			cellSamplingMode: "legacy-median",
+			sampleWindow: 1,
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimAlphaThreshold: 16,
+			floatingMaxPixels: 0,
+		} as const;
+
+		it.each([2, 3, 4, 8])(
+			"restores a nearest %ix upscale exactly when trimming is off",
+			(scale) => {
+				const sprite = mkSprite();
+				const { result, grid } = processImage(upscaleNearest(sprite, scale), {
+					...forceBase,
+					forcePixelsW: 4,
+					forcePixelsH: 4,
+					trimToContent: false,
+				});
+				// グリッドは元キャンバス基準（透明余白を含む全体）で分割される。
+				expect(grid.cellW).toBe(scale);
+				expect(grid.cellH).toBe(scale);
+				expect(grid.cropW).toBe(4 * scale);
+				expect(grid.cropH).toBe(4 * scale);
+				expect(Array.from(result.data)).toEqual(Array.from(sprite.data));
+			},
+		);
+
+		it("keeps forced cells aligned to the canvas for a non-integer upscale", () => {
+			// 4x4 -> 6x6 (1.5x) の最近傍拡大は、全キャンバス基準のセル分割で復元できる。
+			const sprite = mkSprite();
+			const width = 6;
+			const data = new Uint8ClampedArray(width * width * 4);
+			for (let y = 0; y < width; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const src =
+						(Math.min(3, Math.floor((y * 4) / width)) * 4 +
+							Math.min(3, Math.floor((x * 4) / width))) *
+						4;
+					const dst = (y * width + x) * 4;
+					data[dst] = sprite.data[src];
+					data[dst + 1] = sprite.data[src + 1];
+					data[dst + 2] = sprite.data[src + 2];
+					data[dst + 3] = sprite.data[src + 3];
+				}
+			}
+			const { result, grid } = processImage(
+				{ width, height: width, data },
+				{
+					...forceBase,
+					forcePixelsW: 4,
+					forcePixelsH: 4,
+					trimToContent: false,
+				},
+			);
+			expect(grid.cellW).toBe(1.5);
+			expect(grid.cropW).toBe(6);
+			expect(Array.from(result.data)).toEqual(Array.from(sprite.data));
+		});
+
+		it("still trims to the content bbox when trimToContent is on", () => {
+			const upscaled = upscaleNearest(mkSprite(), 4);
+			const { grid } = processImage(upscaled, {
+				...forceBase,
+				forcePixelsW: 4,
+				forcePixelsH: 4,
+				trimToContent: true,
+			});
+			// 不透明領域は x=4..11 / y=4..11 の 8x8 なので、セルは 2px になる。
+			expect(grid.cropW).toBe(8);
+			expect(grid.cropH).toBe(8);
+			expect(grid.cellW).toBe(2);
+			expect(grid.cellH).toBe(2);
+		});
+
+		it("keeps fully transparent cells transparent when trimming is off", () => {
+			const upscaled = upscaleNearest(mkSprite(), 4);
+			const { result } = processImage(upscaled, {
+				...forceBase,
+				forcePixelsW: 4,
+				forcePixelsH: 4,
+				trimToContent: false,
+			});
+			const alphaAt = (x: number, y: number): number =>
+				result.data[(y * 4 + x) * 4 + 3];
+			expect(alphaAt(0, 0)).toBe(0);
+			expect(alphaAt(3, 0)).toBe(0);
+			expect(alphaAt(0, 3)).toBe(0);
+			expect(alphaAt(3, 3)).toBe(0);
+			expect(alphaAt(1, 1)).toBe(255);
+		});
 	});
 
 	describe("resize_and_remove_bg", () => {
