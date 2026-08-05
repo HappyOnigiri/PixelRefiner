@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GRID_SEARCH_LIMITS } from "../shared/config";
+import { DESKEW_LIMITS, GRID_SEARCH_LIMITS } from "../shared/config";
 import type { RawImage } from "../shared/types";
 import { rotateRawImageExpanded } from "./deskew";
 import {
@@ -346,6 +346,24 @@ describe("phase-aware grid search", () => {
 				expect(candidate.scoreY ?? 0).toBeLessThan(threshold);
 			}
 		}
+	});
+
+	it("画素数の上限を超える領域では位相考慮探索を行わない", () => {
+		const side =
+			Math.ceil(Math.sqrt(GRID_SEARCH_LIMITS.maxPhaseAwarePixels)) + 1;
+		const image = createScaledGrid(8, 8, side / 8, side / 8);
+		expect(image.width * image.height).toBeGreaterThan(
+			GRID_SEARCH_LIMITS.maxPhaseAwarePixels,
+		);
+		expect(searchPhaseAwareGrid(image, image)).toBeNull();
+	});
+
+	it("上限は傾き補正の入力上限より大きく、回転で拡張された領域も探索できる", () => {
+		// [Intended] 傾き補正は回転後の領域で位相考慮探索を呼ぶ。上限が近すぎると
+		// 入力が上限内でも回転後だけ超えて、角度候補が黙って捨てられる。
+		expect(GRID_SEARCH_LIMITS.maxPhaseAwarePixels).toBeGreaterThan(
+			DESKEW_LIMITS.maximumInputPixels,
+		);
 	});
 
 	it("keeps an unrotated grid at zero degrees", () => {
