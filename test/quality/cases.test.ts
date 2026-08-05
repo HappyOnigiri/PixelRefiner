@@ -1,4 +1,5 @@
 import {
+	cpSync,
 	mkdirSync,
 	readdirSync,
 	readFileSync,
@@ -12,7 +13,6 @@ import {
 	baselineFile,
 	baselineRoot,
 } from "./baseline";
-import { runQualityCase, writeQualityBaselineImage } from "./benchmark";
 import {
 	loadCases,
 	qualityProfileFromEnvironment,
@@ -21,6 +21,10 @@ import {
 } from "./manifest";
 import { QUALITY_SHARD_COUNT, shardCases } from "./shard";
 import { QUALITY_BASELINE_VERSION, type QualityBaseline } from "./types";
+import {
+	readQualityUpdatePartials,
+	stagingBaselineImagePath,
+} from "./update/partial";
 
 const allCases = loadCases();
 const profile = qualityProfileFromEnvironment();
@@ -29,9 +33,10 @@ const updateMode = process.env.UPDATE_QUALITY_BASELINE === "1";
 const SHARD_ROOT = path.resolve("test/quality/shards");
 const SHARD_ENTRY = /runCasesShard\((\d+)\)/;
 
-// [Policy] ベースライン更新はケースを 3 周（判定用に 2 回 + 画像書き出しに 1 回）
-// 直列で流すため、シャード実行より長い待機時間を確保する。
-const BASELINE_UPDATE_TIMEOUT_MS = 1_800_000;
+// [Policy] ここはベースライン更新の stage2（集約・書き込み専用）。ケース本体の実行は
+// test/quality/shards が並列に済ませ、tmp/quality-baseline-update へ結果を書き出す
+// （"pnpm run quality:update:generate"）。ここは集約と書き込みだけなので短い待機時間で足りる。
+const BASELINE_UPDATE_TIMEOUT_MS = 120_000;
 
 describe("quality case manifest", () => {
 	it("registers every fixture, degradation, and provenance record", () => {
@@ -70,36 +75,40 @@ describe("quality case manifest", () => {
 		() => {
 			assertBaselineUpdateIsSafe(profile);
 			// [Intended] 自動判定ケースの指標は既存のベースライン画像を基準に測るため、
-			// 画像を書き換える前に全ケースを評価しきる。
+			// stage1（並列生成）は画像を書き換える前の状態に対して全ケースを評価しきり、
+			// 結果をステージング領域へ書き出している。ここではそれを集約するだけ。
+			const entryById = new Map(
+				readQualityUpdatePartials().map((entry) => [entry.id, entry]),
+			);
+			const missingIds = selectedCases
+				.map((qualityCase) => qualityCase.id)
+				.filter((id) => !entryById.has(id));
+			if (missingIds.length > 0) {
+				throw new Error(
+					`Missing staged baseline update for ${missingIds.length} case(s): ` +
+						`${missingIds.join(", ")}. Run "pnpm run quality:update:generate" first.`,
+				);
+			}
 			const current: QualityBaseline = {
 				version: QUALITY_BASELINE_VERSION,
 				commit: process.env.QUALITY_HEAD_SHA ?? "working-tree",
 				cases: selectedCases.map((qualityCase) => {
-					const result = runQualityCase(qualityCase);
-					return {
-						id: result.id,
-						status: result.status,
-						outputWidth: result.metrics.outputWidth,
-						outputHeight: result.metrics.outputHeight,
-						meanRgbaError: Number(result.metrics.meanRgbaError.toFixed(6)),
-						edgeF1: Number(result.metrics.edgeF1.toFixed(6)),
-						backgroundMaskIou: Number(
-							result.metrics.backgroundMaskIou.toFixed(6),
-						),
-						smallComponentRetention: Number(
-							result.metrics.smallComponentRetention.toFixed(6),
-						),
-						catastrophicFailure: result.metrics.catastrophicFailure,
-					};
+					const entry = entryById.get(qualityCase.id);
+					if (entry === undefined) {
+						throw new Error(`unreachable: missing entry for ${qualityCase.id}`);
+					}
+					return entry;
 				}),
 			};
-			writeFileSync(baselineFile(), `${JSON.stringify(current, null, 2)}\n`);
-			rmSync(baselineRoot(), { recursive: true, force: true });
-			mkdirSync(baselineRoot(), { recursive: true });
+			const nextBaselineFile = baselineFile();
+			const nextBaselineRoot = baselineRoot();
+			writeFileSync(nextBaselineFile, `${JSON.stringify(current, null, 2)}\n`);
+			rmSync(nextBaselineRoot, { recursive: true, force: true });
+			mkdirSync(nextBaselineRoot, { recursive: true });
 			for (const qualityCase of selectedCases) {
-				writeQualityBaselineImage(
-					qualityCase,
-					path.join(baselineRoot(), `${qualityCase.id}.png`),
+				cpSync(
+					stagingBaselineImagePath(qualityCase.id),
+					path.join(nextBaselineRoot, `${qualityCase.id}.png`),
 				);
 			}
 		},
