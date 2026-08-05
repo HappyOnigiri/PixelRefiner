@@ -20,6 +20,24 @@ const image = (width: number, height: number, pixels: number[]): RawImage => ({
 	data: new Uint8ClampedArray(pixels),
 });
 
+/** 単色の正方セルに、位置ごとのアルファだけを与えたテスト画像を作る。 */
+const alphaCell = (
+	size: number,
+	alphaAt: (x: number, y: number) => number,
+): RawImage => {
+	const data = new Uint8ClampedArray(size * size * 4);
+	for (let y = 0; y < size; y += 1) {
+		for (let x = 0; x < size; x += 1) {
+			const offset = (y * size + x) * 4;
+			data[offset] = 240;
+			data[offset + 1] = 32;
+			data[offset + 2] = 24;
+			data[offset + 3] = alphaAt(x, y);
+		}
+	}
+	return { width: size, height: size, data };
+};
+
 const options = {
 	mode: "alpha-aware-medoid",
 	maxSamplesPerCell: 64,
@@ -182,6 +200,77 @@ describe("cell sampler", () => {
 		});
 
 		expect(Array.from(restored.data)).toEqual([128, 128, 128, 255]);
+	});
+
+	it("drops a cell whose alpha is only bleed from a neighboring cell", () => {
+		// 4x4 セルの右端 1 列だけに、ブラーでにじんだ低いアルファが乗っている。
+		const bleeding = alphaCell(4, (x) => (x === 3 ? 85 : 0));
+		const restored = sampleImageCells(bleeding, grid(4, 4), options);
+
+		expect(Array.from(restored.data)).toEqual([0, 0, 0, 0]);
+	});
+
+	it("keeps a cell whose alpha reaches full opacity on a hard boundary", () => {
+		// にじみと同じ被覆率でも、ハードなアルファ境界は最大値が 255 なので残す。
+		const hardEdge = alphaCell(4, (x) => (x === 3 ? 255 : 0));
+		const restored = sampleImageCells(hardEdge, grid(4, 4), options);
+
+		expect(Array.from(restored.data)).toEqual([240, 32, 24, 64]);
+	});
+
+	it("keeps a uniformly semi-transparent cell at its own coverage", () => {
+		const flat = alphaCell(4, () => 96);
+		const restored = sampleImageCells(flat, grid(4, 4), options);
+
+		expect(Array.from(restored.data)).toEqual([240, 32, 24, 96]);
+	});
+
+	it("keeps a noisy semi-transparent cell that never drops to empty", () => {
+		// 最小値が最大値の半分を超えるため、ランプではなく一様な半透明として扱う。
+		const noisy = alphaCell(4, (x, y) => 88 + ((x + y) % 3) * 8);
+		const restored = sampleImageCells(noisy, grid(4, 4), options);
+
+		expect(Array.from(restored.data)).toEqual([240, 32, 24, 96]);
+	});
+
+	it("skips the bleed check when a cell is only one pixel tall", () => {
+		// セルが 1 画素しかない軸では、アルファ勾配が元画像の表現である可能性が高い。
+		const bleeding = alphaCell(2, (x) => (x === 1 ? 85 : 0));
+		const restored = sampleImageCells(
+			bleeding,
+			{ ...grid(2, 1), outH: 2 },
+			options,
+		);
+
+		expect(Array.from(restored.data.slice(0, 4))).toEqual([240, 32, 24, 43]);
+	});
+
+	it("drops legacy-median bleed while keeping the grid-search sampling intact", () => {
+		const bleeding = alphaCell(4, (x) => (x === 3 ? 85 : 0));
+		const legacyOptions = {
+			mode: "legacy-median",
+			sampleWindow: 3,
+			maxSamplesPerCell: 64,
+			alphaThreshold: 16,
+			preserveThinFeatures: true,
+		} as const;
+
+		expect(
+			Array.from(downsample(bleeding, grid(4, 4), legacyOptions).data),
+		).toEqual([0, 0, 0, 0]);
+		// [Intended] 数値指定はグリッド探索の再構成スコア用。検出結果を動かさないため旧挙動のまま。
+		expect(Array.from(downsample(bleeding, grid(4, 4), 3).data)).toEqual([
+			240, 32, 24, 85,
+		]);
+		expect(
+			Array.from(
+				downsample(
+					alphaCell(4, (x) => (x === 3 ? 255 : 0)),
+					grid(4, 4),
+					legacyOptions,
+				).data,
+			),
+		).toEqual([240, 32, 24, 255]);
 	});
 
 	it("normalizes public sampling limits through shared configuration", () => {

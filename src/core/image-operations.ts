@@ -2,6 +2,7 @@ import type { PixelGrid, RawImage } from "../shared/types";
 import {
 	type CellSamplerOptions,
 	type CellSamplingMode,
+	isAlphaBleedOnlyCell,
 	sampleImageCells,
 } from "./cell-sampler";
 
@@ -35,6 +36,7 @@ const downsampleLegacy = (
 	img: RawImage,
 	grid: PixelGrid,
 	sampleWindow = 3,
+	rejectAlphaBleed = false,
 ): RawImage => {
 	const cellW = grid.cellW;
 	const cellH = grid.cellH;
@@ -94,6 +96,9 @@ const downsampleLegacy = (
 			valuesAllG.length = 0;
 			valuesAllB.length = 0;
 			valuesAllA.length = 0;
+			let alphaSum = 0;
+			let alphaPeak = 0;
+			let alphaFloor = 255;
 
 			for (let y = y0; y < y1; y += 1) {
 				const rowOffset = y * imgW;
@@ -107,6 +112,9 @@ const downsampleLegacy = (
 					valuesAllG.push(g);
 					valuesAllB.push(b);
 					valuesAllA.push(a);
+					alphaSum += a;
+					if (a > alphaPeak) alphaPeak = a;
+					if (a < alphaFloor) alphaFloor = a;
 					if (a >= 16) {
 						valuesR.push(r);
 						valuesG.push(g);
@@ -116,13 +124,31 @@ const downsampleLegacy = (
 				}
 			}
 
+			const outIdx = (j * outW + i) * 4;
+			if (
+				rejectAlphaBleed &&
+				isAlphaBleedOnlyCell(
+					alphaPeak,
+					alphaFloor,
+					valuesAllA.length > 0 ? alphaSum / valuesAllA.length : 0,
+					cellW,
+					cellH,
+				)
+			) {
+				// [Intended] 隣接セルからにじんだアルファだけのセルは、色も採らずに透明へ倒す。
+				out[outIdx] = 0;
+				out[outIdx + 1] = 0;
+				out[outIdx + 2] = 0;
+				out[outIdx + 3] = 0;
+				continue;
+			}
+
 			const useOpaque = valuesA.length > 0;
 			const r = medianOf(useOpaque ? valuesR : valuesAllR);
 			const g = medianOf(useOpaque ? valuesG : valuesAllG);
 			const b = medianOf(useOpaque ? valuesB : valuesAllB);
 			const a = medianOf(useOpaque ? valuesA : valuesAllA);
 
-			const outIdx = (j * outW + i) * 4;
 			out[outIdx] = r;
 			out[outIdx + 1] = g;
 			out[outIdx + 2] = b;
@@ -139,10 +165,13 @@ export const downsample = (
 	options: number | DownsampleOptions = 3,
 ): RawImage => {
 	if (typeof options === "number" || options.mode === "legacy-median") {
+		// [Intended] にじみ判定は出力画像を作る経路だけで有効にする。数値指定の呼び出しは
+		// グリッド探索の再構成スコアで使われており、そこで挙動を変えると検出結果そのものが動く。
 		return downsampleLegacy(
 			img,
 			grid,
 			typeof options === "number" ? options : options.sampleWindow,
+			typeof options !== "number",
 		);
 	}
 	const samplerOptions: CellSamplerOptions = {

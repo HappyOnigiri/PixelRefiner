@@ -1,3 +1,4 @@
+import { SOFT_ALPHA_CELL_LIMITS } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 
 export type RGBA = [number, number, number, number];
@@ -120,6 +121,30 @@ const colorDistanceSquared = (
 
 const pixelOverlap = (start: number, end: number, pixel: number): number =>
 	Math.max(0, Math.min(end, pixel + 1) - Math.max(start, pixel));
+
+/**
+ * セル内のアルファが、セル自身の被覆ではなく隣接セルからにじんだ裾だけで
+ * できているかを判定する。true ならそのセルは透明として扱う。
+ *
+ * [Intended] 次の条件をすべて満たすことを要求して、ハード境界と一様な半透明を守る。
+ * - ランプ状にばらついている（一様な半透明セルは minRampSpan と最大値／最小値の比で除外）
+ * - 最大値が不透明に届かない（背景除去由来のハード境界は最大値 255 で除外）
+ * - 被覆が半分未満（ブラーは面積を保つので、真に塗られたセルは半分を超える）
+ * セル辺長が minCellSize 未満のときは、勾配が元画像の表現である可能性が高いので判定しない。
+ */
+export const isAlphaBleedOnlyCell = (
+	peakAlpha: number,
+	floorAlpha: number,
+	coverage: number,
+	cellWidth: number,
+	cellHeight: number,
+): boolean =>
+	cellWidth >= SOFT_ALPHA_CELL_LIMITS.minCellSize &&
+	cellHeight >= SOFT_ALPHA_CELL_LIMITS.minCellSize &&
+	peakAlpha - floorAlpha >= SOFT_ALPHA_CELL_LIMITS.minRampSpan &&
+	floorAlpha * SOFT_ALPHA_CELL_LIMITS.rampPeakToFloorRatio < peakAlpha &&
+	peakAlpha < SOFT_ALPHA_CELL_LIMITS.maxBleedPeak &&
+	coverage < SOFT_ALPHA_CELL_LIMITS.maxBleedCoverage;
 
 const collectSamples = (
 	image: RawImage,
@@ -503,6 +528,28 @@ export const createCellSampler = (options: CellSamplerOptions): CellSampler => {
 			output.fill(0, offset, offset + 4);
 			return;
 		}
+		const coverage = coverageAlpha(workspace, count);
+		let peakAlpha = 0;
+		let floorAlpha = 255;
+		for (let index = 0; index < count; index += 1) {
+			const alpha = workspace.a[index];
+			if (alpha > peakAlpha) peakAlpha = alpha;
+			if (alpha < floorAlpha) floorAlpha = alpha;
+		}
+		if (
+			isAlphaBleedOnlyCell(
+				peakAlpha,
+				floorAlpha,
+				coverage,
+				bounds.x1 - bounds.x0,
+				bounds.y1 - bounds.y0,
+			)
+		) {
+			// [Intended] にじみだけのセルは色も採用しない。透明画素のRGBを残すと
+			// 後段の背景判定や色抽出へ、元画像に無い色が混入する。
+			output.fill(0, offset, offset + 4);
+			return;
+		}
 		if (options.mode === "area-weighted") {
 			writeAreaWeighted(workspace, count, output, offset);
 			return;
@@ -511,7 +558,7 @@ export const createCellSampler = (options: CellSamplerOptions): CellSampler => {
 		output[offset] = workspace.r[medoid];
 		output[offset + 1] = workspace.g[medoid];
 		output[offset + 2] = workspace.b[medoid];
-		output[offset + 3] = coverageAlpha(workspace, count);
+		output[offset + 3] = coverage;
 	};
 	return {
 		sample(image, bounds, context) {
