@@ -109,6 +109,16 @@ export type QualityBaselineCase = {
 	catastrophicFailure: boolean;
 };
 
+/**
+ * [Intended] auto ケースの regression のうち、head でベースライン画像が更新済み
+ * （= 劣化が宣言済み）としてゲート失敗ではなく警告に降格したもの。
+ * GITHUB_STEP_SUMMARY へ「要人間レビュー」として一覧表示するために集計する。
+ */
+export type QualityGateWarning = {
+	id: string;
+	regressedMetrics: string[];
+};
+
 export type QualityBaseline = {
 	version: number;
 	commit: string;
