@@ -221,6 +221,21 @@ export const GRID_SIGNAL_DEFAULTS = {
 
 export const GRID_CANDIDATE_CELL_SCALES = [0.5, 2] as const;
 
+// 再構成ベースのグリッドサイズ探索（トリミング済み領域からの探索）の重み。
+export const TRIMMED_GRID_SEARCH_WEIGHTS = {
+	/**
+	 * セル数に比例させる複雑度ペナルティの係数。
+	 *
+	 * 再構成誤差は過分割で単調に下がるため、これが唯一の「細かすぎる格子」への抑制になる。
+	 * [Policy] 写実的な入力では再構成誤差の曲線がほぼ平坦で、この係数を動かしても
+	 * 選ばれる格子は跳ぶだけで狙った倍率には収束しない（実測: auto_grid_detection は
+	 * 0.02〜0.64 の全域で 88x61、resize_with_trimming も全域で 90x26、no_trimming は
+	 * 0.04〜0.16 で 97x53、0.20 以上で 88x48）。倍率の精度を上げるには係数の調整では
+	 * なく内容に応じた指標が必要なので、この値だけを触っても改善しない。
+	 */
+	complexityPenalty: 0.16,
+} as const;
+
 export const GRID_SEARCH_LIMITS = {
 	axisCandidateLimit: 24,
 	pairCandidateLimit: 128,
