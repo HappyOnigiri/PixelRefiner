@@ -80,24 +80,30 @@ export const processForcedRoute = (
 		return null;
 	}
 
-	// force: コンテンツ BBox でトリミングし、指定ピクセルサイズ（W x H）へ強制変換する（自動検出なし）
+	// force: 指定ピクセルサイズ（W x H）へ強制変換する（自動検出なし）
 	const bgTol = o.backgroundTolerance;
-	const masked = removeBackground(
-		working,
-		bgTol,
-		o.bgRemovalScope,
-		o.bgConnectivity,
-		bgTargets,
-		o.bgExtractionMethod,
-		backgroundModel,
-	);
+	// [Intended] 背景マスクはトリミング・浮遊成分除去・デバッグ出力でしか使わない。
+	// トリミングしない強制変換では背景除去 1 回ぶんを丸ごと省く。
+	let maskedCache: RawImage | undefined;
+	const getMasked = (): RawImage => {
+		maskedCache ??= removeBackground(
+			working,
+			bgTol,
+			o.bgRemovalScope,
+			o.bgConnectivity,
+			bgTargets,
+			o.bgExtractionMethod,
+			backgroundModel,
+		);
+		return maskedCache;
+	};
 	let smallComponentRemoval = context.smallComponentRemoval;
 	if (o.floatingMaxPixels > 0) {
 		const floatingStart = performance.now();
 		const { removedComponents, removedPixels } =
 			removeSmallFloatingComponentsInPlace(
 				working,
-				masked,
+				getMasked(),
 				trimAlphaThreshold,
 				o.floatingMaxPixels,
 			);
@@ -121,12 +127,19 @@ export const processForcedRoute = (
 			});
 		}
 	}
-	o.debugHook?.("02-pre-downsample-masked", masked, {
-		bgTol,
-		forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
-	});
+	if (o.debugHook) {
+		o.debugHook("02-pre-downsample-masked", getMasked(), {
+			bgTol,
+			forcePixels: { w: o.forcePixelsW, h: o.forcePixelsH },
+		});
+	}
 	const boundsStart = performance.now();
-	let b = findOpaqueBounds(masked, trimAlphaThreshold);
+	// [Intended] 強制サイズのセル境界は元キャンバスの位相に合わせる。トリミング無効時にも
+	// コンテンツ BBox を基準にすると、透明余白のぶんだけグリッドの位相とセル倍率がずれ、
+	// 整数倍で拡大されただけの画像すら元へ戻せない。
+	let b = o.trimToContent
+		? findOpaqueBounds(getMasked(), trimAlphaThreshold)
+		: { x: 0, y: 0, w: working.width, h: working.height };
 	if (!b) {
 		throw new Error(
 			"Specified pixel conversion failed because no content was found.",
@@ -135,14 +148,19 @@ export const processForcedRoute = (
 	const outW = o.forcePixelsW;
 	const outH = o.forcePixelsH;
 	const downsampleStart = performance.now();
+	// [Intended] 画像全体を覆う境界では切り抜きを行わず、元バッファをそのまま読む。
+	const cropToBounds = (
+		image: RawImage,
+		bounds: { x: number; y: number; w: number; h: number },
+	): RawImage =>
+		bounds.x === 0 &&
+		bounds.y === 0 &&
+		bounds.w === image.width &&
+		bounds.h === image.height
+			? image
+			: cropRawImage(image, bounds.x, bounds.y, bounds.w, bounds.h);
 	const createLogicalPass = (bounds: NonNullable<typeof b>) => {
-		const cropped = cropRawImage(
-			working,
-			bounds.x,
-			bounds.y,
-			bounds.w,
-			bounds.h,
-		);
+		const cropped = cropToBounds(working, bounds);
 		const cellW = cropped.width / outW;
 		const cellH = cropped.height / outH;
 		const g: PixelGrid = {
@@ -160,13 +178,7 @@ export const processForcedRoute = (
 		};
 		const sw = cellW < 1 || cellH < 1 ? 1 : o.sampleWindow;
 		const down2 = downsample(cropped, g, getDownsampleOptions(o, sw));
-		const croppedOriginal = cropRawImage(
-			img,
-			bounds.x,
-			bounds.y,
-			bounds.w,
-			bounds.h,
-		);
+		const croppedOriginal = cropToBounds(img, bounds);
 		const compareBeforeSanitized = downsample(
 			croppedOriginal,
 			g,
@@ -199,7 +211,10 @@ export const processForcedRoute = (
 
 	let logicalPass = createLogicalPass(b);
 	const removalDiagnostic = logicalPass.componentResult.diagnostic;
+	// [Intended] 生存成分での境界再構築はトリミング時だけ行う。トリミング無効時に縮めると、
+	// 元キャンバス基準に揃えたセル境界の位相がここで崩れる。
 	if (
+		o.trimToContent &&
 		o.smallComponentMode !== "off" &&
 		logicalPass.componentResult.diagnostic.removedPixels > 0
 	) {
@@ -231,7 +246,7 @@ export const processForcedRoute = (
 					),
 			);
 			const mappedMask = cropRawImage(
-				masked,
+				getMasked(),
 				mappedX,
 				mappedY,
 				mappedRight - mappedX,
