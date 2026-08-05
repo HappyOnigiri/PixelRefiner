@@ -119,6 +119,20 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 			borderBandRatio: BACKGROUND_MODEL_LIMITS.borderBandRatio,
 		};
 	}
+	// [Intended] 境界帯の相当部分がすでに透明なら、その画像はアルファで背景を表現済みとみなし、
+	// 色による背景推定を行わない。切り抜き済み画像に残る不透明な境界画素は「画像端に接した被写体」
+	// であり、色クラスタとして背景に採用すると被写体の外縁（アウトライン）を削ってしまう。
+	// アルファが背景を確定させている状況なので confidence は最大とし、後段の小領域除去は許可する。
+	if (
+		transparentCount / totalBorderCount >=
+		BACKGROUND_MODEL_LIMITS.alphaBackgroundBorderRatio
+	) {
+		return {
+			clusters: [],
+			confidence: 1,
+			borderBandRatio: BACKGROUND_MODEL_LIMITS.borderBandRatio,
+		};
+	}
 
 	// [Intended] 境界帯は画像サイズに比例して大きくなるため、決定論的な等間隔サンプリングで
 	// サンプル数に上限を設ける。比率として使う統計量のみを取るので間引いても評価軸は変わらない。
