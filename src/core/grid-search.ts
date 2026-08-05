@@ -19,6 +19,7 @@ import { applyHarmonicPenalties } from "./grid-signals/harmonics";
 import {
 	type AxisSignalProfile,
 	type AxisSignalScores,
+	autocorrelationScore,
 	combineSignalProfiles,
 	createAxisSignalProfile,
 	createLinearLuminance,
@@ -195,6 +196,12 @@ const createPhaseCandidates = (
 	return phases;
 };
 
+const cellAutocorrelation = (
+	edges: Float64Array,
+	options: GridSignalOptions,
+	cell: number,
+): number => (options.autocorrelation ? autocorrelationScore(edges, cell) : 0);
+
 /**
  * 周期の繰り返し回数に応じてスコアを減衰させる係数。
  *
@@ -215,6 +222,7 @@ const scoreAxisCandidate = (
 	length: number,
 	cell: number,
 	phase: number,
+	autocorrelation: number,
 ): AxisCandidate => {
 	const signals = scoreAxisSignals(
 		profile,
@@ -223,6 +231,7 @@ const scoreAxisCandidate = (
 		phase,
 		options,
 		normalizeGridPhase,
+		autocorrelation,
 	);
 	const alignment =
 		gridAlignmentScore(edges, cell, phase, normalizeGridPhase) * 0.75 +
@@ -249,6 +258,9 @@ const findAxisCandidates = (
 	for (let cellIndex = 0; cellIndex < cells.length; cellIndex += 1) {
 		const cell = cells[cellIndex];
 		const phases = createPhaseCandidates(cell, transitions);
+		// [Intended] 自己相関は位相に依存しないため、セル幅ごとに一度だけ求める。
+		// 位相候補ごとに再計算すると、探索時間の半分近くが同じ値の計算で埋まる。
+		const autocorrelation = cellAutocorrelation(edges, options, cell);
 		let best: AxisCandidate | null = null;
 		let zeroPhase: AxisCandidate | null = null;
 		for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex += 1) {
@@ -260,6 +272,7 @@ const findAxisCandidates = (
 				length,
 				cell,
 				phase,
+				autocorrelation,
 			);
 			if (
 				!best ||
@@ -301,6 +314,7 @@ const findAxisCandidates = (
 		const cell = baseCandidates[index].cell * 2;
 		if (cell > maxCell) continue;
 		const phases = createPhaseCandidates(cell, transitions);
+		const autocorrelation = cellAutocorrelation(edges, options, cell);
 		let best: AxisCandidate | null = null;
 		for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex += 1) {
 			const phase = phases[phaseIndex];
@@ -311,13 +325,22 @@ const findAxisCandidates = (
 				length,
 				cell,
 				phase,
+				autocorrelation,
 			);
 			if (!best || candidate.score > best.score) best = candidate;
 		}
 		if (best) selected.push(best);
 		if (best?.phase !== 0) {
 			selected.push(
-				scoreAxisCandidate(edges, profile, options, length, cell, 0),
+				scoreAxisCandidate(
+					edges,
+					profile,
+					options,
+					length,
+					cell,
+					0,
+					autocorrelation,
+				),
 			);
 		}
 		if (selected.length >= GRID_SEARCH_LIMITS.axisCandidateLimit) break;
@@ -434,6 +457,9 @@ export const searchPhaseAwareGrid = (
 	signalOptions: Partial<GridSignalOptions> = {},
 ): PhaseAwareGridEstimate | null => {
 	if (image.width === 0 || image.height === 0) return null;
+	if (image.width * image.height > GRID_SEARCH_LIMITS.maxPhaseAwarePixels) {
+		return null;
+	}
 	const options: GridSignalOptions = {
 		...GRID_SIGNAL_DEFAULTS,
 		...signalOptions,
