@@ -14,6 +14,28 @@ pnpm test:quality:report   # write tmp/quality-report/latest
 pnpm test:quality:update   # intentionally replace the stored baseline
 ```
 
+## Parallel execution
+
+Vitest parallelizes per test file, so the cases are split across the shard files
+in [`shards/`](./shards). Each file calls `runCasesShard` from
+[`shard.ts`](./shard.ts), which distributes the selected cases over
+`QUALITY_SHARD_COUNT` groups by input pixel count, largest first, so the slowest
+case never shares a shard with another heavy one. `cases.test.ts` fails if the
+number of shard files stops matching `QUALITY_SHARD_COUNT` or if the split no
+longer covers every selected case exactly once.
+
+`pnpm test:quality:report` therefore runs Vitest twice. The first run executes
+the shards, writes the per-case images under `tmp/quality-report/latest`, and
+stores each shard's case results in `tmp/quality-report/partial`. The second run
+executes [`report.test.ts`](./report.test.ts), which merges the partial results
+back into manifest order and writes `results.json`, `summary.md`, and the HTML
+report. Because ordering is restored from the manifest, the report is identical
+to a serial run apart from the measured runtime and memory values.
+
+`pnpm test:quality:update` stays serial: it runs every case in `cases.test.ts`
+so the recorded metrics are measured against the baseline images that the same
+test then replaces.
+
 Open `tmp/quality-report/latest/index.html` directly in a browser after
 generating a report. The report includes JSON and Markdown summaries plus
 ground truth, input, approved baseline, current, ground-truth difference,

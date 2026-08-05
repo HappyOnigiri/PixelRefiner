@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { processBatchImages } from "../../src/core/batch";
@@ -15,13 +15,7 @@ import {
 	createBackgroundMaskImage,
 	createDiffImage,
 } from "./metrics";
-import type {
-	QualityCaseResult,
-	QualityImageCase,
-	QualityMetadata,
-	QualityResults,
-} from "./types";
-import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "./types";
+import type { QualityCaseResult, QualityImageCase } from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
 
@@ -78,27 +72,6 @@ const processQualityCase = (
 		);
 	}
 	return primary.processResult;
-};
-
-const metadataFromEnvironment = (): QualityMetadata => {
-	const repository =
-		process.env.GITHUB_REPOSITORY ?? "HappyOnigiri/PixelRefiner";
-	const server = process.env.GITHUB_SERVER_URL ?? "https://github.com";
-	const runId = process.env.GITHUB_RUN_ID ?? "";
-	const baseline = loadBaseline();
-	return {
-		repositoryUrl: `${server}/${repository}`,
-		prNumber: process.env.QUALITY_PR_NUMBER ?? "local",
-		headCommit:
-			process.env.QUALITY_HEAD_SHA ?? process.env.GITHUB_SHA ?? "local",
-		baseCommit: process.env.QUALITY_BASE_SHA ?? "local",
-		generatedAt: new Date().toISOString(),
-		workflowRunUrl:
-			runId === "" ? "local" : `${server}/${repository}/actions/runs/${runId}`,
-		benchmarkVersion: QUALITY_BENCHMARK_VERSION,
-		reportVersion: QUALITY_REPORT_VERSION,
-		baselineCommit: baseline.commit,
-	};
 };
 
 const failedAssertions = (
@@ -307,118 +280,6 @@ export const writeQualityBaselineImage = (
 	const input = readPng(path.resolve(qualityCase.input));
 	const options = { ...effectiveCaseOptions(qualityCase), debug: false };
 	writePng(outputPath, processQualityCase(qualityCase, input, options).result);
-};
-
-const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
-	const count = cases.length;
-	const average = (select: (result: QualityCaseResult) => number): number => {
-		let total = 0;
-		for (const result of cases) total += select(result);
-		return count === 0 ? 0 : total / count;
-	};
-	const confidenceSamples = cases.flatMap((result) =>
-		result.gridCandidates.map((candidate) => ({
-			confidence: candidate.confidence,
-			correct: Number(
-				candidate.width === result.expectedWidth &&
-					candidate.height === result.expectedHeight,
-			),
-		})),
-	);
-	const sampleCount = confidenceSamples.length;
-	let confidenceTotal = 0;
-	let correctnessTotal = 0;
-	for (const sample of confidenceSamples) {
-		confidenceTotal += sample.confidence;
-		correctnessTotal += sample.correct;
-	}
-	const meanConfidence = sampleCount === 0 ? 0 : confidenceTotal / sampleCount;
-	const meanCorrectness =
-		sampleCount === 0 ? 0 : correctnessTotal / sampleCount;
-	let covariance = 0;
-	let confidenceVariance = 0;
-	let correctnessVariance = 0;
-	for (const sample of confidenceSamples) {
-		const confidenceDelta = sample.confidence - meanConfidence;
-		const correctnessDelta = sample.correct - meanCorrectness;
-		covariance += confidenceDelta * correctnessDelta;
-		confidenceVariance += confidenceDelta * confidenceDelta;
-		correctnessVariance += correctnessDelta * correctnessDelta;
-	}
-	const correlationDenominator = Math.sqrt(
-		confidenceVariance * correctnessVariance,
-	);
-	return {
-		caseCount: count,
-		passed: cases.filter((result) => result.status === "passed").length,
-		failed: cases.filter((result) => result.status === "failed").length,
-		changed: cases.filter((result) => result.changeStatus === "changed").length,
-		improved: cases.filter((result) => result.changeStatus === "improved")
-			.length,
-		regressed: cases.filter((result) => result.changeStatus === "regressed")
-			.length,
-		unchanged: cases.filter((result) => result.changeStatus === "unchanged")
-			.length,
-		newCases: cases.filter((result) => result.changeStatus === "new").length,
-		blockingFailures: cases.filter(
-			(result) =>
-				result.changeStatus === "regressed" ||
-				(result.changeStatus === "new" && result.status === "failed"),
-		).length,
-		explicitCases: cases.filter((result) => result.parameterMode === "explicit")
-			.length,
-		autoCases: cases.filter((result) => result.parameterMode === "auto").length,
-		top1SizeAccuracy: average((result) => Number(result.metrics.sizeCorrect)),
-		top3SizeAccuracy: average((result) =>
-			Number(result.metrics.top3SizeCorrect),
-		),
-		confidenceCorrectnessCorrelation:
-			correlationDenominator === 0 ? null : covariance / correlationDenominator,
-		byteIdentityRate: average((result) => Number(result.metrics.byteIdentical)),
-		catastrophicFailureRate: average((result) =>
-			Number(result.metrics.catastrophicFailure),
-		),
-		meanRgbaError: average((result) => result.metrics.meanRgbaError),
-		meanRuntimeMs: average((result) => result.metrics.runtimeMs),
-		approxPeakBytes: Math.max(
-			0,
-			...cases.map((result) => result.metrics.approxPeakBytes),
-		),
-	};
-};
-
-import {
-	renderCaseDetailHtml,
-	renderHtml,
-	renderMarkdown,
-} from "./report/render";
-
-export const generateQualityReport = (
-	cases: QualityImageCase[],
-): QualityResults => {
-	rmSync(REPORT_ROOT, { recursive: true, force: true });
-	mkdirSync(REPORT_ROOT, { recursive: true });
-	const caseResults = cases.map((qualityCase) =>
-		runQualityCase(qualityCase, true),
-	);
-	const results: QualityResults = {
-		metadata: metadataFromEnvironment(),
-		summary: summarize(caseResults),
-		cases: caseResults,
-	};
-	writeFileSync(
-		path.join(REPORT_ROOT, "results.json"),
-		`${JSON.stringify(results, null, 2)}\n`,
-	);
-	writeFileSync(path.join(REPORT_ROOT, "summary.md"), renderMarkdown(results));
-	writeFileSync(path.join(REPORT_ROOT, "index.html"), renderHtml(results));
-	for (const result of results.cases) {
-		writeFileSync(
-			path.join(REPORT_ROOT, "cases", result.id, "index.html"),
-			renderCaseDetailHtml(result),
-		);
-	}
-	return results;
 };
 
 export const reportRoot = REPORT_ROOT;
