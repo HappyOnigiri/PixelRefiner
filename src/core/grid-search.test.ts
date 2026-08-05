@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GRID_SEARCH_LIMITS } from "../shared/config";
 import type { RawImage } from "../shared/types";
 import { rotateRawImageExpanded } from "./deskew";
 import {
@@ -315,6 +316,36 @@ describe("phase-aware grid search", () => {
 			(candidate) => candidate.totalScore,
 		);
 		expect(scores).toEqual([...scores].sort((left, right) => right - left));
+	});
+
+	it("繰り返し回数の足りない周期には高い軸信頼度を与えない", () => {
+		// 24x24 の中に 16x16 の無地の板だけがある。軸方向の遷移は左右（上下）の
+		// 2 本しかないため、cellW=16 でも予測境界がすべて遷移に一致してしまう。
+		const size = 24;
+		const data = new Uint8ClampedArray(size * size * 4);
+		for (let y = 4; y < 20; y += 1) {
+			for (let x = 4; x < 20; x += 1) {
+				const index = (y * size + x) * 4;
+				data[index] = 40;
+				data[index + 1] = 80;
+				data[index + 2] = 120;
+				data[index + 3] = 255;
+			}
+		}
+		const image: RawImage = { width: size, height: size, data };
+		const estimate = searchPhaseAwareGrid(image, image);
+		expect(estimate).not.toBeNull();
+		if (!estimate) return;
+		const minPeriods = GRID_SEARCH_LIMITS.minGridPeriods;
+		const threshold = GRID_SEARCH_LIMITS.axisConfidenceThreshold;
+		for (const candidate of [estimate, ...(estimate.candidates ?? [])]) {
+			if (size / candidate.cellW < minPeriods) {
+				expect(candidate.scoreX ?? 0).toBeLessThan(threshold);
+			}
+			if (size / candidate.cellH < minPeriods) {
+				expect(candidate.scoreY ?? 0).toBeLessThan(threshold);
+			}
+		}
 	});
 
 	it("keeps an unrotated grid at zero degrees", () => {

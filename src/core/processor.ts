@@ -5,6 +5,7 @@ import type {
 	RawImage,
 	SmallComponentRemovalDiagnostic,
 } from "../shared/types";
+import { evaluateAutoGridDegeneracy } from "./auto-grid-guard";
 import {
 	getBackgroundTargets,
 	removeBackground,
@@ -632,6 +633,44 @@ export const processImage = (
 			log(
 				`No trimming needed or possible in ${(performance.now() - trimStart).toFixed(2)}ms`,
 			);
+		}
+	}
+
+	// [Intended] auto 経路でグリッドが縮退した場合は、破綻した縮小結果を返さず等倍へ戻す。
+	// 判定はトリミング後の実サイズで行う。検出時点の outW/outH は妥当に見えても、
+	// コンテンツ BBox で切り詰めた結果 1x1 まで潰れることがあるため。
+	if (o.processingMode === "auto") {
+		const degeneracy = evaluateAutoGridDegeneracy(
+			working,
+			trimmed.width,
+			trimmed.height,
+			grid,
+		);
+		if (degeneracy.degenerate) {
+			log("Degenerate auto grid detected; falling back to native scale", {
+				outW: trimmed.width,
+				outH: trimmed.height,
+				nativeScale: degeneracy.nativeScale,
+			});
+			return processExplicitSimpleRoute({
+				...simpleRouteContext,
+				route: "preserve",
+				method: "auto-degenerate-grid-preserve",
+				classificationResult,
+				rankedCandidates: rankedGridCandidates,
+				additionalWarnings: [
+					"FALLBACK_TO_PRESERVE",
+					// [Intended] 縮退で棄却したグリッドも候補としては提示したいので、
+					// 候補選択 UI の表示条件である低信頼シグナルを必ず付ける。
+					"LOW_GRID_CONFIDENCE",
+					...detectedGridConfidenceWarnings(
+						working,
+						grid,
+						selectedCandidateConfidence,
+					),
+				],
+				preparedMask: maskedForDebugOrAuto ?? undefined,
+			});
 		}
 	}
 
