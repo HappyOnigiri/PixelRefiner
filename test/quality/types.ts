@@ -97,6 +97,23 @@ export type QualityMetrics = {
 	approxPeakBytes: number;
 };
 
+/**
+ * 固定した目標画像との比較。ベースライン比較が「前回から何が変わったか」を見るのに対し、
+ * こちらは「あるべき姿にどれだけ足りていないか」を見る。
+ * [Policy] ゲート判定には使わない。目標に届かないことが分かっているケースを含むため、
+ * 失敗にすると全件が赤のままになり回帰検知が機能しなくなる。
+ */
+export type QualityTargetMetrics = {
+	targetWidth: number;
+	targetHeight: number;
+	sizeMatches: boolean;
+	exactMatch: boolean;
+	meanRgbaError: number;
+	edgeF1: number;
+	backgroundMaskIou: number;
+	smallComponentRetention: number;
+};
+
 export type QualityBaselineCase = {
 	id: string;
 	status: "passed" | "failed";
@@ -162,13 +179,21 @@ export type QualityCaseResult = {
 	};
 	metrics: QualityMetrics;
 	baselineMetrics: QualityBaselineCase | null;
+	/** 目標画像を登録していないケースは null。 */
+	targetMetrics: QualityTargetMetrics | null;
+	/**
+	 * 目標画像の由来。auto ケースは目標を借りた explicit ケースの ID を持つ。
+	 * explicit ケースはケース定義の正解画像そのものが目標なので null。
+	 */
+	targetSource: string | null;
 	files: {
-		/** auto ケースでベースライン未登録のときは基準画像が存在しない。 */
+		/** 目標画像。登録のない auto ケースでは存在しない。 */
 		groundTruth: string | null;
 		input: string;
 		baseline: string | null;
 		result: string;
-		diff: string;
+		/** 目標との差分。目標がないケースでは存在しない。 */
+		diff: string | null;
 		baselineDiff: string | null;
 		backgroundMask: string;
 	};

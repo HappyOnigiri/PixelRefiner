@@ -1,6 +1,6 @@
 import type { PixelGrid, RawImage } from "../../src/shared/types";
 import { imagesEqual } from "./image";
-import type { QualityMetrics } from "./types";
+import type { QualityMetrics, QualityTargetMetrics } from "./types";
 
 const isOpaque = (image: RawImage, pixelIndex: number): boolean =>
 	image.data[pixelIndex * 4 + 3] >= 16;
@@ -249,6 +249,24 @@ export const calculateMetrics = (
 			input.data.byteLength + actual.data.byteLength + repeat.data.byteLength,
 	};
 };
+
+/**
+ * 目標画像との比較。寸法が違うと edgeF1・IoU・小成分保持は 0 になるが、
+ * meanRgbaError だけは走査位置を正規化して比較するので寸法差があっても意味を持つ。
+ */
+export const calculateTargetMetrics = (
+	actual: RawImage,
+	target: RawImage,
+): QualityTargetMetrics => ({
+	targetWidth: target.width,
+	targetHeight: target.height,
+	sizeMatches: actual.width === target.width && actual.height === target.height,
+	exactMatch: imagesEqual(actual, target),
+	meanRgbaError: meanRgbaError(actual, target),
+	edgeF1: edgeF1(actual, target),
+	backgroundMaskIou: backgroundMaskIou(actual, target),
+	smallComponentRetention: smallComponentRetention(actual, target),
+});
 
 export const createDiffImage = (
 	actual: RawImage,

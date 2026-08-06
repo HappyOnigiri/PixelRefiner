@@ -12,9 +12,11 @@ import { imagesEqual, readPng, writePng } from "./image";
 import { caseParameterMode, qualityCaseDirectory } from "./manifest";
 import {
 	calculateMetrics,
+	calculateTargetMetrics,
 	createBackgroundMaskImage,
 	createDiffImage,
 } from "./metrics";
+import { autoTargetSource, caseTargetImage } from "./targets";
 import type {
 	QualityBaselineCase,
 	QualityCaseResult,
@@ -148,18 +150,21 @@ export const runQualityCase = (
 	const baselineImage = existsSync(storedBaselinePath)
 		? readPng(storedBaselinePath)
 		: null;
-	// [Intended] 自動判定ケースの基準は承認済みベースライン画像。正解画像を持たないため、
-	// ベースライン未登録の初回だけは自身の出力を基準にして「新規」として扱う。
-	const expectedPath =
-		parameterMode === "auto"
-			? baselineImage === null
-				? null
-				: storedBaselinePath
-			: path.resolve(qualityCase.expected ?? "");
+	// [Intended] ゲートと baseline.json が使う基準は従来どおり。自動判定ケースは承認済み
+	// ベースライン画像、explicit ケースはケース定義の正解画像で、ベースライン未登録の初回
+	// だけは自身の出力を基準にして「新規」として扱う。目標画像は下の targetMetrics で
+	// 別に測る。ここへ混ぜると指標の意味が変わり、既存ベースラインとの比較が壊れる。
 	const expected =
 		parameterMode === "auto"
 			? (baselineImage ?? currentRun.result)
-			: readPng(expectedPath ?? "");
+			: readPng(path.resolve(qualityCase.expected ?? ""));
+	const targetPath = caseTargetImage(qualityCase);
+	const targetImage =
+		targetPath === undefined ? null : readPng(path.resolve(targetPath));
+	const targetMetrics =
+		targetImage === null
+			? null
+			: calculateTargetMetrics(currentRun.result, targetImage);
 
 	const metrics = calculateMetrics(
 		currentRun.result,
@@ -190,11 +195,11 @@ export const runQualityCase = (
 	const caseDirectory = qualityCaseDirectory(qualityCase.id);
 	const files = {
 		groundTruth:
-			expectedPath === null ? null : `${caseDirectory}/ground-truth.png`,
+			targetImage === null ? null : `${caseDirectory}/ground-truth.png`,
 		input: `${caseDirectory}/input.png`,
 		baseline: baselineImage === null ? null : `${caseDirectory}/baseline.png`,
 		result: `${caseDirectory}/result.png`,
-		diff: `${caseDirectory}/diff.png`,
+		diff: targetImage === null ? null : `${caseDirectory}/diff.png`,
 		baselineDiff:
 			baselineImage === null ? null : `${caseDirectory}/baseline-diff.png`,
 		backgroundMask: `${caseDirectory}/background-mask.png`,
@@ -215,18 +220,23 @@ export const runQualityCase = (
 	if (writeArtifacts) {
 		const outputDirectory = path.join(REPORT_ROOT, caseDirectory);
 		mkdirSync(outputDirectory, { recursive: true });
-		if (expectedPath !== null && files.groundTruth) {
-			cpSync(expectedPath, path.join(REPORT_ROOT, files.groundTruth));
+		if (targetPath !== undefined && files.groundTruth) {
+			cpSync(
+				path.resolve(targetPath),
+				path.join(REPORT_ROOT, files.groundTruth),
+			);
 		}
 		cpSync(inputPath, path.join(REPORT_ROOT, files.input));
 		if (files.baseline && baselineImage) {
 			writePng(path.join(REPORT_ROOT, files.baseline), baselineImage);
 		}
 		writePng(path.join(REPORT_ROOT, files.result), currentRun.result);
-		writePng(
-			path.join(REPORT_ROOT, files.diff),
-			createDiffImage(currentRun.result, expected),
-		);
+		if (files.diff && targetImage) {
+			writePng(
+				path.join(REPORT_ROOT, files.diff),
+				createDiffImage(currentRun.result, targetImage),
+			);
+		}
 		if (files.baselineDiff && baselineImage) {
 			writePng(
 				path.join(REPORT_ROOT, files.baselineDiff),
@@ -273,6 +283,11 @@ export const runQualityCase = (
 			: effectiveOptions,
 		metrics,
 		baselineMetrics,
+		targetMetrics,
+		targetSource:
+			parameterMode === "auto"
+				? (autoTargetSource(qualityCase.id) ?? null)
+				: null,
 		files,
 	};
 };
