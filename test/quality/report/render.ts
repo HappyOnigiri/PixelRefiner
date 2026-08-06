@@ -1,22 +1,13 @@
 import path from "node:path";
 import type { QualityCaseResult, QualityResults } from "../types";
 import { runQualityReportClient } from "./client";
+import { escapeHtml, formatMetric } from "./format";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
+import { renderTargetComparison } from "./target-section";
 import { REPORT_TRANSLATIONS } from "./translations";
-
-const escapeHtml = (value: string): string =>
-	value
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
 
 const renderClientScript = (): string =>
 	`window.__QUALITY_REPORT_TRANSLATIONS__=${JSON.stringify(REPORT_TRANSLATIONS)};(${runQualityReportClient.toString()})();`;
-
-const formatMetric = (value: number | undefined): string =>
-	value === undefined ? "-" : Number(value.toFixed(3)).toString();
 
 const formatConfidence = (value: number | null): string =>
 	value === null ? "-" : value.toFixed(4);
@@ -32,10 +23,12 @@ const describeCase = (
 		return {
 			en:
 				"Process the fixture with Auto and the default settings only, with no case-specific options, " +
-				"and keep the automatic classification, route, and output grid identical to the approved baseline.",
+				"and keep the automatic classification, route, and output grid identical to the approved baseline. " +
+				"The target comparison additionally measures how far the output still is from the fixed target image.",
 			ja:
 				"ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、" +
-				"自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。",
+				"自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。" +
+				"あわせて、固定した目標画像までの残りの差を目標との比較で測ります。",
 		};
 	}
 	if (result.id === "restore-thin-features-and-alpha-coverage") {
@@ -563,6 +556,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 				</table>
 			</div>
 		</section>
+		${renderTargetComparison(result)}
 		<section>
 			<h2 data-i18n="options">Options</h2>
 			<dl>

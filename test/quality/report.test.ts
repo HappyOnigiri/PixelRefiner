@@ -209,6 +209,28 @@ describe.skipIf(!enabled)("quality report", () => {
 		]) {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
+		expect(compactDetail).toContain('<h2 data-i18n="targetComparison">');
+		// [Intended] 自動判定ケースの目標は借り物なので、どのケースから借りたかを出す。
+		const autoDetail = readFileSync(
+			path.join(reportRoot, "cases", "auto-tall-red", "index.html"),
+			"utf8",
+		);
+		expect(autoDetail).toContain(
+			'<strong data-i18n="targetSource">Target source</strong>: ' +
+				"<code>pad-tall-image-to-square</code>",
+		);
+		expect(autoDetail).toContain('data-i18n="sizeMatches"');
+		const withoutTarget = readFileSync(
+			path.join(
+				reportRoot,
+				"cases",
+				"auto-quality-prf420-shared-palette-companion",
+				"index.html",
+			),
+			"utf8",
+		);
+		expect(withoutTarget).toContain('data-i18n="targetUnregistered"');
+		expect(withoutTarget).not.toContain('data-i18n="groundTruth"');
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
 		expect(markdown).toContain("|Confidence (diagnostic)|");
