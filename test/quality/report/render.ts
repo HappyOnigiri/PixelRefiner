@@ -3,7 +3,11 @@ import type { QualityCaseResult, QualityResults } from "../types";
 import { runQualityReportClient } from "./client";
 import { escapeHtml, formatMetric } from "./format";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
-import { renderTargetComparison } from "./target-section";
+import {
+	renderTargetComparison,
+	TARGET_STATE_KEYS,
+	targetMatchState,
+} from "./target-section";
 import { REPORT_TRANSLATIONS } from "./translations";
 
 const renderClientScript = (): string =>
@@ -266,6 +270,23 @@ const renderReportSidebar = (results: QualityResults): string => {
 			</div>
 		</fieldset>
 		<fieldset class="filter-group">
+			<legend data-i18n="targetMatch">Target match</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-target-filter="" aria-pressed="true">
+					<span data-i18n="allTargets">All</span>
+				</button>
+				<button class="filter-button" type="button" data-target-filter="unmet" aria-pressed="false">
+					<span data-i18n="targetUnmet">differs from target</span>: ${results.summary.targetUnmet}
+				</button>
+				<button class="filter-button" type="button" data-target-filter="met" aria-pressed="false">
+					<span data-i18n="targetMet">matches target</span>: ${results.summary.targetMet}
+				</button>
+				<button class="filter-button" type="button" data-target-filter="missing" aria-pressed="false">
+					<span data-i18n="targetMissing">no target</span>: ${results.summary.targetMissing}
+				</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
 			<legend data-i18n="qualityStatus">Quality status</legend>
 			<div class="filter-row">
 				<button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button>
@@ -285,6 +306,7 @@ const renderReportSidebar = (results: QualityResults): string => {
 			<span data-i18n="displayConditions">Showing</span>:
 			<strong id="active-change-label"></strong> &times;
 			<strong id="active-parameter-label"></strong> &times;
+			<strong id="active-target-label"></strong> &times;
 			<strong id="active-status-label"></strong> &mdash;
 			<strong id="visible-count">0</strong> / ${results.summary.caseCount}
 			<span data-i18n="casesShown">cases</span>
@@ -317,9 +339,20 @@ export const renderHtml = (results: QualityResults): string => {
 					`<span data-i18n="${exactMatch ? "yes" : "no"}">` +
 					`${exactMatch ? "yes" : "no"}</span> &middot; `
 				: "";
+			// [Intended] 一覧から目標未達のケースへ辿れるようにする。目標との距離は詳細ページ
+			// にしかないと 1 件ずつ開くしかなく、どこを見るべきか一覧から判断できない。
+			const targetState = targetMatchState(result);
+			const targetMeasurement =
+				`<strong data-i18n="targetMatch">Target match</strong> ` +
+				`<span data-i18n="${TARGET_STATE_KEYS[targetState]}">${targetState}</span>` +
+				(targetState === "unmet" && result.targetMetrics
+					? ` ${formatMetric(result.targetMetrics.meanRgbaError)}`
+					: "") +
+				" &middot; ";
 			const qualityMeasurement = [
 				'<small class="case-metrics">',
 				exactMeasurement,
+				targetMeasurement,
 				'<strong data-i18n="meanRgbaErrorShort">Error</strong> ',
 				`${formatMetric(result.metrics.meanRgbaError)}/${errorTarget}`,
 				' &middot; <strong data-i18n="processingTime">Time</strong> ',
@@ -360,7 +393,8 @@ export const renderHtml = (results: QualityResults): string => {
 			]);
 			return `<article class="case ${result.status} ${result.changeStatus}"
 			data-status="${result.status}" data-change="${result.changeStatus}"
-			data-parameter="${result.parameterMode}" data-search="${escapeHtml(searchable)}">
+			data-parameter="${result.parameterMode}" data-target="${targetState}"
+			data-search="${escapeHtml(searchable)}">
 			<h2>
 				${escapeHtml(result.id)}
 				<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>

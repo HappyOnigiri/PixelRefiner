@@ -70,8 +70,34 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('parameterMode":"パラメータ"');
 		expect(html).toContain('explicitParameters":"オプション指定あり"');
 		expect(html).toContain('autoParameters":"自動判定"');
-		expect(html).toContain("card.dataset.parameter === activeParameter");
+		expect(html).toContain("card.dataset[group.name] === group.active");
 		expect(html).toContain('id="active-parameter-label"');
+		const targetGroupIndex = html.indexOf('<legend data-i18n="targetMatch">');
+		expect(targetGroupIndex).toBeGreaterThan(parameterGroupIndex);
+		expect(qualityGroupIndex).toBeGreaterThan(targetGroupIndex);
+		expect(html).toContain('data-target-filter=""');
+		expect(html).toContain('data-target-filter="unmet"');
+		expect(html).toContain('data-target-filter="met"');
+		expect(html).toContain('data-target-filter="missing"');
+		expect(html).toContain('id="active-target-label"');
+		expect(html).toContain('targetUnmet":"目標未達"');
+		// [Intended] 一覧のバッジと絞り込みの件数が同じ集計から出ていることを確かめる。
+		// 片方だけずれると、絞り込んだ結果と件数表示が食い違って読めなくなる。
+		for (const [state, count] of [
+			["met", results.summary.targetMet],
+			["unmet", results.summary.targetUnmet],
+			["missing", results.summary.targetMissing],
+		] as const) {
+			expect(
+				html.match(new RegExp(`data-target="${state}"`, "g"))?.length ?? 0,
+			).toBe(count);
+		}
+		expect(
+			results.summary.targetMet +
+				results.summary.targetUnmet +
+				results.summary.targetMissing,
+		).toBe(selectedCases.length);
+		expect(results.summary.targetUnmet).toBeGreaterThan(0);
 		const explicitCount = html.match(/data-parameter="explicit"/g)?.length ?? 0;
 		const autoCount = html.match(/data-parameter="auto"/g)?.length ?? 0;
 		expect(explicitCount + autoCount).toBe(selectedCases.length);
@@ -97,8 +123,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain("unchanged from base branch");
 		expect(html).toContain("base branchと差分なし");
 		expect(html).toContain('new":"新規追加"');
-		expect(html).toContain("card.dataset.change === activeChange");
-		expect(html).not.toContain('activeChange === "changed"');
+		expect(html).not.toContain('group.active === "changed"');
 		expect(html).not.toContain("Preserve the image.");
 		expect(html).not.toContain("画像を保持します。");
 		expect(html.match(/class="case-description"/g)).toHaveLength(

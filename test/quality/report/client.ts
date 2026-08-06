@@ -108,110 +108,60 @@ export const runQualityReportClient = (): void => {
 
 	const search = document.querySelector<HTMLInputElement>("#search");
 	if (search) {
-		const changeButtons = [
-			...document.querySelectorAll<HTMLButtonElement>("[data-change-filter]"),
-		];
-		const statusButtons = [
-			...document.querySelectorAll<HTMLButtonElement>("[data-status-filter]"),
-		];
-		const parameterButtons = [
-			...document.querySelectorAll<HTMLButtonElement>(
-				"[data-parameter-filter]",
-			),
-		];
 		const cards = [...document.querySelectorAll<HTMLElement>(".case")];
-		const changeLabel = document.querySelector<HTMLElement>(
-			"#active-change-label",
-		);
-		const statusLabel = document.querySelector<HTMLElement>(
-			"#active-status-label",
-		);
-		const parameterLabel = document.querySelector<HTMLElement>(
-			"#active-parameter-label",
-		);
 		const visibleCount = document.querySelector<HTMLElement>("#visible-count");
-		let activeChange = "";
-		let activeStatus = "";
-		let activeParameter = "";
-
-		const updateButtons = (
-			buttons: HTMLButtonElement[],
-			attribute: "changeFilter" | "statusFilter" | "parameterFilter",
-			value: string,
-		): void => {
-			for (const button of buttons) {
-				const active = button.dataset[attribute] === value;
-				button.classList.toggle("active", active);
-				button.setAttribute("aria-pressed", String(active));
-			}
-		};
-		const selectedLabel = (
-			buttons: HTMLButtonElement[],
-			attribute: "changeFilter" | "statusFilter" | "parameterFilter",
-			value: string,
-		): string =>
-			buttons
-				.find((button) => button.dataset[attribute] === value)
-				?.querySelector<HTMLElement>("[data-i18n]")?.textContent ?? "";
+		// [Intended] 絞り込みの軸はすべて同じ形（data-<name>-filter のボタン群 ×
+		// カードの data-<name>）なので、軸ごとに同じ処理を書かず名前だけで束ねる。
+		// 軸を増やすときはこの配列に名前を足すだけで済む。
+		const groups = ["change", "parameter", "target", "status"].map((name) => ({
+			name,
+			buttons: [
+				...document.querySelectorAll<HTMLButtonElement>(
+					`[data-${name}-filter]`,
+				),
+			],
+			label: document.querySelector<HTMLElement>(`#active-${name}-label`),
+			active: "",
+		}));
 
 		refreshFilter = (): void => {
 			const text = search.value.toLowerCase();
 			let visible = 0;
 			for (const card of cards) {
-				const changeMatches =
-					!activeChange || card.dataset.change === activeChange;
-				card.hidden = !(
-					(card.dataset.search ?? "").toLowerCase().includes(text) &&
-					(!activeStatus || card.dataset.status === activeStatus) &&
-					(!activeParameter || card.dataset.parameter === activeParameter) &&
-					changeMatches
+				const matchesText = (card.dataset.search ?? "")
+					.toLowerCase()
+					.includes(text);
+				const matchesGroups = groups.every(
+					(group) => !group.active || card.dataset[group.name] === group.active,
 				);
+				card.hidden = !(matchesText && matchesGroups);
 				if (!card.hidden) visible += 1;
 			}
-			if (changeLabel) {
-				changeLabel.textContent = selectedLabel(
-					changeButtons,
-					"changeFilter",
-					activeChange,
-				);
-			}
-			if (statusLabel) {
-				statusLabel.textContent = selectedLabel(
-					statusButtons,
-					"statusFilter",
-					activeStatus,
-				);
-			}
-			if (parameterLabel) {
-				parameterLabel.textContent = selectedLabel(
-					parameterButtons,
-					"parameterFilter",
-					activeParameter,
-				);
+			for (const group of groups) {
+				if (!group.label) continue;
+				group.label.textContent =
+					group.buttons
+						.find(
+							(button) =>
+								button.dataset[`${group.name}Filter`] === group.active,
+						)
+						?.querySelector<HTMLElement>("[data-i18n]")?.textContent ?? "";
 			}
 			if (visibleCount) visibleCount.textContent = String(visible);
 		};
 		search.addEventListener("input", refreshFilter);
-		for (const button of changeButtons) {
-			button.addEventListener("click", () => {
-				activeChange = button.dataset.changeFilter ?? "";
-				updateButtons(changeButtons, "changeFilter", activeChange);
-				refreshFilter();
-			});
-		}
-		for (const button of statusButtons) {
-			button.addEventListener("click", () => {
-				activeStatus = button.dataset.statusFilter ?? "";
-				updateButtons(statusButtons, "statusFilter", activeStatus);
-				refreshFilter();
-			});
-		}
-		for (const button of parameterButtons) {
-			button.addEventListener("click", () => {
-				activeParameter = button.dataset.parameterFilter ?? "";
-				updateButtons(parameterButtons, "parameterFilter", activeParameter);
-				refreshFilter();
-			});
+		for (const group of groups) {
+			for (const button of group.buttons) {
+				button.addEventListener("click", () => {
+					group.active = button.dataset[`${group.name}Filter`] ?? "";
+					for (const other of group.buttons) {
+						const active = other === button;
+						other.classList.toggle("active", active);
+						other.setAttribute("aria-pressed", String(active));
+					}
+					refreshFilter();
+				});
+			}
 		}
 		refreshFilter();
 	}

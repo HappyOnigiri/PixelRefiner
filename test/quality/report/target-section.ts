@@ -1,6 +1,21 @@
 import type { QualityCaseResult, QualityTargetMetrics } from "../types";
 import { escapeHtml, formatMetric } from "./format";
 
+export type TargetMatchState = "met" | "unmet" | "missing";
+
+export const TARGET_STATE_KEYS: Record<TargetMatchState, string> = {
+	met: "targetMet",
+	unmet: "targetUnmet",
+	missing: "targetMissing",
+};
+
+export const targetMatchState = (
+	result: QualityCaseResult,
+): TargetMatchState => {
+	if (result.targetMetrics === null) return "missing";
+	return result.targetMetrics.exactMatch ? "met" : "unmet";
+};
+
 const metricRow = (key: string, label: string, value: string): string =>
 	`<tr><th data-i18n="${key}">${label}</th><td>${value}</td></tr>`;
 

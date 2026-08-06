@@ -215,6 +215,12 @@ export type QualityResults = {
 		explicitCases: number;
 		/** 自動判定（UI 既定のみ）のケース数 */
 		autoCases: number;
+		/** 出力が目標画像と一致したケース数 */
+		targetMet: number;
+		/** 目標画像はあるが一致していないケース数 */
+		targetUnmet: number;
+		/** 目標画像を登録していないケース数 */
+		targetMissing: number;
 		top1SizeAccuracy: number;
 		top3SizeAccuracy: number;
 		confidenceCorrectnessCorrelation: number | null;
