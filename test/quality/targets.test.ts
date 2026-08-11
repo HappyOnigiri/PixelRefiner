@@ -49,27 +49,25 @@ describe("quality auto targets", () => {
 	it.skipIf(initMode)("rejects a target whose source case is gone", () => {
 		const errors = validateAutoTargets(
 			loadCases().filter(
-				(qualityCase) => qualityCase.id !== "restore-nearest-4x-to-8x8",
+				(qualityCase) => qualityCase.id !== "remove-background-trim-resize-46x13",
 			),
 		);
 		expect(errors).toContain(
-			"auto-quality-nearest-4x: unknown target source case restore-nearest-4x-to-8x8",
+			"auto-resize-with-trimming: unknown target source case remove-background-trim-resize-46x13",
 		);
 	});
 
 	it.skipIf(initMode)(
-		"inherits the target source allowances for auto cases",
+		"inherits the target source expectation for auto cases",
 		() => {
 			const autoCase = loadCases().find(
-				(qualityCase) => qualityCase.id === "auto-quality-nearest-3-2x",
+				(qualityCase) => qualityCase.id === "auto-resize-with-trimming",
 			);
 			if (autoCase === undefined) throw new Error("Auto target case not found");
 			expect(caseTargetExpectation(autoCase)).toMatchObject({
-				maxMeanRgbaError: 25,
-				minEdgeF1: 0.8,
-				minBackgroundMaskIou: 0.8,
-				expectedWidth: 8,
-				expectedHeight: 8,
+				exact: true,
+				expectedWidth: 46,
+				expectedHeight: 13,
 			});
 		},
 	);

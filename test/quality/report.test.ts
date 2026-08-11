@@ -117,7 +117,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(autoCount).toBe(results.summary.autoCases);
 		expect(explicitCount).toBe(results.summary.explicitCases);
 		expect(autoCount).toBeGreaterThan(0);
-		const autoCaseId = "auto-quality-nearest-4x";
+		const autoCaseId = "auto-resize-with-trimming";
 		const autoCaseIdIndex = html.indexOf(autoCaseId);
 		const autoCase = html.slice(
 			html.lastIndexOf("<article", autoCaseIdIndex),
@@ -209,7 +209,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(reviewCase).toContain(
 			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
 		);
-		const targetUnmetId = "auto-quality-nearest-3-2x";
+		const targetUnmetId = "auto-resize-with-trimming";
 		const targetUnmetIdIndex = html.indexOf(targetUnmetId);
 		const targetUnmetStart = html.lastIndexOf("<article", targetUnmetIdIndex);
 		const targetUnmetEnd = html.indexOf("</article>", targetUnmetIdIndex);
@@ -217,10 +217,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(targetUnmetCase).toContain('data-quality="unmet"');
 		expect(targetUnmetCase).toContain('data-i18n="targetUnmet"');
 		expect(targetUnmetCase).not.toContain('data-i18n="passed"');
-		expect(targetUnmetCase).toContain('data-i18n="assertions.edge-f1"');
 		expect(targetUnmetCase).toContain(
-			'data-i18n="assertions.background-mask-iou"',
+			'data-i18n="assertions.exact-image-match"',
 		);
+		expect(targetUnmetCase).toContain('data-i18n="assertions.output-size"');
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),
 			"utf8",
@@ -253,12 +253,12 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(compactDetail).toContain('<h2 data-i18n="targetComparison">');
 		// [Intended] 自動判定ケースの目標は借り物なので、どのケースから借りたかを出す。
 		const autoDetail = readFileSync(
-			path.join(reportRoot, "cases", "auto-quality-nearest-4x", "index.html"),
+			path.join(reportRoot, "cases", "auto-resize-with-trimming", "index.html"),
 			"utf8",
 		);
 		expect(autoDetail).toContain(
 			'<strong data-i18n="targetSource">Target source</strong>: ' +
-				"<code>restore-nearest-4x-to-8x8</code>",
+				"<code>remove-background-trim-resize-46x13</code>",
 		);
 		expect(autoDetail).toContain('data-i18n="sizeMatches"');
 		expect(results.summary.targetMissing).toBe(0);
