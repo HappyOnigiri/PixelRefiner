@@ -81,6 +81,18 @@ describe("fast grid search from trimmed", () => {
 		expect(estimate?.gridEvidenceMax).toBeUndefined();
 	});
 
+	it("正解の 5 倍細かい過分割からでも粗い倍音へ乗り換える", () => {
+		// [Intended] 正解セル 40px（出力 11x11）に 8px の濃淡を敷いた 440x440。
+		// 再構成はセル 32px までしか粗く探索しないので正解へ自力では届かず、
+		// ちょうど 5 倍細かい 55x55 を選ぶ。倍音表から整数倍が 1 つでも抜けると、
+		// 窓幅は中心の 10% しかないため正解が前後の窓の隙間へ落ちて評価されない。
+		const fiveTimes = createNestedBlockImage(440, 40, 8, 30);
+		const estimate = strategy.search(fiveTimes, fiveTimes, 3);
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outW).toBe(11);
+		expect(estimate?.outH).toBe(11);
+	});
+
 	it("候補一覧には採用格子の倍音が含まれる", () => {
 		const estimate = strategy.search(image, image, 3);
 		const outHeights = (estimate?.candidates ?? []).map(

@@ -373,8 +373,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		}
 		// [Policy] UI 既定のまま処理する auto 側にも、警告と候補選択の標本を必ず 1 件残す。
 		// 明示オプションのケースだけを標本にすると、既定経路で候補が出るかを誰も見ていない
-		// 状態になる。この入力は論理セルを 2 通りに読めるため、目標へも届いていない。
-		const autoModalCaseId = "auto-quality-prf400-ambiguous-grid-scale";
+		// 状態になる。この入力はセル境界がアンチエイリアスで鈍っており、採用した格子より
+		// 強い境界証拠を持つ倍率が別にあるため、目標へも届いていない。
+		const autoModalCaseId = "auto-quality-prf400-soft-edged-sprite";
 		const autoModalResult = results.cases.find(
 			(result) => result.id === autoModalCaseId,
 		);
