@@ -95,42 +95,62 @@ export const expectSameImage = (
 	);
 };
 
+/** 期待値画像と 1 画素だけ違う色を、座標付きで指定する。 */
+export type PixelException = {
+	x: number;
+	y: number;
+	/** その座標で期待する RGB。アルファは期待値画像と一致していなければならない。 */
+	rgb: readonly [number, number, number];
+};
+
 /**
- * アルファは完全に一致し、RGB はチャンネルあたり maxChannelDelta までのずれを許して比較する。
+ * 指定した座標だけ別の色を期待し、それ以外の画素は期待値画像と完全一致することを確認する。
  *
  * [Intended] Auto 経路は縁に残った背景色の汚染を原寸の色へ差し替えるため、手書きの期待値画像に
- * わずかな背景色が残っている画素では数階調ずれる。この比較の目的は「Auto が手動指定と同じ
- * 出力へ到達する」ことの確認なので、シルエット（アルファ）の一致は厳密に要求したうえで、
- * 汚染除去による色の差だけを許容する。
+ * わずかな背景色が残っている画素だけ色が変わる。変わる画素を座標と色で固定することで、
+ * それ以外の画素の変化と、指定した画素が期待どおりの色になっているかの両方を検知する。
  */
-export const expectSimilarImage = (
+export const expectSameImageExcept = (
 	actual: RawImage,
 	expected: RawImage,
-	maxChannelDelta: number,
+	exceptions: readonly PixelException[],
 ): void => {
 	expect(actual.width).toBe(expected.width);
 	expect(actual.height).toBe(expected.height);
-	const a = normalizeTransparentRgb(actual);
-	const b = normalizeTransparentRgb(expected);
-	for (let pixel = 0; pixel < actual.width * actual.height; pixel += 1) {
-		const offset = pixel * 4;
-		const x = pixel % actual.width;
-		const y = (pixel / actual.width) | 0;
-		if (a[offset + 3] !== b[offset + 3]) {
+	const patched = normalizeTransparentRgb(expected);
+	for (const exception of exceptions) {
+		const offset = (exception.y * expected.width + exception.x) * 4;
+		// 期待値画像と同じ色を指定していたら、この例外はもう不要である。
+		const unchanged =
+			patched[offset] === exception.rgb[0] &&
+			patched[offset + 1] === exception.rgb[1] &&
+			patched[offset + 2] === exception.rgb[2];
+		if (unchanged) {
 			throw new Error(
-				`Alpha mismatch at (${x},${y}) actual=${a[offset + 3]} expected=${b[offset + 3]}`,
+				`Stale exception at (${exception.x},${exception.y}): expected image already has this color`,
 			);
 		}
-		for (let channel = 0; channel < 3; channel += 1) {
-			const delta = Math.abs(a[offset + channel] - b[offset + channel]);
-			if (delta > maxChannelDelta) {
-				throw new Error(
-					`Color mismatch at (${x},${y}) channel=${channel} actual=${a[offset + channel]} expected=${b[offset + channel]} delta=${delta}`,
-				);
-			}
-		}
+		patched[offset] = exception.rgb[0];
+		patched[offset + 1] = exception.rgb[1];
+		patched[offset + 2] = exception.rgb[2];
 	}
+	expectSameImage(actual, {
+		width: expected.width,
+		height: expected.height,
+		data: patched,
+	});
 };
+
+/**
+ * resize_with_trimming の期待値画像に対し、Auto 経路で色が変わる画素。
+ *
+ * [Intended] 手書きの期待値画像は縁に背景色（緑）がわずかに残る画素を持つ。Auto は
+ * その汚染を原寸の色へ差し替えるので、この 2 画素だけ期待値画像と色が違う。
+ */
+export const RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS: readonly PixelException[] = [
+	{ x: 43, y: 4, rgb: [6, 9, 6] },
+	{ x: 44, y: 11, rgb: [4, 4, 4] },
+];
 
 export const getExpectPath = (fixtureBase: string): string =>
 	fileURLToPath(
