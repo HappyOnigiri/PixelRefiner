@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BACKGROUND_MODEL_LIMITS } from "../shared/config";
+import { BACKGROUND_MODEL_LIMITS, PROCESS_RANGES } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 import type { BackgroundModel } from "./background";
 import {
@@ -110,6 +110,16 @@ const mixWithGreen = (
 	color: readonly [number, number, number],
 ): [number, number, number, number] => mixWith(GREEN, share, color);
 
+/** アルファ下限を既定値に固定した呼び出し。しきい値自体を試すケースだけ明示的に渡す。 */
+const cleanEdges = (
+	image: RawImage,
+	source: RawImage,
+	grid: PixelGrid,
+	model: BackgroundModel,
+	alphaThreshold: number = PROCESS_RANGES.cellAlphaThreshold.default,
+): number =>
+	cleanBackgroundContaminatedEdges(image, source, grid, model, alphaThreshold);
+
 describe("cleanBackgroundContaminatedEdges", () => {
 	it("背景色が混ざった縁の色を、同じセルにある本来の色へ差し替える", () => {
 		// 原寸: 上半分が黒、下半分が背景色、その境界に混色帯がある。
@@ -123,7 +133,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 			y === 0 ? mixWithGreen(0.4, [2, 4, 1]) : [0, 0, 0, 0],
 		);
 
-		const cleaned = cleanBackgroundContaminatedEdges(
+		const cleaned = cleanEdges(
 			image,
 			source,
 			grid,
@@ -146,7 +156,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		);
 
 		expect(
-			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
+			cleanEdges(image, source, grid, greenModel()),
 		).toBe(0);
 		expect(colorAt(image, 0, 0)).toEqual([2, 4, 1, 255]);
 	});
@@ -161,7 +171,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		);
 
 		expect(
-			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
+			cleanEdges(image, source, grid, greenModel()),
 		).toBe(0);
 		expect(colorAt(image, 0, 0)).toEqual([120, 20, 20, 255]);
 	});
@@ -177,7 +187,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		const image = createImage(2, 2, (_x, y) =>
 			y === 0 ? [100, 0, 0, 255] : [0, 0, 0, 0],
 		);
-		const cleaned = cleanBackgroundContaminatedEdges(
+		const cleaned = cleanEdges(
 			image,
 			source,
 			grid,
@@ -211,7 +221,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		);
 
 		expect(
-			cleanBackgroundContaminatedEdges(
+			cleanEdges(
 				image,
 				source,
 				grid,
@@ -232,7 +242,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		);
 
 		expect(
-			cleanBackgroundContaminatedEdges(
+			cleanEdges(
 				image,
 				source,
 				grid,
@@ -254,11 +264,49 @@ describe("cleanBackgroundContaminatedEdges", () => {
 
 		// 中央の透明画素から 2 段以内にある 24 画素だけが差し替わる。
 		expect(
-			cleanBackgroundContaminatedEdges(image, source, wideGrid, greenModel()),
+			cleanEdges(image, source, wideGrid, greenModel()),
 		).toBe(24);
 		expect(colorAt(image, 3, 2)).toEqual([2, 4, 1, 255]);
 		expect(colorAt(image, 0, 0)).toEqual(contaminated);
 		expect(colorAt(image, 6, 3)).toEqual(contaminated);
+	});
+
+	it("ほとんど透明な画素の色は候補にしない", () => {
+		// 原寸のセルに、見えないほど薄い黒（アルファ 1）を置く。
+		const contaminated = mixWithGreen(0.4, [2, 4, 1]);
+		const source = createImage(8, 8, (_x, y) =>
+			y < 2 ? contaminated : [2, 4, 1, 1],
+		);
+		const makeImage = () =>
+			createImage(2, 2, (_x, y) => (y === 0 ? contaminated : [0, 0, 0, 0]));
+
+		const defaultThreshold = makeImage();
+		expect(
+			cleanEdges(defaultThreshold, source, grid, greenModel()),
+		).toBe(0);
+		expect(colorAt(defaultThreshold, 0, 0)).toEqual(contaminated);
+
+		// しきい値を下げれば候補に入る（除外はアルファ下限によるものだと確かめる）。
+		const lowThreshold = makeImage();
+		expect(cleanEdges(lowThreshold, source, grid, greenModel(), 1)).toBe(2);
+		expect(colorAt(lowThreshold, 0, 0)).toEqual([2, 4, 1, 255]);
+	});
+
+	it("先端付近の平均はアルファで重み付けする", () => {
+		// 黒背景・赤方向。先端に [190,0,0] (255) と [200,0,0] (51) が入る。
+		// 単純平均なら 195、アルファ加重なら 192。
+		const source = createImage(8, 8, (_x, y) => {
+			if (y < 2) return [100, 0, 0, 255];
+			return y === 2 ? [190, 0, 0, 255] : [200, 0, 0, 51];
+		});
+		const image = createImage(2, 2, (_x, y) =>
+			y === 0 ? [100, 0, 0, 255] : [0, 0, 0, 0],
+		);
+
+		expect(
+			cleanEdges(image, source, grid, singleClusterModel([0, 0, 0])),
+		).toBe(2);
+		expect(colorAt(image, 0, 0)).toEqual([192, 0, 0, 255]);
 	});
 
 	it("透明画素が無い画像には何もしない", () => {
@@ -266,7 +314,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		const image = createImage(2, 2, () => mixWithGreen(0.4, [2, 4, 1]));
 
 		expect(
-			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
+			cleanEdges(image, source, grid, greenModel()),
 		).toBe(0);
 		expect(colorAt(image, 0, 0)).toEqual(mixWithGreen(0.4, [2, 4, 1]));
 	});
@@ -278,7 +326,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		);
 
 		expect(
-			cleanBackgroundContaminatedEdges(image, source, grid, {
+			cleanEdges(image, source, grid, {
 				clusters: [],
 				confidence: 1,
 				borderBandRatio: 0.08,
@@ -298,7 +346,7 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		);
 
 		expect(
-			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
+			cleanEdges(image, source, grid, greenModel()),
 		).toBe(2);
 		expect(colorAt(image, 0, 0)).toEqual([2, 4, 1, 255]);
 	});

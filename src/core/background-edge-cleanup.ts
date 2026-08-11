@@ -139,6 +139,10 @@ type LineProbe = {
 /**
  * 背景色 bg から向き (dirR, dirG, dirB) へ伸びる混色線の上に乗る原寸画素を、セル内から探す。
  * まず線上で最も背景から遠い距離を求め、次にその近傍にある画素の平均色を作る。
+ *
+ * [Intended] 色の候補として扱う画素は alphaThreshold 以上のものに限り、平均はアルファで
+ * 重み付けする。セル代表色の選び方と同じ基準にすることで、ほとんど透明な画素が持つ
+ * 見えない RGB が、不透明な輪郭の色へ昇格するのを防ぐ。
  */
 const probeMixingLine = (
 	source: RawImage,
@@ -153,6 +157,7 @@ const probeMixingLine = (
 	dirG: number,
 	dirB: number,
 	currentDistance: number,
+	alphaThreshold: number,
 	probe: LineProbe,
 ): void => {
 	const data = source.data;
@@ -169,7 +174,7 @@ const probeMixingLine = (
 		const row = y * width;
 		for (let x = x0; x < x1; x += 1) {
 			const offset = (row + x) * 4;
-			if (data[offset + 3] === 0) continue;
+			if (data[offset + 3] < alphaThreshold) continue;
 			const deltaR = data[offset] - bgR;
 			const deltaG = data[offset + 1] - bgG;
 			const deltaB = data[offset + 2] - bgB;
@@ -207,12 +212,14 @@ const probeMixingLine = (
 	let sumR = 0;
 	let sumG = 0;
 	let sumB = 0;
+	let weight = 0;
 	let count = 0;
 	for (let y = y0; y < y1; y += 1) {
 		const row = y * width;
 		for (let x = x0; x < x1; x += 1) {
 			const offset = (row + x) * 4;
-			if (data[offset + 3] === 0) continue;
+			const alpha = data[offset + 3];
+			if (alpha < alphaThreshold) continue;
 			const deltaR = data[offset] - bgR;
 			const deltaG = data[offset + 1] - bgG;
 			const deltaB = data[offset + 2] - bgB;
@@ -231,16 +238,17 @@ const probeMixingLine = (
 			) {
 				continue;
 			}
-			sumR += data[offset];
-			sumG += data[offset + 1];
-			sumB += data[offset + 2];
+			sumR += data[offset] * alpha;
+			sumG += data[offset + 1] * alpha;
+			sumB += data[offset + 2] * alpha;
+			weight += alpha;
 			count += 1;
 		}
 	}
-	if (count === 0) return;
-	probe.r = sumR / count;
-	probe.g = sumG / count;
-	probe.b = sumB / count;
+	if (count === 0 || weight === 0) return;
+	probe.r = sumR / weight;
+	probe.g = sumG / weight;
+	probe.b = sumB / weight;
 	probe.count = count;
 };
 
@@ -269,6 +277,8 @@ export const cleanBackgroundContaminatedEdges = (
 	source: RawImage,
 	grid: PixelGrid,
 	model: BackgroundModel,
+	/** 色の候補として扱う原寸画素のアルファ下限。セル代表色の選択と同じ基準にする。 */
+	alphaThreshold: number,
 ): number => {
 	if (model.clusters.length === 0) return 0;
 	const depth = buildEdgeDepth(image, BACKGROUND_EDGE_CLEANUP_LIMITS.maxDepth);
@@ -333,6 +343,7 @@ export const cleanBackgroundContaminatedEdges = (
 				dirG,
 				dirB,
 				distance,
+				alphaThreshold,
 				probe,
 			);
 			if (probe.count === 0) continue;

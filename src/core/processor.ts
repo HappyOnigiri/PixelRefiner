@@ -600,6 +600,7 @@ const processImageCore = (
 			working,
 			trimmedGrid,
 			backgroundModel,
+			o.cellAlphaThreshold,
 		);
 		log(
 			`Background edge cleanup done in ${(performance.now() - cleanupStart).toFixed(2)}ms`,
