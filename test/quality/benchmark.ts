@@ -3,10 +3,14 @@ import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { processBatchImages } from "../../src/core/batch";
 import { evaluateCandidateModalDecision } from "../../src/core/candidate-modal-decision";
-import { selectCandidatePlans } from "../../src/core/candidate-previews";
+import {
+	candidateProcessOptions,
+	selectCandidatePlans,
+} from "../../src/core/candidate-previews";
 import { processImage } from "../../src/core/processor";
 import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
+import type { CandidateSelection, RawImage } from "../../src/shared/types";
 import { AUTO_CASE_OPTIONS } from "./auto-cases";
 import { baselineImagePath, loadBaseline } from "./baseline";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
@@ -26,6 +30,7 @@ import {
 } from "./targets";
 import type {
 	QualityBaselineCase,
+	QualityCandidateOption,
 	QualityCaseResult,
 	QualityImageCase,
 } from "./types";
@@ -86,6 +91,52 @@ const processQualityCase = (
 	}
 	return primary.processResult;
 };
+
+/**
+ * 候補選択モーダルに並ぶ選択肢を、ブラウザと同じ候補プラン・同じ入力画像から作る。
+ *
+ * [Intended] ブラウザはサムネイルへ縮小した画像を並べるが、レポートには他の画像と同じ
+ * 原寸で書き出す。縮小は表示側の image-stage が行うので、選択肢の実出力を等倍で確認できる。
+ * [Intended] 1 候補の生成失敗で残りの選択肢を捨てない。ブラウザも失敗した候補だけを落として
+ * 表示を続けるため、レポートも欠番として残し、生成できなかった事実を読めるようにする。
+ */
+const buildCandidateOptions = (
+	plans: readonly CandidateSelection[],
+	input: RawImage,
+	options: ProcessOptions,
+	caseDirectory: string,
+): QualityCandidateOption[] =>
+	plans.map((plan) => {
+		const identity = {
+			id: plan.id,
+			kind: plan.kind,
+			recommended: plan.recommended,
+			processingMode: plan.processingMode,
+		};
+		try {
+			const processed = processImage(
+				input,
+				candidateProcessOptions(options, plan),
+			);
+			const file = `${caseDirectory}/candidate-${plan.kind}.png`;
+			writePng(path.join(REPORT_ROOT, file), processed.result);
+			return {
+				...identity,
+				outputWidth: processed.result.width,
+				outputHeight: processed.result.height,
+				colorCount: processed.extractedPalette.length,
+				file,
+			};
+		} catch {
+			return {
+				...identity,
+				outputWidth: null,
+				outputHeight: null,
+				colorCount: null,
+				file: null,
+			};
+		}
+	});
 
 const failedAssertions = (
 	qualityCase: QualityImageCase,
@@ -240,10 +291,11 @@ export const runQualityCase = (
 			(left, right) => right.totalScore - left.totalScore,
 		);
 	}
-	// [Intended] 品質レポートはブラウザの候補プレビュー生成を実行しないため、
-	// UI 初回 Auto 処理と同じ候補プラン数を表示見込みの根拠にする。ここでの判定は
-	// 実際にモーダルを開いた事実ではなく、候補生成失敗を含まない決定論的な診断である。
-	const candidatePlanCount = selectCandidatePlans(currentRun.analysis).length;
+	// [Intended] 表示見込みの判定には候補プレビューの生成結果を挟まず、UI 初回 Auto 処理と
+	// 同じ候補プラン数だけを根拠にする。ここでの判定は実際にモーダルを開いた事実ではなく、
+	// 候補生成の失敗を含まない決定論的な診断である。選択肢の画像は判定後に別途生成する。
+	const candidatePlans = selectCandidatePlans(currentRun.analysis);
+	const candidatePlanCount = candidatePlans.length;
 	const candidateModal = evaluateCandidateModalDecision({
 		isAuto: effectiveOptions.processingMode === "auto",
 		isInitial: true,
@@ -252,6 +304,9 @@ export const runQualityCase = (
 		warningCodes: currentRun.analysis.warnings,
 		candidatePreviewCount: candidatePlanCount,
 	});
+	// [Policy] 候補の再処理はレポート生成時だけ行う。品質ゲートは候補選択を判定に使わないので、
+	// ゲート実行へ候補 1 件あたり 1 回の追加処理を持ち込まない。
+	let candidateOptions: QualityCandidateOption[] = [];
 	if (writeArtifacts) {
 		const outputDirectory = path.join(REPORT_ROOT, caseDirectory);
 		mkdirSync(outputDirectory, { recursive: true });
@@ -282,6 +337,16 @@ export const runQualityCase = (
 			path.join(REPORT_ROOT, files.backgroundMask),
 			createBackgroundMaskImage(currentRun.result),
 		);
+		// [Intended] candidateModalEligible は Auto 以外でも真になりうる（表示可否は
+		// candidateModalDecision が担う）ため、判定にはモーダルの表示見込みそのものを使う。
+		if (candidateModal.candidateModalDecision === "would-show") {
+			candidateOptions = buildCandidateOptions(
+				candidatePlans,
+				input,
+				options,
+				caseDirectory,
+			);
+		}
 	}
 	return {
 		id: qualityCase.id,
@@ -311,6 +376,7 @@ export const runQualityCase = (
 		candidateModalReason: candidateModal.candidateModalReason,
 		warningPresentation: candidateModal.warningPresentation,
 		candidatePlanCount,
+		candidateOptions,
 		expectedWidth: expected.width,
 		expectedHeight: expected.height,
 		gridCandidates: topCandidates.map((candidate) => ({

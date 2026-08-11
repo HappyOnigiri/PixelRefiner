@@ -8,3 +8,6 @@ export const escapeHtml = (value: string): string =>
 
 export const formatMetric = (value: number | undefined): string =>
 	value === undefined ? "-" : Number(value.toFixed(3)).toString();
+
+export const formatConfidence = (value: number | null): string =>
+	value === null ? "-" : value.toFixed(4);

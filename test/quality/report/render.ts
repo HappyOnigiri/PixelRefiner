@@ -1,87 +1,18 @@
 import path from "node:path";
-import type {
-	CandidateModalDecision,
-	WarningPresentation,
-} from "../../../src/core/candidate-modal-decision";
 import type { QualityCaseResult, QualityResults } from "../types";
+import {
+	renderAutoDiagnosticBadges,
+	renderCandidateDiagnostics,
+	renderWarningDetails,
+} from "./auto-diagnostics";
 import { runQualityReportClient } from "./client";
-import { escapeHtml, formatMetric } from "./format";
+import { escapeHtml, formatConfidence, formatMetric } from "./format";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 import { renderTargetComparison, TARGET_STATE_KEYS } from "./target-section";
 import { REPORT_TRANSLATIONS } from "./translations";
 
 const renderClientScript = (): string =>
 	`window.__QUALITY_REPORT_TRANSLATIONS__=${JSON.stringify(REPORT_TRANSLATIONS)};(${runQualityReportClient.toString()})();`;
-
-const formatConfidence = (value: number | null): string =>
-	value === null ? "-" : value.toFixed(4);
-
-const candidateModalDecisionKey = (
-	decision: CandidateModalDecision,
-): string => {
-	if (decision === "would-show") return "candidateModalWouldShow";
-	if (decision === "would-not-show") return "candidateModalWouldNotShow";
-	return "candidateModalNotApplicable";
-};
-
-const warningPresentationKey = (presentation: WarningPresentation): string => {
-	if (presentation === "candidate-modal")
-		return "warningPresentationCandidateModal";
-	if (presentation === "toast") return "warningPresentationToast";
-	return "warningPresentationNone";
-};
-
-const renderProcessingWarnings = (warnings: readonly string[]): string => {
-	if (warnings.length === 0) return '<span data-i18n="none">none</span>';
-	return warnings
-		.map(
-			(warning) =>
-				`<span class="warning-item"><code>${escapeHtml(warning)}</code> ` +
-				`<span data-i18n="processingWarnings.${escapeHtml(warning)}">${escapeHtml(warning)}</span></span>`,
-		)
-		.join(", ");
-};
-
-const renderCandidateModalSummary = (result: QualityCaseResult): string => {
-	if (result.options.processingMode !== "auto") return "";
-	return `<p class="candidate-diagnostics">
-		<strong data-i18n="candidateDiagnostics">Auto candidate diagnostic</strong>:
-		<span data-i18n="classificationConfidence">Classification confidence</span>
-		${formatConfidence(result.classificationConfidence)} &middot;
-		<span data-i18n="gridConfidence">Grid confidence</span>
-		${formatConfidence(result.gridConfidence)} &middot;
-		<span data-i18n="candidateModal">Candidate modal</span>
-		<span data-i18n="${candidateModalDecisionKey(result.candidateModalDecision)}">${escapeHtml(result.candidateModalDecision)}</span>
-		&middot; <span data-i18n="warningPresentation">WARNING presentation</span>
-		<span data-i18n="${warningPresentationKey(result.warningPresentation)}">${escapeHtml(result.warningPresentation)}</span>
-		&middot; <span data-i18n="candidateModalReason">Reason</span>
-		<code>${escapeHtml(result.candidateModalReason)}</code>
-		&middot; <span data-i18n="candidatePlanCount">Candidate plans</span>
-		${result.candidatePlanCount}
-		&middot; <span data-i18n="warnings">Warnings</span>:
-		${renderProcessingWarnings(result.warnings)}
-	</p>`;
-};
-
-const renderCandidateModalDetail = (result: QualityCaseResult): string => {
-	if (result.options.processingMode !== "auto") return "";
-	return `<section class="candidate-diagnostics">
-		<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>
-		<dl>
-			<dt data-i18n="warnings">Warnings</dt><dd>${renderProcessingWarnings(result.warnings)}</dd>
-			<dt data-i18n="classificationConfidence">Classification confidence</dt><dd>${formatConfidence(result.classificationConfidence)}</dd>
-			<dt data-i18n="gridConfidence">Grid confidence</dt><dd>${formatConfidence(result.gridConfidence)}</dd>
-			<dt data-i18n="candidateModal">Candidate modal</dt>
-			<dd><span data-i18n="${candidateModalDecisionKey(result.candidateModalDecision)}">
-				${escapeHtml(result.candidateModalDecision)}</span></dd>
-			<dt data-i18n="warningPresentation">WARNING presentation</dt>
-			<dd><span data-i18n="${warningPresentationKey(result.warningPresentation)}">
-				${escapeHtml(result.warningPresentation)}</span></dd>
-			<dt data-i18n="candidateModalReason">Reason</dt><dd><code>${escapeHtml(result.candidateModalReason)}</code></dd>
-			<dt data-i18n="candidatePlanCount">Candidate plans</dt><dd>${result.candidatePlanCount}</dd>
-		</dl>
-	</section>`;
-};
 
 const formatGeneratedAt = (value: string): string => {
 	const generatedAt = new Date(value);
@@ -417,7 +348,6 @@ export const renderHtml = (results: QualityResults): string => {
 				' &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> ',
 				`${formatConfidence(result.confidence)}</small>`,
 			].join("");
-			const candidateModalSummary = renderCandidateModalSummary(result);
 			const targetFailures =
 				result.targetFailedAssertions.length === 0
 					? ""
@@ -471,12 +401,12 @@ export const renderHtml = (results: QualityResults): string => {
 				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 				<span class="badge parameter-${result.parameterMode}"
 					data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
+				${renderAutoDiagnosticBadges(result)}
 				${qualityMeasurement}
 			</h2>
 			${targetFailures}
 			<p class="case-description" data-description-en="${escapeHtml(description.en)}"
 				data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
-			${candidateModalSummary}
 			<div class="images primary">${primaryImages}</div><p><a class="detail-link"
 				href="${escapeHtml(path.posix.dirname(result.files.result))}/index.html" data-i18n="details">Details</a></p>
 		</article>`;
@@ -528,7 +458,6 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 		["baselineDifference", "Baseline difference", result.files.baselineDiff],
 		["backgroundMask", "Background mask", result.files.backgroundMask],
 	]);
-	const warnings = renderProcessingWarnings(result.warnings);
 	const metricState = (
 		key: string,
 		hasBaseline: boolean,
@@ -697,14 +626,14 @@ ${DETAIL_REPORT_STYLES}	</style>
 			<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>
 		</section>
 		${renderTargetComparison(result)}
-		${renderCandidateModalDetail(result)}
+		${renderWarningDetails(result)}
+		${renderCandidateDiagnostics(result)}
 		<section>
 			<h2 data-i18n="options">Options</h2>
 			<dl>
 				<dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd>
 				<dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd>
 				<dt data-i18n="gridConfidence">Grid confidence</dt><dd>${formatConfidence(result.gridConfidence)}</dd>
-				<dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd>
 				<dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd>
 				<dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd>
 				<dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd>

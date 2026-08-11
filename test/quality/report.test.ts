@@ -187,6 +187,22 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('processingTime":"時間"');
 		expect(html).toContain('gridConfidence":"グリッド信頼度"');
 		expect(html).toContain('classificationConfidence":"自動分類信頼度"');
+		// [Intended] 一覧はバッジだけを出す。診断値を並べると 1 ケースの高さが伸び、
+		// 目標品質の一覧性が落ちるため、信頼度と判定理由はケース詳細へ寄せる。
+		expect(html).not.toContain('class="candidate-diagnostics"');
+		expect(html).not.toContain('data-i18n="candidateModalReason"');
+		expect(html).not.toContain('data-i18n="candidatePlanCount"');
+		expect(html).not.toContain('data-i18n="warningPresentation"');
+		expect(html).toContain('hasWarnings":"WARNINGあり"');
+		expect(html).toContain('hasCandidateSelection":"候補選択あり"');
+		expect(html.match(/data-i18n="hasWarnings"/g)?.length ?? 0).toBe(
+			results.cases.filter((result) => result.warnings.length > 0).length,
+		);
+		expect(html.match(/data-i18n="hasCandidateSelection"/g)?.length ?? 0).toBe(
+			results.cases.filter(
+				(result) => result.candidateModalDecision === "would-show",
+			).length,
+		);
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -310,9 +326,40 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(autoDetail).toContain(
 			'data-i18n="warningPresentationCandidateModal"',
 		);
+		// [Intended] WARNING は文言だけでなく、どの判定で付いたかまで詳細から辿れること。
+		expect(autoDetail).toContain(
+			'<h2 data-i18n="warningDetails">WARNING details</h2>',
+		);
 		expect(autoDetail).toContain(
 			'data-i18n="processingWarnings.LOW_GRID_CONFIDENCE"',
 		);
+		expect(autoDetail).toContain(
+			'data-i18n="warningTriggers.LOW_GRID_CONFIDENCE"',
+		);
+		expect(autoDetail).toContain(
+			'data-i18n="candidateModalReasons.LOW_GRID_CONFIDENCE"',
+		);
+		// [Intended] 候補選択モーダルが出る見込みのケースは、選択肢とその画像を詳細へ出す。
+		expect(autoDetail).toContain(
+			'<h3 data-i18n="candidateOptions">Candidate options</h3>',
+		);
+		expect(autoDetail).toContain('class="images candidate-options"');
+		const autoCandidateOptions =
+			results.cases.find((result) => result.id === autoCaseId)
+				?.candidateOptions ?? [];
+		expect(autoCandidateOptions.length).toBeGreaterThan(0);
+		for (const option of autoCandidateOptions) {
+			expect(autoDetail).toContain(`data-i18n="candidateKinds.${option.kind}"`);
+			if (option.file === null) continue;
+			expect(existsSync(path.join(reportRoot, option.file))).toBe(true);
+			expect(autoDetail).toContain(`src="${path.posix.basename(option.file)}"`);
+		}
+		// [Intended] 候補生成はモーダルが出る見込みのケースだけに限る。品質ゲートと
+		// 表示されないケースに候補 1 件あたり 1 回の追加処理を持ち込まないため。
+		for (const result of results.cases) {
+			if (result.candidateModalDecision === "would-show") continue;
+			expect(result.candidateOptions).toEqual([]);
+		}
 		expect(autoDetail).toContain('data-i18n="sizeMatches"');
 		expect(results.summary.targetMissing).toBe(0);
 		expect(html).toContain("品質レポート");

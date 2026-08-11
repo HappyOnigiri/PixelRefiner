@@ -4,9 +4,13 @@ import type {
 	WarningPresentation,
 } from "../../src/core/candidate-modal-decision";
 import type { ProcessOptions } from "../../src/core/processor";
-import type { DitherMode } from "../../src/shared/types";
+import type {
+	CandidateKind,
+	DitherMode,
+	ProcessingRoute,
+} from "../../src/shared/types";
 
-export const QUALITY_REPORT_VERSION = "4";
+export const QUALITY_REPORT_VERSION = "5";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
@@ -70,6 +74,24 @@ export type QualityImageCase = {
 	assertions: string[];
 	expectation: QualityExpectation;
 	assets: FixtureAssetProvenance[];
+};
+
+/**
+ * 候補選択モーダルに並ぶ選択肢 1 件。ブラウザと同じ候補プランから作る。
+ * [Intended] 生成に失敗した候補も欠番として残す。表示見込みの判定はプラン数だけで
+ * 決めるため、生成失敗は判定に現れず、ここを見ないと気付けない。
+ */
+export type QualityCandidateOption = {
+	id: string;
+	kind: CandidateKind;
+	recommended: boolean;
+	processingMode: ProcessingRoute;
+	/** 生成に失敗した候補は null。 */
+	outputWidth: number | null;
+	outputHeight: number | null;
+	colorCount: number | null;
+	/** 選択肢の出力画像。生成に失敗した候補は null。 */
+	file: string | null;
 };
 
 export type QualityMetadata = {
@@ -182,6 +204,8 @@ export type QualityCaseResult = {
 	warningPresentation: WarningPresentation;
 	/** 品質レポートでは実際のプレビューではなく、候補プラン数を表示見込みの根拠に使う。 */
 	candidatePlanCount: number;
+	/** 候補選択モーダルが出る見込みのケースだけ生成する選択肢。それ以外は空配列。 */
+	candidateOptions: QualityCandidateOption[];
 	expectedWidth: number;
 	expectedHeight: number;
 	gridCandidates: Array<{
