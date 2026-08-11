@@ -10,7 +10,7 @@ APIs.
 ```sh
 pnpm test:quality          # lightweight smoke profile for local checks
 pnpm test:quality:full     # all cases used by the pull-request quality gate
-pnpm test:quality:report   # write tmp/quality-report/latest
+make report                # only generate tmp/quality-report/latest
 pnpm test:quality:update   # intentionally replace the stored baseline
 ```
 
@@ -24,13 +24,18 @@ case never shares a shard with another heavy one. `cases.test.ts` fails if the
 number of shard files stops matching `QUALITY_SHARD_COUNT` or if the split no
 longer covers every selected case exactly once.
 
-`pnpm test:quality:report` therefore runs Vitest twice. The first run executes
+`make report` therefore runs Vitest twice. The first run executes
 the shards, writes the per-case images under `tmp/quality-report/latest`, and
 stores each shard's case results in `tmp/quality-report/partial`. The second run
 executes [`report.test.ts`](./report.test.ts), which merges the partial results
 back into manifest order and writes `results.json`, `summary.md`, and the HTML
 report. Because ordering is restored from the manifest, the report is identical
 to a serial run apart from the measured runtime and memory values.
+
+The pull-request quality workflow enables report and gate modes together. Each
+case is processed once, and that single result is used for both the report and
+the regression assertions. `make report` deliberately leaves gate mode disabled
+so local report generation performs only the work needed for its artifacts.
 
 `pnpm test:quality:update` also runs Vitest twice. The first run
 (`quality:update:generate`) executes the shards with
@@ -76,7 +81,7 @@ as unassessable rather than passed.
    understandable on its own: identify the relevant input characteristics, the
    processing under test, and exactly what the output must preserve. Do not use
    vague phrases such as "preserve the image."
-4. Run `pnpm test:quality:full` and `pnpm test:quality:report`.
+4. Run `pnpm test:quality:full` and `make report`.
 5. Inspect the report visually. If the current baseline should intentionally change, run `pnpm test:quality:update` and review both `baseline.json` and the PNG files under `test/quality/baseline/`.
 
 Manifest validation fails for duplicate case IDs, missing required degradation

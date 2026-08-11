@@ -93,7 +93,7 @@ def main():
         ("Custom Rules", ["make", "check-ts-rules"], False),
         ("TS Line Length", ["make", "check-ts-line-length"], False),
         ("File Line Count", ["make", "check-file-line-count"], True),
-        ("Tests", ["make", "test"], False),
+        ("Unit Tests", ["make", "test-unit"], False),
     ]
 
     if not execute_phase("Check Phase", check_tasks):

@@ -81,7 +81,7 @@ grid refinement, continuous-tone conversion, or safe preservation when the
 result is uncertain. Low-confidence grid results open the candidate chooser
 instead of forcing an extreme reduction.
 
-Run `pnpm test:quality:report` to compare the current output with the base
+Run `make report` to compare the current output with the base
 baseline. Pull requests publish the quality-gate result and the comparison
 summary in GitHub Actions.
 

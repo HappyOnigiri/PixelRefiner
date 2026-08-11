@@ -47,6 +47,9 @@ const QUALITY_CASE_TIMEOUT_MS = 300_000;
 
 const reportMode = process.env.QUALITY_REPORT === "1";
 const updateMode = process.env.UPDATE_QUALITY_BASELINE === "1";
+// [Policy] 通常の品質テストはゲートとして動作する。レポート生成時だけ明示的に
+// QUALITY_GATE=1 を併用すると、同じ処理結果でレポートとゲートの両方を作る。
+const gateMode = process.env.QUALITY_GATE === "1" || !reportMode;
 const profile = qualityProfileFromEnvironment();
 
 // [Intended] 実行コストは入力の画素数にほぼ比例するため、これを重みに使う。
@@ -105,6 +108,7 @@ export const shardCases = (
 const registerGateShard = (
 	cases: QualityImageCase[],
 	shardIndex: number,
+	writeReport: boolean,
 ): void => {
 	const baselineById = new Map(
 		loadBaseline().cases.map((baselineCase) => [baselineCase.id, baselineCase]),
@@ -113,10 +117,12 @@ const registerGateShard = (
 	// 従来どおりすべての regression がゲート失敗になる。
 	const allowDeclaredAutoChanges = allowDeclaredAutoChangesFromEnvironment();
 	const declaredRegressions: QualityGateWarning[] = [];
+	const results: QualityCaseResult[] = [];
 	it.each(cases)(
-		"evaluates $id",
+		writeReport ? "reports and evaluates $id" : "evaluates $id",
 		(qualityCase) => {
-			const result = runQualityCase(qualityCase);
+			const result = runQualityCase(qualityCase, writeReport);
+			if (writeReport) results.push(result);
 			const isAutoCase = caseParameterMode(qualityCase) === "auto";
 			expect(result.metrics.byteIdentical).toBe(true);
 			// [Intended] 自動判定ケースには正解画像がなく、破綻や出力サイズは
@@ -178,6 +184,7 @@ const registerGateShard = (
 	);
 	afterAll(() => {
 		writeQualityGateWarningPartial(shardIndex, declaredRegressions);
+		if (writeReport) writeQualityReportPartial(shardIndex, results);
 	});
 };
 
@@ -232,6 +239,8 @@ const registerReportShard = (
  * シャードファイルから呼ぶ入口。1 始まりのシャード番号を受け取る。
  * UPDATE_QUALITY_BASELINE=1 のときはベースライン更新の並列生成、
  * QUALITY_REPORT=1 のときはレポート成果物の生成、それ以外は品質ゲートを担う。
+ * QUALITY_REPORT=1 と QUALITY_GATE=1 を併用した場合は、各ケースを一度だけ測定して
+ * 両方を実行する。
  */
 export const runCasesShard = (shardIndex: number): void => {
 	const selectedCases = selectCasesForProfile(loadCases());
@@ -253,9 +262,13 @@ export const runCasesShard = (shardIndex: number): void => {
 			return;
 		}
 		if (reportMode) {
-			registerReportShard(assignedCases, shardIndex);
+			if (gateMode) {
+				registerGateShard(assignedCases, shardIndex, true);
+			} else {
+				registerReportShard(assignedCases, shardIndex);
+			}
 			return;
 		}
-		registerGateShard(assignedCases, shardIndex);
+		registerGateShard(assignedCases, shardIndex, false);
 	});
 };
