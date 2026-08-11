@@ -37,12 +37,16 @@ const colorAt = (
 };
 
 const GREEN = [21, 236, 14] as const;
+const WHITE = [255, 255, 255] as const;
 
-const greenModel = (): BackgroundModel => ({
+/** 単一クラスタの背景モデル。差し替えの判定は rgb だけを見る。 */
+const singleClusterModel = (
+	rgb: readonly [number, number, number],
+): BackgroundModel => ({
 	clusters: [
 		{
 			color: { L: 0.87, a: -0.23, b: 0.18 },
-			rgb: { r: GREEN[0], g: GREEN[1], b: GREEN[2] },
+			rgb: { r: rgb[0], g: rgb[1], b: rgb[2] },
 			weight: 1,
 			borderCoverage: 1,
 			variance: 0,
@@ -51,6 +55,8 @@ const greenModel = (): BackgroundModel => ({
 	confidence: 1,
 	borderBandRatio: 0.08,
 });
+
+const greenModel = (): BackgroundModel => singleClusterModel(GREEN);
 
 /** セル 4x4、出力 2x2 のグリッド。 */
 const grid: PixelGrid = {
@@ -67,16 +73,23 @@ const grid: PixelGrid = {
 	score: 0,
 };
 
+/** 背景色 bg と color を、bg の比率 share で混ぜた色。 */
+const mixWith = (
+	bg: readonly [number, number, number],
+	share: number,
+	color: readonly [number, number, number],
+): [number, number, number, number] => [
+	Math.round(bg[0] * share + color[0] * (1 - share)),
+	Math.round(bg[1] * share + color[1] * (1 - share)),
+	Math.round(bg[2] * share + color[2] * (1 - share)),
+	255,
+];
+
 /** 背景色と黒を比率 share で混ぜた色。 */
 const mixWithGreen = (
 	share: number,
 	color: readonly [number, number, number],
-): [number, number, number, number] => [
-	Math.round(GREEN[0] * share + color[0] * (1 - share)),
-	Math.round(GREEN[1] * share + color[1] * (1 - share)),
-	Math.round(GREEN[2] * share + color[2] * (1 - share)),
-	255,
-];
+): [number, number, number, number] => mixWith(GREEN, share, color);
 
 describe("cleanBackgroundContaminatedEdges", () => {
 	it("背景色が混ざった縁の色を、同じセルにある本来の色へ差し替える", () => {
@@ -131,6 +144,48 @@ describe("cleanBackgroundContaminatedEdges", () => {
 		expect(
 			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
 		).toBe(0);
+		expect(colorAt(image, 0, 0)).toEqual([120, 20, 20, 255]);
+	});
+
+	it("同じセルに濃淡がある被写体で、汚染のない縁の色を暗い側へ寄せない", () => {
+		// 明るい赤は白背景の混色では作れない色（混色なら緑と青がもっと高くなる）。
+		// セル内に暗い赤があっても、混色として説明できないので差し替えてはいけない。
+		const source = createImage(8, 8, (_x, y) =>
+			y < 2 ? [200, 60, 60, 255] : [120, 20, 20, 255],
+		);
+		const image = createImage(2, 2, (_x, y) =>
+			y === 0 ? [200, 60, 60, 255] : [0, 0, 0, 0],
+		);
+
+		expect(
+			cleanBackgroundContaminatedEdges(
+				image,
+				source,
+				grid,
+				singleClusterModel(WHITE),
+			),
+		).toBe(0);
+		expect(colorAt(image, 0, 0)).toEqual([200, 60, 60, 255]);
+	});
+
+	it("白背景が混ざった縁の色は、同じセルにある本来の色へ差し替える", () => {
+		// 上の判定を厳しくしても、混色として説明できる色は差し替わる。
+		const contaminated = mixWith(WHITE, 0.3, [120, 20, 20]);
+		const source = createImage(8, 8, (_x, y) =>
+			y < 2 ? contaminated : [120, 20, 20, 255],
+		);
+		const image = createImage(2, 2, (_x, y) =>
+			y === 0 ? contaminated : [0, 0, 0, 0],
+		);
+
+		expect(
+			cleanBackgroundContaminatedEdges(
+				image,
+				source,
+				grid,
+				singleClusterModel(WHITE),
+			),
+		).toBe(2);
 		expect(colorAt(image, 0, 0)).toEqual([120, 20, 20, 255]);
 	});
 

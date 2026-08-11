@@ -111,6 +111,11 @@ const probeMixingLine = (
 	const width = source.width;
 	const noiseFloor = BACKGROUND_EDGE_CLEANUP_LIMITS.lineNoiseFloor;
 	const slopeRatio = BACKGROUND_EDGE_CLEANUP_LIMITS.lineSlopeRatio;
+	const maxOffAxis = BACKGROUND_EDGE_CLEANUP_LIMITS.maxLineOffAxis;
+	// [Intended] 出力色を「背景と候補色の混色」として説明できる範囲で候補を打ち切る。
+	// 上限が無いと、混色では説明できないほど遠い色（別の陰影・別部位）まで代表色になる。
+	const maxDistance =
+		currentDistance / (1 - BACKGROUND_EDGE_CLEANUP_LIMITS.maxBackgroundShare);
 	let farthest = currentDistance;
 	for (let y = y0; y < y1; y += 1) {
 		const row = y * width;
@@ -121,11 +126,14 @@ const probeMixingLine = (
 			const deltaG = data[offset + 1] - bgG;
 			const deltaB = data[offset + 2] - bgB;
 			const distance = deltaR * dirR + deltaG * dirG + deltaB * dirB;
-			if (distance <= farthest) continue;
+			if (distance <= farthest || distance > maxDistance) continue;
 			const offAxisR = deltaR - distance * dirR;
 			const offAxisG = deltaG - distance * dirG;
 			const offAxisB = deltaB - distance * dirB;
-			const allowed = noiseFloor + slopeRatio * (distance - currentDistance);
+			const allowed = Math.min(
+				maxOffAxis,
+				noiseFloor + slopeRatio * (distance - currentDistance),
+			);
 			if (
 				offAxisR * offAxisR + offAxisG * offAxisG + offAxisB * offAxisB >
 				allowed * allowed
@@ -161,11 +169,14 @@ const probeMixingLine = (
 			const deltaG = data[offset + 1] - bgG;
 			const deltaB = data[offset + 2] - bgB;
 			const distance = deltaR * dirR + deltaG * dirG + deltaB * dirB;
-			if (distance < minimumDistance) continue;
+			if (distance < minimumDistance || distance > maxDistance) continue;
 			const offAxisR = deltaR - distance * dirR;
 			const offAxisG = deltaG - distance * dirG;
 			const offAxisB = deltaB - distance * dirB;
-			const allowed = noiseFloor + slopeRatio * (distance - currentDistance);
+			const allowed = Math.min(
+				maxOffAxis,
+				noiseFloor + slopeRatio * (distance - currentDistance),
+			);
 			if (
 				offAxisR * offAxisR + offAxisG * offAxisG + offAxisB * offAxisB >
 				allowed * allowed
@@ -195,9 +206,12 @@ const probeMixingLine = (
  *
  * [Intended] 汚染画素は背景色 bg と本来の色 C の線形混色なので、bg から出力色へ
  * 伸ばした半直線の上に C が乗る。同じセルの原寸画素からその線上でより背景から遠い色を
- * 探し、見つかればそこへ差し替える。すでに本来の色そのものなら、より遠い画素は
- * 存在しないので何も起きない。倍率のようなしきい値で「背景に近い色」を決めないため、
+ * 探し、見つかればそこへ差し替える。倍率のようなしきい値で「背景に近い色」を決めないため、
  * 背景色に似た色を意図的に持つ被写体を巻き込まない。
+ *
+ * [Intended] 候補は「出力色を bg と候補色の混色として説明できる」範囲に限る。線からの
+ * ずれと背景混合率の両方に上限があるので、同じセルに濃淡がある被写体で、汚染のない縁画素が
+ * 別の陰影の色へ寄ることはない。
  *
  * [Policy] アルファは触らない。シルエット・出力サイズ・トリミング・格子検出の結果を
  * 一切動かさず、色だけを直す。背景の許容を広げてオブジェクトを欠けさせないための制約。
