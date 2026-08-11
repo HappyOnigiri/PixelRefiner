@@ -244,14 +244,6 @@ const renderReportSidebar = (results: QualityResults): string => {
 	${reportMetadata}
 	<div class="filter-panel">
 		<fieldset class="filter-group">
-			<legend data-i18n="language">Language</legend>
-				<div class="locale-row">
-					<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
-					<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
-					<button class="locale-button" type="button" data-locale="zh-CN" aria-pressed="false">简体中文</button>
-				</div>
-		</fieldset>
-		<fieldset class="filter-group">
 			<legend data-i18n="qualityStatus">Target quality</legend>
 			<div class="filter-row">
 				<button class="filter-button active" type="button" data-quality-filter="" aria-pressed="true">
@@ -317,6 +309,14 @@ const renderReportSidebar = (results: QualityResults): string => {
 			<strong id="visible-count">0</strong> / ${results.summary.caseCount}
 			<span data-i18n="casesShown">cases</span>
 		</p>
+		<fieldset class="filter-group">
+			<legend data-i18n="language">Language</legend>
+			<div class="locale-row">
+				<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
+				<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
+				<button class="locale-button" type="button" data-locale="zh-CN" aria-pressed="false">简体中文</button>
+			</div>
+		</fieldset>
 	</div>
 </aside>`;
 };

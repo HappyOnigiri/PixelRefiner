@@ -7,6 +7,7 @@ a { color: #b9a7ff; }
 	grid-area: sidebar;
 	position: sticky;
 	top: 16px;
+	margin-bottom: 20px;
 	display: grid;
 	gap: 14px;
 	max-height: calc(100vh - 32px);

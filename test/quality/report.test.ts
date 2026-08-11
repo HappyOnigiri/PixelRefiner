@@ -73,10 +73,13 @@ describe.skipIf(!enabled)("quality report", () => {
 			'<legend data-i18n="parameterMode">',
 		);
 		const searchIndex = html.indexOf('class="search-row"');
+		const languageGroupIndex = html.indexOf('<legend data-i18n="language">');
 		expect(qualityGroupIndex).toBeGreaterThan(-1);
 		expect(changeGroupIndex).toBeGreaterThan(qualityGroupIndex);
 		expect(parameterGroupIndex).toBeGreaterThan(changeGroupIndex);
 		expect(searchIndex).toBeGreaterThan(parameterGroupIndex);
+		expect(languageGroupIndex).toBeGreaterThan(searchIndex);
+		expect(html).toContain("margin-bottom: 20px;");
 		expect(html).toContain('data-parameter-filter=""');
 		expect(html).toContain('data-parameter-filter="explicit"');
 		expect(html).toContain('data-parameter-filter="auto"');
