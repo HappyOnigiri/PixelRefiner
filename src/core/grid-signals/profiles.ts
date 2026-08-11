@@ -120,6 +120,36 @@ export const createAxisSignalProfile = (
 	return { colorBoundary, luminanceGradient, alphaGradient, localGradients };
 };
 
+/**
+ * 両軸の信号プロファイルを、輝度配列と直交方向の間引き幅ごと 1 度で作る。
+ *
+ * [Policy] プロファイルを必要とする箇所はこの関数を通す。輝度配列の生成と
+ * 間引き幅の算出を各所で書き写すと、片方だけ条件が変わったときに軸ごとの
+ * 走査範囲が食い違う。
+ */
+export const createAxisSignalProfiles = (
+	image: RawImage,
+	mask: RawImage,
+): {
+	x: AxisSignalProfile;
+	y: AxisSignalProfile;
+	orthogonalStride: number;
+} => {
+	const orthogonalStride = Math.max(
+		1,
+		Math.ceil(
+			Math.max(image.width, image.height) /
+				GRID_SEARCH_LIMITS.maxAnalysisDimension,
+		),
+	);
+	const luminance = createLinearLuminance(image);
+	return {
+		x: createAxisSignalProfile(image, mask, "x", orthogonalStride, luminance),
+		y: createAxisSignalProfile(image, mask, "y", orthogonalStride, luminance),
+		orthogonalStride,
+	};
+};
+
 export const combineSignalProfiles = (
 	profile: AxisSignalProfile,
 	options: GridSignalOptions,

@@ -1833,6 +1833,120 @@
     ]
   },
   {
+    "id": "restore-soft-edged-sprite-to-34x47",
+    "featureIds": ["PRF-400", "force-size"],
+    "optionNames": [
+      "processingMode",
+      "bgExtractionMethod",
+      "forcePixelsW",
+      "forcePixelsH"
+    ],
+    "profile": "full",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "options": {
+      "processingMode": "refine",
+      "bgExtractionMethod": "auto",
+      "forcePixelsW": 34,
+      "forcePixelsH": 47
+    },
+    "input": "test/fixtures/quality_prf400_soft_edged_sprite.png",
+    "expected": "test/fixtures/quality_prf400_soft_edged_sprite-expect.png",
+    "assertions": [
+      "hand-given grid scale",
+      "output size",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_soft_edged_sprite.png",
+        "sourceType": "generated-ai",
+        "provider": "OpenAI (ChatGPT)",
+        "prompt": "16×16 ドット相当のレトロなドット絵風キャラクター（正面向きの騎士）を、1024×1024 の大きな画像として描いてください。ピクセルの境界がぼやけ、輪郭にアンチエイリアスがかかった「ドット絵っぽいイラスト」にしてください。背景はキャラクターに使わない単色の緑、文字は入れないでください。",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_soft_edged_sprite-expect.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/quality_prf400_soft_edged_sprite.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      }
+    ]
+  },
+  {
+    "id": "restore-blocky-sprite-to-20x18",
+    "featureIds": ["PRF-400", "force-size"],
+    "optionNames": [
+      "processingMode",
+      "bgExtractionMethod",
+      "forcePixelsW",
+      "forcePixelsH"
+    ],
+    "profile": "full",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["ambiguous-grid-scale"],
+    "options": {
+      "processingMode": "refine",
+      "bgExtractionMethod": "auto",
+      "forcePixelsW": 20,
+      "forcePixelsH": 18
+    },
+    "input": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
+    "expected": "test/fixtures/quality_prf400_ambiguous_grid_scale-expect.png",
+    "assertions": [
+      "hand-given coarse grid scale",
+      "output size",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
+        "sourceType": "generated-ai",
+        "provider": "OpenAI (ChatGPT)",
+        "prompt": "ドット絵のキャラクター（丸い顔のスライム）を描いてください。すべてのドットがちょうど 2×2 の同じ色の塊で構成されているように塗ってください。1024×1024、背景はキャラクターに使わない緑一色、文字なし。",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_ambiguous_grid_scale-expect.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      }
+    ]
+  },
+  {
     "id": "restore-alpha-only-grid-to-8x8",
     "featureIds": ["PRF-120"],
     "optionNames": ["gridSignals"],

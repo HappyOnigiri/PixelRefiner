@@ -1,6 +1,7 @@
 {
 	"comment": "自動判定ケースの目標画像の由来。source は同じ入力を処理する explicit ケースで、既定ではその承認済みベースラインを test/quality/targets/<case id>.png へ固定してある。auto の出力自体をレビューで目標として承認した場合は差し替え済みの旨を note に残し、source は許容値の継承元として保持する。",
-	"excluded": {},
+	"excluded": {
+},
 	"targets": {
 		"auto-auto-grid-detection": {
 			"source": "trim-auto-grid",
@@ -16,6 +17,14 @@
 		"auto-no-trimming": {
 			"source": "remove-background-preserve-canvas",
 			"note": "explicit 側はキャンバスを保持する 119x65 だが、auto は既定でトリムするため出力サイズが原理的に一致しない。auto の出力（24x33）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
+		},
+		"auto-quality-prf400-ambiguous-grid-scale": {
+			"source": "restore-blocky-sprite-to-20x18",
+			"note": "生成 AI のドット絵風イラストで、論理セルが 39.7px か、その約 1/5 の 7.9px かを画素だけでは決めきれない。目標は人手で粗い側の 20x18 を与えた出力で、Auto は 100x91 まで細かく読んだまま LOW_GRID_CONFIDENCE と候補選択を出す。目標未達のまま置き、倍率選択が改善したときに縮む距離として使う。"
+		},
+		"auto-quality-prf400-soft-edged-sprite": {
+			"source": "restore-soft-edged-sprite-to-34x47",
+			"note": "生成 AI のドット絵風イラストで、セル境界がアンチエイリアスで鈍っている。目標は人手で 34x47 を与えた出力で、Auto は 33x47 へ着地し横 1 セル足りない。目標未達のまま置き、その差が埋まるかを追う。警告は採用した格子より強い境界証拠を持つ倍率が別にあること（証拠の食い違い）から出ており、証拠の絶対量が薄いことによるものではない。"
 		},
 		"auto-resize-and-remove-bg": {
 			"source": "remove-background-trim-auto-grid"

@@ -128,7 +128,12 @@ export const PROCESS_ANALYSIS_THRESHOLDS = {
 	maxAxisScoreDifferenceRatio: 0.9,
 	gridCandidateConfidenceThreshold: 0.3,
 	gridCandidateSampleLimit: 65536,
-	gridCandidateReconstructionScale: 48,
+	/**
+	 * 候補の再構成誤差を 1/(1 + error * scale) で点数化するときの傾き。
+	 * [Intended] アンサンブル側の reconstructionScore と同じ形・同じ強さにする。
+	 * 線形に引く旧式では、わずかなアンチエイリアスでも全候補が 0 点へ潰れていた。
+	 */
+	gridCandidateReconstructionScale: 12,
 	legacyPreserveCandidateScore: 1_000_000,
 } as const;
 
@@ -337,11 +342,85 @@ export const TRIMMED_GRID_SEARCH_WEIGHTS = {
 	 * 0.02〜0.64 の全域で 88x61、resize_with_trimming も全域で 90x26、no_trimming は
 	 * 0.04〜0.16 で 97x53、0.20 以上で 88x48）。倍率の精度を上げるには係数の調整では
 	 * なく内容に応じた指標が必要なので、この値だけを触っても改善しない。
+	 * その「内容に応じた指標」が境界コントラスト（BOUNDARY_CONTRAST_LIMITS）で、
+	 * 証拠が得られた入力ではそちらが採用格子を決める。
 	 */
 	complexityPenalty: 0.16,
 } as const;
 
+/**
+ * 予測セル境界に実エッジがどれだけ集まるかで格子を選ぶための基準値。
+ * 1.0 が「境界に偏りが無い＝格子の証拠なし」を意味する比率なので、
+ * しきい値はすべて 1.0 より上に置く。
+ */
+export const BOUNDARY_CONTRAST_LIMITS = {
+	/**
+	 * 採用格子の乗り換えを検討する最小値。
+	 * [Policy] これを下回る入力は格子そのものが読み取れていないので、
+	 * 既存の再構成ベースの選択を維持して挙動を変えない。
+	 */
+	minEvidence: 1.1,
+	/**
+	 * 再構成が選んだ格子から乗り換えるために必要な、境界コントラストの優位比。
+	 * [Policy] 僅差では乗り換えない。既存の判断を覆すのは、粗い格子のほうが
+	 * 明確に境界へ乗っている場合だけに限る。
+	 */
+	overrideRatio: 1.25,
+	/**
+	 * 乗り換え先として許す最小の出力高さ。
+	 * [Intended] 数セルしか無い格子は境界コントラストが偶然の一致で跳ね上がる
+	 * （実測: 8x8 が正解の fixture で 2x2 が最大値を取る）。周期の繰り返しが
+	 * 足りない候補は乗り換え先にしない。
+	 */
+	minOverrideOutH: 6,
+	/**
+	 * 乗り換えを許す倍音関係。再構成側の過分割は、正解の整数倍の細かさで現れる。
+	 * [Intended] 倍音以外への乗り換えを許すと、格子とは無関係の周期へ飛ぶ。
+	 */
+	harmonicFactors: [2, 3, 4, 6],
+	/** 各倍音の周囲を探す窓の幅（中心に対する比率）。 */
+	harmonicWindow: 0.1,
+	/**
+	 * 採用格子と、境界コントラストが最も強い格子とのずれ。これを超えたら
+	 * 「どの倍率を採るかで指標が食い違っている」とみなして候補選択を出す。
+	 */
+	contestedRatio: 0.1,
+	/**
+	 * 格子の証拠が十分だとみなす値。これ未満の入力は、出力が正しく見えても
+	 * 別の倍率が同程度に妥当なので、候補選択をユーザーへ出す。
+	 *
+	 * [Policy] 「格子が読めていない」と「格子は読めているが輪郭がぼけている」の
+	 * 境目に置く。この指標はぼけやアンチエイリアスが強い入力ほど 1.0 へ寄るため、
+	 * ぼけた入力を弾く高さに置くと正しい倍率を当てた結果まで警告になる
+	 * （実測: 正解サイズを出す high_resolution 1.053・bilinear 1.154・
+	 * bicubic 1.226・diagonal_grid 1.166 に対し、証拠なしの帯は 0.00〜1.017）。
+	 * 両帯の間で余白がもっとも広い位置を採る。
+	 */
+	confidentEvidence: 1.04,
+	/**
+	 * 境界コントラストが選んだ出力高さの周辺を、再構成誤差で詰め直す幅（行）。
+	 * [Intended] 境界コントラストは倍率を当てられるが、端数の丸めやトリミング位置の
+	 * ずれで 1〜2 行ぶれる。その範囲だけ再構成誤差に決めさせる。
+	 */
+	refineRadius: 3,
+} as const;
+
 export const TRIMMED_GRID_SEARCH_LIMITS = {
+	/**
+	 * 境界コントラストが探索するセル幅の上限（px）。
+	 * [Intended] 32px までしか見ないと、1 ドットが大きく描かれた入力
+	 * （AI 生成のドット絵風イラストなど）で正解のセル幅が範囲外になる。
+	 * 実測: 1254x1254 の生成画像でセル 39.7px / 45.8px が該当した。
+	 */
+	maxCellPixels: 64,
+	/**
+	 * 再構成誤差が探索するセル幅の上限（px）。
+	 * [Policy] こちらを広げると複雑度ペナルティとの釣り合いが変わり、既存の入力で
+	 * 選ばれる格子まで動く。範囲の拡張は境界コントラスト側だけに留める。
+	 */
+	reconstructionMaxCellPixels: 32,
+	/** 探索するセル幅の下限（px）。これ未満は過分割で再構成誤差が常に下がる。 */
+	minCellPixels: 4,
 	/** 論理セルのアスペクト差を別候補として評価する出力幅の上限。 */
 	aspectAdjustedMaxOutputWidth: 64,
 	/** 論理セルのアスペクト差を別候補として評価する出力高さの上限。 */

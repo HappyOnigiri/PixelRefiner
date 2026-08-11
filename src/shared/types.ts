@@ -25,6 +25,22 @@ export type PixelGrid = {
 	candidates?: PixelGrid[];
 	detectionFailedAxes?: Axis[];
 	signalScores?: GridSignalScores;
+	/**
+	 * 予測セル境界に実エッジが集まる度合い（1.0 で偏りなし）。
+	 * [Intended] 「格子として妥当か」ではなく「そもそも格子が読み取れているか」を表す。
+	 * 候補同士の相対比較では曖昧さを検出できないため、絶対量として持ち回す。
+	 */
+	gridEvidence?: number;
+	/**
+	 * 乗り換え先として許す出力高さの範囲で得られた、最大の境界コントラスト。
+	 * [Policy] 数セルしか無い格子は偶然の一致で跳ね上がるため、その範囲は含めない。
+	 */
+	gridEvidenceMax?: number;
+	/**
+	 * 採用格子と、境界がもっとも揃う格子が食い違っているか。
+	 * [Intended] 指標同士が別の倍率を指している状態で、曖昧さの直接の証拠になる。
+	 */
+	gridEvidenceContested?: boolean;
 };
 
 export type GridSignalOptions = {

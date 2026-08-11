@@ -1,5 +1,6 @@
 import {
 	BACKGROUND_MODEL_LIMITS,
+	BOUNDARY_CONTRAST_LIMITS,
 	PROCESS_ANALYSIS_THRESHOLDS,
 } from "../shared/config";
 import type {
@@ -73,6 +74,23 @@ const getGridSafety = (grid: PixelGrid, source: RawImage): GridSafety => {
 };
 
 /**
+ * 格子そのものが読み取れていない入力か。
+ *
+ * [Intended] 候補同士の点差では曖昧さを検出できない。実測では、正しく処理できている
+ * fixture の点差が 0.0001 なのに対し、倍率を取り違えた画像が 0.0021 と逆転していた。
+ * 絶対量である境界コントラストなら、格子の証拠が無い入力が 0.00〜1.02、
+ * 正しい倍率を当てた入力が 1.05 以上と素直に並ぶ。
+ */
+const hasWeakGridEvidence = (grid: PixelGrid): boolean => {
+	if (grid.gridEvidenceContested) return true;
+	const evidence = grid.gridEvidenceMax ?? grid.gridEvidence;
+	return (
+		evidence !== undefined &&
+		evidence < BOUNDARY_CONTRAST_LIMITS.confidentEvidence
+	);
+};
+
+/**
  * 検出グリッド由来の低信頼シグナルを警告コードとして返す。
  *
  * [Intended] preserve 経路の診断はセル 1x1 の合成グリッドで行うため、
@@ -94,9 +112,13 @@ export const detectedGridConfidenceWarnings = (
 		selectedGridConfidence === undefined ||
 		selectedGridConfidence <
 			PROCESS_ANALYSIS_THRESHOLDS.gridCandidateConfidenceThreshold;
+	// [Intended] 境界コントラストの判定もここへ通す。preserve を選んだ経路の分析対象は
+	// 証拠フィールドを持たない等倍格子に置き換わるため、この関数が検出格子を見ないと
+	// 候補信頼度がしきい値以上の入力で弱い証拠と食い違いが伝わらない。
 	if (
 		failedAxes > 0 ||
 		lowConfidence ||
+		hasWeakGridEvidence(grid) ||
 		getGridSafety(grid, source).lowConfidence
 	) {
 		warnings.push("LOW_GRID_CONFIDENCE");
@@ -236,6 +258,7 @@ export const createProcessingAnalysis = (
 	if (
 		gridSafety.lowConfidence ||
 		!selectionConfirmed ||
+		hasWeakGridEvidence(grid) ||
 		(grid.detectionFailedAxes?.length ?? 0) > 0
 	) {
 		warnings.push("LOW_GRID_CONFIDENCE");

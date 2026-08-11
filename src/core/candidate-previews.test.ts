@@ -319,7 +319,9 @@ describe("candidate previews", () => {
 		expect(processed.result.width).toBe(46);
 		expect(processed.result.height).toBe(13);
 		expect(processed.result.data).toEqual(expected.data);
-		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
+		// 採用した格子が候補の最上位として確定する。以前はサブスコアの減点で
+		// 信頼度がしきい値をわずかに下回り、正しい出力なのに未確定になっていた。
+		expect(processed.analysis.selectedCandidateIndex).toBe(0);
 		const autoResultIndex = processed.analysis.autoResultCandidateIndex;
 		expect(autoResultIndex).toBeDefined();
 		const autoResultCandidate =

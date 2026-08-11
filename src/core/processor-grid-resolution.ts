@@ -85,7 +85,7 @@ export const resolveProcessingGrid = ({
 					: undefined;
 			const est = getGridSearchFromTrimmedStrategy(
 				o.fastAutoGridFromTrimmed,
-			).search(cropped, croppedMask, sw, hint);
+			).search(cropped, croppedMask, sw, hint, o.gridSignals);
 			const phaseAwareEstimate =
 				o.fastAutoGridFromTrimmed && hint === undefined
 					? searchPhaseAwareGrid(cropped, croppedMask, o.gridSignals)
