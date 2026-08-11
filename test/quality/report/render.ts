@@ -392,7 +392,7 @@ export const renderHtml = (results: QualityResults): string => {
 				["result", "Result", result.files.result],
 				["groundTruthDifference", "Target difference", result.files.diff],
 			]);
-			return `<article class="case target-${targetState} ${result.changeStatus}"
+			return `<article class="case target-${targetState}"
 			data-quality="${targetState}" data-change="${result.changeStatus}"
 			data-parameter="${result.parameterMode}"
 			data-search="${escapeHtml(searchable)}">
