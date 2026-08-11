@@ -73,8 +73,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).not.toContain(".images img{width:100%;height:220px");
 		expect(html).toContain('data-change-filter=""');
 		expect(html).toContain('data-change-filter="changed"');
+		expect(html).toContain('data-change-filter="unchanged"');
 		expect(html).toContain('data-change-filter="new"');
-		expect(html).toContain('data-change-filter="regressed"');
+		expect(html).not.toContain('data-change-filter="regressed"');
+		expect(html).not.toContain('data-change-filter="improved"');
 		const qualityGroupIndex = html.indexOf(
 			'<legend data-i18n="qualityStatus">',
 		);
@@ -146,9 +148,26 @@ describe.skipIf(!enabled)("quality report", () => {
 		).toBe(true);
 		expect(html).toContain('id="active-change-label"');
 		expect(html).toContain('id="visible-count"');
-		expect(html).toContain("unchanged from base branch");
-		expect(html).toContain("base branchと差分なし");
+		expect(html).toContain("unchanged from previous run / base branch");
+		expect(html).toContain('changed":"差分あり"');
+		expect(html).toContain('unchanged":"差分なし"');
 		expect(html).toContain('new":"新規追加"');
+		expect(html).not.toContain('data-change="regressed"');
+		expect(html).not.toContain('data-change="improved"');
+		for (const [state, count] of [
+			["changed", results.summary.changed],
+			["unchanged", results.summary.unchanged],
+			["new", results.summary.newCases],
+		] as const) {
+			expect(
+				html.match(new RegExp(`data-change="${state}"`, "g"))?.length ?? 0,
+			).toBe(count);
+		}
+		expect(
+			results.summary.changed +
+				results.summary.unchanged +
+				results.summary.newCases,
+		).toBe(selectedCases.length);
 		expect(html).not.toContain('group.active === "changed"');
 		expect(html).not.toContain("Preserve the image.");
 		expect(html).not.toContain("画像を保持します。");
@@ -278,7 +297,11 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
 		expect(markdown).toContain("|Confidence (diagnostic)|");
+		expect(markdown).toContain(`- Changed: ${results.summary.changed}`);
+		expect(markdown).toContain(`- Unchanged: ${results.summary.unchanged}`);
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
+		expect(markdown).not.toContain("- Regressed:");
+		expect(markdown).not.toContain("- Improved:");
 		const remoteMetadata = {
 			...results.metadata,
 			prNumber: "92",

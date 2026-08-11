@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../../src/shared/types";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
-import { meanRgbaError } from "./metrics";
+import {
+	calculateTargetMetrics,
+	meanRgbaError,
+	targetQualityFailures,
+} from "./metrics";
 import type { QualityBaselineCase, QualityMetrics } from "./types";
 
-const image = (pixels: number[]): RawImage => ({
-	width: 2,
-	height: 1,
+const image = (pixels: number[], width = 2, height = 1): RawImage => ({
+	width,
+	height,
 	data: new Uint8ClampedArray(pixels),
 });
 
@@ -54,7 +58,12 @@ describe("quality comparison", () => {
 		});
 	});
 
-	it("separates image changes from quality regressions", () => {
+	it("classifies only baseline availability and decoded image differences", () => {
+		expect(classifyChange(false, true)).toBe("new");
+		expect(classifyChange(false, false)).toBe("new");
+		expect(classifyChange(true, false)).toBe("unchanged");
+		expect(classifyChange(true, true)).toBe("changed");
+
 		const changedMetrics = {
 			...metrics,
 			meanRgbaError: 11,
@@ -63,12 +72,52 @@ describe("quality comparison", () => {
 		const comparison = compareMetrics(changedMetrics, baseline);
 		expect(comparison.regressed).toEqual(["meanRgbaError"]);
 		expect(comparison.improved).toEqual(["edgeF1"]);
+		expect(classifyChange(true, true)).toBe("changed");
+		expect(classifyChange(true, false)).toBe("unchanged");
+	});
+
+	it("treats size changes as image changes", () => {
+		const before = image([0, 0, 0, 255, 10, 10, 10, 255]);
+		const wider = image([0, 0, 0, 255, 10, 10, 10, 255, 20, 20, 20, 255], 3, 1);
+		const taller = image(
+			[0, 0, 0, 255, 10, 10, 10, 255, 0, 0, 0, 255, 10, 10, 10, 255],
+			2,
+			2,
+		);
+		expect(compareImages(wider, before).changed).toBe(true);
+		expect(compareImages(taller, before).changed).toBe(true);
+	});
+
+	it("keeps target quality independent from the previous-image status", () => {
+		const previous = image([0, 0, 0, 255, 10, 10, 10, 255]);
+		const exactTarget = image([0, 0, 0, 255, 11, 10, 10, 255]);
+		const targetMetrics = calculateTargetMetrics(exactTarget, exactTarget);
 		expect(
-			classifyChange(true, true, comparison.regressed, comparison.improved),
-		).toBe("regressed");
-		expect(classifyChange(true, true, [], [])).toBe("changed");
-		expect(classifyChange(true, false, ["status"], [])).toBe("regressed");
-		expect(classifyChange(false, true, [], [])).toBe("new");
+			targetQualityFailures(
+				targetMetrics,
+				{ exact: true },
+				exactTarget.width,
+				exactTarget.height,
+				true,
+			),
+		).toEqual([]);
+		expect(
+			classifyChange(true, compareImages(exactTarget, previous).changed),
+		).toBe("changed");
+
+		const unmetTarget = image([0, 0, 0, 255, 12, 10, 10, 255]);
+		expect(
+			targetQualityFailures(
+				calculateTargetMetrics(previous, unmetTarget),
+				{ exact: true },
+				previous.width,
+				previous.height,
+				true,
+			),
+		).toEqual(["exact-image-match"]);
+		expect(
+			classifyChange(true, compareImages(previous, previous).changed),
+		).toBe("unchanged");
 	});
 
 	it("allows only serialization-level metric differences", () => {

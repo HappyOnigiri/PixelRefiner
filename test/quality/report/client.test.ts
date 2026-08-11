@@ -65,7 +65,9 @@ const createReportPage = (query = "") => {
 	];
 	const changeButtons = [
 		makeButton("change", "", "All"),
-		makeButton("change", "regressed", "Regressed"),
+		makeButton("change", "changed", "Changed"),
+		makeButton("change", "unchanged", "Unchanged"),
+		makeButton("change", "new", "New"),
 	];
 	const parameterButtons = [
 		makeButton("parameter", "", "All"),
@@ -75,19 +77,19 @@ const createReportPage = (query = "") => {
 		makeElement({
 			search: "auto target-unmet",
 			quality: "unmet",
-			change: "regressed",
+			change: "changed",
 			parameter: "auto",
 		}),
 		makeElement({
 			search: "auto target-met",
 			quality: "met",
-			change: "regressed",
+			change: "unchanged",
 			parameter: "auto",
 		}),
 		makeElement({
 			search: "manual target-unmet",
 			quality: "unmet",
-			change: "regressed",
+			change: "new",
 			parameter: "auto",
 		}),
 	];
@@ -139,6 +141,7 @@ const createReportPage = (query = "") => {
 	return {
 		cards,
 		qualityButtons,
+		changeButtons,
 		search,
 		documentMock,
 		windowMock,
@@ -165,21 +168,26 @@ describe("quality report filter query state", () => {
 		expect(firstPage.cards.every((card) => !card.hidden)).toBe(true);
 
 		firstPage.qualityButtons[1].trigger("click");
+		firstPage.changeButtons[1].trigger("click");
 		firstPage.search.value = "auto";
 		firstPage.search.trigger("input");
 
 		const params = new URL(firstPage.windowMock.location.href).searchParams;
 		expect(params.get("search")).toBe("auto");
 		expect(params.get("quality")).toBe("unmet");
-		expect(params.has("change")).toBe(false);
+		expect(params.get("change")).toBe("changed");
 		expect(params.has("parameter")).toBe(false);
-		expect(firstPage.replaceState).toHaveBeenCalledTimes(2);
+		expect(firstPage.replaceState).toHaveBeenCalledTimes(3);
 
 		const secondPage = createReportPage(`?${params.toString()}`);
 		runPage(secondPage);
 
 		expect(secondPage.search.value).toBe("auto");
 		expect(secondPage.qualityButtons[1].classList.toggle).toHaveBeenCalledWith(
+			"active",
+			true,
+		);
+		expect(secondPage.changeButtons[1].classList.toggle).toHaveBeenCalledWith(
 			"active",
 			true,
 		);
