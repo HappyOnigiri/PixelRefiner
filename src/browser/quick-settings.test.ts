@@ -89,6 +89,47 @@ describe("quick settings", () => {
 		});
 	});
 
+	it("takes the background removal scope from the quick settings for a custom method", () => {
+		const result = applyQuickSettingsToOptions(
+			{ bgExtractionMethod: "top-left", bgRemovalScope: "all" },
+			{
+				...QUICK_SETTINGS_DEFAULTS,
+				background: "custom",
+				bgRemovalScope: "auto",
+			},
+		);
+
+		expect(result).toMatchObject({
+			bgExtractionMethod: "top-left",
+			bgRemovalScope: "auto",
+		});
+	});
+
+	it("narrows the selected-corner scope only where it has no effect", () => {
+		const scoped = {
+			...QUICK_SETTINGS_DEFAULTS,
+			bgRemovalScope: "selected",
+		} as const;
+		const auto = applyQuickSettingsToOptions(
+			{},
+			{ ...scoped, background: "auto" },
+		);
+		const picked = applyQuickSettingsToOptions(
+			{ bgRgb: "#123456" },
+			{ ...scoped, background: "pick" },
+		);
+		const corner = applyQuickSettingsToOptions(
+			{ bgExtractionMethod: "bottom-right" },
+			{ ...scoped, background: "custom" },
+		);
+
+		// Auto には角の選択が無く "outer" と同じ結果になるため寄せる。
+		expect(auto.bgRemovalScope).toBe("outer");
+		// 色を指定する抽出は一致画素すべてをシードにするため、内側まで落ちる "selected" を保つ。
+		expect(picked.bgRemovalScope).toBe("selected");
+		expect(corner.bgRemovalScope).toBe("selected");
+	});
+
 	it("maps the public background and dithering levels", () => {
 		const picked = applyQuickSettingsToOptions(
 			{ bgRgb: "#123456" },
