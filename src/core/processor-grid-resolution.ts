@@ -1,5 +1,6 @@
 import {
 	GRID_SEARCH_LIMITS,
+	PROCESS_DEFAULTS,
 	TRIMMED_GRID_SEARCH_LIMITS,
 } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
@@ -165,10 +166,16 @@ export const resolveProcessingGrid = ({
 							cellW: tightBounds.w / Math.max(1, selectedEstimate.outW),
 							cellH: tightBounds.h / Math.max(1, selectedEstimate.outH),
 						};
-						downsampleOptions = getDownsampleOptions({
-							...o,
-							cellSamplingMode: "legacy-median",
-						});
+						// [Intended] 角シードマスクを基準にすると末尾のセルが痩せるため、
+						// 既定のまま使っている場合だけ互換の中央値サンプラーへ切り替える。
+						// 利用者がサンプリング方式を明示して選んでいるときは上書きしない。
+						downsampleOptions =
+							o.cellSamplingMode === PROCESS_DEFAULTS.cellSamplingMode
+								? getDownsampleOptions({
+										...o,
+										cellSamplingMode: "legacy-median",
+									})
+								: downsampleOptions;
 					}
 				}
 				gridMethod = phaseAwareReliable
