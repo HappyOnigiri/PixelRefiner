@@ -29,6 +29,7 @@ import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
 import { applyPostRemovalOutcome } from "./processor-background";
 import {
+	getBackgroundBehavior,
 	getDownsampleOptions,
 	type NormalizedProcessOptions,
 } from "./processor-options";
@@ -84,6 +85,7 @@ export const processForcedRoute = (
 	}
 
 	// force: 指定ピクセルサイズ（W x H）へ強制変換する（自動検出なし）
+	const behavior = getBackgroundBehavior(o);
 	const bgTol = o.backgroundTolerance;
 	// [Intended] 背景マスクはトリミング・浮遊成分除去・デバッグ出力でしか使わない。
 	// トリミングしない強制変換では背景除去 1 回ぶんを丸ごと省く。
@@ -99,6 +101,7 @@ export const processForcedRoute = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				behavior,
 			);
 		return maskedCache;
 	};
@@ -197,6 +200,7 @@ export const processForcedRoute = (
 			bgTargets,
 			o.bgExtractionMethod,
 			backgroundModel,
+			behavior,
 		);
 		const componentResult = removeSmallComponents(
 			down2,
@@ -209,6 +213,7 @@ export const processForcedRoute = (
 					o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
 				automaticBackground: o.bgExtractionMethod === "auto",
 				backgroundConfidence: backgroundDiagnostic?.confidence,
+				backgroundConfidenceGate: o.smallComponentBackgroundGate,
 			},
 		);
 		return { cropped, g, sw, down2, compareBeforeSanitized, componentResult };
@@ -314,6 +319,7 @@ export const processForcedRoute = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				behavior,
 				postRemoval,
 			)
 		: componentResult.image;
@@ -459,6 +465,7 @@ export const processGridDisabledRoute = (
 	}
 
 	// enableGridDetection: グリッド検出とダウンサンプリングを省略する
+	const behavior = getBackgroundBehavior(o);
 	const bgTol = o.backgroundTolerance;
 	// [Intended] 呼び出し元が同じマスクを算出済みなら再計算しない。
 	// 孤立成分の除去は working を破壊的に書き換えるため、2 度走らせると
@@ -473,6 +480,7 @@ export const processGridDisabledRoute = (
 			bgTargets,
 			o.bgExtractionMethod,
 			backgroundModel,
+			behavior,
 		);
 	let smallComponentRemoval = context.smallComponentRemoval;
 	if (!context.preparedMask && o.floatingMaxPixels > 0) {
@@ -497,6 +505,7 @@ export const processGridDisabledRoute = (
 			o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
 		automaticBackground: o.bgExtractionMethod === "auto",
 		backgroundConfidence: backgroundDiagnostic?.confidence,
+		backgroundConfidenceGate: o.smallComponentBackgroundGate,
 	});
 	if (o.smallComponentMode !== "off") {
 		smallComponentRemoval = componentResult.diagnostic;
@@ -517,6 +526,7 @@ export const processGridDisabledRoute = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				behavior,
 				postRemoval,
 			)
 		: componentResult.image;

@@ -46,6 +46,7 @@ import {
 import { processConvertRoute } from "./processor-convert-route";
 import { resolveProcessingGrid } from "./processor-grid-resolution";
 import {
+	getBackgroundBehavior,
 	normalizeProcessOptions,
 	type ProcessOptions,
 } from "./processor-options";
@@ -90,6 +91,7 @@ const processImageCore = (
 	options: ProcessOptions = {},
 ): ProcessResult => {
 	const o = normalizeProcessOptions(options);
+	const backgroundBehavior = getBackgroundBehavior(o);
 	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(inputImage) : 0;
 	const bgTargetsStart = performance.now();
 	// [Intended] 背景色は加工前の入力画像の角から取得し、後段の加工結果に左右されないようにする。
@@ -120,6 +122,7 @@ const processImageCore = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				backgroundBehavior,
 			);
 		}
 		return backgroundMaskedInput;
@@ -138,6 +141,8 @@ const processImageCore = (
 				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
+				undefined,
+				backgroundBehavior,
 			);
 		} else if (o.bgRemovalScope === "selected") {
 			preRemovedInput = removeBackgroundByFloodFillLegacy(
@@ -146,6 +151,7 @@ const processImageCore = (
 				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
+				backgroundBehavior,
 			);
 		} else if (o.bgRemovalScope === "all") {
 			preRemovedInput = removeBackgroundByFloodFillLegacy(
@@ -154,6 +160,7 @@ const processImageCore = (
 				"4",
 				bgTargets,
 				o.bgExtractionMethod,
+				backgroundBehavior,
 			);
 		} else {
 			preRemovedInput = cloneImage(inputImage);
@@ -458,6 +465,7 @@ const processImageCore = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				backgroundBehavior,
 			)
 		: down;
 	const componentResult = removeSmallComponents(
@@ -471,6 +479,7 @@ const processImageCore = (
 				o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
 			automaticBackground: o.bgExtractionMethod === "auto",
 			backgroundConfidence: backgroundDiagnostic?.confidence,
+			backgroundConfidenceGate: o.smallComponentBackgroundGate,
 		},
 	);
 	if (o.smallComponentMode !== "off") {
@@ -587,6 +596,7 @@ const processImageCore = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
+				backgroundBehavior,
 				postRemoval,
 			)
 		: trimmed;
@@ -599,6 +609,7 @@ const processImageCore = (
 	// 角シードや RGB 指定の経路は利用者が背景色を確定させており、手書きの期待値画像と
 	// 完全一致することを前提にしているので触らない。
 	if (
+		o.backgroundEdgeCleanup &&
 		canCleanBackgroundContaminatedEdges(
 			backgroundModel,
 			backgroundDiagnostic?.confidence,

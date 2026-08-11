@@ -1,4 +1,8 @@
 import { PROCESS_DEFAULTS } from "../shared/config";
+import {
+	advancedSettingControls,
+	migrateAdvancedSettings,
+} from "./advanced-settings-fields";
 import type { Elements } from "./app-elements";
 import { i18n } from "./i18n";
 import type { ModalController } from "./modal-controller";
@@ -68,7 +72,7 @@ export const setupPresetControls = ({
 			els.forcePixelsHInput,
 			els.sampleWindowInput,
 			els.sampleWindowSlider,
-			els.alphaAwareMedoidCheck,
+			...advancedSettingControls(els),
 			els.toleranceInput,
 			els.toleranceSlider,
 			els.preRemoveCheck,
@@ -124,8 +128,7 @@ export const setupPresetControls = ({
 		// [Policy] 旧プリセットの割合設定は、無効か安全な自動判定へだけ移行する。
 		migrateSmallComponentMode(state);
 		// [Policy] UI追加前のプリセットは新しい既定値へ移行し、読み込み順で挙動を変えない。
-		state["alpha-aware-medoid"] ??=
-			(PROCESS_DEFAULTS.cellSamplingMode as string) === "alpha-aware-medoid";
+		migrateAdvancedSettings(state);
 		state["gemini-watermark-removal"] ??=
 			PROCESS_DEFAULTS.geminiWatermarkRemoval;
 		// 後方互換性: 旧 boolean の "enable-grid-detection" を新しいモード選択へ移行
