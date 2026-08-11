@@ -221,7 +221,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"セル境界が実際のエッジに明確によく乗る粗い倍率が見つかったとき、採用する格子をそちらへ乗り換えます。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。",
+			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。\n\n「常に無効」にすると、Auto の経路判定でも小さな格子が許可されなくなり、等倍のまま仕上げる経路へ切り替わる場合があります。",
 		"tooltip.help.max_samples_per_cell":
 			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。",
 		"tooltip.help.cell_alpha_threshold":
@@ -590,7 +590,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"当更粗的倍率其单元格边界明显更贴合真实边缘时，将采用的网格切换过去。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。",
+			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。\n\n设为「始终关闭」时，Auto 的路径判定也将不再允许小网格，可能改为按原尺寸完成的路径。",
 		"tooltip.help.max_samples_per_cell":
 			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。",
 		"tooltip.help.cell_alpha_threshold":
@@ -960,7 +960,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges.",
 		"tooltip.help.small_aspect_grid_alignment":
-			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.",
+			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.\n\nWith Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route.",
 		"tooltip.help.max_samples_per_cell":
 			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.",
 		"tooltip.help.cell_alpha_threshold":

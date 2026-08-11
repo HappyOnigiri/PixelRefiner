@@ -129,6 +129,9 @@ export const resolveProcessingGrid = ({
 								(selectedEstimate.outH ?? 0) * (b.w / Math.max(1, b.h)),
 							),
 						);
+				// [Intended] この設定は格子の基準領域だけでなく Auto の経路判定にも効く。
+				// 「常に無効」にすると小さな格子が許可されず、refine から preserve へ
+				// フォールバックする場合がある（ツールチップにも同じ注意を書いている）。
 				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
 				// [Intended] トリミング領域で推定した格子は、元画像の左上へ投影せず
 				// コンテンツ BBox をそのままサンプリング領域として使う。
