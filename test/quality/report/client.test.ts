@@ -50,6 +50,21 @@ const makeElement = (
 const makeButton = (name: string, value: string, label: string): MockElement =>
 	makeElement({ [`${name}Filter`]: value }, label);
 
+type MockLink = {
+	getAttribute: (name: string) => string | null;
+	setAttribute: (name: string, value: string) => void;
+};
+
+const makeLink = (href: string): MockLink => {
+	const attributes: Record<string, string> = { href };
+	return {
+		getAttribute: (name) => attributes[name] ?? null,
+		setAttribute: (name, value) => {
+			attributes[name] = value;
+		},
+	};
+};
+
 const createReportPage = (query = "") => {
 	const search = makeElement();
 	const visibleCount = makeElement();
@@ -93,6 +108,12 @@ const createReportPage = (query = "") => {
 			parameter: "auto",
 		}),
 	];
+	const localeButtons = [
+		makeElement({ locale: "ja" }),
+		makeElement({ locale: "en" }),
+		makeElement({ locale: "zh-CN" }),
+	];
+	const detailLink = makeLink("cases/restore-bilinear-to-8x8/index.html");
 	const selectorGroups: Record<string, MockElement[]> = {
 		"[data-quality-filter]": qualityButtons,
 		"[data-change-filter]": changeButtons,
@@ -108,10 +129,11 @@ const createReportPage = (query = "") => {
 	};
 	const documentMock = {
 		documentElement: { lang: "" },
-		querySelectorAll(selector: string): MockElement[] {
+		querySelectorAll(selector: string): (MockElement | MockLink)[] {
 			if (selector === ".case") return cards;
 			if (selector === ".images img") return [];
-			if (selector === "[data-locale]") return [];
+			if (selector === "[data-locale]") return localeButtons;
+			if (selector === "a.detail-link, a.back-link") return [detailLink];
 			if (selector === "[data-i18n]" || selector === "[data-i18n-alt]") {
 				return [];
 			}
@@ -142,6 +164,8 @@ const createReportPage = (query = "") => {
 		cards,
 		qualityButtons,
 		changeButtons,
+		localeButtons,
+		detailLink,
 		search,
 		documentMock,
 		windowMock,
@@ -149,7 +173,41 @@ const createReportPage = (query = "") => {
 	};
 };
 
-const runPage = (page: ReturnType<typeof createReportPage>): void => {
+/** ケース詳細ページ。サイドバーが無いので絞り込みも言語ボタンも持たない。 */
+const createCaseDetailPage = (query = "") => {
+	const backLink = makeLink("../../index.html");
+	const documentMock = {
+		documentElement: { lang: "" },
+		querySelectorAll(selector: string): (MockElement | MockLink)[] {
+			if (selector === "a.detail-link, a.back-link") return [backLink];
+			return [];
+		},
+		querySelector: (): MockElement | null => null,
+	} as unknown as Document;
+	const location = new URL(
+		`https://example.test/report/cases/restore-bilinear-to-8x8/index.html${query}`,
+	);
+	const replaceState = vi.fn(
+		(_state: unknown, _title: string, nextUrl: string) => {
+			const nextLocation = new URL(nextUrl, location.href);
+			location.href = nextLocation.href;
+			location.search = nextLocation.search;
+			location.hash = nextLocation.hash;
+		},
+	);
+	const windowMock = {
+		__QUALITY_REPORT_TRANSLATIONS__: { en: {}, ja: {}, "zh-CN": {} },
+		location,
+		history: { replaceState },
+		addEventListener: vi.fn(),
+	} as unknown as Window;
+	return { backLink, documentMock, windowMock, replaceState };
+};
+
+const runPage = (page: {
+	documentMock: Document;
+	windowMock: Window;
+}): void => {
 	vi.stubGlobal("document", page.documentMock);
 	vi.stubGlobal("window", page.windowMock);
 	vi.stubGlobal("navigator", { languages: ["en"], language: "en" });
@@ -210,5 +268,49 @@ describe("quality report filter query state", () => {
 
 		page.changeButtons[3].trigger("click");
 		expect(page.cards.map((card) => card.hidden)).toEqual([true, true, false]);
+	});
+});
+
+describe("quality report locale query state", () => {
+	it("carries an explicitly chosen locale into the URL and case links", () => {
+		const page = createReportPage();
+		runPage(page);
+
+		// [Intended] ブラウザ言語のままなら遷移先でも同じ判定になるので、選ばれるまでは
+		// クエリもリンクも書き換えない。
+		expect(page.detailLink.getAttribute("href")).toBe(
+			"cases/restore-bilinear-to-8x8/index.html",
+		);
+		expect(
+			new URL(page.windowMock.location.href).searchParams.has("locale"),
+		).toBe(false);
+
+		page.localeButtons[2].trigger("click");
+
+		expect(page.documentMock.documentElement.lang).toBe("zh-CN");
+		expect(
+			new URL(page.windowMock.location.href).searchParams.get("locale"),
+		).toBe("zh-CN");
+		expect(page.detailLink.getAttribute("href")).toBe(
+			"cases/restore-bilinear-to-8x8/index.html?locale=zh-CN",
+		);
+	});
+
+	it("restores the locale from the query on a case detail page", () => {
+		const page = createCaseDetailPage("?locale=ja");
+		runPage(page);
+
+		expect(page.documentMock.documentElement.lang).toBe("ja");
+		expect(page.backLink.getAttribute("href")).toBe(
+			"../../index.html?locale=ja",
+		);
+	});
+
+	it("falls back to the browser language for an unknown locale", () => {
+		const page = createCaseDetailPage("?locale=fr");
+		runPage(page);
+
+		expect(page.documentMock.documentElement.lang).toBe("en");
+		expect(page.backLink.getAttribute("href")).toBe("../../index.html");
 	});
 });
