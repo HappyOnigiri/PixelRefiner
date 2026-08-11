@@ -620,14 +620,6 @@ export const clampInt = (value: number, range: IntRange): number => {
 	return Math.min(range.max, Math.max(range.min, v));
 };
 
-export const clampNumber = (
-	value: number,
-	range: { min: number; max: number; default: number },
-): number => {
-	const v = Number.isFinite(value) ? value : range.default;
-	return Math.min(range.max, Math.max(range.min, v));
-};
-
 export const clampOptionalInt = (
 	value: number | undefined,
 	range: IntRange,
