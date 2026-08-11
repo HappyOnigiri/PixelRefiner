@@ -350,6 +350,8 @@ describe("processImage modes", () => {
 				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
+				// [Intended] 元画像右下の生成サービス由来マークだけを、原寸の孤立成分として除去する。
+				floatingMaxPixels: 1000,
 				// ユーザーフィードバックに基づき、検索範囲の緩和とペナルティ調整により、
 				// autoGridFromTrimmed: true でも高解像度グリッドが検出されることを確認する。
 				autoGridFromTrimmed: true,
