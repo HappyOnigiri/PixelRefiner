@@ -22,7 +22,7 @@ fix:
 	$(MAKE) html-fix-diff
 
 build:
-	pnpm exec vite build
+	pnpm run build
 
 quality:
 	pnpm run test:quality:full
