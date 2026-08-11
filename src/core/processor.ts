@@ -129,11 +129,11 @@ const processImageCore = (
 			preRemovedInput = automaticBackground.image;
 		} else if (o.bgExtractionMethod === "auto") {
 			preRemovedInput = cloneImage(inputImage);
-		} else if (o.bgRemovalScope === "outer") {
+		} else if (o.bgRemovalScope === "outer" || o.bgRemovalScope === "auto") {
 			preRemovedInput = removeBackground(
 				inputImage,
 				o.backgroundTolerance,
-				"outer",
+				o.bgRemovalScope,
 				o.bgConnectivity,
 				bgTargets,
 				o.bgExtractionMethod,
