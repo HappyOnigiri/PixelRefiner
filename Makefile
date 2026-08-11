@@ -1,4 +1,4 @@
-.PHONY: ci fix build quality report ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-unit test-debug type-check check-ts-rules check-ts-line-length check-file-line-count check-file-line-count-all setup
+.PHONY: ci fix build quality report ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-unit test-debug type-check check-ts-rules check-ts-line-length check-file-line-count check-file-line-count-all check-architecture setup
 
 # repomix を実行してファイルを tmp/repomix/ にまとめる
 repomix:
@@ -46,6 +46,9 @@ type-check:
 
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
+
+check-architecture:
+	python3 scripts/check_architecture.py
 
 check-ts-line-length:
 	python3 scripts/check_ts_line_length.py

@@ -29,6 +29,7 @@ import {
 	type QuickDithering,
 } from "./quick-settings";
 import type { ResultViewer } from "./result-viewer";
+import { BROWSER_RUNTIME_CONFIG } from "./runtime-config";
 import type { ImageSession } from "./session";
 
 const workerInstance = new Worker(
@@ -112,6 +113,7 @@ export const createProcessOptions = (
 	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
 
 	const advancedOptions: ProcessOptions = {
+		debug: BROWSER_RUNTIME_CONFIG.debug,
 		detectionQuantStep,
 		forcePixelsW: gridMode === "force" && usePixels ? pixelsW : undefined,
 		forcePixelsH: gridMode === "force" && usePixels ? pixelsH : undefined,
