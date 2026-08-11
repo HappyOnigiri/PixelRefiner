@@ -598,14 +598,14 @@
     },
     {
       "id": "auto-quality-prf400-ambiguous-grid-scale",
-      "status": "failed",
+      "status": "passed",
       "outputWidth": 20,
       "outputHeight": 18,
-      "meanRgbaError": 3.366511,
-      "edgeF1": 0,
-      "backgroundMaskIou": 0,
-      "smallComponentRetention": 0,
-      "catastrophicFailure": true
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
     },
     {
       "id": "auto-quality-prf400-soft-edged-sprite",
