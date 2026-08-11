@@ -157,16 +157,22 @@ const weightedScore = (
 	return weightSum === 0 ? 0 : clampUnit(score / weightSum);
 };
 
-/** 検出器によらず候補ごとに必ず計測できる信号。 */
+/**
+ * 検出器によらず候補ごとに必ず計測できる信号。
+ *
+ * [Intended] coverage と outputSize は含めない。どちらの検出器も候補すべてに同じ
+ * 解析領域を与えるため（Auto は共通のトリム BBox、格子検出はキャンバス全体）、
+ * 実測すると候補によらず 1.0 の定数になる。定数を実測扱いで平均へ混ぜると、
+ * 誤った候補の総合点まで一律に押し上げて信頼度のしきい値が緩む。
+ * 極端な出力サイズは getGridSafety と EXTREME_OUTPUT_SIZE の警告が受け持つ。
+ */
 const ALWAYS_MEASURED_SUBSCORES = [
 	"periodicity",
 	"edgeAlignment",
 	"reconstruction",
 	"complexity",
-	"coverage",
 	"axisAgreement",
 	"stability",
-	"outputSize",
 ] as const satisfies ReadonlyArray<keyof GridCandidateSubscores>;
 
 /** アンサンブル検出器を通ったときだけ得られる信号。 */
@@ -290,8 +296,9 @@ export const rankGridCandidates = (
 							Math.max(baseError, RECONSTRUCTION_ERROR_EPSILON),
 					)),
 			harmonic: 0.5,
-			outputSize:
-				outputArea <= 1 || outputArea > sourceArea ? 0 : clampUnit(coverage),
+			// [Intended] 出力が極端かどうかだけを表す。coverage を写しても候補間で
+			// 差が出ず、同じ量を二重に数えるだけになる。
+			outputSize: outputArea <= 1 || outputArea > sourceArea ? 0 : 1,
 		};
 		const { candidates: _candidates, ...reportGrid } = grid;
 		// [Intended] preserve は比較用の擬似候補で、信号を測っていない項目を 0 で
