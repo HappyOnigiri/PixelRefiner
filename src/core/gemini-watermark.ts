@@ -10,6 +10,7 @@ import { extractUsedColors } from "./color-reduction";
 import { floodFillTransparent } from "./floodfill";
 import {
 	clearMappedGeminiWatermark,
+	type MappedBackgroundColor,
 	type MappedRemovalMode,
 } from "./gemini-watermark-mapping";
 import type { NormalizedProcessOptions } from "./processor-options";
@@ -380,6 +381,69 @@ export type GeminiWatermarkDetectionMask = {
 	mode: MappedRemovalMode;
 };
 
+const findMappedBackgroundColor = (
+	image: RawImage,
+	detectionMask: RawImage,
+	bounds: GeminiWatermarkBounds[],
+): MappedBackgroundColor | undefined => {
+	let boundMinX = image.width;
+	let boundMinY = image.height;
+	let boundMaxX = 0;
+	let boundMaxY = 0;
+	for (let index = 0; index < bounds.length; index += 1) {
+		const bound = bounds[index];
+		boundMinX = Math.min(boundMinX, bound.x);
+		boundMinY = Math.min(boundMinY, bound.y);
+		boundMaxX = Math.max(boundMaxX, bound.x + bound.w - 1);
+		boundMaxY = Math.max(boundMaxY, bound.y + bound.h - 1);
+	}
+	const maximumRadius =
+		Math.ceil(
+			Math.min(image.width, image.height) *
+				GEMINI_WATERMARK_LIMITS.maximumDimensionRatio,
+		) + 2;
+	const readBackground = (
+		x: number,
+		y: number,
+	): MappedBackgroundColor | null => {
+		const offset = (y * image.width + x) * 4;
+		if (
+			detectionMask.data[offset + 3] >=
+				GEMINI_WATERMARK_LIMITS.alphaThreshold ||
+			image.data[offset + 3] < GEMINI_WATERMARK_LIMITS.alphaThreshold
+		) {
+			return null;
+		}
+		return [
+			image.data[offset],
+			image.data[offset + 1],
+			image.data[offset + 2],
+			image.data[offset + 3],
+		];
+	};
+	for (let radius = 1; radius <= maximumRadius; radius += 1) {
+		const minX = Math.max(0, boundMinX - radius);
+		const maxX = Math.min(image.width - 1, boundMaxX + radius);
+		const minY = Math.max(0, boundMinY - radius);
+		const maxY = Math.min(image.height - 1, boundMaxY + radius);
+		for (let x = minX; x <= maxX; x += 1) {
+			const top = readBackground(x, minY);
+			if (top) return top;
+			if (maxY === minY) continue;
+			const bottom = readBackground(x, maxY);
+			if (bottom) return bottom;
+		}
+		for (let y = minY + 1; y < maxY; y += 1) {
+			const left = readBackground(minX, y);
+			if (left) return left;
+			if (maxX === minX) continue;
+			const right = readBackground(maxX, y);
+			if (right) return right;
+		}
+	}
+	return undefined;
+};
+
 /** 処理本体が採用した背景条件を再利用し、透かしの独立性を判定するマスクを返す。 */
 export const createGeminiWatermarkDetectionMask = (
 	inputImage: RawImage,
@@ -452,26 +516,31 @@ export const applyGeminiWatermarkRemoval = (
 	}
 	const removal = detectGeminiWatermark(inputImage, detectionMask);
 	if (!removal.removed) return processed;
+	const backgroundColor =
+		mode === "background"
+			? findMappedBackgroundColor(inputImage, detectionMask, removal.bounds)
+			: undefined;
+	if (mode === "background" && backgroundColor === undefined) return processed;
 
 	// [Intended] 検出・分類・トリミングの結果は透かし除去前のまま保ち、
 	// 確定した出力座標だけを透明化して Auto の経路選択やキャンバス寸法を変えない。
 	const result = clearMappedGeminiWatermark(
 		processed.result,
+		detectionMask,
 		processed.grid,
-		inputImage.width,
-		inputImage.height,
 		removal.pixels,
 		appliedDeskewAngle,
 		mode,
+		backgroundColor,
 	);
 	const compareBeforeSanitized = clearMappedGeminiWatermark(
 		processed.compareBeforeSanitized,
+		detectionMask,
 		processed.grid,
-		inputImage.width,
-		inputImage.height,
 		removal.pixels,
 		appliedDeskewAngle,
 		mode,
+		backgroundColor,
 	);
 	options.debugHook?.("99-watermark-removed", result, {
 		removedPixels: removal.removedPixels,

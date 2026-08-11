@@ -2,12 +2,20 @@ import { GEMINI_WATERMARK_LIMITS } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 
 export type MappedRemovalMode = "transparent" | "background";
+export type MappedBackgroundColor = readonly [number, number, number, number];
+
+type Rotation = {
+	width: number;
+	height: number;
+	cosine: number;
+	sine: number;
+};
 
 const rotatedSize = (
 	width: number,
 	height: number,
 	angle: number,
-): { width: number; height: number; cosine: number; sine: number } => {
+): Rotation => {
 	const radians = (angle * Math.PI) / 180;
 	const cosine = Math.cos(radians);
 	const sine = Math.sin(radians);
@@ -25,68 +33,118 @@ const rotatedSize = (
 	};
 };
 
-const findNearbyBackgroundOffset = (
-	image: RawImage,
-	boundMinX: number,
-	boundMinY: number,
-	boundMaxX: number,
-	boundMaxY: number,
-): number => {
-	const maximumRadius =
-		Math.ceil(
-			Math.min(image.width, image.height) *
-				GEMINI_WATERMARK_LIMITS.maximumDimensionRatio,
-		) + 2;
-	for (let radius = 1; radius <= maximumRadius; radius += 1) {
-		const minX = Math.max(0, boundMinX - radius);
-		const maxX = Math.min(image.width - 1, boundMaxX + radius);
-		const minY = Math.max(0, boundMinY - radius);
-		const maxY = Math.min(image.height - 1, boundMaxY + radius);
-		for (let candidateX = minX; candidateX <= maxX; candidateX += 1) {
-			const topOffset = (minY * image.width + candidateX) * 4;
-			if (image.data[topOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold) {
-				return topOffset;
-			}
-			if (maxY !== minY) {
-				const bottomOffset = (maxY * image.width + candidateX) * 4;
-				if (
-					image.data[bottomOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
-				) {
-					return bottomOffset;
-				}
-			}
-		}
-		for (let candidateY = minY + 1; candidateY < maxY; candidateY += 1) {
-			const leftOffset = (candidateY * image.width + minX) * 4;
+const cellContainsOtherForeground = (
+	sourceMask: RawImage,
+	markMask: Uint8Array,
+	markMinX: number,
+	markMinY: number,
+	markWidth: number,
+	markHeight: number,
+	grid: PixelGrid,
+	outputX: number,
+	outputY: number,
+	rotation: Rotation,
+	interpolationRadius: number,
+): boolean => {
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const rotatedMinX = cropX + outputX * grid.cellW - interpolationRadius;
+	const rotatedMinY = cropY + outputY * grid.cellH - interpolationRadius;
+	const rotatedMaxX = cropX + (outputX + 1) * grid.cellW + interpolationRadius;
+	const rotatedMaxY = cropY + (outputY + 1) * grid.cellH + interpolationRadius;
+	const sourceCenterX = (sourceMask.width - 1) / 2;
+	const sourceCenterY = (sourceMask.height - 1) / 2;
+	const outputCenterX = (rotation.width - 1) / 2;
+	const outputCenterY = (rotation.height - 1) / 2;
+	let sourceMinX = sourceMask.width;
+	let sourceMinY = sourceMask.height;
+	let sourceMaxX = 0;
+	let sourceMaxY = 0;
+	for (let corner = 0; corner < 4; corner += 1) {
+		const rotatedX = corner % 2 === 0 ? rotatedMinX : rotatedMaxX;
+		const rotatedY = corner < 2 ? rotatedMinY : rotatedMaxY;
+		const centeredX = rotatedX - outputCenterX;
+		const centeredY = rotatedY - outputCenterY;
+		const sourceX =
+			rotation.cosine * centeredX + rotation.sine * centeredY + sourceCenterX;
+		const sourceY =
+			-rotation.sine * centeredX + rotation.cosine * centeredY + sourceCenterY;
+		sourceMinX = Math.min(sourceMinX, Math.floor(sourceX));
+		sourceMinY = Math.min(sourceMinY, Math.floor(sourceY));
+		sourceMaxX = Math.max(sourceMaxX, Math.ceil(sourceX));
+		sourceMaxY = Math.max(sourceMaxY, Math.ceil(sourceY));
+	}
+	sourceMinX = Math.max(0, sourceMinX);
+	sourceMinY = Math.max(0, sourceMinY);
+	sourceMaxX = Math.min(sourceMask.width - 1, sourceMaxX);
+	sourceMaxY = Math.min(sourceMask.height - 1, sourceMaxY);
+	for (let sourceY = sourceMinY; sourceY <= sourceMaxY; sourceY += 1) {
+		for (let sourceX = sourceMinX; sourceX <= sourceMaxX; sourceX += 1) {
+			const sourcePixel = sourceY * sourceMask.width + sourceX;
 			if (
-				image.data[leftOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
+				sourceMask.data[sourcePixel * 4 + 3] <
+				GEMINI_WATERMARK_LIMITS.alphaThreshold
 			) {
-				return leftOffset;
+				continue;
 			}
-			if (maxX !== minX) {
-				const rightOffset = (candidateY * image.width + maxX) * 4;
-				if (
-					image.data[rightOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
-				) {
-					return rightOffset;
-				}
+			const markX = sourceX - markMinX;
+			const markY = sourceY - markMinY;
+			if (
+				markX >= 0 &&
+				markY >= 0 &&
+				markX < markWidth &&
+				markY < markHeight &&
+				markMask[markY * markWidth + markX] !== 0
+			) {
+				continue;
+			}
+			const centeredX = sourceX - sourceCenterX;
+			const centeredY = sourceY - sourceCenterY;
+			const rotatedX =
+				rotation.cosine * centeredX - rotation.sine * centeredY + outputCenterX;
+			const rotatedY =
+				rotation.sine * centeredX + rotation.cosine * centeredY + outputCenterY;
+			const mappedMinX = Math.floor(
+				(rotatedX - interpolationRadius - cropX) / grid.cellW,
+			);
+			const mappedMinY = Math.floor(
+				(rotatedY - interpolationRadius - cropY) / grid.cellH,
+			);
+			const mappedMaxX = Math.floor(
+				(rotatedX + interpolationRadius - cropX) / grid.cellW,
+			);
+			const mappedMaxY = Math.floor(
+				(rotatedY + interpolationRadius - cropY) / grid.cellH,
+			);
+			if (
+				outputX >= mappedMinX &&
+				outputX <= mappedMaxX &&
+				outputY >= mappedMinY &&
+				outputY <= mappedMaxY
+			) {
+				return true;
 			}
 		}
 	}
-	return -1;
+	return false;
 };
 
 /** 検出した元画像画素を、傾き補正と確定済みグリッドを通した出力座標へ写す。 */
 export const clearMappedGeminiWatermark = (
 	image: RawImage,
+	sourceMask: RawImage,
 	grid: PixelGrid,
-	sourceWidth: number,
-	sourceHeight: number,
 	sourcePixels: Uint32Array,
 	angle: number,
 	mode: MappedRemovalMode = "transparent",
+	backgroundColor?: MappedBackgroundColor,
 ): RawImage => {
 	if (sourcePixels.length === 0) return image;
+	if (mode === "background" && backgroundColor === undefined) {
+		return image;
+	}
+	const sourceWidth = sourceMask.width;
+	const sourceHeight = sourceMask.height;
 	const cropX = grid.cropX ?? grid.offsetX;
 	const cropY = grid.cropY ?? grid.offsetY;
 	const rotation = rotatedSize(sourceWidth, sourceHeight, angle);
@@ -107,6 +165,15 @@ export const clearMappedGeminiWatermark = (
 		sourceMinY = Math.min(sourceMinY, sourceY);
 		sourceMaxX = Math.max(sourceMaxX, sourceX);
 		sourceMaxY = Math.max(sourceMaxY, sourceY);
+	}
+	const markWidth = sourceMaxX - sourceMinX + 1;
+	const markHeight = sourceMaxY - sourceMinY + 1;
+	const markMask = new Uint8Array(markWidth * markHeight);
+	for (let index = 0; index < sourcePixels.length; index += 1) {
+		const sourcePixel = sourcePixels[index];
+		const sourceX = sourcePixel % sourceWidth;
+		const sourceY = (sourcePixel / sourceWidth) | 0;
+		markMask[(sourceY - sourceMinY) * markWidth + sourceX - sourceMinX] = 1;
 	}
 	let mappedMinX = image.width;
 	let mappedMinY = image.height;
@@ -151,17 +218,10 @@ export const clearMappedGeminiWatermark = (
 		);
 	}
 	if (mappedMinX > mappedMaxX || mappedMinY > mappedMaxY) return image;
-	const backgroundOffset =
-		mode === "background"
-			? findNearbyBackgroundOffset(
-					image,
-					mappedMinX,
-					mappedMinY,
-					mappedMaxX,
-					mappedMaxY,
-				)
-			: -1;
-	if (mode === "background" && backgroundOffset < 0) return image;
+	const mappedWidth = mappedMaxX - mappedMinX + 1;
+	const cellStatus = new Uint8Array(
+		mappedWidth * (mappedMaxY - mappedMinY + 1),
+	);
 	let data: Uint8ClampedArray | undefined;
 	for (let index = 0; index < sourcePixels.length; index += 1) {
 		const sourcePixel = sourcePixels[index];
@@ -191,13 +251,34 @@ export const clearMappedGeminiWatermark = (
 		);
 		for (let y = minY; y <= maxY; y += 1) {
 			for (let x = minX; x <= maxX; x += 1) {
-				const offset = (y * image.width + x) * 4;
+				const statusIndex = (y - mappedMinY) * mappedWidth + x - mappedMinX;
+				if (cellStatus[statusIndex] !== 0) continue;
+				if (
+					cellContainsOtherForeground(
+						sourceMask,
+						markMask,
+						sourceMinX,
+						sourceMinY,
+						markWidth,
+						markHeight,
+						grid,
+						x,
+						y,
+						rotation,
+						interpolationRadius,
+					)
+				) {
+					cellStatus[statusIndex] = 1;
+					continue;
+				}
+				cellStatus[statusIndex] = 2;
 				data ??= new Uint8ClampedArray(image.data);
-				if (backgroundOffset >= 0) {
-					data[offset] = image.data[backgroundOffset];
-					data[offset + 1] = image.data[backgroundOffset + 1];
-					data[offset + 2] = image.data[backgroundOffset + 2];
-					data[offset + 3] = image.data[backgroundOffset + 3];
+				const offset = (y * image.width + x) * 4;
+				if (backgroundColor) {
+					data[offset] = backgroundColor[0];
+					data[offset + 1] = backgroundColor[1];
+					data[offset + 2] = backgroundColor[2];
+					data[offset + 3] = backgroundColor[3];
 				} else {
 					data[offset] = 0;
 					data[offset + 1] = 0;

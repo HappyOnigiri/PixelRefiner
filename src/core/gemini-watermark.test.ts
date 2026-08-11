@@ -247,6 +247,26 @@ describe("Gemini watermark removal", () => {
 		expect(rgbAt(result.result, 90, 90)).toEqual([220, 220, 220]);
 	});
 
+	it("does not use a nearby subject color for rollback background fill", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		for (let y = 80; y <= 84; y += 1) {
+			for (let x = 84; x <= 96; x += 1) {
+				setPixel(image, x, y, 10, 10, 10);
+			}
+		}
+		const result = processImage(image, {
+			processingMode: "preserve",
+			enableGridDetection: false,
+			bgExtractionMethod: "auto",
+			bgRemovalScope: "outer",
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off",
+		});
+
+		expect(rgbAt(result.result, 90, 90)).toEqual([80, 140, 80]);
+	});
+
 	it("removes mapped cells after a fixed palette darkens the watermark", () => {
 		const image = withOpaqueBackground(createSyntheticImage(false));
 		const result = processImage(image, {
@@ -388,6 +408,34 @@ describe("Gemini watermark removal", () => {
 			}
 		}
 		expect(brightRemaining).toBe(0);
+	});
+
+	it("keeps a coarse output cell containing another foreground component", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		for (let y = 80; y <= 85; y += 1) {
+			for (let x = 80; x <= 85; x += 1) {
+				setPixel(image, x, y, 10, 10, 10);
+			}
+		}
+		const options = {
+			processingMode: "convert" as const,
+			forcePixelsW: 10,
+			forcePixelsH: 10,
+			bgExtractionMethod: "top-left" as const,
+			bgRemovalScope: "outer" as const,
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off" as const,
+		};
+		const automatic = processImage(image, options);
+		const disabled = processImage(image, {
+			...options,
+			geminiWatermarkRemoval: "off",
+		});
+
+		expect(alphaAt(disabled.result, 8, 8)).toBe(255);
+		expect(rgbAt(automatic.result, 8, 8)).toEqual(rgbAt(disabled.result, 8, 8));
+		expect(alphaAt(automatic.result, 8, 8)).toBe(255);
 	});
 
 	for (const fixture of [
