@@ -258,10 +258,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(reviewCase).toContain(
 			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
 		);
-		// [Intended] 目標を満たした Auto ケースの表示を確認する。エッジの汚染除去で
-		// auto-resize-with-trimming は手書きの期待値画像と数階調ずれて目標未達になったため、
-		// 同じ Auto ケースで完全一致を保っているものへ差し替えた。
-		const targetMetId = "auto-resize-and-remove-bg";
+		const targetMetId = "auto-resize-with-trimming";
 		const targetMetIdIndex = html.indexOf(targetMetId);
 		const targetMetStart = html.lastIndexOf("<article", targetMetIdIndex);
 		const targetMetEnd = html.indexOf("</article>", targetMetIdIndex);
