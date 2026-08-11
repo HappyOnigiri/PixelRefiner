@@ -195,4 +195,20 @@ describe("quality report filter query state", () => {
 		expect(secondPage.cards[1].hidden).toBe(true);
 		expect(secondPage.cards[2].hidden).toBe(true);
 	});
+
+	// [Intended] 他の軸を掛けると別の理由でカードが消えるため、前回比較の3状態が
+	// カードの data-change と噛み合っているかは change 軸だけで確かめる。
+	it("filters cases by the change axis alone", () => {
+		const page = createReportPage();
+		runPage(page);
+
+		page.changeButtons[1].trigger("click");
+		expect(page.cards.map((card) => card.hidden)).toEqual([false, true, true]);
+
+		page.changeButtons[2].trigger("click");
+		expect(page.cards.map((card) => card.hidden)).toEqual([true, false, true]);
+
+		page.changeButtons[3].trigger("click");
+		expect(page.cards.map((card) => card.hidden)).toEqual([true, true, false]);
+	});
 });
