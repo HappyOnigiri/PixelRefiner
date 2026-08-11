@@ -147,6 +147,8 @@ export const createProcessOptions = (
 		colorCount,
 		ditherStrength,
 		smallComponentMode,
+		geminiWatermarkRemoval: els.geminiWatermarkRemovalSelect
+			.value as ProcessOptions["geminiWatermarkRemoval"],
 		outlineStyle: els.outlineStyleSelect.value as OutlineStyle,
 		outlineColor: {
 			r: parseInt(outlineHex.slice(1, 3), 16),

@@ -60,6 +60,7 @@ describe("default process options", () => {
 			preserveThinFeatures: PROCESS_DEFAULTS.preserveThinFeatures,
 			enableDeskew: PROCESS_DEFAULTS.enableDeskew,
 			smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
+			geminiWatermarkRemoval: PROCESS_DEFAULTS.geminiWatermarkRemoval,
 			reduceColors: PROCESS_DEFAULTS.reduceColors,
 			reduceColorMode: PROCESS_DEFAULTS.reduceColorMode,
 			ditherMode: PROCESS_DEFAULTS.ditherMode,
@@ -89,6 +90,7 @@ describe("small-component options", () => {
 		const options = normalizeProcessOptions({});
 
 		expect(options.smallComponentMode).toBe("auto");
+		expect(options.geminiWatermarkRemoval).toBe("auto");
 		expect(options.floatingMaxPixels).toBe(0);
 	});
 

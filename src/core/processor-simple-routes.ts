@@ -86,15 +86,17 @@ export const processForcedRoute = (
 	// トリミングしない強制変換では背景除去 1 回ぶんを丸ごと省く。
 	let maskedCache: RawImage | undefined;
 	const getMasked = (): RawImage => {
-		maskedCache ??= removeBackground(
-			working,
-			bgTol,
-			o.bgRemovalScope,
-			o.bgConnectivity,
-			bgTargets,
-			o.bgExtractionMethod,
-			backgroundModel,
-		);
+		maskedCache ??=
+			context.preparedMask ??
+			removeBackground(
+				working,
+				bgTol,
+				o.bgRemovalScope,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+				backgroundModel,
+			);
 		return maskedCache;
 	};
 	let smallComponentRemoval = context.smallComponentRemoval;
@@ -340,7 +342,8 @@ export const processForcedRoute = (
 	);
 
 	// 補正済み比較: パイプラインと同じセルサンプリングを使用する。
-	let finalGridForForce = g;
+	// [Intended] 元画像座標へ対応付ける後処理が切り抜き原点を失わないよう、返却グリッドにも保持する。
+	let finalGridForForce = forcedTrimmedGridForOriginal;
 	if (o.makeSquare) {
 		const w = finalResult.width;
 		const h = finalResult.height;

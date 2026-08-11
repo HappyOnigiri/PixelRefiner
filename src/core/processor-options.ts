@@ -12,6 +12,7 @@ import type {
 	Connectivity,
 	DetailLevel,
 	DitherMode,
+	GeminiWatermarkRemovalMode,
 	GridSignalOptions,
 	OutlineStyle,
 	ProcessingMode,
@@ -81,6 +82,8 @@ export type ProcessOptions = DetectOptions & {
 	trimAlphaThreshold?: number;
 	/** 論理ピクセル単位で小成分を安全に除去する強度。 */
 	smallComponentMode?: SmallComponentRemovalMode;
+	/** 透過背景上で右下に独立している Gemini ウォーターマークを除去する。 */
+	geminiWatermarkRemoval?: GeminiWatermarkRemovalMode;
 	/**
 	 * 除去対象とみなす最大ピクセル数（元画像のピクセル数）。
 	 * 0 の場合は浮遊ノイズを除去しない。
@@ -197,6 +200,7 @@ export const createDefaultProcessOptions = () =>
 		preserveThinFeatures: PROCESS_DEFAULTS.preserveThinFeatures,
 		enableDeskew: PROCESS_DEFAULTS.enableDeskew,
 		smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
+		geminiWatermarkRemoval: PROCESS_DEFAULTS.geminiWatermarkRemoval,
 		reduceColors: PROCESS_DEFAULTS.reduceColors,
 		reduceColorMode: PROCESS_DEFAULTS.reduceColorMode,
 		ditherMode: PROCESS_DEFAULTS.ditherMode,
@@ -245,6 +249,7 @@ export const normalizeProcessOptions = (
 	trimToContent: boolean;
 	trimAlphaThreshold: number;
 	smallComponentMode: SmallComponentRemovalMode;
+	geminiWatermarkRemoval: GeminiWatermarkRemovalMode;
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	gridSignals: GridSignalOptions;
@@ -347,6 +352,8 @@ export const normalizeProcessOptions = (
 	const smallComponentMode = useLegacyFloatingRemoval
 		? "off"
 		: (raw.smallComponentMode ?? PROCESS_DEFAULTS.smallComponentMode);
+	const geminiWatermarkRemoval =
+		raw.geminiWatermarkRemoval ?? PROCESS_DEFAULTS.geminiWatermarkRemoval;
 	const autoGridFromTrimmed =
 		raw.autoGridFromTrimmed ?? PROCESS_DEFAULTS.autoGridFromTrimmed;
 	const fastAutoGridFromTrimmed =
@@ -419,6 +426,7 @@ export const normalizeProcessOptions = (
 		trimToContent,
 		trimAlphaThreshold,
 		smallComponentMode,
+		geminiWatermarkRemoval,
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		gridSignals,
