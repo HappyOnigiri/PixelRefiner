@@ -300,6 +300,7 @@ const resources = {
 		"attr.title.zoom_toggle": "拡大表示する",
 		"attr.title.eyedropper": "スポイトで画像から色を選択",
 		"attr.aria.background_color": "背景色",
+		"attr.aria.theme_toggle": "表示テーマを切り替える",
 		"attr.placeholder.auto": "自動",
 
 		// モーダル
@@ -587,6 +588,7 @@ const resources = {
 		"attr.title.zoom_toggle": "放大显示",
 		"attr.title.eyedropper": "用吸管从图片中选择颜色",
 		"attr.aria.background_color": "背景颜色",
+		"attr.aria.theme_toggle": "切换显示主题",
 		"attr.placeholder.auto": "自动",
 
 		// モーダル
@@ -884,6 +886,7 @@ const resources = {
 		"attr.title.zoom_toggle": "Zoom Output",
 		"attr.title.eyedropper": "Pick color from image",
 		"attr.aria.background_color": "Background color",
+		"attr.aria.theme_toggle": "Toggle color theme",
 		"attr.placeholder.auto": "Auto",
 
 		// モーダル

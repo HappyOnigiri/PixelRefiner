@@ -1,15 +1,97 @@
+import {
+	type ColorTheme,
+	THEME_MEDIA_QUERY,
+	THEME_QUERY_PARAMETER,
+	THEME_STORAGE_KEY,
+} from "../../../src/shared/theme";
+
 interface TranslationTree {
 	[key: string]: string | TranslationTree;
 }
 
+export type QualityReportThemeConfig = {
+	storageKey: string;
+	queryParameter: string;
+	mediaQuery: string;
+};
+
+export const QUALITY_REPORT_THEME_CONFIG: QualityReportThemeConfig = {
+	storageKey: THEME_STORAGE_KEY,
+	queryParameter: THEME_QUERY_PARAMETER,
+	mediaQuery: THEME_MEDIA_QUERY,
+};
+
 declare global {
 	interface Window {
 		__QUALITY_REPORT_TRANSLATIONS__: Record<string, TranslationTree>;
+		__QUALITY_REPORT_THEME__?: {
+			theme: ColorTheme;
+			queryPinned: boolean;
+		};
 	}
 }
 
+// [Intended] 本体の描画前にテーマを確定できるよう、この自己完結した関数だけを head へ埋め込む。
+export const applyInitialQualityReportTheme = (
+	config: QualityReportThemeConfig,
+): void => {
+	const isTheme = (value: string | null): value is ColorTheme =>
+		value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(
+		config.queryParameter,
+	);
+	let storedTheme: string | null = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {
+		// [Workaround] file:// など保存領域を利用できない環境でもレポートを表示する。
+	}
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const prefersDark =
+		typeof window.matchMedia === "function" &&
+		window.matchMedia(config.mediaQuery).matches;
+	const theme = queryTheme ?? savedTheme ?? (prefersDark ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+	window.__QUALITY_REPORT_THEME__ = {
+		theme,
+		queryPinned: queryTheme !== null,
+	};
+};
+
 // [Intended] この自己完結した関数は各静的レポートへシリアライズされる。
-export const runQualityReportClient = (): void => {
+export const runQualityReportClient = (
+	config: QualityReportThemeConfig,
+): void => {
+	const isTheme = (value: string | null): value is ColorTheme =>
+		value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(
+		config.queryParameter,
+	);
+	let storedTheme: string | null = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {
+		// [Workaround] 保存領域を利用できない環境でもテーマ切り替えを妨げない。
+	}
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const themeMediaQuery =
+		typeof window.matchMedia === "function"
+			? window.matchMedia(config.mediaQuery)
+			: null;
+	const themePinned =
+		window.__QUALITY_REPORT_THEME__?.queryPinned ?? queryTheme !== null;
+	let themeManuallySelected = themePinned || savedTheme !== null;
+	let theme =
+		window.__QUALITY_REPORT_THEME__?.theme ??
+		queryTheme ??
+		savedTheme ??
+		(themeMediaQuery?.matches === true ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+
 	const translations = window.__QUALITY_REPORT_TRANSLATIONS__;
 	const preferredLanguage = (
 		navigator.languages?.[0] ??
@@ -82,31 +164,84 @@ export const runQualityReportClient = (): void => {
 			"a.detail-link, a.back-link",
 		),
 	];
-	const persistLocale = (): void => {
-		for (const link of localeLinks) {
-			const href = link.getAttribute("href");
-			if (href === null) continue;
-			// [Intended] href は相対のまま組み直す。絶対URLへ直すと file:// で開いた
-			// レポートのリンクが壊れる。
-			const [target, hash] = href.split("#");
-			const [pathOnly] = target.split("?");
-			link.setAttribute(
-				"href",
-				`${pathOnly}?locale=${encodeURIComponent(locale)}` +
-					(hash === undefined ? "" : `#${hash}`),
-			);
-		}
+	const setLinkParameter = (
+		link: HTMLAnchorElement,
+		name: string,
+		value: string,
+	): void => {
+		const href = link.getAttribute("href");
+		if (href === null) return;
+		// [Intended] 相対URLのままクエリだけを更新し、file:// レポートのリンクを維持する。
+		const [target, hash] = href.split("#");
+		const [pathOnly, query = ""] = target.split("?");
+		const params = new URLSearchParams(query);
+		params.set(name, value);
+		link.setAttribute(
+			"href",
+			`${pathOnly}?${params.toString()}` +
+				(hash === undefined ? "" : `#${hash}`),
+		);
+	};
+	const replaceCurrentParameter = (name: string, value: string): void => {
 		try {
 			const url = new URL(window.location.href);
-			url.searchParams.set("locale", locale);
+			url.searchParams.set(name, value);
 			window.history.replaceState(
 				null,
 				"",
 				`${url.pathname}${url.search}${url.hash}`,
 			);
 		} catch {
-			// [Workaround] URLを更新できない環境でも、表示言語の切り替えは妨げない。
+			// [Workaround] URLを更新できない環境でも、画面上の切り替えは妨げない。
 		}
+	};
+	const themeToggle = document.querySelector<HTMLButtonElement>(
+		"[data-theme-toggle]",
+	);
+	const applyTheme = (nextTheme: ColorTheme): void => {
+		theme = nextTheme;
+		document.documentElement.dataset.theme = theme;
+		document.documentElement.style.colorScheme = theme;
+		window.__QUALITY_REPORT_THEME__ = { theme, queryPinned: themePinned };
+		if (!themeToggle) return;
+		themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+		for (const icon of themeToggle.querySelectorAll<SVGElement>(
+			"[data-theme-icon]",
+		)) {
+			icon.toggleAttribute("hidden", icon.dataset.themeIcon !== theme);
+		}
+	};
+	const persistThemeQuery = (): void => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		}
+		replaceCurrentParameter(config.queryParameter, theme);
+	};
+	applyTheme(theme);
+	if (themePinned) {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		}
+	}
+	themeToggle?.addEventListener("click", () => {
+		themeManuallySelected = true;
+		applyTheme(theme === "light" ? "dark" : "light");
+		try {
+			window.localStorage?.setItem(config.storageKey, theme);
+		} catch {
+			// [Workaround] 保存に失敗しても現在のレポートでは選択を維持する。
+		}
+		if (themePinned) persistThemeQuery();
+	});
+	themeMediaQuery?.addEventListener("change", (event) => {
+		if (!themeManuallySelected) applyTheme(event.matches ? "dark" : "light");
+	});
+
+	const persistLocale = (): void => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, "locale", locale);
+		}
+		replaceCurrentParameter("locale", locale);
 	};
 	let refreshFilter = (): void => {};
 	const setLocale = (nextLocale: string): void => {

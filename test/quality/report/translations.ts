@@ -44,6 +44,7 @@ export const REPORT_TRANSLATIONS = {
 		options: "Options",
 		filterCases: "Filter cases",
 		language: "Language",
+		toggleTheme: "Toggle color theme",
 		allStatuses: "All",
 		passed: "passed",
 		// [Intended] 目標画像との一致とは別概念なので "target" を避ける。こちらはケース定義の
@@ -217,6 +218,7 @@ export const REPORT_TRANSLATIONS = {
 		options: "処理設定",
 		filterCases: "ケースを絞り込む",
 		language: "表示言語",
+		toggleTheme: "表示テーマを切り替える",
 		allStatuses: "すべて",
 		passed: "合格",
 		failed: "基準未達",
@@ -381,6 +383,7 @@ export const REPORT_TRANSLATIONS = {
 		options: "处理设置",
 		filterCases: "筛选用例",
 		language: "显示语言",
+		toggleTheme: "切换显示主题",
 		allStatuses: "全部",
 		passed: "通过",
 		failed: "未达标准",

@@ -1,8 +1,10 @@
 import { inject } from "@vercel/analytics";
 import { initApp } from "./app";
+import { initTheme } from "./theme";
 import { initTooltip } from "./tooltip";
 import "./style.css";
 
+initTheme();
 inject();
 
 window.addEventListener("DOMContentLoaded", () => {

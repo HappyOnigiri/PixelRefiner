@@ -139,6 +139,34 @@ const badges = (
 	);
 
 describe("quality report case detail", () => {
+	it("places the theme toggle last in the index sidebar only", () => {
+		const result = makeCaseResult();
+		const index = renderHtml(makeResults([result]));
+		const sidebar = between(index, '<aside class="sidebar">', "</aside>");
+		expect(sidebar).toContain("data-theme-toggle");
+		expect(sidebar.indexOf("data-theme-toggle")).toBeGreaterThan(
+			sidebar.indexOf('data-i18n="language"'),
+		);
+		const detailBody = between(
+			renderCaseDetailHtml(result),
+			"<body>",
+			"<script>",
+		);
+		expect(detailBody).not.toContain("data-theme-toggle");
+	});
+
+	it("runs the theme bootstrap before report styles are parsed", () => {
+		for (const html of [
+			renderHtml(makeResults([makeCaseResult()])),
+			renderCaseDetailHtml(makeCaseResult()),
+		]) {
+			expect(html.indexOf("pixel-refiner-theme")).toBeGreaterThan(-1);
+			expect(html.indexOf("pixel-refiner-theme")).toBeLessThan(
+				html.indexOf("<style>"),
+			);
+		}
+	});
+
 	// [Intended] 一覧と詳細で同じケースの見出しバッジが食い違うと、片方でしか
 	// 分からない属性が生まれる。両方の見出しを同じ形で突き合わせる。
 	it("shows the same heading badges as the index card", () => {

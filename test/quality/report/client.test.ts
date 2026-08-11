@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runQualityReportClient } from "./client";
+import { QUALITY_REPORT_THEME_CONFIG, runQualityReportClient } from "./client";
 
 type Listener = () => void;
 
@@ -10,8 +10,10 @@ type MockElement = {
 	textContent: string;
 	classList: { toggle: ReturnType<typeof vi.fn> };
 	setAttribute: ReturnType<typeof vi.fn>;
+	toggleAttribute: (name: string, force: boolean) => void;
 	addEventListener: (type: string, listener: Listener) => void;
 	querySelector: (selector: string) => MockElement | null;
+	querySelectorAll: (selector: string) => MockElement[];
 	trigger: (type: string) => void;
 };
 
@@ -33,6 +35,9 @@ const makeElement = (
 		textContent: "",
 		classList: { toggle: vi.fn() },
 		setAttribute: vi.fn(),
+		toggleAttribute: (_name, force) => {
+			element.hidden = force;
+		},
 		addEventListener(type, listener) {
 			const entries = listeners.get(type) ?? [];
 			entries.push(listener);
@@ -40,6 +45,7 @@ const makeElement = (
 		},
 		querySelector: (selector) =>
 			selector === "[data-i18n]" ? labelElement : null,
+		querySelectorAll: () => [],
 		trigger(type) {
 			for (const listener of listeners.get(type) ?? []) listener();
 		},
@@ -65,7 +71,11 @@ const makeLink = (href: string): MockLink => {
 	};
 };
 
-const createReportPage = (query = "") => {
+const createReportPage = (
+	query = "",
+	savedTheme: string | null = null,
+	prefersDark = false,
+) => {
 	const search = makeElement();
 	const visibleCount = makeElement();
 	const activeLabels = {
@@ -113,6 +123,13 @@ const createReportPage = (query = "") => {
 		makeElement({ locale: "en" }),
 		makeElement({ locale: "zh-CN" }),
 	];
+	const themeIcons = [
+		makeElement({ themeIcon: "light" }),
+		makeElement({ themeIcon: "dark" }),
+	];
+	const themeToggle = makeElement();
+	themeToggle.querySelectorAll = (selector) =>
+		selector === "[data-theme-icon]" ? themeIcons : [];
 	const detailLink = makeLink("cases/restore-bilinear-to-8x8/index.html");
 	const selectorGroups: Record<string, MockElement[]> = {
 		"[data-quality-filter]": qualityButtons,
@@ -126,9 +143,14 @@ const createReportPage = (query = "") => {
 		"#active-change-label": activeLabels.change,
 		"#active-parameter-label": activeLabels.parameter,
 		"#image-dialog": null,
+		"[data-theme-toggle]": themeToggle,
 	};
 	const documentMock = {
-		documentElement: { lang: "" },
+		documentElement: {
+			lang: "",
+			dataset: {} as Record<string, string>,
+			style: { colorScheme: "" },
+		},
 		querySelectorAll(selector: string): (MockElement | MockLink)[] {
 			if (selector === ".case") return cards;
 			if (selector === ".images img") return [];
@@ -152,12 +174,30 @@ const createReportPage = (query = "") => {
 			location.hash = nextLocation.hash;
 		},
 	);
+	let storedTheme = savedTheme;
+	let mediaListener = (_event: { matches: boolean }): void => {};
+	const localStorage = {
+		getItem: vi.fn(() => storedTheme),
+		setItem: vi.fn((_key: string, value: string) => {
+			storedTheme = value;
+		}),
+	};
 	const windowMock = {
 		__QUALITY_REPORT_TRANSLATIONS__: { en: {}, ja: {}, "zh-CN": {} },
 		location,
 		history: {
 			replaceState,
 		},
+		localStorage,
+		matchMedia: vi.fn(() => ({
+			matches: prefersDark,
+			addEventListener: (
+				_type: string,
+				listener: (event: { matches: boolean }) => void,
+			) => {
+				mediaListener = listener;
+			},
+		})),
 		addEventListener: vi.fn(),
 	} as unknown as Window;
 	return {
@@ -165,11 +205,15 @@ const createReportPage = (query = "") => {
 		qualityButtons,
 		changeButtons,
 		localeButtons,
+		themeIcons,
+		themeToggle,
 		detailLink,
 		search,
 		documentMock,
 		windowMock,
 		replaceState,
+		localStorage,
+		changeOsTheme: (matches: boolean) => mediaListener({ matches }),
 	};
 };
 
@@ -177,7 +221,11 @@ const createReportPage = (query = "") => {
 const createCaseDetailPage = (query = "") => {
 	const backLink = makeLink("../../index.html");
 	const documentMock = {
-		documentElement: { lang: "" },
+		documentElement: {
+			lang: "",
+			dataset: {} as Record<string, string>,
+			style: { colorScheme: "" },
+		},
 		querySelectorAll(selector: string): (MockElement | MockLink)[] {
 			if (selector === "a.detail-link, a.back-link") return [backLink];
 			return [];
@@ -199,6 +247,11 @@ const createCaseDetailPage = (query = "") => {
 		__QUALITY_REPORT_TRANSLATIONS__: { en: {}, ja: {}, "zh-CN": {} },
 		location,
 		history: { replaceState },
+		localStorage: { getItem: vi.fn(() => null), setItem: vi.fn() },
+		matchMedia: vi.fn(() => ({
+			matches: false,
+			addEventListener: vi.fn(),
+		})),
 		addEventListener: vi.fn(),
 	} as unknown as Window;
 	return { backLink, documentMock, windowMock, replaceState };
@@ -211,7 +264,7 @@ const runPage = (page: {
 	vi.stubGlobal("document", page.documentMock);
 	vi.stubGlobal("window", page.windowMock);
 	vi.stubGlobal("navigator", { languages: ["en"], language: "en" });
-	runQualityReportClient();
+	runQualityReportClient(QUALITY_REPORT_THEME_CONFIG);
 };
 
 afterEach(() => {
@@ -312,5 +365,72 @@ describe("quality report locale query state", () => {
 
 		expect(page.documentMock.documentElement.lang).toBe("en");
 		expect(page.backLink.getAttribute("href")).toBe("../../index.html");
+	});
+});
+
+describe("quality report theme state", () => {
+	it("prioritizes the query over local storage and the OS preference", () => {
+		const page = createReportPage("?theme=light", "dark", true);
+		runPage(page);
+
+		expect(page.documentMock.documentElement.dataset.theme).toBe("light");
+		expect(page.themeIcons.map((icon) => icon.hidden)).toEqual([false, true]);
+		expect(page.detailLink.getAttribute("href")).toBe(
+			"cases/restore-bilinear-to-8x8/index.html?theme=light",
+		);
+	});
+
+	it("uses local storage before the OS preference", () => {
+		const page = createReportPage("", "dark", false);
+		runPage(page);
+		expect(page.documentMock.documentElement.dataset.theme).toBe("dark");
+	});
+
+	it("uses the OS preference and falls back to light when it is unknown", () => {
+		const darkPage = createReportPage("", null, true);
+		runPage(darkPage);
+		expect(darkPage.documentMock.documentElement.dataset.theme).toBe("dark");
+
+		const lightPage = createReportPage();
+		runPage(lightPage);
+		expect(lightPage.documentMock.documentElement.dataset.theme).toBe("light");
+	});
+
+	it("saves manual changes and updates a pinned theme query", () => {
+		const page = createReportPage("?theme=light");
+		runPage(page);
+		page.themeToggle.trigger("click");
+
+		expect(page.documentMock.documentElement.dataset.theme).toBe("dark");
+		expect(page.themeIcons.map((icon) => icon.hidden)).toEqual([true, false]);
+		expect(page.localStorage.setItem).toHaveBeenCalledWith(
+			"pixel-refiner-theme",
+			"dark",
+		);
+		expect(
+			new URL(page.windowMock.location.href).searchParams.get("theme"),
+		).toBe("dark");
+		expect(page.detailLink.getAttribute("href")).toBe(
+			"cases/restore-bilinear-to-8x8/index.html?theme=dark",
+		);
+	});
+
+	it("follows OS changes only until a manual choice is made", () => {
+		const page = createReportPage();
+		runPage(page);
+		page.changeOsTheme(true);
+		expect(page.documentMock.documentElement.dataset.theme).toBe("dark");
+		page.themeToggle.trigger("click");
+		page.changeOsTheme(true);
+		expect(page.documentMock.documentElement.dataset.theme).toBe("light");
+	});
+
+	it("carries a pinned theme query back from a detail page", () => {
+		const page = createCaseDetailPage("?theme=dark");
+		runPage(page);
+		expect(page.documentMock.documentElement.dataset.theme).toBe("dark");
+		expect(page.backLink.getAttribute("href")).toBe(
+			"../../index.html?theme=dark",
+		);
 	});
 });

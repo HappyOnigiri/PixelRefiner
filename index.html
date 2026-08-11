@@ -38,8 +38,8 @@
     <meta name="author" content="Pixel Refiner" />
     <meta name="application-name" content="Pixel Refiner" />
     <meta name="format-detection" content="telephone=no" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#0f1115" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f8fc" />
 
     <!-- ファビコン / アイコン -->
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
@@ -213,7 +213,14 @@
     <style>
       html,
       body {
-        background-color: #0f1115;
+        background-color: #f7f8fc;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        html:not([data-theme]),
+        html:not([data-theme]) body {
+          background-color: #0f1115;
+        }
       }
 
       .app {
@@ -250,14 +257,14 @@
         align-items: center;
         justify-content: space-between;
         padding: 10px 14px;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--surface-hover);
         border-radius: 6px;
         font-size: 0.9rem;
         transition: background 0.2s;
       }
 
       .preset-item:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--surface-hover-strong);
       }
 
       .preset-item-name {
@@ -281,12 +288,57 @@
       <header>
         <div class="header-top">
           <h1><span class="logo-p">P</span>ixel Refiner</h1>
-          <div class="lang-selector">
-            <button class="lang-btn" data-lang-btn="en">EN</button>
-            <span class="separator">/</span>
-            <button class="lang-btn" data-lang-btn="ja">JA</button>
-            <span class="separator">/</span>
-            <button class="lang-btn" data-lang-btn="zh-CN">ZH</button>
+          <div class="header-actions">
+            <div class="lang-selector">
+              <button class="lang-btn" data-lang-btn="en">EN</button>
+              <span class="separator">/</span>
+              <button class="lang-btn" data-lang-btn="ja">JA</button>
+              <span class="separator">/</span>
+              <button class="lang-btn" data-lang-btn="zh-CN">ZH</button>
+            </div>
+            <button
+              class="theme-toggle"
+              type="button"
+              data-theme-toggle
+              data-i18n-attr="aria-label:attr.aria.theme_toggle"
+              aria-label="Toggle color theme"
+              aria-pressed="false"
+            >
+              <svg
+                data-theme-icon="light"
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="4"></circle>
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"
+                ></path>
+              </svg>
+              <svg
+                data-theme-icon="dark"
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                hidden
+              >
+                <path
+                  d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                ></path>
+              </svg>
+            </button>
           </div>
         </div>
         <p class="app-description" data-i18n="app.description" data-i18n-html>

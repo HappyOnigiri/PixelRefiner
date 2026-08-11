@@ -5,7 +5,11 @@ import {
 	renderCandidateDiagnostics,
 	renderWarningDetails,
 } from "./auto-diagnostics";
-import { runQualityReportClient } from "./client";
+import {
+	renderClientScript,
+	renderThemeBootstrapScript,
+	renderThemeToggle,
+} from "./client-script";
 import {
 	escapeHtml,
 	formatConfidence,
@@ -19,10 +23,6 @@ import {
 } from "./images";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 import { renderTargetComparison, TARGET_STATE_KEYS } from "./target-section";
-import { REPORT_TRANSLATIONS } from "./translations";
-
-const renderClientScript = (): string =>
-	`window.__QUALITY_REPORT_TRANSLATIONS__=${JSON.stringify(REPORT_TRANSLATIONS)};(${runQualityReportClient.toString()})();`;
 
 const formatGeneratedAt = (value: string): string => {
 	const generatedAt = new Date(value);
@@ -345,6 +345,7 @@ const renderReportSidebar = (results: QualityResults): string => {
 			</div>
 		</fieldset>
 	</div>
+	${renderThemeToggle()}
 </aside>`;
 };
 
@@ -432,6 +433,7 @@ export const renderHtml = (results: QualityResults): string => {
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
 	<title data-i18n="title">PixelRefiner quality report</title>
+	<script>${renderThemeBootstrapScript()}</script>
 	<style>
 ${INDEX_REPORT_STYLES}	</style>
 </head>
@@ -598,6 +600,7 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
 	<title>${escapeHtml(result.id)} - PixelRefiner quality report</title>
+	<script>${renderThemeBootstrapScript()}</script>
 	<style>
 ${DETAIL_REPORT_STYLES}	</style>
 </head>
