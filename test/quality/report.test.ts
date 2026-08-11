@@ -181,11 +181,28 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		expect(html.match(/data-i18n="confidence"/g)).toHaveLength(
-			selectedCases.length,
-		);
+		expect(
+			html.match(/data-i18n="gridConfidence"/g)?.length ?? 0,
+		).toBeGreaterThanOrEqual(selectedCases.length);
 		expect(html).toContain('processingTime":"時間"');
-		expect(html).toContain('confidence":"信頼度（診断値）"');
+		expect(html).toContain('gridConfidence":"グリッド信頼度"');
+		expect(html).toContain('classificationConfidence":"自動分類信頼度"');
+		// [Intended] 一覧はバッジだけを出す。診断値を並べると 1 ケースの高さが伸び、
+		// 目標品質の一覧性が落ちるため、信頼度と判定理由はケース詳細へ寄せる。
+		expect(html).not.toContain('class="candidate-diagnostics"');
+		expect(html).not.toContain('data-i18n="candidateModalReason"');
+		expect(html).not.toContain('data-i18n="candidatePlanCount"');
+		expect(html).not.toContain('data-i18n="warningPresentation"');
+		expect(html).toContain('hasWarnings":"WARNINGあり"');
+		expect(html).toContain('hasCandidateSelection":"候補選択あり"');
+		expect(html.match(/data-i18n="hasWarnings"/g)?.length ?? 0).toBe(
+			results.cases.filter((result) => result.warnings.length > 0).length,
+		);
+		expect(html.match(/data-i18n="hasCandidateSelection"/g)?.length ?? 0).toBe(
+			results.cases.filter(
+				(result) => result.candidateModalDecision === "would-show",
+			).length,
+		);
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -262,13 +279,17 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
 		expect(compactDetail).toContain(
-			'<dt data-i18n="confidence">Confidence (diagnostic)</dt>',
+			'<dt data-i18n="gridConfidence">Grid confidence</dt>',
 		);
 		expect(compactDetail).toContain(
 			`<dd>${results.cases
 				.find((result) => result.id === compactCaseId)
-				?.confidence?.toFixed(4)}</dd>`,
+				?.gridConfidence?.toFixed(4)}</dd>`,
 		);
+		expect(compactDetail).toContain(
+			'<dt data-i18n="classificationConfidence">Classification confidence</dt>',
+		);
+		expect(compactDetail).toContain('data-i18n="candidateDiagnostics"');
 		expect(compactDetail).toContain('class="case-description"');
 		expect(compactDetail).toContain('class="image-stage dialog-stage"');
 		// [Intended] 一覧カードと同じ属性を詳細でも読み取れるようにする。
@@ -303,12 +324,65 @@ describe.skipIf(!enabled)("quality report", () => {
 			'<strong data-i18n="targetSource">Target source</strong>: ' +
 				"<code>remove-background-trim-resize-46x13</code>",
 		);
+		expect(autoDetail).toContain(
+			'<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>',
+		);
+		expect(autoDetail).toContain('data-i18n="candidateModalWouldShow"');
+		expect(autoDetail).toContain(
+			'data-i18n="warningPresentationCandidateModal"',
+		);
+		// [Intended] WARNING は文言だけでなく、どの判定で付いたかまで詳細から辿れること。
+		expect(autoDetail).toContain(
+			'<h2 data-i18n="warningDetails">WARNING details</h2>',
+		);
+		expect(autoDetail).toContain(
+			'data-i18n="processingWarnings.LOW_GRID_CONFIDENCE"',
+		);
+		expect(autoDetail).toContain(
+			'data-i18n="warningTriggers.LOW_GRID_CONFIDENCE"',
+		);
+		expect(autoDetail).toContain(
+			'data-i18n="candidateModalReasons.LOW_GRID_CONFIDENCE"',
+		);
+		// [Intended] 候補選択モーダルが出る見込みのケースは、選択肢とその画像を詳細へ出す。
+		expect(autoDetail).toContain(
+			'<h3 data-i18n="candidateOptions">Candidate options</h3>',
+		);
+		expect(autoDetail).toContain('class="images candidate-options"');
+		const autoCandidateOptions =
+			results.cases.find((result) => result.id === autoCaseId)
+				?.candidateOptions ?? [];
+		expect(autoCandidateOptions.length).toBeGreaterThan(0);
+		for (const option of autoCandidateOptions) {
+			expect(autoDetail).toContain(`data-i18n="candidateKinds.${option.kind}"`);
+			if (option.file === null) continue;
+			expect(existsSync(path.join(reportRoot, option.file))).toBe(true);
+			expect(autoDetail).toContain(`src="${path.posix.basename(option.file)}"`);
+		}
+		// [Intended] 候補生成はモーダルが出る見込みのケースだけに限る。品質ゲートと
+		// 表示されないケースに候補 1 件あたり 1 回の追加処理を持ち込まないため。
+		for (const result of results.cases) {
+			if (result.candidateModalDecision === "would-show") continue;
+			expect(result.candidateOptions).toEqual([]);
+		}
 		expect(autoDetail).toContain('data-i18n="sizeMatches"');
 		expect(autoDetail).toContain('class="badge parameter-auto"');
 		expect(results.summary.targetMissing).toBe(0);
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
-		expect(markdown).toContain("|Confidence (diagnostic)|");
+		expect(markdown).toContain("|Classification confidence|Grid confidence|");
+		expect(markdown).toContain(
+			"|Candidate modal (expected)|WARNING presentation|",
+		);
+		expect(markdown).toContain("|Decision reason|WARNING codes|");
+		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
+		const uiCandidateCase = results.cases.find(
+			(result) => result.id === "show-ui-default-candidates",
+		);
+		expect(uiCandidateCase?.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(uiCandidateCase?.candidatePlanCount).toBeGreaterThan(0);
+		expect(uiCandidateCase?.candidateModalDecision).toBe("would-show");
+		expect(uiCandidateCase?.warningPresentation).toBe("candidate-modal");
 		expect(markdown).toContain(`- Changed: ${results.summary.changed}`);
 		expect(markdown).toContain(`- Unchanged: ${results.summary.unchanged}`);
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);

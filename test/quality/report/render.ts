@@ -1,16 +1,18 @@
 import path from "node:path";
 import type { QualityCaseResult, QualityResults } from "../types";
+import {
+	renderAutoDiagnosticBadges,
+	renderCandidateDiagnostics,
+	renderWarningDetails,
+} from "./auto-diagnostics";
 import { runQualityReportClient } from "./client";
-import { escapeHtml, formatMetric } from "./format";
+import { escapeHtml, formatConfidence, formatMetric } from "./format";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 import { renderTargetComparison, TARGET_STATE_KEYS } from "./target-section";
 import { REPORT_TRANSLATIONS } from "./translations";
 
 const renderClientScript = (): string =>
 	`window.__QUALITY_REPORT_TRANSLATIONS__=${JSON.stringify(REPORT_TRANSLATIONS)};(${runQualityReportClient.toString()})();`;
-
-const formatConfidence = (value: number | null): string =>
-	value === null ? "-" : value.toFixed(4);
 
 const formatGeneratedAt = (value: string): string => {
 	const generatedAt = new Date(value);
@@ -343,7 +345,7 @@ export const renderHtml = (results: QualityResults): string => {
 				targetMeasurement,
 				' &middot; <strong data-i18n="processingTime">Time</strong> ',
 				`${result.metrics.runtimeMs.toFixed(2)}ms`,
-				' &middot; <strong data-i18n="confidence">Confidence (diagnostic)</strong> ',
+				' &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> ',
 				`${formatConfidence(result.confidence)}</small>`,
 			].join("");
 			const targetFailures =
@@ -399,6 +401,7 @@ export const renderHtml = (results: QualityResults): string => {
 				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 				<span class="badge parameter-${result.parameterMode}"
 					data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
+				${renderAutoDiagnosticBadges(result)}
 				${qualityMeasurement}
 			</h2>
 			${targetFailures}
@@ -455,15 +458,6 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 		["baselineDifference", "Baseline difference", result.files.baselineDiff],
 		["backgroundMask", "Background mask", result.files.backgroundMask],
 	]);
-	const warnings =
-		result.warnings.length === 0
-			? '<span data-i18n="none">none</span>'
-			: result.warnings
-					.map(
-						(warning) =>
-							`<span data-i18n="assertions.${escapeHtml(warning)}">${escapeHtml(warning)}</span>`,
-					)
-					.join(", ");
 	const metricState = (
 		key: string,
 		hasBaseline: boolean,
@@ -641,13 +635,14 @@ ${DETAIL_REPORT_STYLES}	</style>
 			<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>
 		</section>
 		${renderTargetComparison(result)}
+		${renderWarningDetails(result)}
+		${renderCandidateDiagnostics(result)}
 		<section>
 			<h2 data-i18n="options">Options</h2>
 			<dl>
 				<dt data-i18n="inputKind">Input kind</dt><dd>${escapeHtml(result.inputKind)}</dd>
 				<dt data-i18n="route">Route</dt><dd data-i18n="${result.route}">${result.route}</dd>
-				<dt data-i18n="confidence">Confidence (diagnostic)</dt><dd>${formatConfidence(result.confidence)}</dd>
-				<dt data-i18n="warnings">Warnings</dt><dd>${warnings}</dd>
+				<dt data-i18n="gridConfidence">Grid confidence</dt><dd>${formatConfidence(result.gridConfidence)}</dd>
 				<dt data-i18n="topCandidates">Top candidates</dt><dd><code>${escapeHtml(JSON.stringify(result.gridCandidates))}</code></dd>
 				<dt data-i18n="metrics">Metrics</dt><dd><code>${escapeHtml(JSON.stringify(result.metrics))}</code></dd>
 				<dt data-i18n="options">Options</dt><dd><code>${escapeHtml(JSON.stringify(result.options))}</code></dd>
@@ -662,6 +657,13 @@ ${renderImageDialog()}
 
 export const renderMarkdown = (results: QualityResults): string => {
 	const summary = results.summary;
+	const markdownHeader = [
+		"|Case|Target quality|Change from previous run|Output|",
+		"Classification confidence|Grid confidence|",
+		"Candidate modal (expected)|WARNING presentation|",
+		"Decision reason|WARNING codes|Target mean RGBA error|",
+		"Target Edge F1|Runtime (ms)|",
+	].join("");
 	const rows = results.cases
 		.map((result) =>
 			[
@@ -669,7 +671,12 @@ export const renderMarkdown = (results: QualityResults): string => {
 				`|${result.targetStatus}`,
 				`|${result.changeStatus}`,
 				`|${result.metrics.outputWidth}x${result.metrics.outputHeight}`,
-				`|${formatConfidence(result.confidence)}`,
+				`|${formatConfidence(result.classificationConfidence)}`,
+				`|${formatConfidence(result.gridConfidence)}`,
+				`|${result.candidateModalDecision}`,
+				`|${result.warningPresentation}`,
+				`|${result.candidateModalReason}`,
+				`|${result.warnings.join(", ") || "-"}`,
 				`|${formatMetric(result.targetMetrics?.meanRgbaError)}`,
 				`|${formatMetric(result.targetMetrics?.edgeF1)}`,
 				`|${result.metrics.runtimeMs.toFixed(2)}|`,
@@ -696,8 +703,8 @@ export const renderMarkdown = (results: QualityResults): string => {
 		1,
 	)}%
 
-|Case|Target quality|Change from previous run|Output|Confidence (diagnostic)|Target mean RGBA error|Target Edge F1|Runtime (ms)|
-|---|---|---|---:|---:|---:|---:|---:|
+${markdownHeader}
+|---|---|---|---:|---:|---|---|---|---|---|---:|---:|---:|
 ${rows}
 `;
 };

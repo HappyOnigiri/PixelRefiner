@@ -75,6 +75,8 @@ a { color: #b9a7ff; }
 .badge.unchanged { background: #48536b; }
 .badge.parameter-auto { background: #2d4a6b; }
 .badge.parameter-explicit { background: #3d3550; }
+.badge.has-warnings { background: #8a4b16; }
+.badge.has-candidate-selection { background: #1f5f6b; }
 .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 .images figure { margin: 0; }
 .image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 220px; }
@@ -151,6 +153,16 @@ th:first-child { text-align: left; }
 tr.metric-regressed { color: #ff8f8f; }
 tr.metric-improved { color: #85e6a9; }
 section { margin-top: 28px; }
+.warning-details, .candidate-diagnostics { padding: 12px; border: 1px solid #494151; border-radius: 8px; }
+.warning-details h2, .candidate-diagnostics h2 { margin-top: 0; }
+.badge.candidate-recommended { background: #236044; }
+.warning-list { display: grid; gap: 10px; margin: 0; padding-left: 20px; }
+.warning-item { line-height: 1.6; }
+.warning-message { display: block; }
+.warning-trigger { display: block; color: #d6cce4; font-size: .85em; }
+.candidate-options { margin-top: 12px; }
+.candidate-options figcaption { line-height: 1.5; }
+.candidate-metadata { display: block; color: #d6cce4; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 12px; }
 dd { margin: 0; overflow-wrap: anywhere; }
 code { font-size: .8em; }
