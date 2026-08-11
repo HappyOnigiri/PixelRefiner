@@ -1,5 +1,6 @@
 import { wrap } from "comlink";
 import type { ProcessOptions } from "../core/processor";
+import { createDefaultProcessOptions } from "../core/processor-options";
 import type { ProcessorWorker } from "../core/worker";
 import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
@@ -24,7 +25,6 @@ import {
 } from "./processing-warnings";
 import {
 	applyQuickSettingsToOptions,
-	createUiInitialProcessOptions,
 	type QuickBackground,
 	type QuickColors,
 	type QuickDithering,
@@ -113,8 +113,10 @@ export const createProcessOptions = (
 	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
 	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
 
+	// [Intended] 土台は Quick 設定を適用していない詳細設定の既定値にする。
+	// Quick 設定は DOM の実値で最後に一度だけ適用する。
 	const advancedOptions: ProcessOptions = {
-		...createUiInitialProcessOptions(),
+		...createDefaultProcessOptions(),
 		debug: BROWSER_RUNTIME_CONFIG.debug,
 		detectionQuantStep,
 		forcePixelsW: gridMode === "force" && usePixels ? pixelsW : undefined,
