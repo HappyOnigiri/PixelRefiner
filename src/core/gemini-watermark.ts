@@ -1,8 +1,16 @@
 import { GEMINI_WATERMARK_LIMITS } from "../shared/config";
 import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
+import type { AutomaticBackgroundResult } from "./background";
 import { getBackgroundTargets, removeBackground } from "./background-removal";
 import { extractUsedColors } from "./color-reduction";
 import type { NormalizedProcessOptions } from "./processor-options";
+
+type SearchRegion = {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+};
 
 type Component = {
 	id: number;
@@ -12,13 +20,7 @@ type Component = {
 	maxX: number;
 	maxY: number;
 	brightPixels: number;
-};
-
-export type GeminiWatermarkRemovalResult = {
-	image: RawImage;
-	removed: boolean;
-	removedPixels: number;
-	bounds: GeminiWatermarkBounds[];
+	touchesOutsideRegion: boolean;
 };
 
 export type GeminiWatermarkBounds = {
@@ -27,6 +29,17 @@ export type GeminiWatermarkBounds = {
 	w: number;
 	h: number;
 };
+
+export type GeminiWatermarkRemovalResult = {
+	image: RawImage;
+	removed: boolean;
+	removedPixels: number;
+	bounds: GeminiWatermarkBounds[];
+	/** 元画像上で除去対象になった画素番号。 */
+	pixels: Uint32Array;
+};
+
+const EMPTY_PIXELS = new Uint32Array(0);
 
 const assertSameSize = (image: RawImage, mask: RawImage): void => {
 	if (image.width !== mask.width || image.height !== mask.height) {
@@ -40,20 +53,54 @@ const componentWidth = (component: Component): number =>
 const componentHeight = (component: Component): number =>
 	component.maxY - component.minY + 1;
 
+const createSearchRegion = (width: number, height: number): SearchRegion => {
+	const limits = GEMINI_WATERMARK_LIMITS;
+	const minimumDimension = Math.min(width, height);
+	const maximumMarkDimension = minimumDimension * limits.maximumDimensionRatio;
+	const maximumMargin = minimumDimension * limits.maximumMarginRatio;
+	const x = Math.max(
+		0,
+		Math.floor(
+			Math.max(
+				width * limits.minimumCenterRatio - maximumMarkDimension / 2,
+				width - maximumMargin - maximumMarkDimension - 1,
+			),
+		),
+	);
+	const y = Math.max(
+		0,
+		Math.floor(
+			Math.max(
+				height * limits.minimumCenterRatio - maximumMarkDimension / 2,
+				height - maximumMargin - maximumMarkDimension - 1,
+			),
+		),
+	);
+	return { x, y, w: width - x, h: height - y };
+};
+
 const analyzeComponents = (
 	image: RawImage,
 	mask: RawImage,
-): { labels: Int32Array; components: Component[] } => {
-	const width = mask.width;
-	const height = mask.height;
-	const pixelCount = width * height;
-	const labels = new Int32Array(pixelCount);
-	const queue = new Int32Array(pixelCount);
+	region: SearchRegion,
+): { labels: Int32Array; components: Component[]; opaquePixels: number } => {
+	const labels = new Int32Array(region.w * region.h);
+	const queue = new Int32Array(region.w * region.h);
 	const components: Component[] = [];
 	const alphaThreshold = GEMINI_WATERMARK_LIMITS.alphaThreshold;
+	let opaquePixels = 0;
+	for (let pixel = 0; pixel < mask.width * mask.height; pixel += 1) {
+		if (mask.data[pixel * 4 + 3] >= alphaThreshold) opaquePixels += 1;
+	}
 
-	for (let start = 0; start < pixelCount; start += 1) {
-		if (labels[start] !== 0 || mask.data[start * 4 + 3] < alphaThreshold) {
+	for (let start = 0; start < labels.length; start += 1) {
+		const startX = region.x + (start % region.w);
+		const startY = region.y + ((start / region.w) | 0);
+		const sourcePixel = startY * mask.width + startX;
+		if (
+			labels[start] !== 0 ||
+			mask.data[sourcePixel * 4 + 3] < alphaThreshold
+		) {
 			continue;
 		}
 		const id = components.length + 1;
@@ -64,58 +111,84 @@ const analyzeComponents = (
 		const component: Component = {
 			id,
 			size: 0,
-			minX: width,
-			minY: height,
+			minX: image.width,
+			minY: image.height,
 			maxX: 0,
 			maxY: 0,
 			brightPixels: 0,
+			touchesOutsideRegion: false,
 		};
 		while (read < write) {
-			const pixel = queue[read];
+			const localPixel = queue[read];
 			read += 1;
-			const x = pixel % width;
-			const y = (pixel / width) | 0;
+			const x = region.x + (localPixel % region.w);
+			const y = region.y + ((localPixel / region.w) | 0);
+			const pixel = y * image.width + x;
 			const offset = pixel * 4;
 			component.size += 1;
 			component.minX = Math.min(component.minX, x);
 			component.minY = Math.min(component.minY, y);
 			component.maxX = Math.max(component.maxX, x);
 			component.maxY = Math.max(component.maxY, y);
-			const red = image.data[offset];
-			const green = image.data[offset + 1];
-			const blue = image.data[offset + 2];
-			const luminance = (77 * red + 150 * green + 29 * blue) >> 8;
+			const luminance =
+				(77 * image.data[offset] +
+					150 * image.data[offset + 1] +
+					29 * image.data[offset + 2]) >>
+				8;
 			if (luminance >= GEMINI_WATERMARK_LIMITS.brightLuminanceMinimum) {
 				component.brightPixels += 1;
 			}
 
-			const xStart = x > 0 ? -1 : 0;
-			const xEnd = x + 1 < width ? 1 : 0;
-			const yStart = y > 0 ? -1 : 0;
-			const yEnd = y + 1 < height ? 1 : 0;
-			for (let dy = yStart; dy <= yEnd; dy += 1) {
-				for (let dx = xStart; dx <= xEnd; dx += 1) {
+			for (let dy = -1; dy <= 1; dy += 1) {
+				for (let dx = -1; dx <= 1; dx += 1) {
 					if (dx === 0 && dy === 0) continue;
-					const neighbor = pixel + dy * width + dx;
+					const neighborX = x + dx;
+					const neighborY = y + dy;
 					if (
-						labels[neighbor] === 0 &&
-						mask.data[neighbor * 4 + 3] >= alphaThreshold
+						neighborX < 0 ||
+						neighborY < 0 ||
+						neighborX >= mask.width ||
+						neighborY >= mask.height
 					) {
-						labels[neighbor] = id;
-						queue[write] = neighbor;
-						write += 1;
+						continue;
 					}
+					const neighbor = neighborY * mask.width + neighborX;
+					if (mask.data[neighbor * 4 + 3] < alphaThreshold) continue;
+					const localX = neighborX - region.x;
+					const localY = neighborY - region.y;
+					if (
+						localX < 0 ||
+						localY < 0 ||
+						localX >= region.w ||
+						localY >= region.h
+					) {
+						component.touchesOutsideRegion = true;
+						continue;
+					}
+					const localNeighbor = localY * region.w + localX;
+					if (labels[localNeighbor] !== 0) continue;
+					labels[localNeighbor] = id;
+					queue[write] = localNeighbor;
+					write += 1;
 				}
 			}
 		}
 		components.push(component);
 	}
-	return { labels, components };
+	return { labels, components, opaquePixels };
 };
+
+const labelAt = (
+	labels: Int32Array,
+	region: SearchRegion,
+	x: number,
+	y: number,
+): number => labels[(y - region.y) * region.w + x - region.x];
 
 const matchesGeminiShape = (
 	component: Component,
 	labels: Int32Array,
+	region: SearchRegion,
 	imageWidth: number,
 	imageHeight: number,
 ): boolean => {
@@ -136,6 +209,7 @@ const matchesGeminiShape = (
 	const brightPixelRatio = component.brightPixels / component.size;
 
 	if (
+		component.touchesOutsideRegion ||
 		component.size < limits.minimumComponentPixels ||
 		width < minimumDimension ||
 		height < minimumDimension ||
@@ -162,8 +236,7 @@ const matchesGeminiShape = (
 	let verticalMatches = 0;
 	for (let y = component.minY; y <= component.maxY; y += 1) {
 		for (let x = component.minX; x <= component.maxX; x += 1) {
-			const pixel = y * imageWidth + x;
-			if (labels[pixel] !== component.id) continue;
+			if (labelAt(labels, region, x, y) !== component.id) continue;
 			const localX = x - component.minX;
 			const localY = y - component.minY;
 			const inHorizontalEdge =
@@ -173,27 +246,24 @@ const matchesGeminiShape = (
 			if (inHorizontalEdge && inVerticalEdge) cornerPixels += 1;
 			const reflectedX = component.minX + component.maxX - x;
 			const reflectedY = component.minY + component.maxY - y;
-			if (labels[y * imageWidth + reflectedX] === component.id) {
+			if (labelAt(labels, region, reflectedX, y) === component.id) {
 				horizontalMatches += 1;
 			}
-			if (labels[reflectedY * imageWidth + x] === component.id) {
+			if (labelAt(labels, region, x, reflectedY) === component.id) {
 				verticalMatches += 1;
 			}
 		}
 	}
-	const cornerRatio = cornerPixels / component.size;
-	const horizontalSymmetry = horizontalMatches / component.size;
-	const verticalSymmetry = verticalMatches / component.size;
 	return (
-		cornerRatio <= limits.maximumCornerPixelRatio &&
-		horizontalSymmetry >= limits.minimumSymmetryRatio &&
-		verticalSymmetry >= limits.minimumSymmetryRatio
+		cornerPixels / component.size <= limits.maximumCornerPixelRatio &&
+		horizontalMatches / component.size >= limits.minimumSymmetryRatio &&
+		verticalMatches / component.size >= limits.minimumSymmetryRatio
 	);
 };
 
 /**
- * 背景透過後に右下で独立している Gemini の星形だけを除去する。
- * [Intended] 主体と接触したマークは同じ連結成分になり、寸法条件から外れるため補完しない。
+ * 背景マスク上で右下に独立している Gemini の星形だけを除去する。
+ * [Intended] 主体と接触したマークは探索領域外へ接続するか寸法条件から外れるため補完しない。
  */
 export const removeGeminiWatermark = (
 	image: RawImage,
@@ -204,33 +274,49 @@ export const removeGeminiWatermark = (
 		Math.min(image.width, image.height) <
 		GEMINI_WATERMARK_LIMITS.minimumImageDimension
 	) {
-		return { image, removed: false, removedPixels: 0, bounds: [] };
+		return {
+			image,
+			removed: false,
+			removedPixels: 0,
+			bounds: [],
+			pixels: EMPTY_PIXELS,
+		};
 	}
-	const { labels, components } = analyzeComponents(image, transparencyMask);
-	let largestSize = 0;
-	for (let index = 0; index < components.length; index += 1) {
-		largestSize = Math.max(largestSize, components[index].size);
-	}
+	const region = createSearchRegion(image.width, image.height);
+	const { labels, components, opaquePixels } = analyzeComponents(
+		image,
+		transparencyMask,
+		region,
+	);
 	const removeById = new Uint8Array(components.length + 1);
-	let matched = false;
+	let removedPixelCapacity = 0;
 	for (let index = 0; index < components.length; index += 1) {
 		const component = components[index];
 		if (
-			largestSize <
-			component.size * GEMINI_WATERMARK_LIMITS.minimumSubjectSizeRatio
+			opaquePixels <
+			component.size * (GEMINI_WATERMARK_LIMITS.minimumSubjectSizeRatio + 1)
 		) {
 			continue;
 		}
-		if (matchesGeminiShape(component, labels, image.width, image.height)) {
+		if (
+			matchesGeminiShape(component, labels, region, image.width, image.height)
+		) {
 			removeById[component.id] = 1;
-			matched = true;
+			removedPixelCapacity += component.size;
 		}
 	}
-	if (!matched) {
-		return { image, removed: false, removedPixels: 0, bounds: [] };
+	if (removedPixelCapacity === 0) {
+		return {
+			image,
+			removed: false,
+			removedPixels: 0,
+			bounds: [],
+			pixels: EMPTY_PIXELS,
+		};
 	}
 
 	const data = new Uint8ClampedArray(image.data);
+	const pixels = new Uint32Array(removedPixelCapacity);
 	const bounds: GeminiWatermarkBounds[] = [];
 	let removedPixels = 0;
 	for (let index = 0; index < components.length; index += 1) {
@@ -242,13 +328,16 @@ export const removeGeminiWatermark = (
 			w: componentWidth(component),
 			h: componentHeight(component),
 		});
-		// [Intended] 透かしの弱い外縁は背景マスクで透明側へ分類されるため、
-		// 検出した星形の BBox 全体を落としてダウンサンプリング後の点状残りを防ぐ。
 		for (let y = component.minY; y <= component.maxY; y += 1) {
 			for (let x = component.minX; x <= component.maxX; x += 1) {
-				const alphaOffset = (y * image.width + x) * 4 + 3;
-				if (data[alphaOffset] === 0) continue;
-				data[alphaOffset] = 0;
+				if (labelAt(labels, region, x, y) !== component.id) continue;
+				const pixel = y * image.width + x;
+				const offset = pixel * 4;
+				data[offset] = 0;
+				data[offset + 1] = 0;
+				data[offset + 2] = 0;
+				data[offset + 3] = 0;
+				pixels[removedPixels] = pixel;
 				removedPixels += 1;
 			}
 		}
@@ -258,36 +347,92 @@ export const removeGeminiWatermark = (
 		removed: true,
 		removedPixels,
 		bounds,
+		pixels,
 	};
 };
 
-/** 検出した元画像座標の領域を、確定済みグリッドで出力座標へ写して透明化する。 */
-export const clearMappedGeminiWatermarks = (
+const rotatedSize = (
+	width: number,
+	height: number,
+	angle: number,
+): { width: number; height: number; cosine: number; sine: number } => {
+	const radians = (angle * Math.PI) / 180;
+	const cosine = Math.cos(radians);
+	const sine = Math.sin(radians);
+	return {
+		width: Math.max(
+			1,
+			Math.ceil(Math.abs(width * cosine) + Math.abs(height * sine)),
+		),
+		height: Math.max(
+			1,
+			Math.ceil(Math.abs(width * sine) + Math.abs(height * cosine)),
+		),
+		cosine,
+		sine,
+	};
+};
+
+/** 検出した元画像画素を、傾き補正と確定済みグリッドを通した出力座標へ写す。 */
+export const clearMappedGeminiWatermark = (
 	image: RawImage,
 	grid: PixelGrid,
-	bounds: GeminiWatermarkBounds[],
+	sourceWidth: number,
+	sourceHeight: number,
+	sourcePixels: Uint32Array,
+	angle: number,
 ): RawImage => {
-	if (bounds.length === 0 || grid.angle) return image;
+	if (sourcePixels.length === 0) return image;
 	const cropX = grid.cropX ?? grid.offsetX;
 	const cropY = grid.cropY ?? grid.offsetY;
+	const rotation = rotatedSize(sourceWidth, sourceHeight, angle);
+	const sourceCenterX = (sourceWidth - 1) / 2;
+	const sourceCenterY = (sourceHeight - 1) / 2;
+	const outputCenterX = (rotation.width - 1) / 2;
+	const outputCenterY = (rotation.height - 1) / 2;
+	const interpolationRadius = Math.abs(angle) > 1e-9 ? 1 : 0;
 	let data: Uint8ClampedArray | undefined;
-	for (let index = 0; index < bounds.length; index += 1) {
-		const bound = bounds[index];
-		const minX = Math.max(0, Math.floor((bound.x - cropX) / grid.cellW));
-		const minY = Math.max(0, Math.floor((bound.y - cropY) / grid.cellH));
+	for (let index = 0; index < sourcePixels.length; index += 1) {
+		const sourcePixel = sourcePixels[index];
+		const sourceX = sourcePixel % sourceWidth;
+		const sourceY = (sourcePixel / sourceWidth) | 0;
+		const centeredX = sourceX - sourceCenterX;
+		const centeredY = sourceY - sourceCenterY;
+		const rotatedX =
+			rotation.cosine * centeredX - rotation.sine * centeredY + outputCenterX;
+		const rotatedY =
+			rotation.sine * centeredX + rotation.cosine * centeredY + outputCenterY;
+		const minX = Math.max(
+			0,
+			Math.floor((rotatedX - interpolationRadius - cropX) / grid.cellW),
+		);
+		const minY = Math.max(
+			0,
+			Math.floor((rotatedY - interpolationRadius - cropY) / grid.cellH),
+		);
 		const maxX = Math.min(
 			image.width - 1,
-			Math.ceil((bound.x + bound.w - cropX) / grid.cellW) - 1,
+			Math.floor((rotatedX + interpolationRadius - cropX) / grid.cellW),
 		);
 		const maxY = Math.min(
 			image.height - 1,
-			Math.ceil((bound.y + bound.h - cropY) / grid.cellH) - 1,
+			Math.floor((rotatedY + interpolationRadius - cropY) / grid.cellH),
 		);
-		if (minX > maxX || minY > maxY) continue;
-		data ??= new Uint8ClampedArray(image.data);
 		for (let y = minY; y <= maxY; y += 1) {
 			for (let x = minX; x <= maxX; x += 1) {
 				const offset = (y * image.width + x) * 4;
+				const luminance =
+					(77 * image.data[offset] +
+						150 * image.data[offset + 1] +
+						29 * image.data[offset + 2]) >>
+					8;
+				if (
+					image.data[offset + 3] < GEMINI_WATERMARK_LIMITS.alphaThreshold ||
+					luminance < GEMINI_WATERMARK_LIMITS.brightLuminanceMinimum
+				) {
+					continue;
+				}
+				data ??= new Uint8ClampedArray(image.data);
 				data[offset] = 0;
 				data[offset + 1] = 0;
 				data[offset + 2] = 0;
@@ -298,46 +443,82 @@ export const clearMappedGeminiWatermarks = (
 	return data ? { width: image.width, height: image.height, data } : image;
 };
 
-/** 確定済みの処理結果へ透かし除去だけを適用し、経路選択と出力形状を保持する。 */
-export const applyGeminiWatermarkRemoval = (
+/** 処理本体が採用した背景条件を再利用し、透かしの独立性を判定するマスクを返す。 */
+export const createGeminiWatermarkDetectionMask = (
 	inputImage: RawImage,
-	processed: ProcessResult,
 	options: NormalizedProcessOptions,
-): ProcessResult => {
+	automaticBackground: AutomaticBackgroundResult | undefined,
+	getProcessedBackgroundMask: () => RawImage,
+): RawImage => {
 	if (
-		options.geminiWatermarkRemoval === "off" ||
-		!options.postRemoveBackground ||
+		(!options.preRemoveBackground && !options.postRemoveBackground) ||
 		options.bgRemovalScope === "off" ||
 		options.bgExtractionMethod === "none"
 	) {
-		return processed;
+		// [Intended] 入力が既に透過済みなら、背景除去設定が無効でもそのアルファを根拠に判定する。
+		return inputImage;
 	}
-	const detectionMethod =
-		options.bgExtractionMethod === "auto"
-			? ("top-left" as const)
-			: options.bgExtractionMethod;
-	const detectionMask = removeBackground(
+	if (
+		options.bgExtractionMethod === "auto" &&
+		automaticBackground &&
+		!automaticBackground.rolledBack
+	) {
+		return automaticBackground.image;
+	}
+	if (options.bgExtractionMethod !== "auto") {
+		// [Intended] selected / outer / all の違いを処理本体と同じマスクで尊重する。
+		return getProcessedBackgroundMask();
+	}
+
+	// [Intended] Auto が背景面積の大きさだけでロールバックした場合も、右下の星形が
+	// 角背景から独立しているかは保守的な単一角マスクで判定する。
+	const method = "top-left" as const;
+	return removeBackground(
 		inputImage,
 		options.backgroundTolerance,
-		"outer",
+		options.bgRemovalScope,
 		options.bgConnectivity,
-		getBackgroundTargets(inputImage, detectionMethod, options.bgRgb),
-		detectionMethod,
+		getBackgroundTargets(inputImage, method, options.bgRgb),
+		method,
 	);
+};
+
+/** 確定済みの処理結果へ透かし除去だけを適用し、経路選択と出力形状を保持する。 */
+export const applyGeminiWatermarkRemoval = (
+	inputImage: RawImage,
+	detectionMask: RawImage,
+	processed: ProcessResult,
+	options: NormalizedProcessOptions,
+	appliedDeskewAngle: number,
+): ProcessResult => {
+	if (
+		options.geminiWatermarkRemoval === "off" ||
+		// [Policy] 強制サイズ経路は返却グリッドに元画像の切り抜き原点を保持しないため、誤消去を避ける。
+		options.forcePixelsW !== undefined ||
+		options.forcePixelsH !== undefined
+	) {
+		return processed;
+	}
 	const removal = removeGeminiWatermark(inputImage, detectionMask);
 	if (!removal.removed) return processed;
 
 	// [Intended] 検出・分類・トリミングの結果は透かし除去前のまま保ち、
 	// 確定した出力座標だけを透明化して Auto の経路選択やキャンバス寸法を変えない。
-	const result = clearMappedGeminiWatermarks(
+	const result = clearMappedGeminiWatermark(
 		processed.result,
 		processed.grid,
-		removal.bounds,
+		inputImage.width,
+		inputImage.height,
+		removal.pixels,
+		appliedDeskewAngle,
 	);
-	const compareBeforeSanitized = clearMappedGeminiWatermarks(
+	const compareBeforeSanitized = clearMappedGeminiWatermark(
 		processed.compareBeforeSanitized,
 		processed.grid,
-		removal.bounds,
+		inputImage.width,
+		inputImage.height,
+		removal.pixels,
+		appliedDeskewAngle,
 	);
 	options.debugHook?.("99-watermark-removed", result, {
 		removedPixels: removal.removedPixels,

@@ -17,7 +17,10 @@ import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { removeSmallComponents } from "./components";
 import { rotateRawImageExpanded } from "./deskew";
 import { detectGrid } from "./detector";
-import { applyGeminiWatermarkRemoval } from "./gemini-watermark";
+import {
+	applyGeminiWatermarkRemoval,
+	createGeminiWatermarkDetectionMask,
+} from "./gemini-watermark";
 import {
 	rankGridCandidates,
 	rerankGridCandidateReports,
@@ -256,26 +259,53 @@ const processImageCore = (
 		backgroundModel,
 		smallComponentRemoval,
 	};
+	let watermarkDetectionMask: RawImage | undefined;
+	const finishProcessing = (processed: ProcessResult): ProcessResult => {
+		if (
+			o.geminiWatermarkRemoval === "off" ||
+			o.forcePixelsW !== undefined ||
+			o.forcePixelsH !== undefined
+		) {
+			return processed;
+		}
+		watermarkDetectionMask ??= createGeminiWatermarkDetectionMask(
+			inputImage,
+			o,
+			automaticBackground,
+			getBackgroundMaskedInput,
+		);
+		return applyGeminiWatermarkRemoval(
+			inputImage,
+			watermarkDetectionMask,
+			processed,
+			o,
+			appliedDeskewAngle,
+		);
+	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
-	if (forcedResult) return forcedResult;
+	if (forcedResult) return finishProcessing(forcedResult);
 	// [Intended] 明示された処理経路は enableGridDetection の早期 return より先に判定する。
 	// 逆順だと、グリッド検出を無効にしただけで指定した convert が preserve に化ける。
 	if (o.processingMode === "convert") {
-		return processConvertRoute({
-			...simpleRouteContext,
-			route: "convert",
-			method: "manual-convert",
-		});
+		return finishProcessing(
+			processConvertRoute({
+				...simpleRouteContext,
+				route: "convert",
+				method: "manual-convert",
+			}),
+		);
 	}
 	if (o.processingMode === "preserve") {
-		return processExplicitSimpleRoute({
-			...simpleRouteContext,
-			route: "preserve",
-			method: "manual-preserve",
-		});
+		return finishProcessing(
+			processExplicitSimpleRoute({
+				...simpleRouteContext,
+				route: "preserve",
+				method: "manual-preserve",
+			}),
+		);
 	}
 	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
-	if (gridDisabledResult) return gridDisabledResult;
+	if (gridDisabledResult) return finishProcessing(gridDisabledResult);
 
 	// auto: まず背景トリミング後の領域（ダウンサンプリング前）から outW/outH を推定し、そのままダウンサンプリングする。
 	// （隙間の多い画像でも、安定させるためコンテンツ領域に注目したい。）
@@ -503,39 +533,43 @@ const processImageCore = (
 		: { route: "refine" as const, fellBackToPreserve: false };
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
 		if (autoRoute.route === "convert") {
-			return processConvertRoute({
-				...simpleRouteContext,
-				route: "convert",
-				method: "auto-convert",
-				classificationResult,
-				preparedMask: maskedForDebugOrAuto ?? undefined,
-			});
+			return finishProcessing(
+				processConvertRoute({
+					...simpleRouteContext,
+					route: "convert",
+					method: "auto-convert",
+					classificationResult,
+					preparedMask: maskedForDebugOrAuto ?? undefined,
+				}),
+			);
 		}
-		return processExplicitSimpleRoute({
-			...simpleRouteContext,
-			route: autoRoute.route,
-			method: autoRoute.fellBackToPreserve
-				? "auto-low-confidence-preserve"
-				: `auto-${autoRoute.route}`,
-			classificationResult,
-			rankedCandidates: rankedGridCandidates,
-			additionalWarnings: [
-				...(autoRoute.fellBackToPreserve
-					? (["FALLBACK_TO_PRESERVE"] as const)
-					: []),
-				// [Intended] 分類が preserve を選んだ場合も、検出側の低信頼シグナルを
-				// 握りつぶさず渡す。これが無いと候補選択の表示条件を満たさず、
-				// 復元候補の存在をユーザーが知る手段が無くなる。
-				...(autoRoute.route === "preserve"
-					? detectedGridConfidenceWarnings(
-							working,
-							grid,
-							selectedCandidateConfidence,
-						)
-					: []),
-			],
-			preparedMask: maskedForDebugOrAuto ?? undefined,
-		});
+		return finishProcessing(
+			processExplicitSimpleRoute({
+				...simpleRouteContext,
+				route: autoRoute.route,
+				method: autoRoute.fellBackToPreserve
+					? "auto-low-confidence-preserve"
+					: `auto-${autoRoute.route}`,
+				classificationResult,
+				rankedCandidates: rankedGridCandidates,
+				additionalWarnings: [
+					...(autoRoute.fellBackToPreserve
+						? (["FALLBACK_TO_PRESERVE"] as const)
+						: []),
+					// [Intended] 分類が preserve を選んだ場合も、検出側の低信頼シグナルを
+					// 握りつぶさず渡す。これが無いと候補選択の表示条件を満たさず、
+					// 復元候補の存在をユーザーが知る手段が無くなる。
+					...(autoRoute.route === "preserve"
+						? detectedGridConfidenceWarnings(
+								working,
+								grid,
+								selectedCandidateConfidence,
+							)
+						: []),
+				],
+				preparedMask: maskedForDebugOrAuto ?? undefined,
+			}),
+		);
 	}
 
 	const downsampleStart = performance.now();
@@ -653,25 +687,27 @@ const processImageCore = (
 				outH: trimmed.height,
 				nativeScale: degeneracy.nativeScale,
 			});
-			return processExplicitSimpleRoute({
-				...simpleRouteContext,
-				route: "preserve",
-				method: "auto-degenerate-grid-preserve",
-				classificationResult,
-				rankedCandidates: rankedGridCandidates,
-				additionalWarnings: [
-					"FALLBACK_TO_PRESERVE",
-					// [Intended] 縮退で棄却したグリッドも候補としては提示したいので、
-					// 候補選択 UI の表示条件である低信頼シグナルを必ず付ける。
-					"LOW_GRID_CONFIDENCE",
-					...detectedGridConfidenceWarnings(
-						working,
-						grid,
-						selectedCandidateConfidence,
-					),
-				],
-				preparedMask: maskedForDebugOrAuto ?? undefined,
-			});
+			return finishProcessing(
+				processExplicitSimpleRoute({
+					...simpleRouteContext,
+					route: "preserve",
+					method: "auto-degenerate-grid-preserve",
+					classificationResult,
+					rankedCandidates: rankedGridCandidates,
+					additionalWarnings: [
+						"FALLBACK_TO_PRESERVE",
+						// [Intended] 縮退で棄却したグリッドも候補としては提示したいので、
+						// 候補選択 UI の表示条件である低信頼シグナルを必ず付ける。
+						"LOW_GRID_CONFIDENCE",
+						...detectedGridConfidenceWarnings(
+							working,
+							grid,
+							selectedCandidateConfidence,
+						),
+					],
+					preparedMask: maskedForDebugOrAuto ?? undefined,
+				}),
+			);
 		}
 	}
 
@@ -872,21 +908,14 @@ const processImageCore = (
 		smallComponentRemoval,
 	);
 	log("Processing analysis", analysis);
-	return {
+	return finishProcessing({
 		result: finalResult,
 		grid: trimmedGrid,
 		extractedPalette: extracted,
 		compareBefore,
 		compareBeforeSanitized,
 		analysis,
-	};
+	});
 };
 
-export const processImage = (
-	inputImage: RawImage,
-	options: ProcessOptions = {},
-): ProcessResult => {
-	const processed = processImageCore(inputImage, options);
-	const normalized = normalizeProcessOptions(options);
-	return applyGeminiWatermarkRemoval(inputImage, processed, normalized);
-};
+export const processImage = processImageCore;

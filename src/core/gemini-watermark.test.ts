@@ -44,6 +44,21 @@ const createSyntheticImage = (touchSubject: boolean): RawImage => {
 const alphaAt = (image: RawImage, x: number, y: number): number =>
 	image.data[(y * image.width + x) * 4 + 3];
 
+const setPixel = (
+	image: RawImage,
+	x: number,
+	y: number,
+	r: number,
+	g: number,
+	b: number,
+): void => {
+	const offset = (y * image.width + x) * 4;
+	image.data[offset] = r;
+	image.data[offset + 1] = g;
+	image.data[offset + 2] = b;
+	image.data[offset + 3] = 255;
+};
+
 const withOpaqueBackground = (image: RawImage): RawImage => {
 	const data = new Uint8ClampedArray(image.data);
 	for (let offset = 0; offset < data.length; offset += 4) {
@@ -77,6 +92,16 @@ describe("Gemini watermark removal", () => {
 		expect(alphaAt(result.image, 90, 90)).toBe(255);
 	});
 
+	it("keeps an unrelated pixel inside the matched bounding box", () => {
+		const image = createSyntheticImage(false);
+		setPixel(image, 86, 86, 20, 20, 20);
+		const result = removeGeminiWatermark(image);
+
+		expect(result.removed).toBe(true);
+		expect(alphaAt(result.image, 90, 90)).toBe(0);
+		expect(alphaAt(result.image, 86, 86)).toBe(255);
+	});
+
 	it("keeps processing geometry and honors the explicit Off mode", () => {
 		const image = withOpaqueBackground(createSyntheticImage(false));
 		const options = {
@@ -102,6 +127,99 @@ describe("Gemini watermark removal", () => {
 		expect(alphaAt(automatic.result, 90, 90)).toBe(0);
 		expect(alphaAt(disabled.result, 90, 90)).toBe(255);
 		expect(alphaAt(automatic.result, 30, 30)).toBe(255);
+	});
+
+	it("uses the selected background connectivity when deciding isolation", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		for (let y = 0; y < image.height; y += 1) {
+			setPixel(image, 50, y, 10, 10, 10);
+		}
+		const result = processImage(image, {
+			processingMode: "preserve",
+			enableGridDetection: false,
+			bgExtractionMethod: "top-left",
+			bgRemovalScope: "selected",
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off",
+		});
+
+		// [Intended] 右側の背景は選択角と非連結なので、そこにある星形も透過対象にしない。
+		expect(alphaAt(result.result, 90, 90)).toBe(255);
+	});
+
+	it("does not create a transparent hole when background removal is disabled", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const result = processImage(image, {
+			processingMode: "preserve",
+			enableGridDetection: false,
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			bgExtractionMethod: "top-left",
+			bgRemovalScope: "outer",
+			trimToContent: false,
+			smallComponentMode: "off",
+		});
+
+		expect(alphaAt(result.result, 90, 90)).toBe(255);
+	});
+
+	it("maps removal through an explicit deskew rotation", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const options = {
+			processingMode: "preserve" as const,
+			enableGridDetection: false,
+			deskewAngle: 2,
+			bgExtractionMethod: "top-left" as const,
+			bgRemovalScope: "outer" as const,
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off" as const,
+		};
+		const automatic = processImage(image, options);
+		const disabled = processImage(image, {
+			...options,
+			geminiWatermarkRemoval: "off",
+		});
+		let removed = 0;
+		let brightRemaining = 0;
+		for (
+			let pixel = 0;
+			pixel < automatic.result.width * automatic.result.height;
+			pixel += 1
+		) {
+			const offset = pixel * 4;
+			if (
+				automatic.result.data[offset + 3] === 0 &&
+				disabled.result.data[offset + 3] !== 0
+			) {
+				const luminance =
+					(77 * disabled.result.data[offset] +
+						150 * disabled.result.data[offset + 1] +
+						29 * disabled.result.data[offset + 2]) >>
+					8;
+				expect(luminance).toBeGreaterThanOrEqual(168);
+				removed += 1;
+			}
+			const x = pixel % automatic.result.width;
+			const y = (pixel / automatic.result.width) | 0;
+			const luminance =
+				(77 * automatic.result.data[offset] +
+					150 * automatic.result.data[offset + 1] +
+					29 * automatic.result.data[offset + 2]) >>
+				8;
+			if (
+				x >= automatic.result.width * 0.7 &&
+				y >= automatic.result.height * 0.7 &&
+				automatic.result.data[offset + 3] !== 0 &&
+				luminance >= 168
+			) {
+				brightRemaining += 1;
+			}
+		}
+		expect(removed).toBeGreaterThan(0);
+		expect(brightRemaining).toBe(0);
+		expect(automatic.grid).toEqual(disabled.grid);
 	});
 
 	for (const fixture of [
