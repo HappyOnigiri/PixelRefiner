@@ -14,6 +14,23 @@ export type EnclosedComponentTest = (
 ) => boolean;
 
 /**
+ * 島判定の作業領域。成分ごとに確保し直さないよう、画素数分を一度だけ確保して使い回す。
+ *
+ * [Intended] outsideMark は 0 埋めに戻す代わりに成分ごとの世代番号を書き込む。
+ * 外接矩形が画像全体まで伸びうるので、成分ごとの塗り直しも確保と同じだけ重い。
+ */
+type IslandWorkspace = {
+	/** 成分メンバーシップを O(1) で引くためのマスク。成分ごとに 0 へ戻す。 */
+	member: Uint8Array;
+	/** 外接矩形のどこまで外側から届いたかを、書き込んだ世代番号で表す。 */
+	outsideMark: Int32Array;
+	/** 外側を塗る幅優先探索のキュー。 */
+	boxQueue: Uint32Array;
+	/** 直前の成分に使った世代番号。 */
+	generation: number;
+};
+
+/**
  * 外周から連結しない背景候補（内側の閉領域）のうち、透過してよい成分だけを selected へ足す。
  *
  * [Intended] 内側の閉領域は「背景の穴」と「被写体の塗り面」のどちらでもありうる。
@@ -38,8 +55,12 @@ export const addEnclosedBackground = (
 	const pixelCount = width * height;
 	const visited = new Uint8Array(pixelCount);
 	const queue = new Uint32Array(pixelCount);
-	// 島判定で成分メンバーシップを O(1) で引くための作業マスク。成分ごとに戻す。
-	const member = new Uint8Array(pixelCount);
+	const work: IslandWorkspace = {
+		member: new Uint8Array(pixelCount),
+		outsideMark: new Int32Array(pixelCount),
+		boxQueue: new Uint32Array(pixelCount),
+		generation: 0,
+	};
 	const neighborCount = connectivity === "8" ? 8 : 4;
 
 	for (let seed = 0; seed < pixelCount; seed += 1) {
@@ -83,7 +104,7 @@ export const addEnclosedBackground = (
 
 		if (touchesEdge) continue;
 		if (!isBackgroundComponent(queue, size)) continue;
-		if (hasIsland(img, queue, size, member, minX, maxX, minY, maxY)) continue;
+		if (hasIsland(img, queue, size, work, minX, maxX, minY, maxY)) continue;
 
 		for (let index = 0; index < size; index += 1) {
 			selected[queue[index]] = 1;
@@ -102,23 +123,29 @@ const hasIsland = (
 	img: RawImage,
 	pixels: Uint32Array,
 	size: number,
-	member: Uint8Array,
+	work: IslandWorkspace,
 	minX: number,
 	maxX: number,
 	minY: number,
 	maxY: number,
 ): boolean => {
 	const width = img.width;
+	const { member, outsideMark, boxQueue } = work;
+	work.generation += 1;
+	const generation = work.generation;
 	for (let index = 0; index < size; index += 1) member[pixels[index]] = 1;
 	const boxWidth = maxX - minX + 1;
 	const boxHeight = maxY - minY + 1;
-	const outside = new Uint8Array(boxWidth * boxHeight);
-	const boxQueue = new Uint32Array(boxWidth * boxHeight);
 	let tail = 0;
 	const enqueue = (bx: number, by: number): void => {
 		const index = by * boxWidth + bx;
-		if (outside[index] || member[(minY + by) * width + minX + bx]) return;
-		outside[index] = 1;
+		if (
+			outsideMark[index] === generation ||
+			member[(minY + by) * width + minX + bx]
+		) {
+			return;
+		}
+		outsideMark[index] = generation;
 		boxQueue[tail] = index;
 		tail += 1;
 	};
@@ -144,7 +171,7 @@ const hasIsland = (
 	let island = false;
 	for (let by = 0; by < boxHeight && !island; by += 1) {
 		for (let bx = 0; bx < boxWidth; bx += 1) {
-			if (outside[by * boxWidth + bx]) continue;
+			if (outsideMark[by * boxWidth + bx] === generation) continue;
 			const pixel = (minY + by) * width + minX + bx;
 			if (member[pixel]) continue;
 			// [Intended] すでに透明な画素は残すべき別要素ではないので島に数えない。
