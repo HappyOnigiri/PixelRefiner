@@ -3,6 +3,9 @@ import type { PixelGrid, RawImage } from "../shared/types";
 
 export type MappedRemovalMode = "transparent" | "background";
 
+const TRANSPARENT_BACKGROUND_OFFSET = -1;
+const MISSING_BACKGROUND_OFFSET = -2;
+
 type Rotation = {
 	width: number;
 	height: number;
@@ -163,7 +166,7 @@ const findMappedBackgroundOffset = (
 			sourceMask.data[sourceOffset + 3] >=
 			GEMINI_WATERMARK_LIMITS.alphaThreshold
 		) {
-			return -1;
+			return MISSING_BACKGROUND_OFFSET;
 		}
 		const centeredX = sourceX - sourceCenterX;
 		const centeredY = sourceY - sourceCenterY;
@@ -196,12 +199,12 @@ const findMappedBackgroundOffset = (
 				interpolationRadius,
 			)
 		) {
-			return -1;
+			return MISSING_BACKGROUND_OFFSET;
 		}
 		const offset = (outputY * image.width + outputX) * 4;
 		return image.data[offset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
 			? offset
-			: -1;
+			: TRANSPARENT_BACKGROUND_OFFSET;
 	};
 	for (let radius = 1; radius <= maximumRadius; radius += 1) {
 		const minX = Math.max(0, sourceMinX - radius);
@@ -210,20 +213,20 @@ const findMappedBackgroundOffset = (
 		const maxY = Math.min(sourceMask.height - 1, sourceMaxY + radius);
 		for (let x = minX; x <= maxX; x += 1) {
 			const top = candidateOffset(x, minY);
-			if (top >= 0) return top;
+			if (top !== MISSING_BACKGROUND_OFFSET) return top;
 			if (maxY === minY) continue;
 			const bottom = candidateOffset(x, maxY);
-			if (bottom >= 0) return bottom;
+			if (bottom !== MISSING_BACKGROUND_OFFSET) return bottom;
 		}
 		for (let y = minY + 1; y < maxY; y += 1) {
 			const left = candidateOffset(minX, y);
-			if (left >= 0) return left;
+			if (left !== MISSING_BACKGROUND_OFFSET) return left;
 			if (maxX === minX) continue;
 			const right = candidateOffset(maxX, y);
-			if (right >= 0) return right;
+			if (right !== MISSING_BACKGROUND_OFFSET) return right;
 		}
 	}
-	return -1;
+	return MISSING_BACKGROUND_OFFSET;
 };
 
 /** 検出した元画像画素を、傾き補正と確定済みグリッドを通した出力座標へ写す。 */
@@ -330,7 +333,9 @@ export const clearMappedGeminiWatermark = (
 					mappedMaxY,
 				)
 			: -1;
-	if (mode === "background" && backgroundOffset < 0) return image;
+	if (mode === "background" && backgroundOffset === MISSING_BACKGROUND_OFFSET) {
+		return image;
+	}
 	const mappedWidth = mappedMaxX - mappedMinX + 1;
 	const cellStatus = new Uint8Array(
 		mappedWidth * (mappedMaxY - mappedMinY + 1),

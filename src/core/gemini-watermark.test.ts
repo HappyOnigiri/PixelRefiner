@@ -308,6 +308,51 @@ describe("Gemini watermark removal", () => {
 		expect(rgbAt(result.result, 90, 90)).toEqual(processedBackground);
 	});
 
+	it("uses transparent output background after automatic removal rolls back", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const options = {
+			processingMode: "convert" as const,
+			forcePixelsW: 14,
+			forcePixelsH: 14,
+			bgExtractionMethod: "auto" as const,
+			bgRemovalScope: "outer" as const,
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off" as const,
+		};
+		const automatic = processImage(image, options);
+		const disabled = processImage(image, {
+			...options,
+			geminiWatermarkRemoval: "off",
+		});
+		let removedBrightCells = 0;
+		let transparentCells = 0;
+		for (
+			let pixel = 0;
+			pixel < automatic.result.width * automatic.result.height;
+			pixel += 1
+		) {
+			const offset = pixel * 4;
+			if (automatic.result.data[offset + 3] === 0) transparentCells += 1;
+			const disabledLuminance =
+				(77 * disabled.result.data[offset] +
+					150 * disabled.result.data[offset + 1] +
+					29 * disabled.result.data[offset + 2]) >>
+				8;
+			if (
+				automatic.result.data[offset + 3] === 0 &&
+				disabled.result.data[offset + 3] !== 0 &&
+				disabledLuminance >= 168
+			) {
+				removedBrightCells += 1;
+			}
+		}
+
+		expect(automatic.analysis.warnings).toContain("BACKGROUND_REMOVAL_SKIPPED");
+		expect(transparentCells).toBeGreaterThan(0);
+		expect(removedBrightCells).toBeGreaterThan(0);
+	});
+
 	it("maps removal through an explicit deskew rotation", () => {
 		const image = withOpaqueBackground(createSyntheticImage(false));
 		const options = {
