@@ -609,7 +609,8 @@ export const PROCESS_DEFAULTS = {
 	outlineColor: PROCESS_RANGES.outlineColor,
 	sharedPalette: false,
 	includeDiagnosticSummary: false,
-	debug: import.meta.env.DEV,
+	// [Policy] core/shared は実行環境に依存せず、開発時の値は browser 側から明示的に渡す。
+	debug: false,
 } as const;
 
 export const clampInt = (value: number, range: IntRange): number => {

@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 const RUN_CI_PATH = fileURLToPath(new URL("./run_ci.py", import.meta.url));
 const CHECK_TASKS = [
 	"build",
+	"check-architecture",
 	"check-file-line-count",
 	"check-ts-line-length",
 	"check-ts-rules",

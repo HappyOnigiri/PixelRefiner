@@ -78,6 +78,7 @@ def main():
         ("HTML Check", ["make", "html-check-diff"], False),
         ("Type Check", ["make", "type-check"], False),
         ("Custom Rules", ["make", "check-ts-rules"], False),
+        ("Architecture Check", ["make", "check-architecture"], False),
         ("TS Line Length", ["make", "check-ts-line-length"], False),
         ("File Line Count", ["make", "check-file-line-count"], True),
         ("Unit Tests", ["make", "test-unit"], False),
