@@ -471,19 +471,21 @@ export const setupSettingsControls = ({
 			}
 		});
 
-		// [Intended] Auto と RGB 指定には角の選択が無く、"selected" は "outer" と同じ結果に
-		// なるため選ばせない。角シードを持つのは角指定の抽出方式だけである。
-		const hasNoCornerSeed =
-			els.bgExtractionMethod.value === "auto" ||
-			els.bgExtractionMethod.value === "rgb";
+		// [Intended] Auto には角の選択が無く、"selected" は "outer" と同じ結果になるため
+		// 選ばせない。色を指定する抽出も角シードは持たないが、"selected" では画像全体の
+		// 一致画素をシードにして内側の閉領域まで落ちるため、選べるままにする。
+		const selectedScopeHasNoEffect = els.bgExtractionMethod.value === "auto";
 		const selectedScopeOption =
 			els.quickBgRemovalScopeSelect.querySelector<HTMLOptionElement>(
 				'option[value="selected"]',
 			);
 		if (selectedScopeOption) {
-			selectedScopeOption.disabled = hasNoCornerSeed;
+			selectedScopeOption.disabled = selectedScopeHasNoEffect;
 		}
-		if (hasNoCornerSeed && els.quickBgRemovalScopeSelect.value === "selected") {
+		if (
+			selectedScopeHasNoEffect &&
+			els.quickBgRemovalScopeSelect.value === "selected"
+		) {
 			els.quickBgRemovalScopeSelect.value = "outer";
 		}
 

@@ -94,16 +94,18 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 ] as const;
 
 /**
- * 角シードを持たない抽出方法では "selected" が "outer" と同じ結果になるため、
+ * Auto 抽出では角シードが無く "selected" が "outer" と同じ結果になるため、
  * 実際に渡すオプションでは "outer" へ寄せる。
+ *
+ * [Intended] 色を指定する抽出も角シードは持たないが、"selected" では画像全体の
+ * 一致画素からフラッドフィルするため内側の閉領域まで落ちる。"outer" とは結果が
+ * 異なるので寄せない。
  */
 const resolveBgRemovalScope = (
 	scope: BackgroundRemovalScope,
 	method: NonNullable<ProcessOptions["bgExtractionMethod"]>,
 ): BackgroundRemovalScope =>
-	scope === "selected" && (method === "auto" || method === "rgb")
-		? "outer"
-		: scope;
+	scope === "selected" && method === "auto" ? "outer" : scope;
 
 export const applyQuickSettingsToOptions = (
 	advanced: ProcessOptions,
