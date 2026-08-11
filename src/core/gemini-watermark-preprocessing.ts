@@ -55,7 +55,7 @@ export const getGeminiWatermarkDownsampleOptions = (
 	removed: boolean,
 ): ReturnType<typeof getDownsampleOptions> =>
 	getDownsampleOptions(
-		removed && options.watermarkSamplingCompat
+		removed && options.watermarkSamplingCompatEnabled
 			? { ...options, cellSamplingMode: "legacy-median" }
 			: options,
 	);

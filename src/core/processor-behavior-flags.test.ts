@@ -52,19 +52,19 @@ describe("auto behavior settings", () => {
 	it("follows the processing route while the setting stays at auto", () => {
 		expect(
 			normalizeProcessOptions({ processingMode: "auto" })
-				.smallAspectGridAlignment,
+				.smallAspectGridAlignmentEnabled,
 		).toBe(true);
 		expect(
 			normalizeProcessOptions({ processingMode: "refine" })
-				.smallAspectGridAlignment,
+				.smallAspectGridAlignmentEnabled,
 		).toBe(false);
 		expect(
 			normalizeProcessOptions({ processingMode: "auto" })
-				.watermarkSamplingCompat,
+				.watermarkSamplingCompatEnabled,
 		).toBe(true);
 		expect(
 			normalizeProcessOptions({ processingMode: "preserve" })
-				.watermarkSamplingCompat,
+				.watermarkSamplingCompatEnabled,
 		).toBe(false);
 	});
 
@@ -74,25 +74,25 @@ describe("auto behavior settings", () => {
 			normalizeProcessOptions({
 				processingMode: "refine",
 				smallAspectGridAlignment: "on",
-			}).smallAspectGridAlignment,
+			}).smallAspectGridAlignmentEnabled,
 		).toBe(true);
 		expect(
 			normalizeProcessOptions({
 				processingMode: "auto",
 				smallAspectGridAlignment: "off",
-			}).smallAspectGridAlignment,
+			}).smallAspectGridAlignmentEnabled,
 		).toBe(false);
 		expect(
 			normalizeProcessOptions({
 				processingMode: "refine",
 				watermarkSamplingCompat: "on",
-			}).watermarkSamplingCompat,
+			}).watermarkSamplingCompatEnabled,
 		).toBe(true);
 		expect(
 			normalizeProcessOptions({
 				processingMode: "auto",
 				watermarkSamplingCompat: "off",
-			}).watermarkSamplingCompat,
+			}).watermarkSamplingCompatEnabled,
 		).toBe(false);
 	});
 });

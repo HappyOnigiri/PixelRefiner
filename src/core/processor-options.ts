@@ -295,10 +295,10 @@ export const normalizeProcessOptions = (
 	smallComponentBackgroundGate: boolean;
 	phaseAwareGridSearch: boolean;
 	boundaryContrastOverride: boolean;
-	/** 経路依存を解決済みの実効値。 */
-	smallAspectGridAlignment: boolean;
-	/** 経路依存を解決済みの実効値。 */
-	watermarkSamplingCompat: boolean;
+	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	smallAspectGridAlignmentEnabled: boolean;
+	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	watermarkSamplingCompatEnabled: boolean;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
 	keepAspectRatio: boolean;
@@ -415,11 +415,11 @@ export const normalizeProcessOptions = (
 		const value = setting ?? fallback;
 		return value === "auto" ? processingMode === "auto" : value === "on";
 	};
-	const smallAspectGridAlignment = resolveAutoBehavior(
+	const smallAspectGridAlignmentEnabled = resolveAutoBehavior(
 		raw.smallAspectGridAlignment,
 		PROCESS_DEFAULTS.smallAspectGridAlignment,
 	);
-	const watermarkSamplingCompat = resolveAutoBehavior(
+	const watermarkSamplingCompatEnabled = resolveAutoBehavior(
 		raw.watermarkSamplingCompat,
 		PROCESS_DEFAULTS.watermarkSamplingCompat,
 	);
@@ -506,8 +506,8 @@ export const normalizeProcessOptions = (
 			raw.phaseAwareGridSearch ?? PROCESS_DEFAULTS.phaseAwareGridSearch,
 		boundaryContrastOverride:
 			raw.boundaryContrastOverride ?? PROCESS_DEFAULTS.boundaryContrastOverride,
-		smallAspectGridAlignment,
-		watermarkSamplingCompat,
+		smallAspectGridAlignmentEnabled,
+		watermarkSamplingCompatEnabled,
 		enableGridDetection,
 		makeSquare,
 		keepAspectRatio,

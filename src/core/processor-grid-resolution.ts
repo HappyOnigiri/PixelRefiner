@@ -115,7 +115,7 @@ export const resolveProcessingGrid = ({
 				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
 				const isSmallAspectAdjustedGrid =
 					!phaseAwareReliable &&
-					o.smallAspectGridAlignment &&
+					o.smallAspectGridAlignmentEnabled &&
 					o.bgExtractionMethod === "auto" &&
 					o.bgRemovalScope !== "off" &&
 					trimToContent &&
