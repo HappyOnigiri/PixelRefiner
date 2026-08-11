@@ -317,6 +317,13 @@ export const TRIMMED_GRID_SEARCH_WEIGHTS = {
 	complexityPenalty: 0.16,
 } as const;
 
+export const TRIMMED_GRID_SEARCH_LIMITS = {
+	/** 論理セルのアスペクト差を別候補として評価する出力幅の上限。 */
+	aspectAdjustedMaxOutputWidth: 64,
+	/** 論理セルのアスペクト差を別候補として評価する出力高さの上限。 */
+	aspectAdjustedMaxOutputHeight: 32,
+} as const;
+
 export const GRID_SEARCH_LIMITS = {
 	axisCandidateLimit: 24,
 	pairCandidateLimit: 128,
