@@ -89,7 +89,7 @@ export type ProcessOptions = DetectOptions & {
 	bgConnectivity?: Connectivity;
 	backgroundTolerance?: number;
 	sampleWindow?: number;
-	/** セル色の復元方法。アルゴリズム名は内部比較用で、UIには公開しない。 */
+	/** セル色の復元方法。詳細設定の 3 択として公開している。 */
 	cellSamplingMode?: CellSamplingMode;
 	/** 1セルから決定論的に抽出するサンプル数の上限。 */
 	maxSamplesPerCell?: number;

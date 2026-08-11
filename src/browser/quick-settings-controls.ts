@@ -7,6 +7,10 @@ import type {
 	OutlineStyle,
 	ProcessingMode,
 } from "../shared/types";
+import {
+	advancedSettingControls,
+	applyAdvancedSettingDefaults,
+} from "./advanced-settings-fields";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import type {
@@ -117,8 +121,7 @@ export const setupQuickSettingsControls = ({
 			els.postRemoveCheck.checked = defaults.postRemoveBackground;
 			els.bgConnectivitySelect.value = defaults.bgConnectivity;
 			els.smallComponentModeSelect.value = defaults.smallComponentMode;
-			els.alphaAwareMedoidCheck.checked =
-				(defaults.cellSamplingMode as string) === "alpha-aware-medoid";
+			applyAdvancedSettingDefaults(els, defaults);
 			els.fastAutoGridFromTrimmedCheck.checked =
 				defaults.fastAutoGridFromTrimmed;
 			els.makeSquareCheck.checked = defaults.makeSquare;
@@ -213,7 +216,7 @@ export const setupQuickSettingsControls = ({
 		els.forcePixelsHInput,
 		els.sampleWindowInput,
 		els.sampleWindowSlider,
-		els.alphaAwareMedoidCheck,
+		...advancedSettingControls(els),
 		els.toleranceInput,
 		els.toleranceSlider,
 		els.preRemoveCheck,

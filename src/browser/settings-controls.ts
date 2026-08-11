@@ -1,6 +1,10 @@
 import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
+import {
+	advancedSettingControls,
+	applyAdvancedSettingDefaults,
+} from "./advanced-settings-fields";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import { isDitherSettingsEnabled } from "./batch-options";
@@ -223,8 +227,7 @@ export const setupSettingsControls = ({
 		els.bgConnectivitySelect.value = defaults.bgConnectivity;
 		els.smallComponentModeSelect.value = defaults.smallComponentMode;
 		els.geminiWatermarkRemovalSelect.value = defaults.geminiWatermarkRemoval;
-		els.alphaAwareMedoidCheck.checked =
-			(defaults.cellSamplingMode as string) === "alpha-aware-medoid";
+		applyAdvancedSettingDefaults(els, defaults);
 		els.trimToContentCheck.checked = defaults.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked = defaults.fastAutoGridFromTrimmed;
 		els.makeSquareCheck.checked = defaults.makeSquare;
@@ -551,7 +554,7 @@ export const setupSettingsControls = ({
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
-		els.alphaAwareMedoidCheck,
+		...advancedSettingControls(els),
 		els.preRemoveCheck,
 		els.postRemoveCheck,
 		els.bgConnectivitySelect,

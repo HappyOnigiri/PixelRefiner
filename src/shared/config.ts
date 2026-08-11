@@ -741,8 +741,8 @@ export const PROCESS_DEFAULTS = {
 	keepAspectRatio: false,
 	// グリッド検出モード（UI 用）
 	gridDetectionMode: "auto",
-	// [Intended] 既定では補間由来の中間 alpha を面積被覆として残さず、
-	// 必要な場合だけ詳細設定から alpha-aware-medoid を有効にする。
+	// [Intended] 既定では補間由来の中間 alpha を面積被覆として残さない。
+	// 必要な場合だけ詳細設定のセル色サンプリングから別の方式を選ぶ。
 	cellSamplingMode: "hard-alpha-medoid",
 	preserveThinFeatures: true,
 	smallComponentMode: "auto",

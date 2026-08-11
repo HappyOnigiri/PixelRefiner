@@ -136,9 +136,57 @@ export const createProcessOptions = (
 			: "4",
 		backgroundTolerance: tolerance,
 		sampleWindow,
-		cellSamplingMode: els.alphaAwareMedoidCheck.checked
-			? "alpha-aware-medoid"
-			: "hard-alpha-medoid",
+		cellSamplingMode: els.cellSamplingModeSelect
+			.value as ProcessOptions["cellSamplingMode"],
+		maxSamplesPerCell: clampInt(
+			Number(els.maxSamplesPerCellInput.value),
+			PROCESS_RANGES.maxSamplesPerCell,
+		),
+		cellAlphaThreshold: clampInt(
+			Number(els.cellAlphaThresholdInput.value),
+			PROCESS_RANGES.cellAlphaThreshold,
+		),
+		trimAlphaThreshold: clampInt(
+			Number(els.trimAlphaThresholdInput.value),
+			PROCESS_RANGES.trimAlphaThreshold,
+		),
+		autoMaxCellsW: clampInt(
+			Number(els.autoMaxCellsWInput.value),
+			PROCESS_RANGES.autoMaxCells,
+		),
+		autoMaxCellsH: clampInt(
+			Number(els.autoMaxCellsHInput.value),
+			PROCESS_RANGES.autoMaxCells,
+		),
+		backgroundMask: els.detectionBackgroundMaskCheck.checked,
+		backgroundMaskTolerance: clampInt(
+			Number(els.backgroundMaskToleranceInput.value),
+			PROCESS_RANGES.backgroundMaskTolerance,
+		),
+		preserveThinFeatures: els.preserveThinFeaturesCheck.checked,
+		autoGridFromTrimmed: els.autoGridFromTrimmedCheck.checked,
+		phaseAwareGridSearch: els.phaseAwareGridSearchCheck.checked,
+		boundaryContrastOverride: els.boundaryContrastOverrideCheck.checked,
+		smallAspectGridAlignment: els.smallAspectGridAlignmentSelect
+			.value as ProcessOptions["smallAspectGridAlignment"],
+		watermarkSamplingCompat: els.watermarkSamplingCompatSelect
+			.value as ProcessOptions["watermarkSamplingCompat"],
+		gridSignals: {
+			colorBoundary: els.gridSignalColorBoundaryCheck.checked,
+			luminanceAlphaGradient: els.gridSignalLuminanceAlphaCheck.checked,
+			autocorrelation: els.gridSignalAutocorrelationCheck.checked,
+			reconstruction: els.gridSignalReconstructionCheck.checked,
+			localPhaseStability: els.gridSignalLocalPhaseCheck.checked,
+		},
+		// [Intended] 背景の自動判定は、背景抽出そのものが無効なら意味を持たない。
+		// 既存の bgEnabled と同じ従属関係へ置き、UI の指定が独り歩きしないようにする。
+		backgroundDehalo: bgEnabled && els.backgroundDehaloCheck.checked,
+		backgroundEdgeCleanup: bgEnabled && els.backgroundEdgeCleanupCheck.checked,
+		backgroundRampFollow: bgEnabled && els.backgroundRampFollowCheck.checked,
+		backgroundRemovalRollback: els.backgroundRemovalRollbackCheck.checked,
+		alphaBorderBackgroundGuard: els.alphaBorderBackgroundGuardCheck.checked,
+		backgroundConfidenceGate: els.backgroundConfidenceGateCheck.checked,
+		smallComponentBackgroundGate: els.smallComponentBackgroundGateCheck.checked,
 		trimToContent: els.trimToContentCheck.checked,
 		fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 		makeSquare: els.makeSquareCheck.checked,

@@ -983,17 +983,36 @@
 
                       <label class="setting-item">
                         <span class="label-text">
-                          <span data-i18n="setting.preserve_partial_alpha"
-                            >Preserve Semi-transparent Edges</span
+                          <span data-i18n="setting.cell_sampling_mode"
+                            >Cell Color Sampling</span
                           >
                           <span
                             class="help"
-                            data-i18n-attr="data-tooltip:tooltip.help.preserve_partial_alpha"
-                            data-tooltip="When ON, preserves area-coverage alpha with alpha-aware medoid sampling. This is useful for intentionally soft or semi-transparent edges.&#10;When OFF, favors hard alpha edges and avoids retaining partial transparency introduced by interpolation."
+                            data-i18n-attr="data-tooltip:tooltip.help.cell_sampling_mode"
+                            data-tooltip="How the representative colour of each logical pixel is chosen.&#10;&#10;Hard Alpha: Avoids keeping partial transparency introduced by interpolation.&#10;Alpha Aware: Preserves area-coverage alpha for intentionally soft edges.&#10;Compatible: The legacy median sampler, used automatically after watermark removal."
                             >?</span
                           >
                         </span>
-                        <input id="alpha-aware-medoid" type="checkbox" />
+                        <select id="cell-sampling-mode">
+                          <option
+                            value="hard-alpha-medoid"
+                            data-i18n="option.cell_sampling_hard"
+                          >
+                            Hard Alpha (Default)
+                          </option>
+                          <option
+                            value="alpha-aware-medoid"
+                            data-i18n="option.cell_sampling_alpha_aware"
+                          >
+                            Alpha Aware
+                          </option>
+                          <option
+                            value="legacy-median"
+                            data-i18n="option.cell_sampling_legacy"
+                          >
+                            Compatible (Median)
+                          </option>
+                        </select>
                       </label>
 
                       <label class="setting-item">
@@ -1050,6 +1069,280 @@
                           id="fast-auto-grid-from-trimmed"
                           type="checkbox"
                         />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.preserve_thin_features"
+                            >Preserve Thin Features</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.preserve_thin_features"
+                            data-tooltip="Protects minority colours that cross a cell so that thin lines and outlines survive downsampling."
+                            >?</span
+                          >
+                        </span>
+                        <input id="preserve-thin-features" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.auto_grid_from_trimmed"
+                            >Estimate Grid From Content</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.auto_grid_from_trimmed"
+                            data-tooltip="Estimates the output grid from the trimmed content area.&#10;When OFF, the fallback detector scans the whole canvas instead."
+                            >?</span
+                          >
+                        </span>
+                        <input id="auto-grid-from-trimmed" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.phase_aware_grid_search"
+                            >Phase-aware Grid Search</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.phase_aware_grid_search"
+                            data-tooltip="Also runs a phase-aware search and prefers it when both axes are confident enough."
+                            >?</span
+                          >
+                        </span>
+                        <input id="phase-aware-grid-search" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.boundary_contrast_override"
+                            >Boundary Contrast Override</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.boundary_contrast_override"
+                            data-tooltip="Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="boundary-contrast-override"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.small_aspect_grid_alignment"
+                            >Small Grid Alignment</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.small_aspect_grid_alignment"
+                            data-tooltip="For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.&#10;&#10;This used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine."
+                            >?</span
+                          >
+                        </span>
+                        <select id="small-aspect-grid-alignment">
+                          <option
+                            value="auto"
+                            data-i18n="option.auto_behavior_auto"
+                          >
+                            Auto (Follow Processing Mode)
+                          </option>
+                          <option
+                            value="on"
+                            data-i18n="option.auto_behavior_on"
+                          >
+                            Always On
+                          </option>
+                          <option
+                            value="off"
+                            data-i18n="option.auto_behavior_off"
+                          >
+                            Always Off
+                          </option>
+                        </select>
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.max_samples_per_cell"
+                            >Max Samples per Cell</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.max_samples_per_cell"
+                            data-tooltip="Upper bound on the pixels sampled from one cell when picking its colour.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <input id="max-samples-per-cell" type="number" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.cell_alpha_threshold"
+                            >Cell Alpha Threshold</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.cell_alpha_threshold"
+                            data-tooltip="Minimum alpha for a pixel to be considered a colour candidate inside a cell.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <input id="cell-alpha-threshold" type="number" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.auto_max_cells_w"
+                            >Max Cells (Width)</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.auto_max_cells_w"
+                            data-tooltip="Upper bound on the detected cell count for the fallback detector.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <input id="auto-max-cells-w" type="number" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.auto_max_cells_h"
+                            >Max Cells (Height)</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.auto_max_cells_h"
+                            data-tooltip="Upper bound on the detected cell count for the fallback detector.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <input id="auto-max-cells-h" type="number" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.detection_background_mask"
+                            >Mask Background For Detection</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.detection_background_mask"
+                            data-tooltip="Guesses the background colour and masks it before grid detection so that background noise does not bias the result."
+                            >?</span
+                          >
+                        </span>
+                        <input id="detection-background-mask" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.background_mask_tolerance"
+                            >Detection Mask Tolerance</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.background_mask_tolerance"
+                            data-tooltip="Per-channel tolerance used by the detection background mask.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <input id="background-mask-tolerance" type="number" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.grid_signal_color_boundary"
+                            >Signal: Colour Boundary</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.grid_signal_color_boundary"
+                            data-tooltip="Includes the colour-boundary signal when scoring grid candidates."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="grid-signal-color-boundary"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.grid_signal_luminance_alpha"
+                            >Signal: Luminance / Alpha</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.grid_signal_luminance_alpha"
+                            data-tooltip="Includes the luminance and alpha gradient signals when scoring grid candidates."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="grid-signal-luminance-alpha"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.grid_signal_autocorrelation"
+                            >Signal: Autocorrelation</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.grid_signal_autocorrelation"
+                            data-tooltip="Includes the autocorrelation signal when scoring grid candidates."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="grid-signal-autocorrelation"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.grid_signal_reconstruction"
+                            >Signal: Reconstruction</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.grid_signal_reconstruction"
+                            data-tooltip="Includes the reconstruction-error signal when scoring grid candidates."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="grid-signal-reconstruction"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.grid_signal_local_phase"
+                            >Signal: Local Phase</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.grid_signal_local_phase"
+                            data-tooltip="Includes the local phase stability signal when scoring grid candidates."
+                            >?</span
+                          >
+                        </span>
+                        <input id="grid-signal-local-phase" type="checkbox" />
                       </label>
                     </div>
                   </div>
@@ -1319,6 +1612,159 @@
                           </option>
                         </select>
                       </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.background_dehalo"
+                            >Reduce Edge Halo</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.background_dehalo"
+                            data-tooltip="Pushes anti-aliased edge pixels away from the background colour after removal."
+                            >?</span
+                          >
+                        </span>
+                        <input id="background-dehalo" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.background_edge_cleanup"
+                            >Clean Contaminated Edges</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.background_edge_cleanup"
+                            data-tooltip="Replaces edge pixels that still carry the background colour after downscaling with their original colour."
+                            >?</span
+                          >
+                        </span>
+                        <input id="background-edge-cleanup" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.background_ramp_follow"
+                            >Follow Gradient Background</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.background_ramp_follow"
+                            data-tooltip="Follows a smooth gradient background as a chain of small steps instead of an absolute colour difference."
+                            >?</span
+                          >
+                        </span>
+                        <input id="background-ramp-follow" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.background_removal_rollback"
+                            >Roll Back Over-removal</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.background_removal_rollback"
+                            data-tooltip="Discards the whole background removal when it would erase almost all of the visible pixels."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="background-removal-rollback"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span
+                            data-i18n="setting.alpha_border_background_guard"
+                            >Trust Existing Transparency</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.alpha_border_background_guard"
+                            data-tooltip="Skips colour-cluster estimation when most of the border band is already transparent."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="alpha-border-background-guard"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.background_confidence_gate"
+                            >Require Confident Background</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.background_confidence_gate"
+                            data-tooltip="Skips background removal when the estimated background model is not confident enough."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="background-confidence-gate"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span
+                            data-i18n="setting.small_component_background_gate"
+                            >Gate Cleanup On Background</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.small_component_background_gate"
+                            data-tooltip="Skips small-detail cleanup when the estimated background model is not confident enough."
+                            >?</span
+                          >
+                        </span>
+                        <input
+                          id="small-component-background-gate"
+                          type="checkbox"
+                        />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.watermark_sampling_compat"
+                            >Watermark Sampling Fallback</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.watermark_sampling_compat"
+                            data-tooltip="Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.&#10;&#10;This used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine."
+                            >?</span
+                          >
+                        </span>
+                        <select id="watermark-sampling-compat">
+                          <option
+                            value="auto"
+                            data-i18n="option.auto_behavior_auto"
+                          >
+                            Auto (Follow Processing Mode)
+                          </option>
+                          <option
+                            value="on"
+                            data-i18n="option.auto_behavior_on"
+                          >
+                            Always On
+                          </option>
+                          <option
+                            value="off"
+                            data-i18n="option.auto_behavior_off"
+                          >
+                            Always Off
+                          </option>
+                        </select>
+                      </label>
                     </div>
                   </div>
 
@@ -1341,6 +1787,21 @@
                           >
                         </span>
                         <input id="trim-to-content" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.trim_alpha_threshold"
+                            >Trim Alpha Threshold</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.trim_alpha_threshold"
+                            data-tooltip="Minimum alpha for a pixel to count as content when computing the trimming bounds.&#10;&#10;Range: {min} to {max} (Default: {default})"
+                            >?</span
+                          >
+                        </span>
+                        <input id="trim-alpha-threshold" type="number" />
                       </label>
 
                       <label class="setting-item">
