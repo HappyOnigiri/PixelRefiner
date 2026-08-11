@@ -32,9 +32,19 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-i18n="title"');
 		expect(html).toContain('<div class="report-layout">');
 		expect(html).toContain('<aside class="sidebar">');
-		const reportMetaStart = html.indexOf('<section class="report-meta"');
-		const reportMetaEnd = html.indexOf("</section>", reportMetaStart);
-		const reportMeta = html.slice(reportMetaStart, reportMetaEnd);
+		const localHtml = renderHtml({
+			...results,
+			metadata: {
+				...results.metadata,
+				prNumber: "local",
+				headCommit: "local",
+				baseCommit: "local",
+				workflowRunUrl: "local",
+			},
+		});
+		const reportMetaStart = localHtml.indexOf('<section class="report-meta"');
+		const reportMetaEnd = localHtml.indexOf("</section>", reportMetaStart);
+		const reportMeta = localHtml.slice(reportMetaStart, reportMetaEnd);
 		expect(reportMeta).toContain('data-i18n="localReport"');
 		expect(reportMeta).toContain("Viewing locally");
 		expect(reportMeta).toContain('data-i18n="generatedAt"');
