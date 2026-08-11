@@ -5,6 +5,10 @@ import type {
 } from "../shared/types";
 import { evaluateAutoGridDegeneracy } from "./auto-grid-guard";
 import {
+	canCleanBackgroundContaminatedEdges,
+	cleanBackgroundContaminatedEdgesInPlace,
+} from "./background-edge-cleanup";
+import {
 	getBackgroundTargets,
 	removeBackground,
 	removeBackgroundByFloodFillLegacy,
@@ -173,6 +177,8 @@ const processImageCore = (
 
 	const workingStart = performance.now();
 	let working: RawImage;
+	/** working が背景除去済みか。縁の色の差し替えを行ってよいかの判定に使う。 */
+	let preBackgroundRemoved = false;
 	if (!o.preRemoveBackground) {
 		working = cloneImage(inputImage);
 	} else if (
@@ -181,6 +187,7 @@ const processImageCore = (
 		!(o.bgExtractionMethod === "auto" && !backgroundModel)
 	) {
 		working = cloneImage(getPreRemovedInput());
+		preBackgroundRemoved = true;
 	} else if (o.bgExtractionMethod === "auto") {
 		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
 		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
@@ -561,6 +568,10 @@ const processImageCore = (
 	}
 
 	const postBgStart = performance.now();
+	// [Intended] 縁の汚染除去は「補正する画像の透過を作った除去」が成立したかだけを見たい。
+	// backgroundDiagnostic は原寸の事前除去のロールバックも保持するため、後段除去の結果を
+	// 別の受け皿で取り、診断へは従来どおり合流させる。
+	const postRemovalOutcome = { removalRolledBack: false };
 	const result = o.postRemoveBackground
 		? removeBackground(
 				trimmed,
@@ -570,12 +581,42 @@ const processImageCore = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
-				backgroundDiagnostic,
+				postRemovalOutcome,
 			)
 		: trimmed;
+	if (postRemovalOutcome.removalRolledBack && backgroundDiagnostic) {
+		backgroundDiagnostic.removalRolledBack = true;
+	}
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
+
+	// [Policy] 縁の汚染除去は背景クラスタ色を必要とするため auto 経路だけで行う。
+	// 角シードや RGB 指定の経路は利用者が背景色を確定させており、手書きの期待値画像と
+	// 完全一致することを前提にしているので触らない。
+	if (
+		canCleanBackgroundContaminatedEdges(
+			backgroundModel,
+			backgroundDiagnostic?.confidence,
+			o.postRemoveBackground
+				? postRemovalOutcome.removalRolledBack
+				: (automaticBackground?.rolledBack ?? false),
+			o.postRemoveBackground || preBackgroundRemoved,
+		)
+	) {
+		const cleanupStart = performance.now();
+		const cleaned = cleanBackgroundContaminatedEdgesInPlace(
+			result,
+			working,
+			trimmedGrid,
+			backgroundModel,
+			o.cellAlphaThreshold,
+		);
+		log(
+			`Background edge cleanup done in ${(performance.now() - cleanupStart).toFixed(2)}ms`,
+			{ cleaned },
+		);
+	}
 
 	// 色削減
 	let finalResult = result;

@@ -5,9 +5,11 @@ import { processImage } from "./processor";
 import {
 	cleanDebugDir,
 	expectSameImage,
+	expectSameImageExcept,
 	getExpectPath,
 	makeDebugHook,
 	readPngAsRawImage,
+	RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
 	UPDATE_EXPECT,
 	writeRawImageAsPngSync,
 } from "./processor-test-helpers";
@@ -355,7 +357,9 @@ describe("processImage", () => {
 			expect(result.height).toBe(13);
 			expect(grid.outW).toBe(46);
 			expect(grid.outH).toBe(13);
-			expectSameImage(result, expected, getExpectPath("resize_with_trimming"));
+			// Auto は縁の背景色の汚染を落とすため、期待値画像にわずかな緑が残る 2 画素だけ
+			// 色が変わる。変わる画素を固定し、それ以外は完全一致を要求する。
+			expectSameImageExcept(result, expected, RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS);
 		});
 	});
 

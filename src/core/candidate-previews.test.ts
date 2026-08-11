@@ -7,7 +7,11 @@ import {
 } from "./candidate-previews";
 import { resizeRawImageNearest } from "./image-operations";
 import { processImage } from "./processor";
-import { readPngAsRawImage } from "./processor-test-helpers";
+import {
+	expectSameImageExcept,
+	readPngAsRawImage,
+	RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+} from "./processor-test-helpers";
 
 const analysis = (
 	classification: ProcessingAnalysis["classification"],
@@ -318,7 +322,13 @@ describe("candidate previews", () => {
 		const processed = processImage(image, { debug: false });
 		expect(processed.result.width).toBe(46);
 		expect(processed.result.height).toBe(13);
-		expect(processed.result.data).toEqual(expected.data);
+		// Auto は縁の背景色の汚染を落とすため、期待値画像にわずかな緑が残る 2 画素だけ
+		// 色が変わる。変わる画素を固定し、それ以外は完全一致を要求する。
+		expectSameImageExcept(
+			processed.result,
+			expected,
+			RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+		);
 		// 採用した格子が候補の最上位として確定する。以前はサブスコアの減点で
 		// 信頼度がしきい値をわずかに下回り、正しい出力なのに未確定になっていた。
 		expect(processed.analysis.selectedCandidateIndex).toBe(0);

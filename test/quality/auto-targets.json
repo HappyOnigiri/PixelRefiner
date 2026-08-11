@@ -5,18 +5,19 @@
 	"targets": {
 		"auto-auto-grid-detection": {
 			"source": "trim-auto-grid",
-			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。auto の出力（88x61）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
+			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。auto の出力（88x61）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。縁の背景色の汚染除去を入れた後の出力も同様に承認し、目標を差し替え直した。"
 		},
 		"auto-high-resolution": {
 			"source": "restore-high-resolution-pixel-grid",
-			"note": "auto の出力（140x212）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
+			"note": "auto の出力（140x212）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。縁の背景色の汚染除去を入れた後の出力も同様に承認し、目標を差し替え直した。髪の隙間のように被写体の内側で閉じた背景は縁ではないため、その汚染は残る。"
 		},
 		"auto-inner-background-removal": {
-			"source": "remove-inner-background-auto-grid"
+			"source": "remove-inner-background-auto-grid",
+			"note": "縁の背景色の汚染除去でドーナツ下端の緑が消えた出力をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		},
 		"auto-no-trimming": {
 			"source": "remove-background-preserve-canvas",
-			"note": "explicit 側はキャンバスを保持する 119x65 だが、auto は既定でトリムするため出力サイズが原理的に一致しない。auto の出力（24x33）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
+			"note": "explicit 側はキャンバスを保持する 119x65 だが、auto は既定でトリムするため出力サイズが原理的に一致しない。auto の出力（24x33）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。縁の背景色の汚染除去を入れた後の出力も同様に承認し、目標を差し替え直した。"
 		},
 		"auto-quality-prf400-ambiguous-grid-scale": {
 			"source": "restore-blocky-sprite-to-20x18",
@@ -30,7 +31,8 @@
 			"source": "remove-background-trim-auto-grid"
 		},
 		"auto-resize-with-trimming": {
-			"source": "remove-background-trim-resize-46x13"
+			"source": "remove-background-trim-resize-46x13",
+			"note": "縁の背景色の汚染除去で 2 画素が手書きの期待値画像と数階調ずれた出力をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		}
 	}
 }
