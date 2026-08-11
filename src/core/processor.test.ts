@@ -8,8 +8,8 @@ import {
 	expectSameImageExcept,
 	getExpectPath,
 	makeDebugHook,
-	readPngAsRawImage,
 	RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+	readPngAsRawImage,
 	UPDATE_EXPECT,
 	writeRawImageAsPngSync,
 } from "./processor-test-helpers";
@@ -359,7 +359,11 @@ describe("processImage", () => {
 			expect(grid.outH).toBe(13);
 			// Auto は縁の背景色の汚染を落とすため、期待値画像にわずかな緑が残る 2 画素だけ
 			// 色が変わる。変わる画素を固定し、それ以外は完全一致を要求する。
-			expectSameImageExcept(result, expected, RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS);
+			expectSameImageExcept(
+				result,
+				expected,
+				RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+			);
 		});
 	});
 
@@ -571,6 +575,20 @@ describe("processImage", () => {
 			expect(grid.outH).toBe(expected.height);
 
 			expectSameImage(result, expected, getExpectPath("no_trimming"));
+		});
+
+		it("should not report a skipped background removal while the output is transparent", () => {
+			// [Intended] 余白が広い入力では原寸の事前除去だけが消えすぎ判定に当たってロールバック
+			// するが、トリミング後の出力解像度で行う事後除去は成立する。出力に背景の透過が
+			// 入っている状態で「透過を中止した」と伝えないことを固定する。
+			const { result, analysis } = processImage(img, {});
+
+			let transparent = 0;
+			for (let i = 3; i < result.data.length; i += 4) {
+				if (result.data[i] === 0) transparent += 1;
+			}
+			expect(transparent).toBeGreaterThan(0);
+			expect(analysis.warnings).not.toContain("BACKGROUND_REMOVAL_SKIPPED");
 		});
 	});
 
