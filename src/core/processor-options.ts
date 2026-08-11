@@ -196,7 +196,6 @@ export const createDefaultProcessOptions = () =>
 		preserveThinFeatures: PROCESS_DEFAULTS.preserveThinFeatures,
 		enableDeskew: PROCESS_DEFAULTS.enableDeskew,
 		smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
-		floatingMaxPixels: PROCESS_DEFAULTS.floatingMaxPixels,
 		reduceColors: PROCESS_DEFAULTS.reduceColors,
 		reduceColorMode: PROCESS_DEFAULTS.reduceColorMode,
 		ditherMode: PROCESS_DEFAULTS.ditherMode,
