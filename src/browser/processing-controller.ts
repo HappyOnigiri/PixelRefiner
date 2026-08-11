@@ -267,6 +267,10 @@ export const createRunProcessing = ({
 				analysis,
 			});
 
+			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
+			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
+			if (imageSession.getActiveImage()?.id !== currentItem.id) return;
+
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);
 			const analysisText = formatProcessingAnalysis(analysis, (key, params) =>
@@ -274,7 +278,6 @@ export const createRunProcessing = ({
 			);
 			mainResultViewer.updateAnalysis(analysisText);
 			modalResultViewer.updateAnalysis(analysisText);
-			mainResultViewer.setLoading(false);
 
 			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。
 			if (resultImage.width > 256 || resultImage.height > 256) {
@@ -389,6 +392,8 @@ export const createRunProcessing = ({
 			showError(msg);
 			imageSession.setImageStatus(currentItem.id, "error", msg);
 		} finally {
+			// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
+			mainResultViewer.setLoading(false);
 			els.loadingOverlay.style.display = "none";
 			els.outputPanel.classList.remove("is-processing");
 			els.outputPanel.removeAttribute("aria-busy");
