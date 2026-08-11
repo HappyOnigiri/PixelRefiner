@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { BACKGROUND_MODEL_LIMITS } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 import type { BackgroundModel } from "./background";
-import { cleanBackgroundContaminatedEdges } from "./background-edge-cleanup";
+import {
+	canCleanBackgroundContaminatedEdges,
+	cleanBackgroundContaminatedEdges,
+} from "./background-edge-cleanup";
 
 const createImage = (
 	width: number,
@@ -263,5 +267,54 @@ describe("cleanBackgroundContaminatedEdges", () => {
 			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
 		).toBe(2);
 		expect(colorAt(image, 0, 0)).toEqual([2, 4, 1, 255]);
+	});
+});
+
+describe("canCleanBackgroundContaminatedEdges", () => {
+	const diagnostic = (confidence: number, removalRolledBack = false) => ({
+		confidence,
+		removalRolledBack,
+	});
+
+	it("背景モデルがあり、除去が適用され、信頼度が足りていれば行う", () => {
+		expect(
+			canCleanBackgroundContaminatedEdges(
+				greenModel(),
+				diagnostic(BACKGROUND_MODEL_LIMITS.minConfidence),
+				true,
+			),
+		).toBe(true);
+	});
+
+	it("背景除去が適用されていない経路では行わない", () => {
+		expect(
+			canCleanBackgroundContaminatedEdges(greenModel(), diagnostic(1), false),
+		).toBe(false);
+	});
+
+	it("信頼度が下限未満で除去を見送った場合は行わない", () => {
+		expect(
+			canCleanBackgroundContaminatedEdges(
+				greenModel(),
+				diagnostic(BACKGROUND_MODEL_LIMITS.minConfidence - 0.01),
+				true,
+			),
+		).toBe(false);
+	});
+
+	it("消えすぎ検出で除去を巻き戻した場合は行わない", () => {
+		expect(
+			canCleanBackgroundContaminatedEdges(
+				greenModel(),
+				diagnostic(1, true),
+				true,
+			),
+		).toBe(false);
+	});
+
+	it("背景モデルが無ければ行わない", () => {
+		expect(
+			canCleanBackgroundContaminatedEdges(undefined, diagnostic(1), true),
+		).toBe(false);
 	});
 });

@@ -4,7 +4,10 @@ import type {
 	SmallComponentRemovalDiagnostic,
 } from "../shared/types";
 import { evaluateAutoGridDegeneracy } from "./auto-grid-guard";
-import { cleanBackgroundContaminatedEdges } from "./background-edge-cleanup";
+import {
+	canCleanBackgroundContaminatedEdges,
+	cleanBackgroundContaminatedEdges,
+} from "./background-edge-cleanup";
 import {
 	getBackgroundTargets,
 	removeBackground,
@@ -174,6 +177,8 @@ const processImageCore = (
 
 	const workingStart = performance.now();
 	let working: RawImage;
+	/** working が背景除去済みか。縁の色の差し替えを行ってよいかの判定に使う。 */
+	let preBackgroundRemoved = false;
 	if (!o.preRemoveBackground) {
 		working = cloneImage(inputImage);
 	} else if (
@@ -182,6 +187,7 @@ const processImageCore = (
 		!(o.bgExtractionMethod === "auto" && !backgroundModel)
 	) {
 		working = cloneImage(getPreRemovedInput());
+		preBackgroundRemoved = true;
 	} else if (o.bgExtractionMethod === "auto") {
 		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
 		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
@@ -581,7 +587,13 @@ const processImageCore = (
 	// [Policy] 縁の汚染除去は背景クラスタ色を必要とするため auto 経路だけで行う。
 	// 角シードや RGB 指定の経路は利用者が背景色を確定させており、手書きの期待値画像と
 	// 完全一致することを前提にしているので触らない。
-	if (backgroundModel && o.postRemoveBackground) {
+	if (
+		canCleanBackgroundContaminatedEdges(
+			backgroundModel,
+			backgroundDiagnostic,
+			o.postRemoveBackground || preBackgroundRemoved,
+		)
+	) {
 		const cleanupStart = performance.now();
 		const cleaned = cleanBackgroundContaminatedEdges(
 			result,
