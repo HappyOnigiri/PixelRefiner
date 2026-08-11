@@ -3,11 +3,7 @@ import type { QualityCaseResult, QualityResults } from "../types";
 import { runQualityReportClient } from "./client";
 import { escapeHtml, formatMetric } from "./format";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
-import {
-	renderTargetComparison,
-	TARGET_STATE_KEYS,
-	targetMatchState,
-} from "./target-section";
+import { renderTargetComparison, TARGET_STATE_KEYS } from "./target-section";
 import { REPORT_TRANSLATIONS } from "./translations";
 
 const renderClientScript = (): string =>
@@ -198,11 +194,13 @@ const renderReportSidebar = (results: QualityResults): string => {
 		`${repositoryUrl}/commit/${encodeURIComponent(commit)}`;
 	const shortCommit = (commit: string): string =>
 		escapeHtml(commit.slice(0, 7));
-	const verdictKey =
-		results.summary.blockingFailures > 0 ? "hasRegression" : "noRegression";
 	return `<aside class="sidebar">
 	<h1 data-i18n="title">PixelRefiner quality report</h1>
-	<p class="verdict" data-i18n="${verdictKey}">${verdictKey}</p>
+	<div class="report-overview">
+		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>${results.summary.targetUnmet}</strong></p>
+		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>${results.summary.targetMissing}</strong></p>
+		<p><span data-i18n="regressed">Regressed</span>: <strong>${results.summary.regressed}</strong></p>
+	</div>
 	<section class="report-meta" aria-labelledby="report-meta-title">
 		<h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2>
 		<dl>
@@ -233,16 +231,27 @@ const renderReportSidebar = (results: QualityResults): string => {
 				</div>
 		</fieldset>
 		<fieldset class="filter-group">
-			<legend data-i18n="changeStatus">Change status</legend>
+			<legend data-i18n="qualityStatus">Target quality</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-quality-filter="" aria-pressed="true">
+					<span data-i18n="allStatuses">All</span>: ${results.summary.caseCount}
+				</button>
+				<button class="filter-button" type="button" data-quality-filter="unmet" aria-pressed="false">
+					<span data-i18n="targetUnmet">Target unmet</span>: ${results.summary.targetUnmet}
+				</button>
+				<button class="filter-button" type="button" data-quality-filter="met" aria-pressed="false">
+					<span data-i18n="targetMet">Target met</span>: ${results.summary.targetMet}
+				</button>
+				<button class="filter-button" type="button" data-quality-filter="missing" aria-pressed="false">
+					<span data-i18n="targetMissing">Cannot assess</span>: ${results.summary.targetMissing}
+				</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
+			<legend data-i18n="changeStatus">Change from previous run</legend>
 			<div class="filter-row">
 				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true">
 					<span data-i18n="allChanges">All</span>: ${results.summary.caseCount}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
-					<span data-i18n="changed">changed</span>: ${results.summary.changed}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="new" aria-pressed="false">
-					<span data-i18n="new">new</span>: ${results.summary.newCases}
 				</button>
 				<button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false">
 					<span data-i18n="regressed">regressed</span>: ${results.summary.regressed}
@@ -252,6 +261,12 @@ const renderReportSidebar = (results: QualityResults): string => {
 				</button>
 				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false">
 					<span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}
+				</button>
+				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
+					<span data-i18n="changed">changed</span>: ${results.summary.changed}
+				</button>
+				<button class="filter-button" type="button" data-change-filter="new" aria-pressed="false">
+					<span data-i18n="new">new</span>: ${results.summary.newCases}
 				</button>
 			</div>
 		</fieldset>
@@ -269,45 +284,15 @@ const renderReportSidebar = (results: QualityResults): string => {
 				</button>
 			</div>
 		</fieldset>
-		<fieldset class="filter-group">
-			<legend data-i18n="targetMatch">Target match</legend>
-			<div class="filter-row">
-				<button class="filter-button active" type="button" data-target-filter="" aria-pressed="true">
-					<span data-i18n="allTargets">All</span>
-				</button>
-				<button class="filter-button" type="button" data-target-filter="unmet" aria-pressed="false">
-					<span data-i18n="targetUnmet">differs from target</span>: ${results.summary.targetUnmet}
-				</button>
-				<button class="filter-button" type="button" data-target-filter="met" aria-pressed="false">
-					<span data-i18n="targetMet">matches target</span>: ${results.summary.targetMet}
-				</button>
-				<button class="filter-button" type="button" data-target-filter="missing" aria-pressed="false">
-					<span data-i18n="targetMissing">no target</span>: ${results.summary.targetMissing}
-				</button>
-			</div>
-		</fieldset>
-		<fieldset class="filter-group">
-			<legend data-i18n="qualityStatus">Quality status</legend>
-			<div class="filter-row">
-				<button class="filter-button active" type="button" data-status-filter="" aria-pressed="true"><span data-i18n="allStatuses">All</span></button>
-				<button class="filter-button" type="button" data-status-filter="passed" aria-pressed="false">
-					<span data-i18n="passed">passed</span>: ${results.summary.passed}
-				</button>
-				<button class="filter-button" type="button" data-status-filter="failed" aria-pressed="false">
-					<span data-i18n="failed">target unmet</span>: ${results.summary.failed}
-				</button>
-			</div>
-		</fieldset>
 		<label class="search-row" for="search">
 			<span data-i18n="filterCases">Filter cases</span>
 			<input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases">
 		</label>
 		<p class="filter-summary" aria-live="polite">
 			<span data-i18n="displayConditions">Showing</span>:
+			<strong id="active-quality-label"></strong> &times;
 			<strong id="active-change-label"></strong> &times;
-			<strong id="active-parameter-label"></strong> &times;
-			<strong id="active-target-label"></strong> &times;
-			<strong id="active-status-label"></strong> &mdash;
+			<strong id="active-parameter-label"></strong> &mdash;
 			<strong id="visible-count">0</strong> / ${results.summary.caseCount}
 			<span data-i18n="casesShown">cases</span>
 		</p>
@@ -316,6 +301,7 @@ const renderReportSidebar = (results: QualityResults): string => {
 };
 
 export const renderHtml = (results: QualityResults): string => {
+	const targetOrder = { unmet: 0, missing: 1, met: 2 };
 	const changeOrder = {
 		regressed: 0,
 		new: 1,
@@ -325,46 +311,45 @@ export const renderHtml = (results: QualityResults): string => {
 	};
 	const sortedCases = [...results.cases].sort(
 		(left, right) =>
+			targetOrder[left.targetStatus] - targetOrder[right.targetStatus] ||
 			changeOrder[left.changeStatus] - changeOrder[right.changeStatus],
 	);
 	const cards = sortedCases
 		.map((result) => {
 			const description = describeCase(result);
-			const exactMatch = !result.failedAssertions.includes("exact-image-match");
-			const errorTarget = result.expectation.exact
-				? "0"
-				: `&le;${formatMetric(result.expectation.maxMeanRgbaError)}`;
-			const exactMeasurement = result.expectation.exact
-				? '<strong data-i18n="exactMatchShort">Exact</strong> ' +
-					`<span data-i18n="${exactMatch ? "yes" : "no"}">` +
-					`${exactMatch ? "yes" : "no"}</span> &middot; `
-				: "";
-			// [Intended] 一覧から目標未達のケースへ辿れるようにする。目標との距離は詳細ページ
-			// にしかないと 1 件ずつ開くしかなく、どこを見るべきか一覧から判断できない。
-			const targetState = targetMatchState(result);
+			// [Intended] 一覧の主判定は固定目標に対する品質だけにする。前回出力との比較結果を
+			// 「合格」と表示すると、既知の不具合を再現したケースが良品に見えるため。
+			const targetState = result.targetStatus;
 			const targetMeasurement =
-				`<strong data-i18n="targetMatch">Target match</strong> ` +
+				`<strong data-i18n="qualityStatus">Target quality</strong> ` +
 				`<span data-i18n="${TARGET_STATE_KEYS[targetState]}">${targetState}</span>` +
 				(targetState === "unmet" && result.targetMetrics
 					? ` ${formatMetric(result.targetMetrics.meanRgbaError)}`
-					: "") +
-				" &middot; ";
+					: "");
 			const qualityMeasurement = [
 				'<small class="case-metrics">',
-				exactMeasurement,
 				targetMeasurement,
-				'<strong data-i18n="meanRgbaErrorShort">Error</strong> ',
-				`${formatMetric(result.metrics.meanRgbaError)}/${errorTarget}`,
 				' &middot; <strong data-i18n="processingTime">Time</strong> ',
 				`${result.metrics.runtimeMs.toFixed(2)}ms`,
 				' &middot; <strong data-i18n="confidence">Confidence (diagnostic)</strong> ',
 				`${formatConfidence(result.confidence)}</small>`,
 			].join("");
+			const targetFailures =
+				result.targetFailedAssertions.length === 0
+					? ""
+					: `<p class="target-failures"><strong data-i18n="failed">Target unmet</strong>: ` +
+						result.targetFailedAssertions
+							.map(
+								(assertion) =>
+									`<span data-i18n="assertions.${escapeHtml(assertion)}">${escapeHtml(assertion)}</span>`,
+							)
+							.join(", ") +
+						"</p>";
 			const searchable = [
 				result.id,
 				...result.featureIds,
 				result.parameterMode,
-				result.status,
+				result.targetStatus,
 				result.changeStatus,
 				result.inputKind,
 				result.route,
@@ -388,21 +373,23 @@ export const renderHtml = (results: QualityResults): string => {
 					)
 					.join("");
 			const primaryImages = renderImages([
-				["input", "Input", result.files.input],
+				["groundTruth", "Target", result.files.groundTruth],
 				["result", "Result", result.files.result],
+				["groundTruthDifference", "Target difference", result.files.diff],
 			]);
-			return `<article class="case ${result.status} ${result.changeStatus}"
-			data-status="${result.status}" data-change="${result.changeStatus}"
-			data-parameter="${result.parameterMode}" data-target="${targetState}"
+			return `<article class="case target-${targetState} ${result.changeStatus}"
+			data-quality="${targetState}" data-change="${result.changeStatus}"
+			data-parameter="${result.parameterMode}"
 			data-search="${escapeHtml(searchable)}">
 			<h2>
 				${escapeHtml(result.id)}
-				<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
+				<span class="badge target-${targetState}" data-i18n="${TARGET_STATE_KEYS[targetState]}">${targetState}</span>
+				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 				<span class="badge parameter-${result.parameterMode}"
 					data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
-				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 				${qualityMeasurement}
 			</h2>
+			${targetFailures}
 			<p class="case-description" data-description-en="${escapeHtml(description.en)}"
 				data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
 			<div class="images primary">${primaryImages}</div><p><a class="detail-link"
@@ -432,6 +419,7 @@ ${renderImageDialog()}
 
 export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const description = describeCase(result);
+	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];
 	const renderImages = (
 		images: Array<[string, string, string | null]>,
 	): string =>
@@ -561,7 +549,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 	<main>
 		<h1>
 			${escapeHtml(result.id)}
-			<span class="badge ${result.status}" data-i18n="${result.status}">${result.status}</span>
+			<span class="badge target-${result.targetStatus}" data-i18n="${targetStateKey}">${result.targetStatus}</span>
 			<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
 		</h1>
 		<p class="case-description" data-description-en="${escapeHtml(description.en)}"
@@ -616,11 +604,12 @@ export const renderMarkdown = (results: QualityResults): string => {
 		.map((result) =>
 			[
 				`|${result.id}`,
-				`|${result.status}`,
+				`|${result.targetStatus}`,
+				`|${result.changeStatus}`,
 				`|${result.metrics.outputWidth}x${result.metrics.outputHeight}`,
 				`|${formatConfidence(result.confidence)}`,
-				`|${result.metrics.meanRgbaError.toFixed(3)}`,
-				`|${result.metrics.edgeF1.toFixed(3)}`,
+				`|${formatMetric(result.targetMetrics?.meanRgbaError)}`,
+				`|${formatMetric(result.targetMetrics?.edgeF1)}`,
 				`|${result.metrics.runtimeMs.toFixed(2)}|`,
 			].join(""),
 		)
@@ -628,8 +617,9 @@ export const renderMarkdown = (results: QualityResults): string => {
 	return `# PixelRefiner quality report
 
 - Cases: ${summary.caseCount}
-- Passed: ${summary.passed}
-- Failed: ${summary.failed}
+- Target met: ${summary.targetMet}
+- Target unmet: ${summary.targetUnmet}
+- Cannot assess: ${summary.targetMissing}
 - Changed: ${summary.changed}
 - New: ${summary.newCases}
 - Regressed: ${summary.regressed}
@@ -645,8 +635,8 @@ export const renderMarkdown = (results: QualityResults): string => {
 		1,
 	)}%
 
-|Case|Status|Output|Confidence (diagnostic)|Mean RGBA error|Edge F1|Runtime (ms)|
-|---|---|---:|---:|---:|---:|---:|
+|Case|Target quality|Change from previous run|Output|Confidence (diagnostic)|Target mean RGBA error|Target Edge F1|Runtime (ms)|
+|---|---|---|---:|---:|---:|---:|---:|
 ${rows}
 `;
 };

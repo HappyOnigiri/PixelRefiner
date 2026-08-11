@@ -1,19 +1,14 @@
-import type { QualityCaseResult, QualityTargetMetrics } from "../types";
+import type {
+	QualityCaseResult,
+	QualityTargetMetrics,
+	QualityTargetStatus,
+} from "../types";
 import { escapeHtml, formatMetric } from "./format";
 
-export type TargetMatchState = "met" | "unmet" | "missing";
-
-export const TARGET_STATE_KEYS: Record<TargetMatchState, string> = {
+export const TARGET_STATE_KEYS: Record<QualityTargetStatus, string> = {
 	met: "targetMet",
 	unmet: "targetUnmet",
 	missing: "targetMissing",
-};
-
-export const targetMatchState = (
-	result: QualityCaseResult,
-): TargetMatchState => {
-	if (result.targetMetrics === null) return "missing";
-	return result.targetMetrics.exactMatch ? "met" : "unmet";
 };
 
 const metricRow = (key: string, label: string, value: string): string =>
@@ -70,9 +65,23 @@ export const renderTargetComparison = (result: QualityCaseResult): string => {
 			? ""
 			: `<p><strong data-i18n="targetSource">Target source</strong>: ` +
 				`<code>${escapeHtml(result.targetSource)}</code></p>`;
+	const verdictKey = TARGET_STATE_KEYS[result.targetStatus];
+	const failures =
+		result.targetFailedAssertions.length === 0
+			? ""
+			: `<p><strong data-i18n="failed">Target unmet</strong>: ` +
+				result.targetFailedAssertions
+					.map(
+						(assertion) =>
+							`<span data-i18n="assertions.${escapeHtml(assertion)}">${escapeHtml(assertion)}</span>`,
+					)
+					.join(", ") +
+				"</p>";
 	return `<section>
 		<h2 data-i18n="targetComparison">Target comparison</h2>
+		<p><span class="badge target-${result.targetStatus}" data-i18n="${verdictKey}">${result.targetStatus}</span></p>
 		${source}
+		${failures}
 		<div class="table-scroll">
 			<table>
 				<tbody>${targetRows(target)}</tbody>

@@ -1,6 +1,10 @@
 import type { PixelGrid, RawImage } from "../../src/shared/types";
 import { imagesEqual } from "./image";
-import type { QualityMetrics, QualityTargetMetrics } from "./types";
+import type {
+	QualityExpectation,
+	QualityMetrics,
+	QualityTargetMetrics,
+} from "./types";
 
 const isOpaque = (image: RawImage, pixelIndex: number): boolean =>
 	image.data[pixelIndex * 4 + 3] >= 16;
@@ -267,6 +271,62 @@ export const calculateTargetMetrics = (
 	backgroundMaskIou: backgroundMaskIou(actual, target),
 	smallComponentRetention: smallComponentRetention(actual, target),
 });
+
+/**
+ * 固定目標と、その目標に紐づく許容値に対する未達項目を返す。
+ * [Intended] auto ケースでも目標元の explicit ケースと同じ許容値を使う。
+ * 前回の auto 出力を再現できたことを、目標品質の達成と取り違えないため。
+ */
+export const targetQualityFailures = (
+	metrics: QualityTargetMetrics,
+	expectation: QualityExpectation,
+	outputWidth: number,
+	outputHeight: number,
+	byteIdentical: boolean,
+): string[] => {
+	const failed: string[] = [];
+	if (expectation.exact && !metrics.exactMatch)
+		failed.push("exact-image-match");
+	if (
+		expectation.maxMeanRgbaError !== undefined &&
+		metrics.meanRgbaError > expectation.maxMeanRgbaError
+	) {
+		failed.push("mean-rgba-error");
+	}
+	if (
+		expectation.minEdgeF1 !== undefined &&
+		metrics.edgeF1 < expectation.minEdgeF1
+	) {
+		failed.push("edge-f1");
+	}
+	if (
+		expectation.minBackgroundMaskIou !== undefined &&
+		metrics.backgroundMaskIou < expectation.minBackgroundMaskIou
+	) {
+		failed.push("background-mask-iou");
+	}
+	if (
+		expectation.minSmallComponentRetention !== undefined &&
+		metrics.smallComponentRetention < expectation.minSmallComponentRetention
+	) {
+		failed.push("small-component-retention");
+	}
+	if (!metrics.sizeMatches) failed.push("output-size");
+	if (
+		expectation.expectedWidth !== undefined &&
+		outputWidth !== expectation.expectedWidth
+	) {
+		failed.push("expected-width");
+	}
+	if (
+		expectation.expectedHeight !== undefined &&
+		outputHeight !== expectation.expectedHeight
+	) {
+		failed.push("expected-height");
+	}
+	if (!byteIdentical) failed.push("deterministic-output");
+	return [...new Set(failed)];
+};
 
 export const createDiffImage = (
 	actual: RawImage,

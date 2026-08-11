@@ -7,8 +7,8 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { checkedInBaselineImagePath } from "./baseline";
-import { caseParameterMode } from "./manifest";
-import type { QualityImageCase } from "./types";
+import { caseParameterMode, loadExplicitCases } from "./manifest";
+import type { QualityExpectation, QualityImageCase } from "./types";
 
 const TARGET_DIRECTORY = "test/quality/targets";
 const TARGET_ROOT = path.resolve(TARGET_DIRECTORY);
@@ -49,6 +49,28 @@ export const autoTargetImage = (caseId: string): string | undefined =>
 /** 目標画像の由来となった explicit ケースの ID。レポートに出典として載せる。 */
 export const autoTargetSource = (caseId: string): string | undefined =>
 	loadAutoTargetRegistry().targets[caseId]?.source;
+
+let cachedExplicitExpectations: Map<string, QualityExpectation> | null = null;
+
+/**
+ * 固定目標に適用する合格条件。auto ケースは目標画像だけでなく、その画像を作った
+ * explicit ケースの許容値も引き継ぐ。前回出力の状態ではなく、目標へ到達したかを
+ * レポートの主判定にするために使う。
+ */
+export const caseTargetExpectation = (
+	qualityCase: QualityImageCase,
+): QualityExpectation | undefined => {
+	if (caseParameterMode(qualityCase) !== "auto") return qualityCase.expectation;
+	const source = autoTargetSource(qualityCase.id);
+	if (source === undefined) return undefined;
+	cachedExplicitExpectations ??= new Map(
+		loadExplicitCases().map((explicitCase) => [
+			explicitCase.id,
+			explicitCase.expectation,
+		]),
+	);
+	return cachedExplicitExpectations.get(source);
+};
 
 /**
  * ケースの目標画像。explicit はケース定義の正解画像、auto は固定した目標画像。

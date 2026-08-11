@@ -8,6 +8,7 @@ import {
 	isCatastrophicFailure,
 	meanRgbaError,
 	smallComponentRetention,
+	targetQualityFailures,
 	topGridCandidates,
 } from "./metrics";
 
@@ -118,5 +119,36 @@ describe("quality metrics", () => {
 		expect(metrics.backgroundMaskIou).toBe(0);
 		expect(metrics.smallComponentRetention).toBe(0);
 		expect(metrics.meanRgbaError).toBe(0);
+	});
+
+	it("judges target quality with the target case allowances", () => {
+		const target = image(2, 1, [0, 0, 0, 255, 0, 0, 0, 0]);
+		const actual = image(2, 1, [0, 0, 0, 255, 0, 0, 0, 255]);
+		const metrics = calculateTargetMetrics(actual, target);
+		expect(
+			targetQualityFailures(
+				metrics,
+				{
+					maxMeanRgbaError: 100,
+					minEdgeF1: 0.8,
+					minBackgroundMaskIou: 0.8,
+					minSmallComponentRetention: 1,
+					expectedWidth: 2,
+					expectedHeight: 1,
+				},
+				2,
+				1,
+				true,
+			),
+		).toEqual(["edge-f1", "background-mask-iou"]);
+	});
+
+	it("does not treat repeatable output as target quality when exact output differs", () => {
+		const target = image(2, 1, [0, 0, 0, 255, 0, 0, 0, 0]);
+		const actual = image(2, 1, [0, 0, 0, 255, 0, 0, 0, 255]);
+		const metrics = calculateTargetMetrics(actual, target);
+		expect(targetQualityFailures(metrics, { exact: true }, 2, 1, true)).toEqual(
+			["exact-image-match"],
+		);
 	});
 });

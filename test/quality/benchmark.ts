@@ -15,8 +15,13 @@ import {
 	calculateTargetMetrics,
 	createBackgroundMaskImage,
 	createDiffImage,
+	targetQualityFailures,
 } from "./metrics";
-import { autoTargetSource, caseTargetImage } from "./targets";
+import {
+	autoTargetSource,
+	caseTargetExpectation,
+	caseTargetImage,
+} from "./targets";
 import type {
 	QualityBaselineCase,
 	QualityCaseResult,
@@ -165,6 +170,8 @@ export const runQualityCase = (
 		targetImage === null
 			? null
 			: calculateTargetMetrics(currentRun.result, targetImage);
+	const targetExpectation =
+		targetImage === null ? null : (caseTargetExpectation(qualityCase) ?? null);
 
 	const metrics = calculateMetrics(
 		currentRun.result,
@@ -180,6 +187,22 @@ export const runQualityCase = (
 		imagesEqual(currentRun.result, expected),
 	);
 	const status = failed.length === 0 ? "passed" : "failed";
+	const targetFailedAssertions =
+		targetMetrics === null || targetExpectation === null
+			? []
+			: targetQualityFailures(
+					targetMetrics,
+					targetExpectation,
+					currentRun.result.width,
+					currentRun.result.height,
+					metrics.byteIdentical,
+				);
+	const targetStatus =
+		targetMetrics === null || targetExpectation === null
+			? "missing"
+			: targetFailedAssertions.length === 0
+				? "met"
+				: "unmet";
 	const baseline = loadBaseline();
 	const baselineMetrics =
 		baseline.cases.find((baselineCase) => baselineCase.id === qualityCase.id) ??
@@ -255,6 +278,9 @@ export const runQualityCase = (
 		inputKind: qualityCase.inputKind,
 		degradationPatterns: qualityCase.degradationPatterns,
 		status,
+		targetStatus,
+		targetFailedAssertions,
+		targetExpectation,
 		changeStatus,
 		failedAssertions: failed,
 		regressedMetrics: metricComparison.regressed,

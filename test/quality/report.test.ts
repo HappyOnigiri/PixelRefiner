@@ -39,7 +39,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-locale="zh-CN"');
 		expect(html).toContain('"zh-CN":{"title":"PixelRefiner 质量报告"');
 		expect(html).toContain(
-			'class="filter-button active" type="button" data-change-filter="" aria-pressed="true"',
+			'class="filter-button active" type="button" data-quality-filter="" aria-pressed="true"',
 		);
 		expect(html).toContain('grid-template-areas: "main sidebar"');
 		expect(html).toContain("event.target === dialog");
@@ -52,18 +52,18 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-change-filter="changed"');
 		expect(html).toContain('data-change-filter="new"');
 		expect(html).toContain('data-change-filter="regressed"');
+		const qualityGroupIndex = html.indexOf(
+			'<legend data-i18n="qualityStatus">',
+		);
 		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
 		const parameterGroupIndex = html.indexOf(
 			'<legend data-i18n="parameterMode">',
 		);
-		const qualityGroupIndex = html.indexOf(
-			'<legend data-i18n="qualityStatus">',
-		);
 		const searchIndex = html.indexOf('class="search-row"');
-		expect(changeGroupIndex).toBeGreaterThan(-1);
+		expect(qualityGroupIndex).toBeGreaterThan(-1);
+		expect(changeGroupIndex).toBeGreaterThan(qualityGroupIndex);
 		expect(parameterGroupIndex).toBeGreaterThan(changeGroupIndex);
-		expect(qualityGroupIndex).toBeGreaterThan(parameterGroupIndex);
-		expect(searchIndex).toBeGreaterThan(qualityGroupIndex);
+		expect(searchIndex).toBeGreaterThan(parameterGroupIndex);
 		expect(html).toContain('data-parameter-filter=""');
 		expect(html).toContain('data-parameter-filter="explicit"');
 		expect(html).toContain('data-parameter-filter="auto"');
@@ -72,14 +72,11 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('autoParameters":"自動判定"');
 		expect(html).toContain("card.dataset[group.name] === group.active");
 		expect(html).toContain('id="active-parameter-label"');
-		const targetGroupIndex = html.indexOf('<legend data-i18n="targetMatch">');
-		expect(targetGroupIndex).toBeGreaterThan(parameterGroupIndex);
-		expect(qualityGroupIndex).toBeGreaterThan(targetGroupIndex);
-		expect(html).toContain('data-target-filter=""');
-		expect(html).toContain('data-target-filter="unmet"');
-		expect(html).toContain('data-target-filter="met"');
-		expect(html).toContain('data-target-filter="missing"');
-		expect(html).toContain('id="active-target-label"');
+		expect(html).toContain('data-quality-filter=""');
+		expect(html).toContain('data-quality-filter="unmet"');
+		expect(html).toContain('data-quality-filter="met"');
+		expect(html).toContain('data-quality-filter="missing"');
+		expect(html).toContain('id="active-quality-label"');
 		expect(html).toContain('targetUnmet":"目標未達"');
 		// [Intended] 一覧のバッジと絞り込みの件数が同じ集計から出ていることを確かめる。
 		// 片方だけずれると、絞り込んだ結果と件数表示が食い違って読めなくなる。
@@ -89,7 +86,7 @@ describe.skipIf(!enabled)("quality report", () => {
 			["missing", results.summary.targetMissing],
 		] as const) {
 			expect(
-				html.match(new RegExp(`data-target="${state}"`, "g"))?.length ?? 0,
+				html.match(new RegExp(`data-quality="${state}"`, "g"))?.length ?? 0,
 			).toBe(count);
 		}
 		expect(
@@ -182,9 +179,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
 		const compactCaseEnd = html.indexOf("</article>", compactCaseIdIndex);
 		const compactCase = html.slice(compactCaseStart, compactCaseEnd);
-		expect(compactCase.match(/<figure>/g)).toHaveLength(2);
-		expect(compactCase).toContain('data-i18n="input"');
+		expect(compactCase.match(/<figure>/g)).toHaveLength(3);
+		expect(compactCase).toContain('data-i18n="groundTruth"');
 		expect(compactCase).toContain('data-i18n="result"');
+		expect(compactCase).toContain('data-i18n="groundTruthDifference"');
 		expect(compactCase).toContain(
 			`href="cases/${compactCaseId}/index.html" data-i18n="details"`,
 		);
@@ -195,15 +193,17 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(reviewCase).toContain(
 			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
 		);
-		const exactCaseId = "restore-nearest-2x-to-8x8";
-		const exactCaseIdIndex = html.indexOf(exactCaseId);
-		const exactCaseStart = html.lastIndexOf("<article", exactCaseIdIndex);
-		const exactCaseEnd = html.indexOf("</article>", exactCaseIdIndex);
-		const exactCase = html.slice(exactCaseStart, exactCaseEnd);
-		expect(exactCase).toContain('data-i18n="exactMatchShort"');
-		expect(exactCase).toContain('data-i18n="yes"');
-		expect(exactCase).toMatch(
-			/<strong data-i18n="meanRgbaErrorShort">Error<\/strong> 0\/0/,
+		const targetUnmetId = "auto-quality-nearest-3-2x";
+		const targetUnmetIdIndex = html.indexOf(targetUnmetId);
+		const targetUnmetStart = html.lastIndexOf("<article", targetUnmetIdIndex);
+		const targetUnmetEnd = html.indexOf("</article>", targetUnmetIdIndex);
+		const targetUnmetCase = html.slice(targetUnmetStart, targetUnmetEnd);
+		expect(targetUnmetCase).toContain('data-quality="unmet"');
+		expect(targetUnmetCase).toContain('data-i18n="targetUnmet"');
+		expect(targetUnmetCase).not.toContain('data-i18n="passed"');
+		expect(targetUnmetCase).toContain('data-i18n="assertions.edge-f1"');
+		expect(targetUnmetCase).toContain(
+			'data-i18n="assertions.background-mask-iou"',
 		);
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),

@@ -1,7 +1,7 @@
 import type { ProcessOptions } from "../../src/core/processor";
 import type { DitherMode } from "../../src/shared/types";
 
-export const QUALITY_REPORT_VERSION = "2";
+export const QUALITY_REPORT_VERSION = "3";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
@@ -11,6 +11,9 @@ export type QualityChangeStatus =
 	| "changed"
 	| "unchanged"
 	| "new";
+
+/** 固定した目標と、その目標に紐づく合格条件に対する品質判定。 */
+export type QualityTargetStatus = "met" | "unmet" | "missing";
 
 export type FixtureAssetProvenance = {
 	file: string;
@@ -149,6 +152,12 @@ export type QualityCaseResult = {
 	inputKind: string;
 	degradationPatterns: string[];
 	status: "passed" | "failed";
+	/** 一覧で主判定として表示する、固定目標に対する品質状態。 */
+	targetStatus: QualityTargetStatus;
+	/** 固定目標の合格条件を満たさなかった項目。 */
+	targetFailedAssertions: string[];
+	/** auto ケースでは目標元の explicit ケースから引き継いだ合格条件。 */
+	targetExpectation: QualityExpectation | null;
 	changeStatus: QualityChangeStatus;
 	failedAssertions: string[];
 	regressedMetrics: string[];
@@ -215,11 +224,11 @@ export type QualityResults = {
 		explicitCases: number;
 		/** 自動判定（UI 既定のみ）のケース数 */
 		autoCases: number;
-		/** 出力が目標画像と一致したケース数 */
+		/** 固定目標の合格条件を満たしたケース数 */
 		targetMet: number;
-		/** 目標画像はあるが一致していないケース数 */
+		/** 固定目標の合格条件を満たしていないケース数 */
 		targetUnmet: number;
-		/** 目標画像を登録していないケース数 */
+		/** 目標画像または合格条件を登録していないケース数 */
 		targetMissing: number;
 		top1SizeAccuracy: number;
 		top3SizeAccuracy: number;

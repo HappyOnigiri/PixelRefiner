@@ -113,7 +113,7 @@ export const runQualityReportClient = (): void => {
 		// [Intended] 絞り込みの軸はすべて同じ形（data-<name>-filter のボタン群 ×
 		// カードの data-<name>）なので、軸ごとに同じ処理を書かず名前だけで束ねる。
 		// 軸を増やすときはこの配列に名前を足すだけで済む。
-		const groups = ["change", "parameter", "target", "status"].map((name) => ({
+		const groups = ["quality", "change", "parameter"].map((name) => ({
 			name,
 			buttons: [
 				...document.querySelectorAll<HTMLButtonElement>(

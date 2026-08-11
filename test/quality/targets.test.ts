@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { loadCases } from "./manifest";
-import { syncAutoTargets, validateAutoTargets } from "./targets";
+import {
+	caseTargetExpectation,
+	syncAutoTargets,
+	validateAutoTargets,
+} from "./targets";
 
 // [Policy] 目標画像の作成は "pnpm run quality:targets:init" だけが行う。通常のテスト実行では
 // 検証だけを走らせ、目標が現状の出力に合わせて静かに書き換わることがないようにする。
@@ -52,4 +56,21 @@ describe("quality auto targets", () => {
 			"auto-tall-red: unknown target source case pad-tall-image-to-square",
 		);
 	});
+
+	it.skipIf(initMode)(
+		"inherits the target source allowances for auto cases",
+		() => {
+			const autoCase = loadCases().find(
+				(qualityCase) => qualityCase.id === "auto-quality-nearest-3-2x",
+			);
+			if (autoCase === undefined) throw new Error("Auto target case not found");
+			expect(caseTargetExpectation(autoCase)).toMatchObject({
+				maxMeanRgbaError: 25,
+				minEdgeF1: 0.8,
+				minBackgroundMaskIou: 0.8,
+				expectedWidth: 8,
+				expectedHeight: 8,
+			});
+		},
+	);
 });

@@ -51,12 +51,13 @@ the difference from the target, the difference from the previous run, and the
 background mask. See [Target images](#target-images) for how the target and the
 previous run differ.
 
-The HTML report initially shows every case. Use the change-status, quality-status,
-and text filters to narrow the list to review targets. A difference is not
-automatically a regression: metric changes classify it as improved, regressed,
-or changed without a measurable quality change. Cases absent from the PR base
-are classified separately as new. Known expectation failures that are unchanged
-remain visible through the status filter but do not fail the regression gate.
+The HTML report initially shows every case. Its primary quality status answers
+whether the current image meets the fixed target and that target's allowances.
+Auto cases inherit the allowances from the explicit case that supplied their
+target. A separate previous-run status shows whether the output improved,
+regressed, or stayed unchanged. Use both filters together to list, for example,
+all target-unmet cases that also regressed. Cases without a target are reported
+as unassessable rather than passed.
 
 ## Adding a fixture
 
@@ -86,10 +87,10 @@ case cannot be excluded only from the report.
 Two separate references exist for every case, and they answer different
 questions.
 
-| Reference | Question | Changes |
-|---|---|---|
-| Target | How far is the output from where it should be? | Only by deliberate review |
-| Baseline | What changed since the base branch? | Whenever a PR changes the output |
+| Reference | Question                                       | Changes                          |
+| --------- | ---------------------------------------------- | -------------------------------- |
+| Target    | How far is the output from where it should be? | Only by deliberate review        |
+| Baseline  | What changed since the base branch?            | Whenever a PR changes the output |
 
 For cases with explicit options the target is the `expected` image already
 registered in `cases.json`. Auto cases have no ground truth of their own, so
@@ -113,14 +114,13 @@ exclusion reason, when a mapping points at a case that does not exist, or when
 `targets/` holds an image no case references. Adding a fixture therefore forces a
 decision about its target instead of silently producing a case without one.
 
-Target metrics never fail the quality gate. Several auto cases are known to fall
-short of their target, and a few legitimately differ in size from it — trimming
-to content, or the intentional downscale on the convert route. Failing on those
-would leave the gate permanently red and useless for regression detection, so the
-gate keeps comparing against the baseline while the target comparison stays
-informational. Note that edge F1, background-mask IoU, and small-component
-retention read `0` whenever the sizes differ; the size-matches row above them
-says why.
+Target quality is the report's primary verdict but does not fail the regression
+gate. Several auto cases are known to fall short of their target, so using that
+verdict as the CI gate would leave the gate permanently red. The gate therefore
+continues to compare against the previous-run baseline, while the report labels
+the two concepts separately. Note that edge F1, background-mask IoU, and
+small-component retention read `0` whenever the sizes differ; the size-matches
+row above them says why.
 
 ## Metrics and baseline
 
