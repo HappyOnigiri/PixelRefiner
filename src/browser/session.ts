@@ -1,4 +1,3 @@
-import { needsBatchAttention } from "../core/batch";
 import type {
 	CandidateSelection,
 	PixelGrid,
@@ -18,7 +17,6 @@ export interface ImageItem {
 	status: "pending" | "processing" | "done" | "error";
 	error?: string;
 	analysis?: ProcessingAnalysis;
-	attention?: boolean;
 	outputFilename?: string;
 	/**
 	 * 候補プレビューで選んだ処理方針。設定変更で再処理しても自動判定へ戻らないよう保持する。
@@ -114,7 +112,6 @@ export class ImageSession {
 			img.result = processed.result;
 			img.grid = processed.grid;
 			img.analysis = processed.analysis;
-			img.attention = needsBatchAttention(processed.analysis);
 			img.status = "done";
 			img.error = undefined;
 			this.onUpdate();
@@ -156,7 +153,6 @@ export class ImageSession {
 			img.error = error;
 			if (status === "processing") {
 				img.analysis = undefined;
-				img.attention = false;
 				img.outputFilename = undefined;
 			}
 			this.onUpdate();

@@ -1,5 +1,4 @@
 import { PROCESS_DEFAULTS } from "../shared/config";
-import type { ProcessingAnalysis } from "../shared/types";
 import {
 	extractColorsFromImage,
 	generateGPL,
@@ -27,7 +26,7 @@ import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { createRunProcessing } from "./processing-controller";
 import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
-import { ImageSession } from "./session";
+import { type ImageItem, ImageSession } from "./session";
 import { setupSettingsControls } from "./settings-controls";
 
 export const initApp = (): void => {
@@ -43,12 +42,17 @@ export const initApp = (): void => {
 	const modalResultViewer = new ResultViewer(
 		els.resultModal.querySelector(".result-modal-body") as HTMLElement,
 	);
-	const updateProcessingAnalysis = (analysis?: ProcessingAnalysis) => {
-		const text = analysis
-			? formatProcessingAnalysis(analysis, (key, params) =>
-					i18n.t(key as Parameters<typeof i18n.t>[0], params),
-				)
-			: "";
+	// [Intended] 一覧から判定表示を外したぶん、失敗した画像を選んだときは
+	// ホバーできる環境に頼らず結果表示で理由を読めるようにする。
+	const formatAnalysisText = (item: ImageItem | null | undefined): string => {
+		if (item?.status === "error" && item.error) return item.error;
+		if (!item?.analysis) return "";
+		return formatProcessingAnalysis(item.analysis, (key, params) =>
+			i18n.t(key as Parameters<typeof i18n.t>[0], params),
+		);
+	};
+	const updateProcessingAnalysis = (item: ImageItem | null | undefined) => {
+		const text = formatAnalysisText(item);
 		mainResultViewer.updateAnalysis(text);
 		modalResultViewer.updateAnalysis(text);
 	};
@@ -93,7 +97,7 @@ export const initApp = (): void => {
 		},
 		onActiveChange: (item) => {
 			candidateChooser.dismiss();
-			updateProcessingAnalysis(item?.analysis);
+			updateProcessingAnalysis(item);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -250,7 +254,7 @@ export const initApp = (): void => {
 		runProcessing,
 		saveSettings,
 		onLanguageChange: () =>
-			updateProcessingAnalysis(imageSession.getActiveImage()?.analysis),
+			updateProcessingAnalysis(imageSession.getActiveImage()),
 	});
 	els.sharedPaletteToggle.addEventListener(
 		"change",
