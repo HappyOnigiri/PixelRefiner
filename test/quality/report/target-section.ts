@@ -3,7 +3,7 @@ import type {
 	QualityTargetMetrics,
 	QualityTargetStatus,
 } from "../types";
-import { escapeHtml, formatMetric } from "./format";
+import { escapeHtml, formatImageSize, formatMetric } from "./format";
 
 export const TARGET_STATE_KEYS: Record<QualityTargetStatus, string> = {
 	met: "targetMet",
@@ -25,7 +25,10 @@ const targetRows = (target: QualityTargetMetrics): string =>
 		metricRow(
 			"outputSize",
 			"Output size",
-			`${String(target.targetWidth)}x${String(target.targetHeight)}`,
+			formatImageSize({
+				width: target.targetWidth,
+				height: target.targetHeight,
+			}),
 		),
 		metricRow("sizeMatches", "Size matches", booleanValue(target.sizeMatches)),
 		metricRow("exactMatch", "Exact match", booleanValue(target.exactMatch)),

@@ -77,6 +77,15 @@ const makeCaseResult = (
 		baselineDiff: null,
 		backgroundMask: `cases/${CASE_ID}/background-mask.png`,
 	},
+	imageSizes: {
+		groundTruth: { width: 8, height: 8 },
+		input: { width: 64, height: 64 },
+		baseline: null,
+		result: { width: 8, height: 8 },
+		diff: { width: 8, height: 8 },
+		baselineDiff: null,
+		backgroundMask: { width: 8, height: 8 },
+	},
 	...overrides,
 });
 
@@ -173,6 +182,91 @@ describe("quality report case detail", () => {
 		);
 		expect(between(detail, "<tbody>", "</tbody>")).not.toContain(
 			"processingTime",
+		);
+	});
+
+	// [Intended] 画像の寸法は一覧でも詳細でも同じ形で読めるようにする。片方にしか無いと、
+	// 目標と出力の食い違いに気付くために毎回詳細を開くことになる。
+	it("shows each image size next to its caption in both views", () => {
+		const result = makeCaseResult();
+		expect(renderHtml(makeResults([result]))).toContain(
+			'<span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small>',
+		);
+		expect(renderCaseDetailHtml(result)).toContain(
+			'<span data-i18n="input">Input</span> <small class="image-size">(64x64px)</small>',
+		);
+	});
+
+	// [Intended] 翻訳は data-i18n の要素の textContent を丸ごと置き換えるので、実寸を
+	// figcaption 直下へ置くと言語切り替えで消える。見出しは span に閉じ込める。
+	it("keeps the image size outside the translated caption element", () => {
+		const result = makeCaseResult();
+		expect(renderHtml(makeResults([result]))).not.toContain(
+			"<figcaption data-i18n=",
+		);
+		expect(renderCaseDetailHtml(result)).not.toContain(
+			"<figcaption data-i18n=",
+		);
+	});
+
+	it("highlights the current-run size when it differs from the target", () => {
+		const result = makeCaseResult({
+			targetMetrics: {
+				targetWidth: 8,
+				targetHeight: 8,
+				sizeMatches: false,
+				exactMatch: false,
+				meanRgbaError: 1.5,
+				edgeF1: 0,
+				backgroundMaskIou: 0,
+				smallComponentRetention: 0,
+			},
+			imageSizes: {
+				groundTruth: { width: 8, height: 8 },
+				input: { width: 64, height: 64 },
+				baseline: null,
+				result: { width: 16, height: 16 },
+				diff: { width: 16, height: 16 },
+				baselineDiff: null,
+				backgroundMask: { width: 16, height: 16 },
+			},
+		});
+		for (const html of [
+			renderHtml(makeResults([result])),
+			renderCaseDetailHtml(result),
+		]) {
+			expect(html).toContain(
+				'<span data-i18n="result">Result</span> <small class="image-size size-mismatch">(16x16px)</small>',
+			);
+			expect(html).toContain('<small class="image-size">(8x8px)</small>');
+		}
+	});
+
+	// [Intended] 目標を持たないケースは寸法を比べられないので、警告色にはしない。
+	it("does not highlight the current-run size without a target image", () => {
+		const result = makeCaseResult({
+			targetMetrics: null,
+			files: {
+				groundTruth: null,
+				input: `cases/${CASE_ID}/input.png`,
+				baseline: null,
+				result: `cases/${CASE_ID}/result.png`,
+				diff: null,
+				baselineDiff: null,
+				backgroundMask: `cases/${CASE_ID}/background-mask.png`,
+			},
+			imageSizes: {
+				groundTruth: null,
+				input: { width: 64, height: 64 },
+				baseline: null,
+				result: { width: 16, height: 16 },
+				diff: null,
+				baselineDiff: null,
+				backgroundMask: { width: 16, height: 16 },
+			},
+		});
+		expect(renderCaseDetailHtml(result)).not.toContain(
+			'<small class="image-size size-mismatch">',
 		);
 	});
 

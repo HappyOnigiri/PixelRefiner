@@ -4,7 +4,7 @@ import type {
 	WarningPresentation,
 } from "../../../src/core/candidate-modal-decision";
 import type { QualityCandidateOption, QualityCaseResult } from "../types";
-import { escapeHtml, formatConfidence } from "./format";
+import { escapeHtml, formatConfidence, formatImageSize } from "./format";
 
 const CANDIDATE_MODAL_DECISION_KEYS: Record<CandidateModalDecision, string> = {
 	"would-show": "candidateModalWouldShow",
@@ -83,10 +83,17 @@ const renderCandidateOption = (option: QualityCandidateOption): string => {
 		: "";
 	// [Intended] 生成に失敗した候補も欠番として残す。モーダルの表示見込みは候補プラン数だけで
 	// 決まるため、生成できなかった選択肢はここに出さないとレポートから消えてしまう。
+	const outputSize =
+		option.outputWidth === null || option.outputHeight === null
+			? "-"
+			: formatImageSize({
+					width: option.outputWidth,
+					height: option.outputHeight,
+				});
 	const metadata =
 		option.file === null
 			? '<span data-i18n="candidateOptionFailed">generation failed</span>'
-			: `${String(option.outputWidth)} &times; ${String(option.outputHeight)} px ` +
+			: `${outputSize} ` +
 				`&middot; <span data-i18n="colorCount">Colors</span> ${String(option.colorCount)}`;
 	const stage =
 		option.file === null

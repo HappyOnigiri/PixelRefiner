@@ -2,6 +2,7 @@ import type { PixelGrid, RawImage } from "../../src/shared/types";
 import { imagesEqual } from "./image";
 import type {
 	QualityExpectation,
+	QualityImageSize,
 	QualityMetrics,
 	QualityTargetMetrics,
 } from "./types";
@@ -328,12 +329,24 @@ export const targetQualityFailures = (
 	return [...new Set(failed)];
 };
 
+/**
+ * 差分画像の寸法。寸法の違う 2 枚を重ねるため、両方が収まる大きさになる。
+ * [Intended] 画素を作らずに寸法だけ要るレポート側と定義を共有し、書き出した画像と
+ * レポートに載る寸法がずれないようにする。
+ */
+export const diffImageSize = (
+	actual: RawImage,
+	expected: RawImage,
+): QualityImageSize => ({
+	width: Math.max(actual.width, expected.width),
+	height: Math.max(actual.height, expected.height),
+});
+
 export const createDiffImage = (
 	actual: RawImage,
 	expected: RawImage,
 ): RawImage => {
-	const width = Math.max(actual.width, expected.width);
-	const height = Math.max(actual.height, expected.height);
+	const { width, height } = diffImageSize(actual, expected);
 	const data = new Uint8ClampedArray(width * height * 4);
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {

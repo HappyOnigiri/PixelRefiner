@@ -3,6 +3,7 @@ import path from "node:path";
 import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { reportRoot } from "./benchmark";
+import { readPng } from "./image";
 import { loadCases, selectCasesForProfile } from "./manifest";
 import { aggregateQualityReport } from "./report/aggregate";
 import { renderHtml } from "./report/render";
@@ -472,6 +473,25 @@ describe.skipIf(!enabled)("quality report", () => {
 				expect(existsSync(path.join(reportRoot, result.files.baseline))).toBe(
 					true,
 				);
+			}
+		}
+		// [Intended] レポートに載る寸法は、書き出した画像そのものを読み直して突き合わせる。
+		// 生成側は背景マスクを出力と同寸だと決め打ちするなど実装への暗黙の依存を持つため、
+		// その前提が崩れたときに表示だけが実物とずれた状態で残らないようにする。
+		for (const result of results.cases) {
+			for (const [key, file] of Object.entries(result.files)) {
+				const size = result.imageSizes[key as keyof typeof result.files];
+				if (file === null) {
+					expect([result.id, key, size]).toEqual([result.id, key, null]);
+					continue;
+				}
+				const image = readPng(path.join(reportRoot, file));
+				expect([result.id, key, size?.width, size?.height]).toEqual([
+					result.id,
+					key,
+					image.width,
+					image.height,
+				]);
 			}
 		}
 	}, 120_000);
