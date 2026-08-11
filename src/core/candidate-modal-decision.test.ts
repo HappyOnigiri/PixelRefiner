@@ -70,11 +70,34 @@ describe("candidate modal decision", () => {
 		});
 	});
 
-	it("Auto 以外は品質レポートの対象外として扱う", () => {
+	// [Intended] 候補選択モーダルは Auto 専用。利用者が処理経路を選んでいる場合に
+	// 別の経路を提案せず、WARNING を通常通知へ送ることを固定する。
+	it("Auto 以外はモーダルを表示せず WARNING を通常通知へ送る", () => {
 		expect(evaluate({ isAuto: false })).toMatchObject({
+			candidateModalEligible: false,
 			candidateModalDecision: "not-applicable",
 			candidateModalReason: "NOT_AUTO",
-			warningPresentation: "candidate-modal",
+			warningPresentation: "toast",
+		});
+	});
+
+	it("Auto 以外で WARNING もなければ通知しない", () => {
+		expect(evaluate({ isAuto: false, warningCodes: [] })).toMatchObject({
+			candidateModalEligible: false,
+			candidateModalDecision: "not-applicable",
+			candidateModalReason: "NOT_AUTO",
+			warningPresentation: "none",
+		});
+	});
+
+	// [Intended] 候補を選んだあとの再処理は Auto 以外の経路になるが、判定理由は
+	// 「選択済み」を優先する。NOT_AUTO では再表示しない本当の理由が読めない。
+	it("候補選択済みの再処理は Auto 以外でも選択済みを理由にする", () => {
+		expect(
+			evaluate({ isAuto: false, hasCandidateSelection: true }),
+		).toMatchObject({
+			candidateModalReason: "CANDIDATE_SELECTION_EXISTS",
+			warningPresentation: "toast",
 		});
 	});
 

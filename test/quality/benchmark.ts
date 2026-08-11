@@ -337,8 +337,6 @@ export const runQualityCase = (
 			path.join(REPORT_ROOT, files.backgroundMask),
 			createBackgroundMaskImage(currentRun.result),
 		);
-		// [Intended] candidateModalEligible は Auto 以外でも真になりうる（表示可否は
-		// candidateModalDecision が担う）ため、判定にはモーダルの表示見込みそのものを使う。
 		if (candidateModal.candidateModalDecision === "would-show") {
 			candidateOptions = buildCandidateOptions(
 				candidatePlans,

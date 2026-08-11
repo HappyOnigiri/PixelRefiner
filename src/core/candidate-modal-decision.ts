@@ -37,6 +37,8 @@ export type CandidateModalDecisionResult = {
 /**
  * 候補選択モーダルと WARNING 通知の表示見込みを決定する。
  *
+ * [Intended] 候補選択モーダルは Auto 専用にする。Auto 以外は利用者が処理経路を
+ * 明示的に選んでいるので、こちらから別の経路を提案せず WARNING を通常通知へ送る。
  * [Intended] candidatePreviewCount が未確定の段階では、他の条件を満たせば
  * プレビュー生成を試行できると判定する。実際の表示可否はプレビュー生成後に
  * 件数を渡して再評価する。
@@ -55,6 +57,8 @@ export const evaluateCandidateModalDecision = ({
 
 	if (hasCandidateSelection) {
 		candidateModalReason = "CANDIDATE_SELECTION_EXISTS";
+	} else if (!isAuto) {
+		candidateModalReason = "NOT_AUTO";
 	} else if (!isInitial) {
 		candidateModalReason = "NOT_INITIAL";
 	} else if (!showCandidates) {
@@ -87,7 +91,7 @@ export const evaluateCandidateModalDecision = ({
 	return {
 		candidateModalEligible,
 		candidateModalDecision,
-		candidateModalReason: isAuto ? candidateModalReason : "NOT_AUTO",
+		candidateModalReason,
 		warningPresentation,
 	};
 };
