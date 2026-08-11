@@ -411,7 +411,7 @@ describe("Gemini watermark removal", () => {
 		expect(automatic.grid).toEqual(disabled.grid);
 	});
 
-	it("maps removal through a forced-size crop", () => {
+	it("excludes the watermark from forced-size crop bounds", () => {
 		const image = withOpaqueBackground(createSyntheticImage(false));
 		const options = {
 			processingMode: "convert" as const,
@@ -428,22 +428,12 @@ describe("Gemini watermark removal", () => {
 			...options,
 			geminiWatermarkRemoval: "off",
 		});
-		let removed = 0;
-		for (
-			let pixel = 0;
-			pixel < automatic.result.width * automatic.result.height;
-			pixel += 1
-		) {
-			const offset = pixel * 4;
-			if (
-				automatic.result.data[offset + 3] === 0 &&
-				disabled.result.data[offset + 3] !== 0
-			) {
-				removed += 1;
-			}
-		}
-		expect(removed).toBeGreaterThan(0);
-		expect(automatic.grid).toEqual(disabled.grid);
+		expect(automatic.result.width).toBe(20);
+		expect(automatic.result.height).toBe(20);
+		expect(automatic.grid.cropW).toBe(26);
+		expect(automatic.grid.cropH).toBe(26);
+		expect(automatic.grid.cropW).toBeLessThan(disabled.grid.cropW ?? 0);
+		expect(automatic.grid.cropH).toBeLessThan(disabled.grid.cropH ?? 0);
 		expect(automatic.grid.cropX).toBeGreaterThan(0);
 		expect(automatic.grid.cropY).toBeGreaterThan(0);
 	});
@@ -529,4 +519,20 @@ describe("Gemini watermark removal", () => {
 			expect(result.removedPixels).toBeGreaterThan(0);
 		});
 	}
+
+	it("matches the high-resolution target geometry after removal", async () => {
+		const image = await readPngAsRawImage("test/fixtures/high_resolution.png");
+		const target = await readPngAsRawImage(
+			"test/quality/targets/auto-high-resolution.png",
+		);
+		const result = processImage(image);
+
+		expect(result.result.width).toBe(target.width);
+		expect(result.result.height).toBe(target.height);
+		let totalError = 0;
+		for (let offset = 0; offset < result.result.data.length; offset += 1) {
+			totalError += Math.abs(result.result.data[offset] - target.data[offset]);
+		}
+		expect(totalError / result.result.data.length).toBeLessThan(3);
+	}, 30_000);
 });

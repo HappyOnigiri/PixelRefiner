@@ -86,15 +86,17 @@ export const processForcedRoute = (
 	// トリミングしない強制変換では背景除去 1 回ぶんを丸ごと省く。
 	let maskedCache: RawImage | undefined;
 	const getMasked = (): RawImage => {
-		maskedCache ??= removeBackground(
-			working,
-			bgTol,
-			o.bgRemovalScope,
-			o.bgConnectivity,
-			bgTargets,
-			o.bgExtractionMethod,
-			backgroundModel,
-		);
+		maskedCache ??=
+			context.preparedMask ??
+			removeBackground(
+				working,
+				bgTol,
+				o.bgRemovalScope,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+				backgroundModel,
+			);
 		return maskedCache;
 	};
 	let smallComponentRemoval = context.smallComponentRemoval;

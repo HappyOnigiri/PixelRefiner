@@ -1,5 +1,5 @@
 import { GEMINI_WATERMARK_LIMITS } from "../shared/config";
-import type { ProcessResult, RawImage } from "../shared/types";
+import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
 import type { AutomaticBackgroundResult } from "./background";
 import {
 	detectBackgroundRamp,
@@ -12,6 +12,7 @@ import {
 	clearMappedGeminiWatermark,
 	type MappedRemovalMode,
 } from "./gemini-watermark-mapping";
+import { cloneImage } from "./image-operations";
 import type { NormalizedProcessOptions } from "./processor-options";
 
 type SearchRegion = {
@@ -411,10 +412,11 @@ export const createGeminiWatermarkDetectionMask = (
 	// 角背景から独立しているかは保守的な単一角マスクで判定する。
 	const method = "top-left" as const;
 	if (automaticBackground) {
-		// [Intended] ロールバック結果は処理完了後には再利用されない原寸コピーなので、
-		// 追加の画像バッファを作らず検出マスクへ転用する。
+		// [Intended] 検出マスクは後続処理より先に作るため、Auto 背景除去の結果を保持する。
+		// ここで共有画像を透過化すると、後続の背景除去経路まで意図せず変わってしまう。
+		const detectionMask = cloneImage(automaticBackground.image);
 		floodFillTransparent(
-			automaticBackground.image,
+			detectionMask,
 			0,
 			0,
 			options.backgroundTolerance,
@@ -422,7 +424,7 @@ export const createGeminiWatermarkDetectionMask = (
 			options.bgConnectivity,
 			detectBackgroundRamp(inputImage, options.backgroundTolerance),
 		);
-		return { image: automaticBackground.image, mode: "background" };
+		return { image: detectionMask, mode: "background" };
 	}
 	return {
 		image: removeBackground(
@@ -438,9 +440,41 @@ export const createGeminiWatermarkDetectionMask = (
 	};
 };
 
+/** Auto 判定へ渡す作業画像から、検出済みの透かし成分を元画像座標で除外する。 */
+export const clearGeminiWatermarkFromWorkingImage = (
+	detectionMask: RawImage,
+	workingImage: RawImage,
+	sourcePixels: Uint32Array,
+	appliedDeskewAngle: number,
+	mode: MappedRemovalMode,
+): RawImage => {
+	if (sourcePixels.length === 0) return workingImage;
+	const grid: PixelGrid = {
+		cellW: 1,
+		cellH: 1,
+		offsetX: 0,
+		offsetY: 0,
+		outW: workingImage.width,
+		outH: workingImage.height,
+		cropX: 0,
+		cropY: 0,
+		cropW: workingImage.width,
+		cropH: workingImage.height,
+		score: 0,
+	};
+	return clearMappedGeminiWatermark(
+		workingImage,
+		detectionMask,
+		grid,
+		sourcePixels,
+		appliedDeskewAngle,
+		mode,
+	);
+};
+
 /** 確定済みの処理結果へ透かし除去だけを適用し、経路選択と出力形状を保持する。 */
 export const applyGeminiWatermarkRemoval = (
-	inputImage: RawImage,
+	removal: GeminiWatermarkDetectionResult,
 	detectionMask: RawImage,
 	processed: ProcessResult,
 	options: NormalizedProcessOptions,
@@ -450,11 +484,9 @@ export const applyGeminiWatermarkRemoval = (
 	if (options.geminiWatermarkRemoval === "off") {
 		return processed;
 	}
-	const removal = detectGeminiWatermark(inputImage, detectionMask);
 	if (!removal.removed) return processed;
 
-	// [Intended] 検出・分類・トリミングの結果は透かし除去前のまま保ち、
-	// 確定した出力座標だけを透明化して Auto の経路選択やキャンバス寸法を変えない。
+	// [Intended] 作業画像で先に除去しても補間後に残り得る対象セルを、確定座標でも除去する。
 	const result = clearMappedGeminiWatermark(
 		processed.result,
 		detectionMask,

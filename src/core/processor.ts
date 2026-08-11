@@ -22,9 +22,11 @@ import { removeSmallComponents } from "./components";
 import { rotateRawImageExpanded } from "./deskew";
 import { detectGrid } from "./detector";
 import {
-	applyGeminiWatermarkRemoval,
-	createGeminiWatermarkDetectionMask,
-} from "./gemini-watermark";
+	downsampleGeminiWatermarkGeometry,
+	getGeminiWatermarkDownsampleOptions,
+	prepareGeminiWatermarkAwareAutoMask,
+	prepareGeminiWatermarkGeometry,
+} from "./gemini-watermark-preprocessing";
 import {
 	rankGridCandidates,
 	rerankGridCandidateReports,
@@ -239,6 +241,20 @@ const processImageCore = (
 	} else {
 		working = cloneImage(img);
 	}
+	const watermarkGeometry = prepareGeminiWatermarkGeometry({
+		inputImage,
+		image: img,
+		working,
+		options: o,
+		automaticBackground,
+		getBackgroundMaskedInput,
+		backgroundTargets: bgTargets,
+		backgroundModel,
+		appliedDeskewAngle,
+	});
+	const geometryImage = watermarkGeometry.image;
+	const geometryWorking = watermarkGeometry.working;
+	const preparedWatermarkMask = watermarkGeometry.mask;
 	log(
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
 	);
@@ -249,6 +265,7 @@ const processImageCore = (
 	});
 	const trimToContent = o.trimToContent;
 	const trimAlphaThreshold = o.trimAlphaThreshold;
+	const watermarkRemovedFromGeometry = watermarkGeometry.removed;
 
 	let smallComponentRemoval: SmallComponentRemovalDiagnostic | undefined;
 	const simpleRouteContext: SimpleRouteContext = {
@@ -262,27 +279,9 @@ const processImageCore = (
 		backgroundDiagnostic,
 		backgroundModel,
 		smallComponentRemoval,
+		preparedMask: preparedWatermarkMask,
 	};
-	let watermarkDetection:
-		| ReturnType<typeof createGeminiWatermarkDetectionMask>
-		| undefined;
-	const finishProcessing = (processed: ProcessResult): ProcessResult => {
-		if (o.geminiWatermarkRemoval === "off") return processed;
-		watermarkDetection ??= createGeminiWatermarkDetectionMask(
-			inputImage,
-			o,
-			automaticBackground,
-			getBackgroundMaskedInput,
-		);
-		return applyGeminiWatermarkRemoval(
-			inputImage,
-			watermarkDetection.image,
-			processed,
-			o,
-			appliedDeskewAngle,
-			watermarkDetection.mode,
-		);
-	};
+	const finishProcessing = watermarkGeometry.finish;
 	const forcedResult = processForcedRoute(simpleRouteContext);
 	if (forcedResult) return finishProcessing(forcedResult);
 	// [Intended] 明示された処理経路は enableGridDetection の早期 return より先に判定する。
@@ -316,27 +315,19 @@ const processImageCore = (
 	// これはデバッグ出力のためだけに計算され、実際の処理パイプラインは変更しない。
 	const bgTol = o.backgroundTolerance;
 	const maskedStart = performance.now();
-	const maskedForDebugOrAuto =
-		o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0
-			? appliedDeskewAngle !== 0 &&
-				o.bgRemovalScope !== "off" &&
-				o.bgExtractionMethod !== "none"
-				? o.preRemoveBackground
-					? cloneImage(working)
-					: rotateRawImageExpanded(
-							getBackgroundMaskedInput(),
-							appliedDeskewAngle,
-						)
-				: removeBackground(
-						working,
-						bgTol,
-						o.bgRemovalScope,
-						o.bgConnectivity,
-						bgTargets,
-						o.bgExtractionMethod,
-						backgroundModel,
-					)
-			: null;
+	const maskedForDebugOrAuto = prepareGeminiWatermarkAwareAutoMask({
+		needed: Boolean(
+			o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0,
+		),
+		preparedMask: preparedWatermarkMask,
+		appliedDeskewAngle,
+		options: o,
+		working,
+		geometryWorking,
+		getBackgroundMaskedInput,
+		backgroundTargets: bgTargets,
+		backgroundModel,
+	});
 	if (maskedForDebugOrAuto) {
 		log(
 			`Masked image for debug/auto created in ${(performance.now() - maskedStart).toFixed(2)}ms`,
@@ -385,7 +376,10 @@ const processImageCore = (
 
 	let grid: PixelGrid | null = null;
 	let gridMethod = "detect-grid";
-	let downsampleOptions = getDownsampleOptions(o);
+	let downsampleOptions = getGeminiWatermarkDownsampleOptions(
+		o,
+		watermarkRemovedFromGeometry,
+	);
 	let allowSmallTrimmedGrid = false;
 
 	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
@@ -457,7 +451,7 @@ const processImageCore = (
 					// [Intended] 自動背景推定が残す薄い外周は、論理セルのアスペクト比を
 					// 乱すため、角から得たマスクの境界を格子の基準領域に使用する。
 					const cornerMask = removeBackground(
-						img,
+						geometryImage,
 						o.backgroundTolerance,
 						o.bgRemovalScope,
 						o.bgConnectivity,
@@ -553,7 +547,7 @@ const processImageCore = (
 
 	if (!grid) {
 		const detectStart = performance.now();
-		grid = detectGrid(working, { ...o.detect, debug: o.debug });
+		grid = detectGrid(geometryWorking, { ...o.detect, debug: o.debug });
 		grid.angle = appliedDeskewAngle;
 		log(
 			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
@@ -563,7 +557,11 @@ const processImageCore = (
 			grid,
 		});
 	}
-	let rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	let rankedGridCandidates = rankGridCandidates(
+		geometryWorking,
+		grid,
+		gridMethod,
+	);
 	if (deskewSearch) {
 		const additional = deskewSearch.candidates
 			.filter((candidate) => candidate.angle !== appliedDeskewAngle)
@@ -587,7 +585,7 @@ const processImageCore = (
 	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
 		o.processingMode === "auto"
-			? classifyInput(working, rankedGridCandidates)
+			? classifyInput(geometryWorking, rankedGridCandidates)
 			: undefined;
 	const selectedCandidateIndex = findCandidateIndexForGrid(
 		rankedGridCandidates,
@@ -634,7 +632,7 @@ const processImageCore = (
 					// 復元候補の存在をユーザーが知る手段が無くなる。
 					...(autoRoute.route === "preserve"
 						? detectedGridConfidenceWarnings(
-								working,
+								geometryWorking,
 								grid,
 								selectedCandidateConfidence,
 							)
@@ -650,6 +648,14 @@ const processImageCore = (
 	// 候補診断は検出器で共有する座標空間に保つ。
 	const diagnosticGrid = grid;
 	const down = downsample(working, grid, downsampleOptions);
+	const geometryDown = downsampleGeminiWatermarkGeometry(
+		preparedWatermarkMask,
+		geometryWorking,
+		working,
+		down,
+		grid,
+		downsampleOptions,
+	);
 	log(
 		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
 	);
@@ -666,7 +672,7 @@ const processImageCore = (
 	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
 	const logicalMask = needsLogicalMask
 		? removeBackground(
-				down,
+				geometryDown,
 				o.backgroundTolerance,
 				o.bgRemovalScope,
 				o.bgConnectivity,
