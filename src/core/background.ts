@@ -668,7 +668,15 @@ const measureSelectedClusterMeansOklab = (
 	const labL = new Float64Array(1);
 	const labA = new Float64Array(1);
 	const labB = new Float64Array(1);
-	for (let pixel = 0; pixel < selected.length; pixel += 1) {
+	// [Policy] 走査は等間隔に間引く。間引くと 1 クラスタあたりの標本数も同じ割合で
+	// 減るので、minEnclosedReferencePixels の判定は実画素数より厳しい側へ倒れる。
+	const stride = Math.max(
+		1,
+		Math.ceil(
+			selected.length / BACKGROUND_MODEL_LIMITS.maxEnclosedReferenceSamples,
+		),
+	);
+	for (let pixel = 0; pixel < selected.length; pixel += stride) {
 		if (!selected[pixel]) continue;
 		const offset = pixel * 4;
 		if (img.data[offset + 3] === 0) continue;

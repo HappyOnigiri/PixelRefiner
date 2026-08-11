@@ -265,6 +265,15 @@ export const BACKGROUND_MODEL_LIMITS = {
 	// [Intended] 内側判定の基準色を外周の実測色に切り替える最小画素数。数画素の平均は
 	// 縁のにじみ 1 つで動くので、クラスタ中心より当てにならない。
 	minEnclosedReferencePixels: 24,
+	/**
+	 * 内側判定の基準色を測るときに走査する画素数の上限。
+	 *
+	 * [Policy] 平均は許容値と比べるだけの統計量なので、全画素を舐める必要はない。
+	 * 1 画素あたり pow 3 回＋cbrt 3 回の Oklab 変換が入り、既定スコープでは原寸画像に
+	 * 対して必ず通る経路になる（実測: 4.3Mpx で約 250ms）。maxBorderSamples と同じ
+	 * 考え方で等間隔に間引く。
+	 */
+	maxEnclosedReferenceSamples: 262_144,
 	varianceScale: 2.5,
 	varianceConfidenceScale: 0.012,
 	maxBorderSamples: 262_144,
