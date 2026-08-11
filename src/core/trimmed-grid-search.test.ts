@@ -222,4 +222,16 @@ describe("fast grid search from trimmed", () => {
 		expect(outHeights).toContain(16);
 		expect(outHeights).toContain(24);
 	});
+
+	it("候補にも採用格子と同じ手順で位相が載る", () => {
+		// [Intended] 採用格子だけに位相を載せると、同じセル寸法の候補が位相 0 の別サイズ
+		// として残り、投影後のサイズが採用格子と食い違う（実測: auto_grid_detection で
+		// 採用 203x116 の隣に 202x114 が並んでいた）。
+		const estimate = strategy.search(image, image, 3);
+		const candidates = estimate?.candidates ?? [];
+		expect(candidates.length).toBeGreaterThan(1);
+		for (const candidate of candidates) {
+			expect(candidate.phaseMeasured).toBeTypeOf("boolean");
+		}
+	});
 });

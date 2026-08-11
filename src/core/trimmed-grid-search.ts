@@ -681,26 +681,39 @@ export class FastGridSearchFromTrimmed
 			evidence.bestOutH > 0 &&
 			Math.abs(best.outH - evidence.bestOutH) >
 				evidence.bestOutH * BOUNDARY_CONTRAST_LIMITS.contestedRatio;
+		const reconstructionError = (grid: PixelGrid): number | null =>
+			measureReconstructionError(
+				cropped,
+				mask,
+				grid,
+				sampleWindow,
+				Math.max(1, Math.floor(pixelStride / 2)),
+			);
 		return {
 			...best,
 			...measurePhase(
 				axisContrast,
 				best.cellW,
 				best.cellH,
-				(grid) =>
-					measureReconstructionError(
-						cropped,
-						mask,
-						grid,
-						sampleWindow,
-						Math.max(1, Math.floor(pixelStride / 2)),
-					),
+				reconstructionError,
 				cropped,
 			),
 			gridEvidence: evidenceAt(evidence, best.outH),
 			gridEvidenceMax: evidence.bestEvidence,
 			gridEvidenceContested: contested,
-			candidates: coarse.est.candidates,
+			// [Intended] 候補にも同じ手順で位相を載せる。採用格子だけに載せると、同じセル
+			// 寸法の候補が位相 0 の別サイズとして残り、投影後のサイズが採用格子と食い違う。
+			// 候補の再構成スコアも位相のずれた格子で測られ、比較条件が揃わない。
+			candidates: coarse.est.candidates?.map((candidate) => ({
+				...candidate,
+				...measurePhase(
+					axisContrast,
+					candidate.cellW,
+					candidate.cellH,
+					reconstructionError,
+					cropped,
+				),
+			})),
 		};
 	}
 }
