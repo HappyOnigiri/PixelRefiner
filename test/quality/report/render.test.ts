@@ -25,8 +25,17 @@ const makeCaseResult = (
 	diffBoundingBox: null,
 	classification: "pixel-art",
 	route: "refine",
+	classificationConfidence: 0.5,
 	confidence: 0.5,
+	gridConfidence: 0.5,
 	warnings: [],
+	// [Intended] explicit ケースなので候補選択モーダルは対象外になる。
+	// evaluateCandidateModalDecision が isAuto=false に対して返す組み合わせと揃える。
+	candidateModalDecision: "not-applicable",
+	candidateModalReason: "NOT_AUTO",
+	warningPresentation: "none",
+	candidatePlanCount: 0,
+	candidateOptions: [],
 	expectedWidth: 8,
 	expectedHeight: 8,
 	gridCandidates: [],
