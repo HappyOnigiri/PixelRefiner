@@ -123,6 +123,66 @@ export const runQualityReportClient = (): void => {
 			label: document.querySelector<HTMLElement>(`#active-${name}-label`),
 			active: "",
 		}));
+		type FilterState = {
+			search: string;
+			groups: Record<string, string>;
+		};
+		const readFilterState = (): FilterState => {
+			const params = new URLSearchParams(window.location.search);
+			const savedGroups: Record<string, string> = {};
+			for (const group of groups) {
+				const active = params.get(group.name);
+				if (active !== null) savedGroups[group.name] = active;
+			}
+			return {
+				search: params.get("search") ?? "",
+				groups: savedGroups,
+			};
+		};
+		const initialFilterState = readFilterState();
+		search.value = initialFilterState.search;
+		const setGroupActive = (
+			group: (typeof groups)[number],
+			button: HTMLButtonElement,
+		): void => {
+			group.active = button.dataset[`${group.name}Filter`] ?? "";
+			for (const other of group.buttons) {
+				const active = other === button;
+				other.classList.toggle("active", active);
+				other.setAttribute("aria-pressed", String(active));
+			}
+		};
+		for (const group of groups) {
+			const savedActive = initialFilterState.groups[group.name];
+			const button =
+				group.buttons.find(
+					(candidate) =>
+						candidate.dataset[`${group.name}Filter`] === savedActive,
+				) ??
+				group.buttons.find(
+					(candidate) => candidate.dataset[`${group.name}Filter`] === "",
+				);
+			if (button) setGroupActive(group, button);
+		}
+		const saveFilterState = (): void => {
+			try {
+				const url = new URL(window.location.href);
+				url.searchParams.delete("search");
+				for (const group of groups) url.searchParams.delete(group.name);
+				if (search.value) url.searchParams.set("search", search.value);
+				for (const group of groups) {
+					if (group.active) url.searchParams.set(group.name, group.active);
+				}
+				// [Intended] URLに状態を残し、更新や共有リンクから同じ条件を復元する。
+				window.history.replaceState(
+					null,
+					"",
+					`${url.pathname}${url.search}${url.hash}`,
+				);
+			} catch {
+				// [Workaround] URLを更新できない環境でも、画面上の絞り込みは妨げない。
+			}
+		};
 
 		refreshFilter = (): void => {
 			const text = search.value.toLowerCase();
@@ -149,16 +209,15 @@ export const runQualityReportClient = (): void => {
 			}
 			if (visibleCount) visibleCount.textContent = String(visible);
 		};
-		search.addEventListener("input", refreshFilter);
+		search.addEventListener("input", () => {
+			saveFilterState();
+			refreshFilter();
+		});
 		for (const group of groups) {
 			for (const button of group.buttons) {
 				button.addEventListener("click", () => {
-					group.active = button.dataset[`${group.name}Filter`] ?? "";
-					for (const other of group.buttons) {
-						const active = other === button;
-						other.classList.toggle("active", active);
-						other.setAttribute("aria-pressed", String(active));
-					}
+					setGroupActive(group, button);
+					saveFilterState();
 					refreshFilter();
 				});
 			}
