@@ -73,6 +73,21 @@ const grid: PixelGrid = {
 	score: 0,
 };
 
+/** セル 2x2、出力 7x7 のグリッド。 */
+const wideGrid: PixelGrid = {
+	cellW: 2,
+	cellH: 2,
+	offsetX: 0,
+	offsetY: 0,
+	cropX: 0,
+	cropY: 0,
+	cropW: 14,
+	cropH: 14,
+	outW: 7,
+	outH: 7,
+	score: 0,
+};
+
 /** 背景色 bg と color を、bg の比率 share で混ぜた色。 */
 const mixWith = (
 	bg: readonly [number, number, number],
@@ -187,6 +202,25 @@ describe("cleanBackgroundContaminatedEdges", () => {
 			),
 		).toBe(2);
 		expect(colorAt(image, 0, 0)).toEqual([120, 20, 20, 255]);
+	});
+
+	it("透過が内側だけで起きた出力では、外周を縁として扱わない", () => {
+		// 原寸は各セルに本来の色と混色を 1 行ずつ持つ。出力は中央 1 画素だけ透明。
+		const contaminated = mixWithGreen(0.4, [2, 4, 1]);
+		const source = createImage(14, 14, (_x, y) =>
+			y % 2 === 0 ? [2, 4, 1, 255] : contaminated,
+		);
+		const image = createImage(7, 7, (x, y) =>
+			x === 3 && y === 3 ? [0, 0, 0, 0] : contaminated,
+		);
+
+		// 中央の透明画素から 2 段以内にある 24 画素だけが差し替わる。
+		expect(
+			cleanBackgroundContaminatedEdges(image, source, wideGrid, greenModel()),
+		).toBe(24);
+		expect(colorAt(image, 3, 2)).toEqual([2, 4, 1, 255]);
+		expect(colorAt(image, 0, 0)).toEqual(contaminated);
+		expect(colorAt(image, 6, 3)).toEqual(contaminated);
 	});
 
 	it("透明画素が無い画像には何もしない", () => {

@@ -2,14 +2,31 @@ import { BACKGROUND_EDGE_CLEANUP_LIMITS } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 import type { BackgroundModel } from "./background";
 
+/** 画像の最外周に透明画素が 1 つでもあるか。 */
+const hasTransparentBorder = (image: RawImage): boolean => {
+	const width = image.width;
+	const height = image.height;
+	const data = image.data;
+	for (let x = 0; x < width; x += 1) {
+		if (data[x * 4 + 3] === 0) return true;
+		if (data[((height - 1) * width + x) * 4 + 3] === 0) return true;
+	}
+	for (let y = 0; y < height; y += 1) {
+		if (data[y * width * 4 + 3] === 0) return true;
+		if (data[(y * width + width - 1) * 4 + 3] === 0) return true;
+	}
+	return false;
+};
+
 /**
  * 透明画素からの 8 近傍距離を、不透明画素について求める。距離 1 が透明に隣接する縁で、
  * 補正対象から外れる画素には 0 が入る。透明画素が無ければ null を返す。
  *
- * [Intended] 画像外は透明として扱う。トリミング後の出力では被写体の最外行・最外列が
- * そのまま画像端になるため、画像外を不透明扱いにするとその行だけ補正から漏れる。
- * 透明画素を 1 つも持たない画像では null を返すので、背景を除去していない画像の外周が
- * まとめて縁扱いになることはない。
+ * [Intended] 外周に透明画素がある画像でだけ、画像外を透明として扱う。トリミング後の
+ * 出力では被写体の最外行・最外列がそのまま画像端になるため、画像外を不透明扱いにすると
+ * その行だけ補正から漏れる。一方、透過が内側の閉領域や小領域除去だけで生じた画像では
+ * 外周は縁ではないので、画像外を無条件に透明とみなすと（小さな出力では画像全体が）
+ * 縁扱いになってしまう。
  */
 const buildEdgeDepth = (
 	image: RawImage,
@@ -27,6 +44,7 @@ const buildEdgeDepth = (
 		}
 	}
 	if (!hasTransparent) return null;
+	const outsideIsTransparent = hasTransparentBorder(image);
 	const depth = new Uint8Array(pixelCount);
 	const queue = new Uint32Array(pixelCount);
 	let tail = 0;
@@ -34,7 +52,9 @@ const buildEdgeDepth = (
 		for (let x = 0; x < width; x += 1) {
 			const pixel = y * width + x;
 			if (data[pixel * 4 + 3] === 0) continue;
-			let adjacent = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+			let adjacent =
+				outsideIsTransparent &&
+				(x === 0 || y === 0 || x === width - 1 || y === height - 1);
 			for (let dy = -1; dy <= 1 && !adjacent; dy += 1) {
 				for (let dx = -1; dx <= 1; dx += 1) {
 					if (dx === 0 && dy === 0) continue;
