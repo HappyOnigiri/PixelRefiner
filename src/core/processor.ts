@@ -22,6 +22,12 @@ import { removeSmallComponents } from "./components";
 import { rotateRawImageExpanded } from "./deskew";
 import { detectGrid } from "./detector";
 import {
+	downsampleGeminiWatermarkGeometry,
+	getGeminiWatermarkDownsampleOptions,
+	prepareGeminiWatermarkAwareAutoMask,
+	prepareGeminiWatermarkGeometry,
+} from "./gemini-watermark-preprocessing";
+import {
 	rankGridCandidates,
 	rerankGridCandidateReports,
 } from "./grid-candidates";
@@ -91,7 +97,7 @@ export {
 	LegacyGridSearchFromTrimmed,
 } from "./trimmed-grid-search";
 
-export const processImage = (
+const processImageCore = (
 	inputImage: RawImage,
 	options: ProcessOptions = {},
 ): ProcessResult => {
@@ -235,6 +241,20 @@ export const processImage = (
 	} else {
 		working = cloneImage(img);
 	}
+	const watermarkGeometry = prepareGeminiWatermarkGeometry({
+		inputImage,
+		image: img,
+		working,
+		options: o,
+		automaticBackground,
+		getBackgroundMaskedInput,
+		backgroundTargets: bgTargets,
+		backgroundModel,
+		appliedDeskewAngle,
+	});
+	const geometryImage = watermarkGeometry.image;
+	const geometryWorking = watermarkGeometry.working;
+	const preparedWatermarkMask = watermarkGeometry.mask;
 	log(
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
 	);
@@ -245,6 +265,7 @@ export const processImage = (
 	});
 	const trimToContent = o.trimToContent;
 	const trimAlphaThreshold = o.trimAlphaThreshold;
+	const watermarkRemovedFromGeometry = watermarkGeometry.removed;
 
 	let smallComponentRemoval: SmallComponentRemovalDiagnostic | undefined;
 	const simpleRouteContext: SimpleRouteContext = {
@@ -258,27 +279,33 @@ export const processImage = (
 		backgroundDiagnostic,
 		backgroundModel,
 		smallComponentRemoval,
+		preparedMask: preparedWatermarkMask,
 	};
+	const finishProcessing = watermarkGeometry.finish;
 	const forcedResult = processForcedRoute(simpleRouteContext);
-	if (forcedResult) return forcedResult;
+	if (forcedResult) return finishProcessing(forcedResult);
 	// [Intended] 明示された処理経路は enableGridDetection の早期 return より先に判定する。
 	// 逆順だと、グリッド検出を無効にしただけで指定した convert が preserve に化ける。
 	if (o.processingMode === "convert") {
-		return processConvertRoute({
-			...simpleRouteContext,
-			route: "convert",
-			method: "manual-convert",
-		});
+		return finishProcessing(
+			processConvertRoute({
+				...simpleRouteContext,
+				route: "convert",
+				method: "manual-convert",
+			}),
+		);
 	}
 	if (o.processingMode === "preserve") {
-		return processExplicitSimpleRoute({
-			...simpleRouteContext,
-			route: "preserve",
-			method: "manual-preserve",
-		});
+		return finishProcessing(
+			processExplicitSimpleRoute({
+				...simpleRouteContext,
+				route: "preserve",
+				method: "manual-preserve",
+			}),
+		);
 	}
 	const gridDisabledResult = processGridDisabledRoute(simpleRouteContext);
-	if (gridDisabledResult) return gridDisabledResult;
+	if (gridDisabledResult) return finishProcessing(gridDisabledResult);
 
 	// auto: まず背景トリミング後の領域（ダウンサンプリング前）から outW/outH を推定し、そのままダウンサンプリングする。
 	// （隙間の多い画像でも、安定させるためコンテンツ領域に注目したい。）
@@ -288,27 +315,19 @@ export const processImage = (
 	// これはデバッグ出力のためだけに計算され、実際の処理パイプラインは変更しない。
 	const bgTol = o.backgroundTolerance;
 	const maskedStart = performance.now();
-	const maskedForDebugOrAuto =
-		o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0
-			? appliedDeskewAngle !== 0 &&
-				o.bgRemovalScope !== "off" &&
-				o.bgExtractionMethod !== "none"
-				? o.preRemoveBackground
-					? cloneImage(working)
-					: rotateRawImageExpanded(
-							getBackgroundMaskedInput(),
-							appliedDeskewAngle,
-						)
-				: removeBackground(
-						working,
-						bgTol,
-						o.bgRemovalScope,
-						o.bgConnectivity,
-						bgTargets,
-						o.bgExtractionMethod,
-						backgroundModel,
-					)
-			: null;
+	const maskedForDebugOrAuto = prepareGeminiWatermarkAwareAutoMask({
+		needed: Boolean(
+			o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0,
+		),
+		preparedMask: preparedWatermarkMask,
+		appliedDeskewAngle,
+		options: o,
+		working,
+		geometryWorking,
+		getBackgroundMaskedInput,
+		backgroundTargets: bgTargets,
+		backgroundModel,
+	});
 	if (maskedForDebugOrAuto) {
 		log(
 			`Masked image for debug/auto created in ${(performance.now() - maskedStart).toFixed(2)}ms`,
@@ -357,7 +376,10 @@ export const processImage = (
 
 	let grid: PixelGrid | null = null;
 	let gridMethod = "detect-grid";
-	let downsampleOptions = getDownsampleOptions(o);
+	let downsampleOptions = getGeminiWatermarkDownsampleOptions(
+		o,
+		watermarkRemovedFromGeometry,
+	);
 	let allowSmallTrimmedGrid = false;
 
 	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
@@ -429,7 +451,7 @@ export const processImage = (
 					// [Intended] 自動背景推定が残す薄い外周は、論理セルのアスペクト比を
 					// 乱すため、角から得たマスクの境界を格子の基準領域に使用する。
 					const cornerMask = removeBackground(
-						img,
+						geometryImage,
 						o.backgroundTolerance,
 						o.bgRemovalScope,
 						o.bgConnectivity,
@@ -525,7 +547,7 @@ export const processImage = (
 
 	if (!grid) {
 		const detectStart = performance.now();
-		grid = detectGrid(working, { ...o.detect, debug: o.debug });
+		grid = detectGrid(geometryWorking, { ...o.detect, debug: o.debug });
 		grid.angle = appliedDeskewAngle;
 		log(
 			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
@@ -535,7 +557,11 @@ export const processImage = (
 			grid,
 		});
 	}
-	let rankedGridCandidates = rankGridCandidates(working, grid, gridMethod);
+	let rankedGridCandidates = rankGridCandidates(
+		geometryWorking,
+		grid,
+		gridMethod,
+	);
 	if (deskewSearch) {
 		const additional = deskewSearch.candidates
 			.filter((candidate) => candidate.angle !== appliedDeskewAngle)
@@ -559,7 +585,7 @@ export const processImage = (
 	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
 		o.processingMode === "auto"
-			? classifyInput(working, rankedGridCandidates)
+			? classifyInput(geometryWorking, rankedGridCandidates)
 			: undefined;
 	const selectedCandidateIndex = findCandidateIndexForGrid(
 		rankedGridCandidates,
@@ -578,39 +604,43 @@ export const processImage = (
 		: { route: "refine" as const, fellBackToPreserve: false };
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
 		if (autoRoute.route === "convert") {
-			return processConvertRoute({
-				...simpleRouteContext,
-				route: "convert",
-				method: "auto-convert",
-				classificationResult,
-				preparedMask: maskedForDebugOrAuto ?? undefined,
-			});
+			return finishProcessing(
+				processConvertRoute({
+					...simpleRouteContext,
+					route: "convert",
+					method: "auto-convert",
+					classificationResult,
+					preparedMask: maskedForDebugOrAuto ?? undefined,
+				}),
+			);
 		}
-		return processExplicitSimpleRoute({
-			...simpleRouteContext,
-			route: autoRoute.route,
-			method: autoRoute.fellBackToPreserve
-				? "auto-low-confidence-preserve"
-				: `auto-${autoRoute.route}`,
-			classificationResult,
-			rankedCandidates: rankedGridCandidates,
-			additionalWarnings: [
-				...(autoRoute.fellBackToPreserve
-					? (["FALLBACK_TO_PRESERVE"] as const)
-					: []),
-				// [Intended] 分類が preserve を選んだ場合も、検出側の低信頼シグナルを
-				// 握りつぶさず渡す。これが無いと候補選択の表示条件を満たさず、
-				// 復元候補の存在をユーザーが知る手段が無くなる。
-				...(autoRoute.route === "preserve"
-					? detectedGridConfidenceWarnings(
-							working,
-							grid,
-							selectedCandidateConfidence,
-						)
-					: []),
-			],
-			preparedMask: maskedForDebugOrAuto ?? undefined,
-		});
+		return finishProcessing(
+			processExplicitSimpleRoute({
+				...simpleRouteContext,
+				route: autoRoute.route,
+				method: autoRoute.fellBackToPreserve
+					? "auto-low-confidence-preserve"
+					: `auto-${autoRoute.route}`,
+				classificationResult,
+				rankedCandidates: rankedGridCandidates,
+				additionalWarnings: [
+					...(autoRoute.fellBackToPreserve
+						? (["FALLBACK_TO_PRESERVE"] as const)
+						: []),
+					// [Intended] 分類が preserve を選んだ場合も、検出側の低信頼シグナルを
+					// 握りつぶさず渡す。これが無いと候補選択の表示条件を満たさず、
+					// 復元候補の存在をユーザーが知る手段が無くなる。
+					...(autoRoute.route === "preserve"
+						? detectedGridConfidenceWarnings(
+								geometryWorking,
+								grid,
+								selectedCandidateConfidence,
+							)
+						: []),
+				],
+				preparedMask: maskedForDebugOrAuto ?? undefined,
+			}),
+		);
 	}
 
 	const downsampleStart = performance.now();
@@ -618,6 +648,14 @@ export const processImage = (
 	// 候補診断は検出器で共有する座標空間に保つ。
 	const diagnosticGrid = grid;
 	const down = downsample(working, grid, downsampleOptions);
+	const geometryDown = downsampleGeminiWatermarkGeometry(
+		preparedWatermarkMask,
+		geometryWorking,
+		working,
+		down,
+		grid,
+		downsampleOptions,
+	);
 	log(
 		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
 	);
@@ -634,7 +672,7 @@ export const processImage = (
 	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
 	const logicalMask = needsLogicalMask
 		? removeBackground(
-				down,
+				geometryDown,
 				o.backgroundTolerance,
 				o.bgRemovalScope,
 				o.bgConnectivity,
@@ -728,25 +766,27 @@ export const processImage = (
 				outH: trimmed.height,
 				nativeScale: degeneracy.nativeScale,
 			});
-			return processExplicitSimpleRoute({
-				...simpleRouteContext,
-				route: "preserve",
-				method: "auto-degenerate-grid-preserve",
-				classificationResult,
-				rankedCandidates: rankedGridCandidates,
-				additionalWarnings: [
-					"FALLBACK_TO_PRESERVE",
-					// [Intended] 縮退で棄却したグリッドも候補としては提示したいので、
-					// 候補選択 UI の表示条件である低信頼シグナルを必ず付ける。
-					"LOW_GRID_CONFIDENCE",
-					...detectedGridConfidenceWarnings(
-						working,
-						grid,
-						selectedCandidateConfidence,
-					),
-				],
-				preparedMask: maskedForDebugOrAuto ?? undefined,
-			});
+			return finishProcessing(
+				processExplicitSimpleRoute({
+					...simpleRouteContext,
+					route: "preserve",
+					method: "auto-degenerate-grid-preserve",
+					classificationResult,
+					rankedCandidates: rankedGridCandidates,
+					additionalWarnings: [
+						"FALLBACK_TO_PRESERVE",
+						// [Intended] 縮退で棄却したグリッドも候補としては提示したいので、
+						// 候補選択 UI の表示条件である低信頼シグナルを必ず付ける。
+						"LOW_GRID_CONFIDENCE",
+						...detectedGridConfidenceWarnings(
+							working,
+							grid,
+							selectedCandidateConfidence,
+						),
+					],
+					preparedMask: maskedForDebugOrAuto ?? undefined,
+				}),
+			);
 		}
 	}
 
@@ -947,12 +987,14 @@ export const processImage = (
 		smallComponentRemoval,
 	);
 	log("Processing analysis", analysis);
-	return {
+	return finishProcessing({
 		result: finalResult,
 		grid: trimmedGrid,
 		extractedPalette: extracted,
 		compareBefore,
 		compareBeforeSanitized,
 		analysis,
-	};
+	});
 };
+
+export const processImage = processImageCore;
