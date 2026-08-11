@@ -379,6 +379,16 @@ describe("enclosed background removal (scope: auto)", () => {
 		expect(alphaAt(result.image, 0, 0)).toBe(0);
 	});
 
+	it("removes an enclosed hole that already contains transparent pixels", () => {
+		// 部分透過画像の中空。元からある透過部分は残すべき別要素ではないので穴として扱う。
+		const image = createDonut([240, 240, 240]);
+		image.data[(15 * 32 + 15) * 4 + 3] = 0;
+		const result = removeAutomaticBackground(image, 64, "auto", "4");
+
+		expect(alphaAt(result.image, 14, 15)).toBe(0);
+		expect(alphaAt(result.image, 15, 7)).toBe(255);
+	});
+
 	it("follows the connectivity setting when grouping an enclosed area", () => {
 		// 内側の閉領域が斜めの一点だけでくびれてつながる形。左側には別要素の島がある。
 		const image = createImage(21, 21, (x, y) => {

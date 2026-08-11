@@ -83,7 +83,7 @@ export const addEnclosedBackground = (
 
 		if (touchesEdge) continue;
 		if (!isBackgroundComponent(queue, size)) continue;
-		if (hasIsland(width, queue, size, member, minX, maxX, minY, maxY)) continue;
+		if (hasIsland(img, queue, size, member, minX, maxX, minY, maxY)) continue;
 
 		for (let index = 0; index < size; index += 1) {
 			selected[queue[index]] = 1;
@@ -99,7 +99,7 @@ export const addEnclosedBackground = (
  * 成分が斜めに接している箇所をすり抜けて内部へ回り込み、囲われた要素を島と見なせなくなる。
  */
 const hasIsland = (
-	width: number,
+	img: RawImage,
 	pixels: Uint32Array,
 	size: number,
 	member: Uint8Array,
@@ -108,6 +108,7 @@ const hasIsland = (
 	minY: number,
 	maxY: number,
 ): boolean => {
+	const width = img.width;
 	for (let index = 0; index < size; index += 1) member[pixels[index]] = 1;
 	const boxWidth = maxX - minX + 1;
 	const boxHeight = maxY - minY + 1;
@@ -144,10 +145,13 @@ const hasIsland = (
 	for (let by = 0; by < boxHeight && !island; by += 1) {
 		for (let bx = 0; bx < boxWidth; bx += 1) {
 			if (outside[by * boxWidth + bx]) continue;
-			if (!member[(minY + by) * width + minX + bx]) {
-				island = true;
-				break;
-			}
+			const pixel = (minY + by) * width + minX + bx;
+			if (member[pixel]) continue;
+			// [Intended] すでに透明な画素は残すべき別要素ではないので島に数えない。
+			// 中空に元から透過部分がある部分透過画像で、穴全体の透過を諦めないため。
+			if (img.data[pixel * 4 + 3] === 0) continue;
+			island = true;
+			break;
 		}
 	}
 	for (let index = 0; index < size; index += 1) member[pixels[index]] = 0;
