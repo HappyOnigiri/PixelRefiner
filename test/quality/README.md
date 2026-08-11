@@ -59,10 +59,10 @@ previous run differ.
 The HTML report initially shows every case. Its primary quality status answers
 whether the current image meets the fixed target and that target's allowances.
 Auto cases inherit the allowances from the explicit case that supplied their
-target. A separate previous-run status shows whether the output improved,
-regressed, or stayed unchanged. Use both filters together to list, for example,
-all target-unmet cases that also regressed. Cases without a target are reported
-as unassessable rather than passed.
+target. A separate previous-run status shows whether the output changed, stayed
+unchanged, or is a new case. Use both filters together to list, for example,
+all target-unmet cases whose output changed. Cases without a target are
+reported as unassessable rather than passed.
 
 ## Adding a fixture
 
