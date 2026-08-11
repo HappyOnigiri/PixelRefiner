@@ -116,18 +116,22 @@ describe("pending image queue", () => {
 
 	it("ignores calls made while the queue is running", async () => {
 		const session = createFakeSession(["a", "b"], "b");
+		const drained: string[][] = [];
 		let secondCall: Promise<void> | undefined;
 		const queue = createQueue(session, {
 			onProcess: (id) => {
 				if (id !== "a") return;
 				secondCall = queue();
 			},
+			onDrained: (attemptedIds) => drained.push([...attemptedIds]),
 		});
 
 		await queue();
 		await secondCall;
 
 		expect(session.processed).toEqual(["a", "b"]);
+		// 再入した呼び出しが独立に走ると一巡の通知が 2 回になるため、回数で多重起動を検出する。
+		expect(drained).toEqual([["a", "b"]]);
 	});
 
 	it("does not retry an image that stays pending", async () => {
