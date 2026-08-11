@@ -21,7 +21,10 @@ type GridEstimateFromTrimmed = {
 	score?: number;
 	/** この格子の境界コントラスト。 */
 	gridEvidence?: number;
-	/** 探索した全候補中の最大の境界コントラスト。曖昧さの判定に使う。 */
+	/**
+	 * 乗り換え先として許す出力高さの範囲で得られた、最大の境界コントラスト。
+	 * 曖昧さの判定に使う。
+	 */
 	gridEvidenceMax?: number;
 	/** 採用格子と、境界がもっとも揃う格子が食い違っているか。 */
 	gridEvidenceContested?: boolean;
@@ -82,11 +85,9 @@ const scanBoundaryEvidence = (
 ): {
 	bestOutH: number;
 	bestEvidence: number;
-	evidenceMax: number;
 	scores: Float64Array;
 	outHMin: number;
 } => {
-	let evidenceMax = 0;
 	let bestOutH = 0;
 	const scores = new Float64Array(Math.max(0, outHMax - outHMin + 1));
 	for (let outH = outHMin; outH <= outHMax; outH += 1) {
@@ -94,14 +95,15 @@ const scanBoundaryEvidence = (
 		const cellW = croppedW / outW;
 		const cellH = croppedH / outH;
 		if (!(cellW > 1 && cellH > 1)) continue;
-		const evidence = boundaryContrast(cellW, cellH);
-		scores[outH - outHMin] = evidence;
-		if (evidence > evidenceMax) evidenceMax = evidence;
+		scores[outH - outHMin] = boundaryContrast(cellW, cellH);
 	}
 	// [Intended] 最大値そのものを採る。正しい格子の 2 倍粗い読み方は境界がすべて実エッジに
 	// 乗るため証拠がほぼ並ぶので、「同等なら粗い方」にすると正解を機械的に半分にしてしまう
 	// （実測: 24x32 の合成スプライトが 12x16 になった）。粗い側へ倒すかどうかは、
 	// 再構成との優位比で判断する findCoarserHarmonic だけが決める。
+	// ただし範囲は minOverrideOutH 以上に限る。数セルしか無い格子は偶然の一致で
+	// 跳ね上がるため（実測: 8x8 が正解の fixture で 2x2 が最大値を取る）、そこを含めた
+	// 最大値は「入力に格子があるか」の判断材料にならない。
 	let bestEvidence = 0;
 	for (let index = 0; index < scores.length; index += 1) {
 		const outH = outHMin + index;
@@ -111,7 +113,7 @@ const scanBoundaryEvidence = (
 			bestEvidence = scores[index];
 		}
 	}
-	return { bestOutH, bestEvidence, evidenceMax, scores, outHMin };
+	return { bestOutH, bestEvidence, scores, outHMin };
 };
 
 type BoundaryEvidenceScan = ReturnType<typeof scanBoundaryEvidence>;
@@ -543,7 +545,7 @@ export class FastGridSearchFromTrimmed
 		return {
 			...best,
 			gridEvidence: evidenceAt(evidence, best.outH),
-			gridEvidenceMax: evidence.evidenceMax,
+			gridEvidenceMax: evidence.bestEvidence,
 			gridEvidenceContested: contested,
 			candidates: coarse.est.candidates,
 		};
