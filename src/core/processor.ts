@@ -39,7 +39,10 @@ import {
 	detectedGridConfidenceWarnings,
 	findCandidateIndexForGrid,
 } from "./processing-analysis";
-import { prepareAutomaticBackground } from "./processor-background";
+import {
+	applyPostRemovalOutcome,
+	prepareAutomaticBackground,
+} from "./processor-background";
 import { processConvertRoute } from "./processor-convert-route";
 import { resolveProcessingGrid } from "./processor-grid-resolution";
 import {
@@ -569,9 +572,11 @@ const processImageCore = (
 
 	const postBgStart = performance.now();
 	// [Intended] 縁の汚染除去は「補正する画像の透過を作った除去」が成立したかだけを見たい。
-	// backgroundDiagnostic は原寸の事前除去のロールバックも保持するため、後段除去の結果を
-	// 別の受け皿で取り、診断へは従来どおり合流させる。
-	const postRemovalOutcome = { removalRolledBack: false };
+	// 診断は段階をまとめた結論を持つため、後段除去の結果は別の受け皿で取る。
+	const postRemoval = {
+		attempted: o.postRemoveBackground,
+		rolledBack: false,
+	};
 	const result = o.postRemoveBackground
 		? removeBackground(
 				trimmed,
@@ -581,12 +586,10 @@ const processImageCore = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
-				postRemovalOutcome,
+				postRemoval,
 			)
 		: trimmed;
-	if (postRemovalOutcome.removalRolledBack && backgroundDiagnostic) {
-		backgroundDiagnostic.removalRolledBack = true;
-	}
+	applyPostRemovalOutcome(backgroundDiagnostic, postRemoval);
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
@@ -599,7 +602,7 @@ const processImageCore = (
 			backgroundModel,
 			backgroundDiagnostic?.confidence,
 			o.postRemoveBackground
-				? postRemovalOutcome.removalRolledBack
+				? postRemoval.rolledBack
 				: (automaticBackground?.rolledBack ?? false),
 			o.postRemoveBackground || preBackgroundRemoved,
 		)

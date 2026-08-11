@@ -207,14 +207,29 @@ export type GridCandidateReport = {
 	subscores?: Partial<GridCandidateSubscores>;
 };
 
+/** 背景除去 1 段階の実施結果。 */
+export type BackgroundRemovalStageOutcome = {
+	/** その段階の除去を実行したか。 */
+	attempted: boolean;
+	/** 消えすぎ検出により入力をそのまま返したか。 */
+	rolledBack: boolean;
+};
+
 /** 自動背景モデルの診断情報。手動背景指定では省略する。 */
 export type BackgroundDiagnostic = {
 	confidence: number;
 	/**
-	 * 消えすぎ検出により背景除去を中止したか。
-	 * [Intended] 出力へ適用された各段階の結果を集約するため、処理中に書き換える。
+	 * 消えすぎ検出により、出力へ背景の透過が一切入らなかったか。
+	 * [Intended] 段階ごとの生の結果ではなく、利用者へ「透過を中止した」と伝えてよいかを表す。
+	 * 事後除去の結果が出るまでは事前除去の結果を暫定値として持つ。
 	 */
 	removalRolledBack: boolean;
+	/**
+	 * 原寸に対する事前除去の実施結果。
+	 * [Intended] 事前除去と事後除去は解像度が違うため消えすぎ判定も別々に出る。
+	 * 出力向けの結論を出すには段階ごとの結果を残しておく必要がある。
+	 */
+	preRemoval: BackgroundRemovalStageOutcome;
 };
 
 export type ProcessingAnalysis = {

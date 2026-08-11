@@ -27,6 +27,7 @@ import {
 } from "./image-operations";
 import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
+import { applyPostRemovalOutcome } from "./processor-background";
 import type { SimpleRouteContext } from "./processor-simple-routes";
 
 const gridForCandidate = (
@@ -206,6 +207,10 @@ export const processConvertRoute = (
 	}
 	finalResult = componentResult.image;
 
+	const postRemoval = {
+		attempted: o.postRemoveBackground,
+		rolledBack: false,
+	};
 	if (o.postRemoveBackground) {
 		finalResult = removeBackground(
 			finalResult,
@@ -215,9 +220,10 @@ export const processConvertRoute = (
 			bgTargets,
 			o.bgExtractionMethod,
 			backgroundModel,
-			backgroundDiagnostic,
+			postRemoval,
 		);
 	}
+	applyPostRemovalOutcome(backgroundDiagnostic, postRemoval);
 	if (o.convertReduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
 			finalResult,

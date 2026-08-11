@@ -4,6 +4,7 @@ import {
 } from "../shared/config";
 import type {
 	BackgroundRemovalScope,
+	BackgroundRemovalStageOutcome,
 	Connectivity,
 	RawImage,
 } from "../shared/types";
@@ -329,7 +330,7 @@ export const removeBackground = (
 	automaticModel?: BackgroundModel,
 	// [Intended] 自動除去のロールバックは呼び出し側の診断へ集約する必要があるため、
 	// 戻り値を画像のままにして、この出力引数へ書き戻す。
-	outcome?: { removalRolledBack: boolean },
+	outcome?: BackgroundRemovalStageOutcome,
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 	if (bgRemovalScope === "off") return cloneImage(img);
@@ -341,7 +342,7 @@ export const removeBackground = (
 			bgConnectivity,
 			automaticModel,
 		);
-		if (outcome && automatic.rolledBack) outcome.removalRolledBack = true;
+		if (outcome && automatic.rolledBack) outcome.rolledBack = true;
 		return automatic.image;
 	}
 

@@ -247,6 +247,7 @@ export const createProcessingAnalysis = (
 	}
 	// [Intended] ロールバック時は背景が透過されなかっただけで内容は失われていないため、
 	// CONTENT_LOSS_RISK ではなく専用の警告で「背景透過を中止した」ことを伝える。
+	// removalRolledBack は段階をまとめた結論なので、出力に透過が残る場合はここへ来ない。
 	if (backgroundDiagnostic?.removalRolledBack) {
 		warnings.push("BACKGROUND_REMOVAL_SKIPPED");
 	}

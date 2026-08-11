@@ -348,7 +348,11 @@ describe("Gemini watermark removal", () => {
 			}
 		}
 
-		expect(automatic.analysis.warnings).toContain("BACKGROUND_REMOVAL_SKIPPED");
+		// 原寸の事前除去はロールバックするが、出力解像度の事後除去が透過を作るため、
+		// 「透過を中止した」警告は出さない。
+		expect(automatic.analysis.warnings).not.toContain(
+			"BACKGROUND_REMOVAL_SKIPPED",
+		);
 		expect(transparentCells).toBeGreaterThan(0);
 		expect(removedBrightCells).toBeGreaterThan(0);
 	});
