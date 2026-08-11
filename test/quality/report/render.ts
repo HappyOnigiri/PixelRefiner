@@ -561,6 +561,18 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 				: `>= ${result.expectation.minSmallComponentRetention}`,
 		),
 	].join("\n");
+	// [Intended] 指標テーブルの行は数値指標だけなので、catastrophicFailure や status の
+	// ような非数値の回帰は表に現れない。ゲートが落ちた理由をレポートから辿れるように、
+	// regressedMetrics のキーを漏らさず列挙する。
+	const regressedMetricsSummary =
+		result.regressedMetrics.length === 0
+			? '<span data-i18n="none">none</span>'
+			: result.regressedMetrics
+					.map(
+						(key) =>
+							`<span data-i18n="${escapeHtml(key)}">${escapeHtml(key)}</span>`,
+					)
+					.join(", ");
 	const changedPixels =
 		result.changedPixelCount === null
 			? "-"
@@ -610,6 +622,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 					<tbody>${metricRows}</tbody>
 				</table>
 			</div>
+			<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>
 		</section>
 		${renderTargetComparison(result)}
 		<section>

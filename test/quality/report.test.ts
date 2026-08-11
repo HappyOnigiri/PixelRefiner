@@ -283,6 +283,12 @@ describe.skipIf(!enabled)("quality report", () => {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
 		expect(compactDetail).toContain('<h2 data-i18n="targetComparison">');
+		// [Intended] 指標テーブルに行を持たない catastrophicFailure / status の回帰も
+		// レポートから辿れるように、regressedMetrics の列挙を必ず出す。
+		expect(compactDetail).toContain('data-i18n="regressedMetrics"');
+		expect(html).toContain('regressedMetrics":"悪化した指標"');
+		expect(html).toContain('catastrophicFailure":"致命的な失敗"');
+		expect(html).toContain('status":"合格判定"');
 		// [Intended] 自動判定ケースの目標は借り物なので、どのケースから借りたかを出す。
 		const autoDetail = readFileSync(
 			path.join(reportRoot, "cases", "auto-resize-with-trimming", "index.html"),
