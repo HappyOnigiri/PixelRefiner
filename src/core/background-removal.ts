@@ -328,8 +328,8 @@ export const removeBackground = (
 		| "bottom-right"
 		| "rgb",
 	automaticModel?: BackgroundModel,
-	// [Intended] 自動除去のロールバックは呼び出し側の診断へ集約する必要があるため、
-	// 戻り値を画像のままにして、この出力引数へ書き戻す。
+	// [Intended] 自動除去のロールバックと除去の有無は呼び出し側の診断へ集約する必要が
+	// あるため、戻り値を画像のままにして、この出力引数へ書き戻す。
 	outcome?: BackgroundRemovalStageOutcome,
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
@@ -342,7 +342,10 @@ export const removeBackground = (
 			bgConnectivity,
 			automaticModel,
 		);
-		if (outcome && automatic.rolledBack) outcome.rolledBack = true;
+		if (outcome) {
+			if (automatic.rolledBack) outcome.rolledBack = true;
+			else if (automatic.removedRatio > 0) outcome.removed = true;
+		}
 		return automatic.image;
 	}
 

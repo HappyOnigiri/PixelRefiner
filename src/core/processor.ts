@@ -576,6 +576,7 @@ const processImageCore = (
 	const postRemoval = {
 		attempted: o.postRemoveBackground,
 		rolledBack: false,
+		removed: false,
 	};
 	const result = o.postRemoveBackground
 		? removeBackground(

@@ -213,6 +213,12 @@ export type BackgroundRemovalStageOutcome = {
 	attempted: boolean;
 	/** 消えすぎ検出により入力をそのまま返したか。 */
 	rolledBack: boolean;
+	/**
+	 * その段階が実際に背景の透過を作ったか。
+	 * [Intended] ロールバックしていないことは透過を作ったことを意味しない。背景モデルが
+	 * 立たない場合や除去対象が 1 画素も無い場合も、入力をそのまま返して巻き戻しにはならない。
+	 */
+	removed: boolean;
 };
 
 /** 自動背景モデルの診断情報。手動背景指定では省略する。 */

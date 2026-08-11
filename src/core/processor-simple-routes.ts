@@ -303,6 +303,7 @@ export const processForcedRoute = (
 	const postRemoval = {
 		attempted: o.postRemoveBackground,
 		rolledBack: false,
+		removed: false,
 	};
 	const result2 = o.postRemoveBackground
 		? removeBackground(
@@ -505,6 +506,7 @@ export const processGridDisabledRoute = (
 		attempted:
 			(context.applyFinalAdjustments ?? false) && o.postRemoveBackground,
 		rolledBack: false,
+		removed: false,
 	};
 	const base = postRemoval.attempted
 		? removeBackground(

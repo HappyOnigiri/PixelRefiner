@@ -37,7 +37,7 @@ export const prepareAutomaticBackground = (
 			backgroundDiagnostic: {
 				confidence: model.confidence,
 				removalRolledBack: false,
-				preRemoval: { attempted: false, rolledBack: false },
+				preRemoval: { attempted: false, rolledBack: false, removed: false },
 			},
 		};
 	}
@@ -56,6 +56,9 @@ export const prepareAutomaticBackground = (
 			preRemoval: {
 				attempted: true,
 				rolledBack: automaticBackground.rolledBack,
+				removed:
+					!automaticBackground.rolledBack &&
+					automaticBackground.removedRatio > 0,
 			},
 		},
 	};
@@ -66,8 +69,10 @@ export const prepareAutomaticBackground = (
  *
  * [Intended] 事前除去は原寸、事後除去は出力解像度で別々に消えすぎ判定を行うため、
  * 片方だけがロールバックすることがある。ロールバックした段階は入力をそのまま返すだけなので、
- * もう一方が成功していれば出力には背景の透過が残る。「透過を中止した」と伝えてよいのは、
- * 実施した段階がすべてロールバックしたときに限る。
+ * もう一方が透過を作っていれば出力には背景の透過が残る。「透過を中止した」と伝えてよいのは、
+ * どこかの段階が消えすぎで巻き戻り、かつどの段階も透過を作らなかったときに限る。
+ * ロールバックしなかった段階を成功と見なすと、除去対象が無くて何も消さなかった段階が
+ * 巻き戻りを打ち消し、透過が一切ない出力でも中止を伝えられなくなる。
  */
 export const applyPostRemovalOutcome = (
 	diagnostic: BackgroundDiagnostic | undefined,
@@ -77,5 +82,6 @@ export const applyPostRemovalOutcome = (
 	const stages = [diagnostic.preRemoval, postRemoval];
 	const attempted = stages.filter((stage) => stage.attempted);
 	diagnostic.removalRolledBack =
-		attempted.length > 0 && attempted.every((stage) => stage.rolledBack);
+		attempted.some((stage) => stage.rolledBack) &&
+		!attempted.some((stage) => stage.removed);
 };
