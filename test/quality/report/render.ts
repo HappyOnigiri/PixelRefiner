@@ -6,7 +6,12 @@ import {
 	renderWarningDetails,
 } from "./auto-diagnostics";
 import { runQualityReportClient } from "./client";
-import { escapeHtml, formatConfidence, formatMetric } from "./format";
+import {
+	escapeHtml,
+	formatConfidence,
+	formatImageSize,
+	formatMetric,
+} from "./format";
 import {
 	renderAllImages,
 	renderImageDialog,
@@ -503,14 +508,27 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const expectedSize =
 		result.expectation.expectedWidth !== undefined &&
 		result.expectation.expectedHeight !== undefined
-			? `${result.expectation.expectedWidth}x${result.expectation.expectedHeight}`
+			? formatImageSize({
+					width: result.expectation.expectedWidth,
+					height: result.expectation.expectedHeight,
+				})
 			: "correct";
 	const sizeState = result.metrics.sizeCorrect ? "passed" : "failed";
 	const sizeRow = `<tr class="${sizeState}">
 		<th data-i18n="outputSize">Output size</th>
 		<td>${expectedSize}</td>
-		<td>${baselineMetrics ? `${baselineMetrics.outputWidth}x${baselineMetrics.outputHeight}` : "-"}</td>
-		<td>${result.metrics.outputWidth}x${result.metrics.outputHeight}</td>
+		<td>${
+			baselineMetrics
+				? formatImageSize({
+						width: baselineMetrics.outputWidth,
+						height: baselineMetrics.outputHeight,
+					})
+				: "-"
+		}</td>
+		<td>${formatImageSize({
+			width: result.metrics.outputWidth,
+			height: result.metrics.outputHeight,
+		})}</td>
 		<td>-</td>
 		<td data-i18n="${sizeState}">${sizeState}</td>
 	</tr>`;
