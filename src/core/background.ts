@@ -724,6 +724,7 @@ export const removeAutomaticBackground = (
 			img,
 			candidates,
 			selected,
+			connectivity,
 			createEnclosedClusterTest(img, model, tolerance),
 		);
 	}

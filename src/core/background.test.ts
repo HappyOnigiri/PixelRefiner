@@ -379,6 +379,28 @@ describe("enclosed background removal (scope: auto)", () => {
 		expect(alphaAt(result.image, 0, 0)).toBe(0);
 	});
 
+	it("follows the connectivity setting when grouping an enclosed area", () => {
+		// 内側の閉領域が斜めの一点だけでくびれてつながる形。左側には別要素の島がある。
+		const image = createImage(21, 21, (x, y) => {
+			if (x < 3 || x > 17 || y < 3 || y > 17) return [240, 240, 240, 255];
+			if (x === 3 || x === 17 || y === 3 || y === 17) return [40, 90, 160, 255];
+			if (x === 10 && y <= 10) return [40, 90, 160, 255];
+			if (x === 11 && y >= 11) return [40, 90, 160, 255];
+			if (x === 6 && y === 6) return [20, 20, 20, 255];
+			return [240, 240, 240, 255];
+		});
+		const fourWay = removeAutomaticBackground(image, 64, "auto", "4");
+		const eightWay = removeAutomaticBackground(image, 64, "auto", "8");
+
+		// 4 方向では左右が別の成分なので、島を持たない右側だけが穴になる。
+		expect(alphaAt(fourWay.image, 6, 12)).toBe(255);
+		expect(alphaAt(fourWay.image, 14, 12)).toBe(0);
+		// 8 方向では斜めの接点でつながって 1 つの成分になり、島を含むので両側が残る。
+		expect(alphaAt(eightWay.image, 6, 12)).toBe(255);
+		expect(alphaAt(eightWay.image, 14, 12)).toBe(255);
+		expect(alphaAt(eightWay.image, 0, 0)).toBe(0);
+	});
+
 	it("removes an enclosed hole for the RGB extraction method too", () => {
 		const image = createDonut([255, 255, 255], [255, 255, 255]);
 		const targets = getBackgroundTargets(image, "rgb", "#ffffff");

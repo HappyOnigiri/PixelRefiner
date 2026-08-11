@@ -259,6 +259,7 @@ export const removeBackgroundByFloodFillLegacy = (
 const removeEnclosedTargets = (
 	img: RawImage,
 	tolerance: number,
+	connectivity: Connectivity,
 	bgTargets: Array<[number, number, number]>,
 ): void => {
 	if (bgTargets.length === 0) return;
@@ -282,24 +283,30 @@ const removeEnclosedTargets = (
 	const strictTolerance =
 		tolerance * BACKGROUND_MODEL_LIMITS.enclosedToleranceRatio;
 	const selected = new Uint8Array(pixelCount);
-	addEnclosedBackground(img, candidates, selected, (pixels, size) => {
-		let sumR = 0;
-		let sumG = 0;
-		let sumB = 0;
-		for (let index = 0; index < size; index += 1) {
-			const offset = pixels[index] * 4;
-			sumR += img.data[offset];
-			sumG += img.data[offset + 1];
-			sumB += img.data[offset + 2];
-		}
-		return isCandidate(
-			sumR / size,
-			sumG / size,
-			sumB / size,
-			bgTargets,
-			strictTolerance,
-		);
-	});
+	addEnclosedBackground(
+		img,
+		candidates,
+		selected,
+		connectivity,
+		(pixels, size) => {
+			let sumR = 0;
+			let sumG = 0;
+			let sumB = 0;
+			for (let index = 0; index < size; index += 1) {
+				const offset = pixels[index] * 4;
+				sumR += img.data[offset];
+				sumG += img.data[offset + 1];
+				sumB += img.data[offset + 2];
+			}
+			return isCandidate(
+				sumR / size,
+				sumG / size,
+				sumB / size,
+				bgTargets,
+				strictTolerance,
+			);
+		},
+	);
 	for (let pixel = 0; pixel < pixelCount; pixel += 1) {
 		if (selected[pixel]) img.data[pixel * 4 + 3] = 0;
 	}
@@ -394,7 +401,7 @@ export const removeBackground = (
 			}
 		});
 		if (bgRemovalScope === "auto") {
-			removeEnclosedTargets(outer, tolerance, bgTargets);
+			removeEnclosedTargets(outer, tolerance, bgConnectivity, bgTargets);
 		}
 		return outer;
 	}
