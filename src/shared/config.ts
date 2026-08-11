@@ -465,6 +465,19 @@ export const BOUNDARY_CONTRAST_LIMITS = {
 	 * ずれで 1〜2 行ぶれる。その範囲だけ再構成誤差に決めさせる。
 	 */
 	refineRadius: 3,
+	/**
+	 * 採用したセル寸法のまま位相を詰めるときの、境界コントラストの最小値。
+	 * [Policy] これを下回る軸は格子の位相が読めていないので、位相は決めずに
+	 * 従来どおりキャンバス左上を起点として投影する。
+	 */
+	minPhaseEvidence: 1.1,
+	/**
+	 * 位相を測ることを許す最小のセル辺長（px）。
+	 * [Intended] これより小さいセルでは、セル内部の 1px の線が境界と区別できない
+	 * （実測: 4px セルの合成 fixture で、各セルの localY=1 にある特徴線を境界と読み、
+	 * 位相が 1〜2px ずれた）。小さいセルの位相は測らず従来の投影に任せる。
+	 */
+	minPhaseCellPixels: 8,
 } as const;
 
 export const TRIMMED_GRID_SEARCH_LIMITS = {

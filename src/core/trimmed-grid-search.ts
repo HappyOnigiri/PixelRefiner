@@ -6,8 +6,9 @@ import {
 } from "../shared/config";
 import type { GridSignalOptions, PixelGrid, RawImage } from "../shared/types";
 import {
+	type AxisBoundaryContrastEvaluator,
 	type BoundaryContrastEvaluator,
-	createBoundaryContrastEvaluator,
+	createAxisBoundaryContrastEvaluator,
 } from "./grid-signals/boundary-contrast";
 import { downsample } from "./image-operations";
 
@@ -28,6 +29,11 @@ type GridEstimateFromTrimmed = {
 	gridEvidenceMax?: number;
 	/** 採用格子と、境界がもっとも揃う格子が食い違っているか。 */
 	gridEvidenceContested?: boolean;
+	/**
+	 * offsetX/offsetY が実測した位相かどうか。false（未指定）なら位相は未測定で、
+	 * 投影側は従来どおりキャンバス左上を起点にする。
+	 */
+	phaseMeasured?: boolean;
 	candidates?: GridEstimateFromTrimmed[];
 };
 
@@ -181,6 +187,52 @@ const findCoarserHarmonic = (
 		}
 	}
 	return 0;
+};
+
+/**
+ * 採用したセル寸法のまま、境界がもっとも揃う位相を 1px 刻みで探す。
+ * 位相はコンテンツ BBox の左上を 0 とした画素数で返し、証拠が薄い軸は null を返す。
+ *
+ * [Intended] セル寸法はコンテンツ BBox の幅・高さから割り出すのに、投影は
+ * キャンバス左上を起点にしていたため、BBox 開始位置の端数だけ格子がずれていた。
+ * ずれた格子ではどのセルも隣のドットを食うので、代表色が混色へ寄る（実測:
+ * 20x18 が正解の 1254x1254 生成画像で x が 1/6 セルずれ、輪郭とハイライトが
+ * にじんだ）。倍率を選んだ根拠である境界コントラストは BBox 起点で測っているので、
+ * 位相もその指標で決めて投影と食い違わないようにする。
+ */
+const findAxisPhase = (
+	contrast: (cell: number, phase?: number) => number,
+	cell: number,
+): number | null => {
+	if (cell < BOUNDARY_CONTRAST_LIMITS.minPhaseCellPixels) return null;
+	let bestPhase = 0;
+	let bestContrast = contrast(cell, 0);
+	// 位相 0 とセル幅ちょうどは同じ格子なので、走査は 1 〜 ceil(cell)-1 で足りる。
+	for (let phase = 1; phase < Math.ceil(cell); phase += 1) {
+		const value = contrast(cell, phase);
+		if (value > bestContrast) {
+			bestContrast = value;
+			bestPhase = phase;
+		}
+	}
+	return bestContrast >= BOUNDARY_CONTRAST_LIMITS.minPhaseEvidence
+		? bestPhase
+		: null;
+};
+
+const measurePhase = (
+	axes: AxisBoundaryContrastEvaluator,
+	cellW: number,
+	cellH: number,
+): { offsetX: number; offsetY: number; phaseMeasured: boolean } => {
+	const phaseX = findAxisPhase(axes.x, cellW);
+	const phaseY = findAxisPhase(axes.y, cellH);
+	// [Policy] 片方の軸しか読めていないときは位相を採らない。読めた軸だけ動かすと
+	// もう一方はキャンバス起点のまま残り、どちらの根拠とも合わない格子になる。
+	if (phaseX === null || phaseY === null) {
+		return { offsetX: 0, offsetY: 0, phaseMeasured: false };
+	}
+	return { offsetX: phaseX, offsetY: phaseY, phaseMeasured: true };
 };
 
 const outputWidthsForHeight = (outH: number, ratio: number): number[] => {
@@ -454,11 +506,13 @@ export class FastGridSearchFromTrimmed
 				Math.floor(cropped.height / TRIMMED_GRID_SEARCH_LIMITS.minCellPixels),
 			),
 		);
-		const boundaryContrast = createBoundaryContrastEvaluator(
+		const axisContrast = createAxisBoundaryContrastEvaluator(
 			cropped,
 			mask,
 			signalOptions,
 		);
+		const boundaryContrast: BoundaryContrastEvaluator = (cellW, cellH) =>
+			Math.sqrt(axisContrast.x(cellW) * axisContrast.y(cellH));
 		const ratio = cropped.width / Math.max(1, cropped.height);
 
 		// 画像が大きい場合は粗い刻みで候補を減らす
@@ -556,6 +610,7 @@ export class FastGridSearchFromTrimmed
 				evidence.bestOutH * BOUNDARY_CONTRAST_LIMITS.contestedRatio;
 		return {
 			...best,
+			...measurePhase(axisContrast, best.cellW, best.cellH),
 			gridEvidence: evidenceAt(evidence, best.outH),
 			gridEvidenceMax: evidence.bestEvidence,
 			gridEvidenceContested: contested,
