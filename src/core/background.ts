@@ -643,10 +643,60 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
  * 内側の閉領域が背景クラスタの色そのものかを、成分の平均色で判定するテストを作る。
  * 通常の候補許容よりも厳しい距離を使い、背景に近いだけの塗り面を落とす。
  */
+/**
+ * 外周連結として除去する画素の平均色。内側の閉領域を比べる基準に使う。
+ * 画素数が足りないときは基準にできないので null を返す。
+ *
+ * [Intended] 背景クラスタの中心は背景全体の加重平均なので、背景に明るさの勾配が
+ * あると場所ごとの実際の色から離れる（実測: 緑背景のドーナツ画像で、穴の中の緑は
+ * クラスタ中心から 0.0227 離れ、内側判定の許容 0.0212 を素の色で超えていた）。
+ * 同じ画像で外周として除去した画素の実測色と比べれば、勾配の影響を受けない。
+ */
+const measureSelectedMeanOklab = (
+	img: RawImage,
+	selected: Uint8Array,
+): Oklab | null => {
+	const labL = new Float64Array(1);
+	const labA = new Float64Array(1);
+	const labB = new Float64Array(1);
+	let sumL = 0;
+	let sumA = 0;
+	let sumB = 0;
+	let count = 0;
+	for (let pixel = 0; pixel < selected.length; pixel += 1) {
+		if (!selected[pixel]) continue;
+		const offset = pixel * 4;
+		if (img.data[offset + 3] === 0) continue;
+		writeOklab(
+			img.data[offset],
+			img.data[offset + 1],
+			img.data[offset + 2],
+			labL,
+			labA,
+			labB,
+			0,
+		);
+		sumL += labL[0];
+		sumA += labA[0];
+		sumB += labB[0];
+		count += 1;
+	}
+	if (count < BACKGROUND_MODEL_LIMITS.minEnclosedReferencePixels) return null;
+	return { L: sumL / count, a: sumA / count, b: sumB / count };
+};
+
+/**
+ * 内側の閉領域が背景の穴かを、平均色で判定するテストを作る。
+ *
+ * [Intended] 基準色は「同じ画像で外周として除去した画素の実測色」を優先し、
+ * 外周が足りないときだけ背景クラスタの中心へ落とす。許容は通常より厳しい
+ * enclosedToleranceRatio 倍のままで、比較先だけを局所の実測色へ寄せる。
+ */
 const createEnclosedClusterTest = (
 	img: RawImage,
 	model: BackgroundModel,
 	tolerance: number,
+	outerReference: Oklab | null,
 ): EnclosedComponentTest => {
 	const strictTolerance =
 		(BACKGROUND_MODEL_LIMITS.baseOklabTolerance +
@@ -654,6 +704,10 @@ const createEnclosedClusterTest = (
 				(BACKGROUND_MODEL_LIMITS.maxOklabTolerance -
 					BACKGROUND_MODEL_LIMITS.baseOklabTolerance)) *
 		BACKGROUND_MODEL_LIMITS.enclosedToleranceRatio;
+	const references: Oklab[] =
+		outerReference !== null
+			? [outerReference]
+			: model.clusters.map((cluster) => cluster.color);
 	const labL = new Float64Array(1);
 	const labA = new Float64Array(1);
 	const labB = new Float64Array(1);
@@ -679,8 +733,8 @@ const createEnclosedClusterTest = (
 		const meanL = sumL / size;
 		const meanA = sumA / size;
 		const meanB = sumB / size;
-		for (let cluster = 0; cluster < model.clusters.length; cluster += 1) {
-			const color = model.clusters[cluster].color;
+		for (let index = 0; index < references.length; index += 1) {
+			const color = references[index];
 			if (
 				distanceSquared(meanL, meanA, meanB, color.L, color.a, color.b) <=
 				strictTolerance * strictTolerance
@@ -720,12 +774,15 @@ export const removeAutomaticBackground = (
 			? candidates
 			: markConnectedBackground(img, candidates, connectivity);
 	if (scope === "auto") {
+		// [Intended] 基準色は addEnclosedBackground が selected を書き足す前に測る。
+		// 後から測ると、透過を決めた内側の閉領域まで基準へ混ざる。
+		const outerReference = measureSelectedMeanOklab(img, selected);
 		addEnclosedBackground(
 			img,
 			candidates,
 			selected,
 			connectivity,
-			createEnclosedClusterTest(img, model, tolerance),
+			createEnclosedClusterTest(img, model, tolerance, outerReference),
 		);
 	}
 	let opaqueBefore = 0;

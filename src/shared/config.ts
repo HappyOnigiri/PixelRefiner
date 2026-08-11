@@ -262,6 +262,9 @@ export const BACKGROUND_MODEL_LIMITS = {
 	// 通常許容にこの係数を掛けた厳しい一致を要求する。1/3 は合成ケースと実 fixture の
 	// 比較で、背景に近いだけの塗り面を落としつつ本当の穴を取れる水準として選んだ。
 	enclosedToleranceRatio: 1 / 3,
+	// [Intended] 内側判定の基準色を外周の実測色に切り替える最小画素数。数画素の平均は
+	// 縁のにじみ 1 つで動くので、クラスタ中心より当てにならない。
+	minEnclosedReferencePixels: 24,
 	varianceScale: 2.5,
 	varianceConfidenceScale: 0.012,
 	maxBorderSamples: 262_144,
