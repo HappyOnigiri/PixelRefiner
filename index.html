@@ -402,16 +402,34 @@
                 <!-- JavaScript がここへ追加する -->
               </div>
               <div class="batch-options">
-                <label>
-                  <input id="shared-palette-toggle" type="checkbox" />
-                  <span data-i18n="ui.shared_palette">Shared palette</span>
-                </label>
-                <label>
-                  <input id="include-diagnostics-toggle" type="checkbox" />
-                  <span data-i18n="ui.include_diagnostics"
-                    >Include diagnostics</span
+                <div class="batch-option">
+                  <label>
+                    <input id="shared-palette-toggle" type="checkbox" />
+                    <span data-i18n="ui.shared_palette">Shared palette</span>
+                  </label>
+                  <span
+                    class="help"
+                    tabindex="0"
+                    data-i18n-attr="data-tooltip:tooltip.help.shared_palette"
+                    data-tooltip="Reduces colors with a single palette shared by every image.&#10;&#10;A common palette is built from all processed images, limited to the color count setting, and reapplied to each image.&#10;Useful when colors must match across character variations or animation frames."
+                    >?</span
                   >
-                </label>
+                </div>
+                <div class="batch-option">
+                  <label>
+                    <input id="include-diagnostics-toggle" type="checkbox" />
+                    <span data-i18n="ui.include_diagnostics"
+                      >Include diagnostics</span
+                    >
+                  </label>
+                  <span
+                    class="help"
+                    tabindex="0"
+                    data-i18n-attr="data-tooltip:tooltip.help.include_diagnostics"
+                    data-tooltip="Adds diagnostics.json to the ZIP download.&#10;&#10;It records the input and output filenames, detected input type, processing route, confidence, and warning codes for each image.&#10;Useful for narrowing down images that need a second look after a large batch."
+                    >?</span
+                  >
+                </div>
               </div>
             </section>
 
@@ -1142,7 +1160,7 @@
                           <span
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.small_aspect_grid_alignment"
-                            data-tooltip="For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.&#10;&#10;This used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine."
+                            data-tooltip="For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.&#10;&#10;This used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.&#10;&#10;With Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route."
                             >?</span
                           >
                         </span>
@@ -1174,6 +1192,7 @@
                             >Max Samples per Cell</span
                           >
                           <span
+                            id="help-max-samples-per-cell"
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.max_samples_per_cell"
                             data-tooltip="Upper bound on the pixels sampled from one cell when picking its colour.&#10;&#10;Range: {min} to {max} (Default: {default})"
@@ -1189,6 +1208,7 @@
                             >Cell Alpha Threshold</span
                           >
                           <span
+                            id="help-cell-alpha-threshold"
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.cell_alpha_threshold"
                             data-tooltip="Minimum alpha for a pixel to be considered a colour candidate inside a cell.&#10;&#10;Range: {min} to {max} (Default: {default})"
@@ -1204,6 +1224,7 @@
                             >Max Cells (Width)</span
                           >
                           <span
+                            id="help-auto-max-cells-w"
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.auto_max_cells_w"
                             data-tooltip="Upper bound on the detected cell count for the fallback detector.&#10;&#10;Range: {min} to {max} (Default: {default})"
@@ -1219,6 +1240,7 @@
                             >Max Cells (Height)</span
                           >
                           <span
+                            id="help-auto-max-cells-h"
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.auto_max_cells_h"
                             data-tooltip="Upper bound on the detected cell count for the fallback detector.&#10;&#10;Range: {min} to {max} (Default: {default})"
@@ -1249,6 +1271,7 @@
                             >Detection Mask Tolerance</span
                           >
                           <span
+                            id="help-background-mask-tolerance"
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.background_mask_tolerance"
                             data-tooltip="Per-channel tolerance used by the detection background mask.&#10;&#10;Range: {min} to {max} (Default: {default})"
@@ -1795,6 +1818,7 @@
                             >Trim Alpha Threshold</span
                           >
                           <span
+                            id="help-trim-alpha-threshold"
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.trim_alpha_threshold"
                             data-tooltip="Minimum alpha for a pixel to count as content when computing the trimming bounds.&#10;&#10;Range: {min} to {max} (Default: {default})"

@@ -14,6 +14,7 @@ import type {
 	RawImage,
 	SmallComponentRemovalDiagnostic,
 } from "../shared/types";
+import { hasSkippedBackgroundRemoval } from "./processor-background";
 
 const clampUnit = (value: number): number => Math.min(1, Math.max(0, value));
 
@@ -247,7 +248,11 @@ export const createProcessingAnalysis = (
 	}
 	// [Intended] ロールバック時は背景が透過されなかっただけで内容は失われていないため、
 	// CONTENT_LOSS_RISK ではなく専用の警告で「背景透過を中止した」ことを伝える。
-	if (backgroundDiagnostic?.removalRolledBack) {
+	// 判定は段階ごとの結果をまとめた結論なので、出力に透過が残る場合はここへ来ない。
+	if (
+		backgroundDiagnostic &&
+		hasSkippedBackgroundRemoval(backgroundDiagnostic)
+	) {
 		warnings.push("BACKGROUND_REMOVAL_SKIPPED");
 	}
 	if (before === 0) warnings.push("NO_CONTENT");

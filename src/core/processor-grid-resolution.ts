@@ -1,5 +1,6 @@
 import {
 	GRID_SEARCH_LIMITS,
+	PROCESS_DEFAULTS,
 	TRIMMED_GRID_SEARCH_LIMITS,
 } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
@@ -114,7 +115,7 @@ export const resolveProcessingGrid = ({
 				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
 				const isSmallAspectAdjustedGrid =
 					!phaseAwareReliable &&
-					o.smallAspectGridAlignment &&
+					o.smallAspectGridAlignmentEnabled &&
 					o.bgExtractionMethod === "auto" &&
 					o.bgRemovalScope !== "off" &&
 					trimToContent &&
@@ -129,6 +130,9 @@ export const resolveProcessingGrid = ({
 								(selectedEstimate.outH ?? 0) * (b.w / Math.max(1, b.h)),
 							),
 						);
+				// [Intended] この設定は格子の基準領域だけでなく Auto の経路判定にも効く。
+				// 「常に無効」にすると小さな格子が許可されず、refine から preserve へ
+				// フォールバックする場合がある（ツールチップにも同じ注意を書いている）。
 				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
 				// [Intended] トリミング領域で推定した格子は、元画像の左上へ投影せず
 				// コンテンツ BBox をそのままサンプリング領域として使う。
@@ -162,10 +166,16 @@ export const resolveProcessingGrid = ({
 							cellW: tightBounds.w / Math.max(1, selectedEstimate.outW),
 							cellH: tightBounds.h / Math.max(1, selectedEstimate.outH),
 						};
-						downsampleOptions = getDownsampleOptions({
-							...o,
-							cellSamplingMode: "legacy-median",
-						});
+						// [Intended] 角シードマスクを基準にすると末尾のセルが痩せるため、
+						// 既定のまま使っている場合だけ互換の中央値サンプラーへ切り替える。
+						// 利用者がサンプリング方式を明示して選んでいるときは上書きしない。
+						downsampleOptions =
+							o.cellSamplingMode === PROCESS_DEFAULTS.cellSamplingMode
+								? getDownsampleOptions({
+										...o,
+										cellSamplingMode: "legacy-median",
+									})
+								: downsampleOptions;
 					}
 				}
 				gridMethod = phaseAwareReliable

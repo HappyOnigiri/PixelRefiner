@@ -68,9 +68,6 @@ const resources = {
 		"candidate.description.preserve":
 			"縮小せず、安全に元の解像度を維持します。",
 		"candidate.description.convert": "通常画像としてドット絵風に変換します。",
-		"batch.route.refine": "復元",
-		"batch.route.convert": "変換",
-		"batch.route.preserve": "原寸維持",
 		"batch.status.pending": "未処理",
 		"batch.status.processing": "処理中",
 		"batch.status.done": "完了",
@@ -221,19 +218,19 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"セル境界が実際のエッジに明確によく乗る粗い倍率が見つかったとき、採用する格子をそちらへ乗り換えます。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。",
+			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。\n\n「常に無効」にすると、Auto の経路判定でも小さな格子が許可されなくなり、等倍のまま仕上げる経路へ切り替わる場合があります。",
 		"tooltip.help.max_samples_per_cell":
-			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。",
+			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.cell_alpha_threshold":
-			"セル内で色の候補として扱うために必要な、最低限のアルファ値です。",
+			"セル内で色の候補として扱うために必要な、最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.auto_max_cells_w":
-			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。",
+			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.auto_max_cells_h":
-			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。",
+			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.detection_background_mask":
 			"背景色を推測して格子検出の前に隠します。背景のノイズが検出結果を引っぱるのを防ぎます。",
 		"tooltip.help.background_mask_tolerance":
-			"検出用の背景マスクが背景色とみなす、チャンネルごとの色差です。",
+			"検出用の背景マスクが背景色とみなす、チャンネルごとの色差です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.grid_signal_color_boundary":
 			"格子候補の採点に色境界の信号を含めます。",
 		"tooltip.help.grid_signal_luminance_alpha":
@@ -261,13 +258,17 @@ const resources = {
 		"tooltip.help.watermark_sampling_compat":
 			"透かしを消したあと、末尾の行が欠けるのを防ぐために互換の中央値サンプラーへ切り替えます。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。",
 		"tooltip.help.trim_alpha_threshold":
-			"トリミング範囲を求めるときに、内容とみなすために必要な最低限のアルファ値です。",
+			"トリミング範囲を求めるときに、内容とみなすために必要な最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.force_width":
 			"指定ピクセル（横）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.force_height":
 			"指定ピクセル（縦）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.fast_mode":
 			"ONにすると、効率的なアルゴリズムで探索を高速化します。\nOFFにすると、より広範囲を精密に探索します。\n\n自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。",
+		"tooltip.help.shared_palette":
+			"すべての画像を同じパレットで減色します。\n\n処理後の全画像から共通のパレットを作り、色数の設定を上限としてまとめてから、各画像へ適用し直します。\nキャラクターの差分やアニメーションのコマなど、画像どうしで色味を揃えたい場合に使います。",
+		"tooltip.help.include_diagnostics":
+			"一括ダウンロード (ZIP) に diagnostics.json を追加します。\n\n画像ごとの入出力ファイル名、判定した入力の種類、処理方式、信頼度、警告コードを記録した JSON です。\n大量の画像を処理したあとで、確認が必要な画像を絞り込むときに使います。",
 		"tooltip.help.bg_method":
 			"背景色をどこから抽出するか選択します。\n\n自動: 外周全体から背景を推定します。\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
 		"tooltip.help.bg_rgb":
@@ -360,6 +361,8 @@ const resources = {
 		"warning.fallback_to_preserve": "安全のため元のサイズを維持しました。",
 		"warning.batch_partial_failure":
 			"{total}件中{failed}件を処理できませんでした。成功した画像はZIPに含まれています。",
+		"warning.pending_partial_failure":
+			"{total}件中{failed}件を変換できませんでした。画像リストで対象を確認できます。",
 		"warning.unknown": "不明な処理警告です（{code}）。",
 
 		"error.palette_limit":
@@ -438,9 +441,6 @@ const resources = {
 		"candidate.description.coarser": "将图像整理为更大像素块的方案。",
 		"candidate.description.preserve": "不缩小图像，安全保留原始分辨率。",
 		"candidate.description.convert": "按普通图像转换为像素画风格。",
-		"batch.route.refine": "还原",
-		"batch.route.convert": "转换",
-		"batch.route.preserve": "保持原尺寸",
 		"batch.status.pending": "待处理",
 		"batch.status.processing": "处理中",
 		"batch.status.done": "完成",
@@ -590,19 +590,19 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"当更粗的倍率其单元格边界明显更贴合真实边缘时，将采用的网格切换过去。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。",
+			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。\n\n设为「始终关闭」时，Auto 的路径判定也将不再允许小网格，可能改为按原尺寸完成的路径。",
 		"tooltip.help.max_samples_per_cell":
-			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。",
+			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.cell_alpha_threshold":
-			"像素在单元格内被视为颜色候选所需的最低 Alpha 值。",
+			"像素在单元格内被视为颜色候选所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.auto_max_cells_w":
-			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。",
+			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.auto_max_cells_h":
-			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。",
+			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.detection_background_mask":
 			"在网格检测前推测并遮罩背景色，避免背景噪点影响检测结果。",
 		"tooltip.help.background_mask_tolerance":
-			"检测用背景遮罩视为背景的各通道色差。",
+			"检测用背景遮罩视为背景的各通道色差。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.grid_signal_color_boundary":
 			"在网格候选评分中纳入颜色边界信号。",
 		"tooltip.help.grid_signal_luminance_alpha":
@@ -630,13 +630,17 @@ const resources = {
 		"tooltip.help.watermark_sampling_compat":
 			"移除水印后切换到兼容的中值采样器，以避免末行缺失。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。",
 		"tooltip.help.trim_alpha_threshold":
-			"计算裁剪范围时，像素被视为内容所需的最低 Alpha 值。",
+			"计算裁剪范围时，像素被视为内容所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.force_width":
 			"指定像素宽度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该宽度。\n\n范围：1 到 1024 (默认：自动)",
 		"tooltip.help.force_height":
 			"指定像素高度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该高度。\n\n范围：1 到 1024 (默认：自动)",
 		"tooltip.help.fast_mode":
 			"开启后使用更高效的算法加快搜索。\n关闭后会进行更大范围、更精细的搜索。\n\n如果自动检测结果错位，或图片包含大量噪点和细碎纹理，关闭后可能提高准确度。",
+		"tooltip.help.shared_palette":
+			"使用同一个调色板对所有图片减色。\n\n处理完成后会从全部图片生成共用调色板，以色数设置为上限归纳后，再重新应用到每张图片。\n适合角色差分或动画帧等需要统一色调的场景。",
+		"tooltip.help.include_diagnostics":
+			"在全部下载 (ZIP) 中追加 diagnostics.json。\n\n该 JSON 记录每张图片的输入输出文件名、判定的输入类型、处理方式、置信度和警告代码。\n便于在批量处理后筛选需要确认的图片。",
 		"tooltip.help.bg_method":
 			"选择从哪里提取背景色。\n\n自动：从整个图像边缘估算背景。\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
 		"tooltip.help.bg_rgb":
@@ -726,6 +730,8 @@ const resources = {
 		"warning.fallback_to_preserve": "为安全起见，已保留原始尺寸。",
 		"warning.batch_partial_failure":
 			"{total} 张图片中有 {failed} 张处理失败。成功的图片已包含在 ZIP 中。",
+		"warning.pending_partial_failure":
+			"{total} 张图片中有 {failed} 张转换失败。可在图片列表中查看对象。",
 		"warning.unknown": "未知处理警告（{code}）。",
 
 		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
@@ -807,9 +813,6 @@ const resources = {
 			"Avoids downscaling and safely keeps the original resolution.",
 		"candidate.description.convert":
 			"Treats the input as a regular image and converts it to pixel art.",
-		"batch.route.refine": "Refine",
-		"batch.route.convert": "Convert",
-		"batch.route.preserve": "Preserve",
 		"batch.status.pending": "Pending",
 		"batch.status.processing": "Processing",
 		"batch.status.done": "Done",
@@ -960,19 +963,19 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges.",
 		"tooltip.help.small_aspect_grid_alignment":
-			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.",
+			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.\n\nWith Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route.",
 		"tooltip.help.max_samples_per_cell":
-			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.",
+			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.cell_alpha_threshold":
-			"Minimum alpha for a pixel to be considered a colour candidate inside a cell.",
+			"Minimum alpha for a pixel to be considered a colour candidate inside a cell.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.auto_max_cells_w":
-			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.",
+			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.auto_max_cells_h":
-			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.",
+			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.detection_background_mask":
 			"Guesses the background colour and masks it before grid detection so that background noise does not bias the result.",
 		"tooltip.help.background_mask_tolerance":
-			"Per-channel colour difference the detection background mask treats as background.",
+			"Per-channel colour difference the detection background mask treats as background.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.grid_signal_color_boundary":
 			"Includes the colour-boundary signal when scoring grid candidates.",
 		"tooltip.help.grid_signal_luminance_alpha":
@@ -1000,13 +1003,17 @@ const resources = {
 		"tooltip.help.watermark_sampling_compat":
 			"Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.",
 		"tooltip.help.trim_alpha_threshold":
-			"Minimum alpha for a pixel to count as content when computing the trimming bounds.",
+			"Minimum alpha for a pixel to count as content when computing the trimming bounds.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.force_width":
 			"Specified pixel width.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.force_height":
 			"Specified pixel height.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.fast_mode":
 			"When ON, uses an efficient algorithm to speed up the search.\nWhen OFF, performs a more comprehensive and precise search.\n\nIf automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy.",
+		"tooltip.help.shared_palette":
+			"Reduces colors with a single palette shared by every image.\n\nA common palette is built from all processed images, limited to the color count setting, and reapplied to each image.\nUseful when colors must match across character variations or animation frames.",
+		"tooltip.help.include_diagnostics":
+			"Adds diagnostics.json to the ZIP download.\n\nIt records the input and output filenames, detected input type, processing route, confidence, and warning codes for each image.\nUseful for narrowing down images that need a second look after a large batch.",
 		"tooltip.help.bg_method":
 			"Select where to extract the background color from.\n\nAuto: Estimates the background from the full image border.\nNone: No background removal.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
 		"tooltip.help.bg_rgb":
@@ -1100,6 +1107,8 @@ const resources = {
 			"The original size was preserved for safety.",
 		"warning.batch_partial_failure":
 			"{failed} of {total} images could not be processed. Successful images are included in the ZIP.",
+		"warning.pending_partial_failure":
+			"{failed} of {total} images could not be converted. Check the image list to see which ones.",
 		"warning.unknown": "Unknown processing warning ({code}).",
 
 		"error.palette_limit":

@@ -56,6 +56,16 @@ type ProcessingControllerOptions = {
 
 export type RunProcessingOptions = {
 	showCandidates?: boolean;
+	/**
+	 * 処理の終わりに読み込みオーバーレイを閉じない。
+	 * 複数画像を続けて変換する呼び出し側が、1 枚ごとの閉じ直しによる点滅を避けるために使う。
+	 */
+	keepLoadingOverlay?: boolean;
+	/**
+	 * 失敗をその場で通知しない。
+	 * 複数画像を続けて変換する呼び出し側が、一巡の完了時にまとめて通知するために使う。
+	 */
+	suppressErrorNotification?: boolean;
 };
 
 const parseOptionalInt = (
@@ -246,8 +256,9 @@ export const createRunProcessing = ({
 
 	const runProcessing = async (
 		selection?: CandidateSelection,
-		showCandidates = true,
+		options: RunProcessingOptions = {},
 	) => {
+		const showCandidates = options.showCandidates !== false;
 		const images = imageSession.getImages();
 		if (images.length === 0) return;
 		const generation = ++latestGeneration;
@@ -315,6 +326,10 @@ export const createRunProcessing = ({
 				analysis,
 			});
 
+			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
+			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
+			if (imageSession.getActiveImage()?.id !== currentItem.id) return;
+
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);
 			const analysisText = formatProcessingAnalysis(analysis, (key, params) =>
@@ -322,7 +337,6 @@ export const createRunProcessing = ({
 			);
 			mainResultViewer.updateAnalysis(analysisText);
 			modalResultViewer.updateAnalysis(analysisText);
-			mainResultViewer.setLoading(false);
 
 			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。
 			if (resultImage.width > 256 || resultImage.height > 256) {
@@ -434,10 +448,19 @@ export const createRunProcessing = ({
 			updateBgColorFromMethod();
 		} catch (err) {
 			const msg = `${i18n.t("error.process_failed")}: ${(err as Error).message}`;
-			showError(msg);
+			// [Intended] トーストは重ねて表示できないため、呼び出し側がまとめて通知する場合は出さない。
+			// 原因は画像一覧の状態として残るので、ここで失われるわけではない。
+			if (!options.suppressErrorNotification) showError(msg);
 			imageSession.setImageStatus(currentItem.id, "error", msg);
 		} finally {
-			els.loadingOverlay.style.display = "none";
+			// [Intended] 続けて別の画像を変換する呼び出し側は、オーバーレイの開閉を自分で行う。
+			// mainResultViewer の読み込み表示は els.loadingOverlay と同じ要素なので、
+			// ここで閉じると呼び出し側が開いたままにできない。
+			if (!options.keepLoadingOverlay) {
+				// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
+				mainResultViewer.setLoading(false);
+				els.loadingOverlay.style.display = "none";
+			}
 			els.outputPanel.classList.remove("is-processing");
 			els.outputPanel.removeAttribute("aria-busy");
 			els.processButton.disabled = false;
@@ -451,6 +474,5 @@ export const createRunProcessing = ({
 			await runProcessing(selection);
 		},
 	});
-	return (options?: RunProcessingOptions) =>
-		runProcessing(undefined, options?.showCandidates !== false);
+	return (options?: RunProcessingOptions) => runProcessing(undefined, options);
 };

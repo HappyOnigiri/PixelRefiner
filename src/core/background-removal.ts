@@ -4,6 +4,7 @@ import {
 } from "../shared/config";
 import type {
 	BackgroundRemovalScope,
+	BackgroundRemovalStageOutcome,
 	Connectivity,
 	RawImage,
 } from "../shared/types";
@@ -148,12 +149,13 @@ const fillWithRampFallback = (
 		? detectBackgroundRamp(img, tolerance)
 		: undefined;
 	if (ramp !== undefined) {
-		const opaqueBefore = countOpaquePixels(img);
 		const ramped = cloneImage(img);
 		fill(ramped, ramp);
+		// 巻き戻しが無効なら除去率を測る必要がないので、全画素走査へ入る前に返す。
+		if (!behavior.rollback) return ramped;
+		const opaqueBefore = countOpaquePixels(img);
 		const removed = opaqueBefore - countOpaquePixels(ramped);
 		if (
-			!behavior.rollback ||
 			opaqueBefore === 0 ||
 			removed <= opaqueBefore * BACKGROUND_RAMP_LIMITS.maxRemovalRatio
 		) {
@@ -356,9 +358,9 @@ export const removeBackground = (
 		| "rgb",
 	automaticModel?: BackgroundModel,
 	behavior: BackgroundBehavior = DEFAULT_BACKGROUND_BEHAVIOR,
-	// [Intended] 自動除去のロールバックは呼び出し側の診断へ集約する必要があるため、
-	// 戻り値を画像のままにして、この出力引数へ書き戻す。
-	outcome?: { removalRolledBack: boolean },
+	// [Intended] 自動除去のロールバックと除去の有無は呼び出し側の診断へ集約する必要が
+	// あるため、戻り値を画像のままにして、この出力引数へ書き戻す。
+	outcome?: BackgroundRemovalStageOutcome,
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 	if (bgRemovalScope === "off") return cloneImage(img);
@@ -371,7 +373,10 @@ export const removeBackground = (
 			automaticModel,
 			behavior,
 		);
-		if (outcome && automatic.rolledBack) outcome.removalRolledBack = true;
+		if (outcome) {
+			if (automatic.rolledBack) outcome.rolledBack = true;
+			else if (automatic.removedRatio > 0) outcome.removed = true;
+		}
 		return automatic.image;
 	}
 
