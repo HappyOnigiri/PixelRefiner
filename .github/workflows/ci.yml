@@ -15,9 +15,8 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    # [Policy] make ci は品質ケースを全件実行する。ケースはシャードファイル単位で
-    # 並列に流れるが、共有ランナーのコア数に律速されるため余裕を持たせる。
-    timeout-minutes: 20
+    # [Policy] 重い画像品質ケースは必須の quality check に分離する。
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:

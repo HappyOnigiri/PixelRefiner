@@ -13,6 +13,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:unit": "vitest run --exclude 'test/quality/shards/**'",
     "test:watch": "vitest",
     "test:quality": "QUALITY_PROFILE=smoke vitest run test/quality/cases.test.ts test/quality/shards",
     "test:quality:full": "QUALITY_PROFILE=full vitest run test/quality/cases.test.ts test/quality/shards",
@@ -22,6 +23,7 @@
     "quality:targets:init": "INIT_QUALITY_TARGETS=1 vitest run test/quality/targets.test.ts",
     "test:quality:report": "pnpm run quality:report:cases && pnpm run quality:report:aggregate",
     "quality:report:cases": "rm -rf tmp/quality-report/latest tmp/quality-report/partial && QUALITY_REPORT=1 QUALITY_PROFILE=full vitest run test/quality/shards",
+    "quality:report-and-gate:cases": "rm -rf tmp/quality-report/latest tmp/quality-report/partial tmp/quality-gate-warnings && QUALITY_REPORT=1 QUALITY_GATE=1 QUALITY_PROFILE=full vitest run test/quality/shards",
     "quality:report:aggregate": "QUALITY_REPORT=1 QUALITY_PROFILE=full vitest run test/quality/report.test.ts --reporter=default --reporter=./test/quality/quality-reporter.ts"
   },
   "devDependencies": {

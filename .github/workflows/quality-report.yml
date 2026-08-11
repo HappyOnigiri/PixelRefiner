@@ -12,13 +12,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  quality:
+    name: quality
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
-    # [Policy] 比較レポート生成と品質ゲートで各 1 周ずつ全ケースを流す。
-    # どちらもシャードファイル単位でランナーのコア数ぶん並列に実行されるので、
-    # 4 コアの共有ランナーで詰まっても収まる範囲に上限を置く。
-    timeout-minutes: 20
+    # [Policy] 比較レポートと品質ゲートは同じケース実行結果から生成する。
+    # シャードは共有ランナーのコア数に律速されるため余裕を持たせる。
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -53,14 +53,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Generate comparison report
-        run: pnpm test:quality:report
-        env:
-          QUALITY_PR_NUMBER: ${{ github.event.pull_request.number }}
-          QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-
-      - name: Run quality gate
+      - name: Generate comparison report and run quality gate
         id: quality-gate
         continue-on-error: true
         # [Intended] auto ケースは正解画像を持たず、ベースライン（＝旧 auto 出力）と比べる
@@ -74,9 +67,16 @@ jobs:
         # ローカルの pnpm test:quality:full はこの変数を立てないため挙動は変わらない。
         env:
           QUALITY_GATE_ALLOW_DECLARED_AUTO_CHANGES: "1"
+          QUALITY_PR_NUMBER: ${{ github.event.pull_request.number }}
+          QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          rm -rf tmp/quality-gate-warnings
-          pnpm test:quality:full
+          set +e
+          pnpm run quality:report-and-gate:cases
+          gate_exit="$?"
+          set -e
+          pnpm run quality:report:aggregate
+          exit "$gate_exit"
 
       # 品質ゲートの後に掲載する。ゲートの成否を含めないと、
       # 落ちた PR でもサマリーが比較レポートの要約だけになり結果を誤読させる。
@@ -126,8 +126,8 @@ jobs:
       always() &&
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      needs.build.result != 'cancelled'
-    needs: build
+      needs.quality.result != 'cancelled'
+    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 10
     concurrency:
