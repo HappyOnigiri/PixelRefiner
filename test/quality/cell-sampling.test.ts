@@ -38,18 +38,16 @@ describe("PRF-130 quality comparison", () => {
 });
 
 describe("default alpha sampling", () => {
-	it("keeps rotated pixel-art edges hard unless alpha coverage is enabled", () => {
-		const input = readPng("test/fixtures/quality-prf500-rotated-neg-1.png");
+	it("keeps pixel-art edges hard unless alpha coverage is enabled", () => {
+		const input = readPng("test/fixtures/quality_alpha_blur.png");
 		const options: ProcessOptions = {
-			processingMode: "refine",
-			enableDeskew: true,
-			autoGridFromTrimmed: true,
-			fastAutoGridFromTrimmed: true,
-			sampleWindow: 1,
+			forcePixelsW: 8,
+			forcePixelsH: 8,
+			sampleWindow: 3,
 			preRemoveBackground: false,
 			postRemoveBackground: false,
 			bgRemovalScope: "off",
-			trimToContent: true,
+			trimToContent: false,
 		};
 		const defaultResult = processImage(input, options).result;
 		const alphaAwareResult = processImage(input, {

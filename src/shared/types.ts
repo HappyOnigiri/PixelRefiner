@@ -25,8 +25,6 @@ export type PixelGrid = {
 	candidates?: PixelGrid[];
 	detectionFailedAxes?: Axis[];
 	signalScores?: GridSignalScores;
-	/** 入力へ適用する傾き補正角度（度）。 */
-	angle?: number;
 };
 
 export type GridSignalOptions = {
@@ -175,7 +173,6 @@ export type GridCandidateSubscores = {
 
 export type GridCandidateReport = {
 	grid: PixelGrid;
-	angle?: number;
 	outW: number;
 	outH: number;
 	cropX: number;
@@ -263,7 +260,6 @@ export type CandidateSelection = {
 	outW?: number;
 	outH?: number;
 	detailLevel?: DetailLevel;
-	angle?: number;
 };
 
 export type CandidatePreview = CandidateSelection & {

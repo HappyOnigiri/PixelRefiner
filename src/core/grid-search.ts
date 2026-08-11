@@ -1,20 +1,10 @@
-import {
-	DESKEW_LIMITS,
-	GRID_SEARCH_LIMITS,
-	GRID_SIGNAL_DEFAULTS,
-} from "../shared/config";
+import { GRID_SEARCH_LIMITS, GRID_SIGNAL_DEFAULTS } from "../shared/config";
 import type {
 	GridSignalOptions,
 	GridSignalScores,
 	PixelGrid,
 	RawImage,
 } from "../shared/types";
-import {
-	createDeskewAnalysisImage,
-	createDeskewAngles,
-	rotateRawImageExpanded,
-	scoreDeskewAngles,
-} from "./deskew";
 import { applyHarmonicPenalties } from "./grid-signals/harmonics";
 import {
 	type AxisSignalProfile,
@@ -30,7 +20,6 @@ import {
 	perceptualReconstructionError,
 	reconstructionScore,
 } from "./grid-signals/reconstruction";
-import { cropRawImage, findOpaqueBounds } from "./image-operations";
 
 export type PhaseAwareGridEstimate = PixelGrid & {
 	outW: number;
@@ -48,23 +37,6 @@ export type GridEstimateLike = {
 	score?: number;
 	scoreX?: number;
 	scoreY?: number;
-};
-
-export type DeskewGridCandidate = {
-	angle: number;
-	confidence: number;
-	alignmentScore: number;
-	image: RawImage;
-	mask: RawImage;
-	estimate: PhaseAwareGridEstimate;
-};
-
-export type DeskewGridSearchResult = {
-	angle: number;
-	image: RawImage;
-	mask: RawImage;
-	estimate: PhaseAwareGridEstimate;
-	candidates: DeskewGridCandidate[];
 };
 
 type AxisCandidate = {
@@ -639,157 +611,4 @@ export const searchPhaseAwareGrid = (
 	);
 	if (estimates.length === 0) return null;
 	return { ...estimates[0], candidates: estimates.slice(1) };
-};
-
-const deskewConfidence = (estimate: PhaseAwareGridEstimate): number =>
-	Math.min(estimate.scoreX ?? 0, estimate.scoreY ?? 0);
-
-const compareDeskewCandidates = (
-	left: Pick<
-		DeskewGridCandidate,
-		"angle" | "confidence" | "alignmentScore" | "estimate"
-	>,
-	right: Pick<
-		DeskewGridCandidate,
-		"angle" | "confidence" | "alignmentScore" | "estimate"
-	>,
-): number =>
-	right.alignmentScore - left.alignmentScore ||
-	right.confidence - left.confidence ||
-	left.estimate.score - right.estimate.score ||
-	Math.abs(left.angle) - Math.abs(right.angle) ||
-	left.angle - right.angle;
-
-export const hasMeaningfulDeskewScoreGain = (
-	bestScore: number,
-	zeroScore: number,
-): boolean =>
-	bestScore - zeroScore >=
-	Math.max(1e-9, 1 - zeroScore) * DESKEW_LIMITS.minimumScoreHeadroomGain;
-
-const compareDeskewAngles = (
-	left: Pick<DeskewGridCandidate, "angle" | "alignmentScore">,
-	right: Pick<DeskewGridCandidate, "angle" | "alignmentScore">,
-): number =>
-	right.alignmentScore - left.alignmentScore ||
-	Math.abs(left.angle) - Math.abs(right.angle) ||
-	left.angle - right.angle;
-
-export const searchDeskewedGrid = (
-	image: RawImage,
-	mask: RawImage,
-	signalOptions: Partial<GridSignalOptions> = {},
-): DeskewGridSearchResult | null => {
-	if (image.width === 0 || image.height === 0) return null;
-	const analysisImage = createDeskewAnalysisImage(image);
-	const coarse: Array<{
-		angle: number;
-		alignmentScore: number;
-	}> = [];
-	const angles = createDeskewAngles();
-	const alignmentScores = scoreDeskewAngles(analysisImage, angles);
-	for (let index = 0; index < angles.length; index += 1) {
-		const angle = angles[index];
-		coarse.push({
-			angle,
-			alignmentScore: alignmentScores[index],
-		});
-	}
-	if (coarse.length === 0) return null;
-	coarse.sort(compareDeskewAngles);
-	const coarseAlignmentRange = Math.max(
-		coarse[0].alignmentScore - coarse[coarse.length - 1].alignmentScore,
-		1e-9,
-	);
-	const zeroIndex = coarse.findIndex((candidate) => candidate.angle === 0);
-	const zeroCoarse = zeroIndex >= 0 ? coarse[zeroIndex] : undefined;
-	const coarseGain = zeroCoarse
-		? (coarse[0].alignmentScore - zeroCoarse.alignmentScore) /
-			coarseAlignmentRange
-		: 1;
-	if (coarse[0].angle === 0) return null;
-	if (coarseGain < DESKEW_LIMITS.minimumConfidenceGain) return null;
-	if (
-		zeroCoarse &&
-		!hasMeaningfulDeskewScoreGain(
-			coarse[0].alignmentScore,
-			zeroCoarse.alignmentScore,
-		)
-	)
-		return null;
-	const selectedCoarse = coarse.slice(
-		0,
-		DESKEW_LIMITS.fullResolutionCandidateLimit,
-	);
-	if (
-		zeroIndex >= 0 &&
-		!selectedCoarse.some((candidate) => candidate.angle === 0)
-	) {
-		selectedCoarse[selectedCoarse.length - 1] = coarse[zeroIndex];
-	}
-
-	const full: DeskewGridCandidate[] = [];
-	for (let index = 0; index < selectedCoarse.length; index += 1) {
-		const coarseCandidate = selectedCoarse[index];
-		const rotatedImage = rotateRawImageExpanded(image, coarseCandidate.angle);
-		// [Intended] 同じ画像をマスクとして使う通常経路では、フル解像度の回転結果を共有する。
-		const rotatedMask =
-			mask === image
-				? rotatedImage
-				: rotateRawImageExpanded(mask, coarseCandidate.angle);
-		const bounds = findOpaqueBounds(rotatedMask, 16);
-		const searchImage = bounds
-			? cropRawImage(rotatedImage, bounds.x, bounds.y, bounds.w, bounds.h)
-			: rotatedImage;
-		const searchMask = bounds
-			? cropRawImage(rotatedMask, bounds.x, bounds.y, bounds.w, bounds.h)
-			: rotatedMask;
-		const localEstimate = searchPhaseAwareGrid(
-			searchImage,
-			searchMask,
-			signalOptions,
-		);
-		const estimate = localEstimate
-			? ({
-					...resolveGridEstimate(
-						localEstimate,
-						rotatedImage,
-						bounds ?? { x: 0, y: 0 },
-						true,
-					),
-					candidates: localEstimate.candidates,
-				} as PhaseAwareGridEstimate)
-			: null;
-		if (!estimate) continue;
-		estimate.angle = coarseCandidate.angle;
-		full.push({
-			angle: coarseCandidate.angle,
-			confidence: deskewConfidence(estimate),
-			alignmentScore: coarseCandidate.alignmentScore,
-			image: rotatedImage,
-			mask: rotatedMask,
-			estimate,
-		});
-	}
-	if (full.length === 0) return null;
-	full.sort(compareDeskewCandidates);
-	const zero = full.find((candidate) => candidate.angle === 0);
-	const best = full[0];
-	const alignmentGain = zero
-		? (best.alignmentScore - zero.alignmentScore) / coarseAlignmentRange
-		: 1;
-	const canApply =
-		best.angle !== 0 &&
-		best.confidence >= DESKEW_LIMITS.minimumConfidence &&
-		alignmentGain >= DESKEW_LIMITS.minimumConfidenceGain;
-	const selected = canApply ? best : zero;
-	// [Policy] 信頼度を満たさない非ゼロ候補は、自動補正として適用しない。
-	if (!selected) return null;
-	return {
-		angle: selected.angle,
-		image: selected.image,
-		mask: selected.mask,
-		estimate: selected.estimate,
-		candidates: full,
-	};
 };
