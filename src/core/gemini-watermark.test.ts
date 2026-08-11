@@ -44,6 +44,11 @@ const createSyntheticImage = (touchSubject: boolean): RawImage => {
 const alphaAt = (image: RawImage, x: number, y: number): number =>
 	image.data[(y * image.width + x) * 4 + 3];
 
+const rgbAt = (image: RawImage, x: number, y: number): number[] => {
+	const offset = (y * image.width + x) * 4;
+	return Array.from(image.data.slice(offset, offset + 3));
+};
+
 const setPixel = (
 	image: RawImage,
 	x: number,
@@ -90,6 +95,26 @@ describe("Gemini watermark removal", () => {
 		expect(result.removed).toBe(false);
 		expect(result.image).toBe(image);
 		expect(alphaAt(result.image, 90, 90)).toBe(255);
+	});
+
+	it("keeps a mark with even one dark subject pixel attached", () => {
+		const image = createSyntheticImage(false);
+		setPixel(image, 85, 90, 40, 70, 100);
+		const result = removeGeminiWatermark(image);
+
+		expect(result.removed).toBe(false);
+		expect(alphaAt(result.image, 90, 90)).toBe(255);
+		expect(alphaAt(result.image, 85, 90)).toBe(255);
+	});
+
+	it("keeps a mark with an asymmetric bright subject pixel attached", () => {
+		const image = createSyntheticImage(false);
+		setPixel(image, 85, 90, 240, 240, 240);
+		const result = removeGeminiWatermark(image);
+
+		expect(result.removed).toBe(false);
+		expect(alphaAt(result.image, 90, 90)).toBe(255);
+		expect(alphaAt(result.image, 85, 90)).toBe(255);
 	});
 
 	it("keeps an unrelated pixel inside the matched bounding box", () => {
@@ -162,6 +187,29 @@ describe("Gemini watermark removal", () => {
 		});
 
 		expect(alphaAt(result.result, 90, 90)).toBe(255);
+	});
+
+	it("fills from nearby background when automatic background removal rolls back", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const options = {
+			processingMode: "preserve" as const,
+			enableGridDetection: false,
+			bgExtractionMethod: "auto" as const,
+			bgRemovalScope: "outer" as const,
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off" as const,
+		};
+		const automatic = processImage(image, options);
+		const disabled = processImage(image, {
+			...options,
+			geminiWatermarkRemoval: "off",
+		});
+
+		expect(automatic.analysis.warnings).toContain("BACKGROUND_REMOVAL_SKIPPED");
+		expect(alphaAt(automatic.result, 90, 90)).toBe(255);
+		expect(rgbAt(automatic.result, 90, 90)).toEqual([80, 140, 80]);
+		expect(rgbAt(disabled.result, 90, 90)).toEqual([240, 240, 240]);
 	});
 
 	it("maps removal through an explicit deskew rotation", () => {
@@ -257,6 +305,35 @@ describe("Gemini watermark removal", () => {
 		expect(automatic.grid).toEqual(disabled.grid);
 		expect(automatic.grid.cropX).toBeGreaterThan(0);
 		expect(automatic.grid.cropY).toBeGreaterThan(0);
+	});
+
+	it("covers the full watermark area when forced size upscales", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const result = processImage(image, {
+			processingMode: "convert",
+			forcePixelsW: 200,
+			forcePixelsH: 200,
+			bgExtractionMethod: "top-left",
+			bgRemovalScope: "outer",
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off",
+		});
+		let brightRemaining = 0;
+		for (let y = 140; y < result.result.height; y += 1) {
+			for (let x = 140; x < result.result.width; x += 1) {
+				const offset = (y * result.result.width + x) * 4;
+				const luminance =
+					(77 * result.result.data[offset] +
+						150 * result.result.data[offset + 1] +
+						29 * result.result.data[offset + 2]) >>
+					8;
+				if (result.result.data[offset + 3] !== 0 && luminance >= 168) {
+					brightRemaining += 1;
+				}
+			}
+		}
+		expect(brightRemaining).toBe(0);
 	});
 
 	for (const fixture of [

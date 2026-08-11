@@ -51,8 +51,8 @@ export const GEMINI_WATERMARK_LIMITS = {
 	maximumFillRatio: 0.78,
 	cornerSizeRatio: 0.25,
 	maximumCornerPixelRatio: 0.08,
-	minimumSymmetryRatio: 0.7,
-	minimumBrightPixelRatio: 0.85,
+	minimumSymmetryRatio: 0.98,
+	minimumBrightPixelRatio: 1,
 	brightLuminanceMinimum: 168,
 	minimumSubjectSizeRatio: 2,
 } as const;

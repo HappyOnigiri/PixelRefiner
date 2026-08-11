@@ -1,8 +1,17 @@
 import { GEMINI_WATERMARK_LIMITS } from "../shared/config";
-import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
+import type { ProcessResult, RawImage } from "../shared/types";
 import type { AutomaticBackgroundResult } from "./background";
-import { getBackgroundTargets, removeBackground } from "./background-removal";
+import {
+	detectBackgroundRamp,
+	getBackgroundTargets,
+	removeBackground,
+} from "./background-removal";
 import { extractUsedColors } from "./color-reduction";
+import { floodFillTransparent } from "./floodfill";
+import {
+	clearMappedGeminiWatermark,
+	type MappedRemovalMode,
+} from "./gemini-watermark-mapping";
 import type { NormalizedProcessOptions } from "./processor-options";
 
 type SearchRegion = {
@@ -30,13 +39,16 @@ export type GeminiWatermarkBounds = {
 	h: number;
 };
 
-export type GeminiWatermarkRemovalResult = {
-	image: RawImage;
+export type GeminiWatermarkDetectionResult = {
 	removed: boolean;
 	removedPixels: number;
 	bounds: GeminiWatermarkBounds[];
 	/** 元画像上で除去対象になった画素番号。 */
 	pixels: Uint32Array;
+};
+
+export type GeminiWatermarkRemovalResult = GeminiWatermarkDetectionResult & {
+	image: RawImage;
 };
 
 const EMPTY_PIXELS = new Uint32Array(0);
@@ -262,20 +274,19 @@ const matchesGeminiShape = (
 };
 
 /**
- * 背景マスク上で右下に独立している Gemini の星形だけを除去する。
+ * 背景マスク上で右下に独立している Gemini の星形だけを検出する。
  * [Intended] 主体と接触したマークは探索領域外へ接続するか寸法条件から外れるため補完しない。
  */
-export const removeGeminiWatermark = (
+export const detectGeminiWatermark = (
 	image: RawImage,
 	transparencyMask: RawImage = image,
-): GeminiWatermarkRemovalResult => {
+): GeminiWatermarkDetectionResult => {
 	assertSameSize(image, transparencyMask);
 	if (
 		Math.min(image.width, image.height) <
 		GEMINI_WATERMARK_LIMITS.minimumImageDimension
 	) {
 		return {
-			image,
 			removed: false,
 			removedPixels: 0,
 			bounds: [],
@@ -307,7 +318,6 @@ export const removeGeminiWatermark = (
 	}
 	if (removedPixelCapacity === 0) {
 		return {
-			image,
 			removed: false,
 			removedPixels: 0,
 			bounds: [],
@@ -315,7 +325,6 @@ export const removeGeminiWatermark = (
 		};
 	}
 
-	const data = new Uint8ClampedArray(image.data);
 	const pixels = new Uint32Array(removedPixelCapacity);
 	const bounds: GeminiWatermarkBounds[] = [];
 	let removedPixels = 0;
@@ -332,18 +341,12 @@ export const removeGeminiWatermark = (
 			for (let x = component.minX; x <= component.maxX; x += 1) {
 				if (labelAt(labels, region, x, y) !== component.id) continue;
 				const pixel = y * image.width + x;
-				const offset = pixel * 4;
-				data[offset] = 0;
-				data[offset + 1] = 0;
-				data[offset + 2] = 0;
-				data[offset + 3] = 0;
 				pixels[removedPixels] = pixel;
 				removedPixels += 1;
 			}
 		}
 	}
 	return {
-		image: { width: image.width, height: image.height, data },
 		removed: true,
 		removedPixels,
 		bounds,
@@ -351,96 +354,30 @@ export const removeGeminiWatermark = (
 	};
 };
 
-const rotatedSize = (
-	width: number,
-	height: number,
-	angle: number,
-): { width: number; height: number; cosine: number; sine: number } => {
-	const radians = (angle * Math.PI) / 180;
-	const cosine = Math.cos(radians);
-	const sine = Math.sin(radians);
+/** 検出した Gemini ウォーターマーク成分だけを透明化した画像を返す。 */
+export const removeGeminiWatermark = (
+	image: RawImage,
+	transparencyMask: RawImage = image,
+): GeminiWatermarkRemovalResult => {
+	const detection = detectGeminiWatermark(image, transparencyMask);
+	if (!detection.removed) return { ...detection, image };
+	const data = new Uint8ClampedArray(image.data);
+	for (let index = 0; index < detection.pixels.length; index += 1) {
+		const offset = detection.pixels[index] * 4;
+		data[offset] = 0;
+		data[offset + 1] = 0;
+		data[offset + 2] = 0;
+		data[offset + 3] = 0;
+	}
 	return {
-		width: Math.max(
-			1,
-			Math.ceil(Math.abs(width * cosine) + Math.abs(height * sine)),
-		),
-		height: Math.max(
-			1,
-			Math.ceil(Math.abs(width * sine) + Math.abs(height * cosine)),
-		),
-		cosine,
-		sine,
+		...detection,
+		image: { width: image.width, height: image.height, data },
 	};
 };
 
-/** 検出した元画像画素を、傾き補正と確定済みグリッドを通した出力座標へ写す。 */
-export const clearMappedGeminiWatermark = (
-	image: RawImage,
-	grid: PixelGrid,
-	sourceWidth: number,
-	sourceHeight: number,
-	sourcePixels: Uint32Array,
-	angle: number,
-): RawImage => {
-	if (sourcePixels.length === 0) return image;
-	const cropX = grid.cropX ?? grid.offsetX;
-	const cropY = grid.cropY ?? grid.offsetY;
-	const rotation = rotatedSize(sourceWidth, sourceHeight, angle);
-	const sourceCenterX = (sourceWidth - 1) / 2;
-	const sourceCenterY = (sourceHeight - 1) / 2;
-	const outputCenterX = (rotation.width - 1) / 2;
-	const outputCenterY = (rotation.height - 1) / 2;
-	const interpolationRadius = Math.abs(angle) > 1e-9 ? 1 : 0;
-	let data: Uint8ClampedArray | undefined;
-	for (let index = 0; index < sourcePixels.length; index += 1) {
-		const sourcePixel = sourcePixels[index];
-		const sourceX = sourcePixel % sourceWidth;
-		const sourceY = (sourcePixel / sourceWidth) | 0;
-		const centeredX = sourceX - sourceCenterX;
-		const centeredY = sourceY - sourceCenterY;
-		const rotatedX =
-			rotation.cosine * centeredX - rotation.sine * centeredY + outputCenterX;
-		const rotatedY =
-			rotation.sine * centeredX + rotation.cosine * centeredY + outputCenterY;
-		const minX = Math.max(
-			0,
-			Math.floor((rotatedX - interpolationRadius - cropX) / grid.cellW),
-		);
-		const minY = Math.max(
-			0,
-			Math.floor((rotatedY - interpolationRadius - cropY) / grid.cellH),
-		);
-		const maxX = Math.min(
-			image.width - 1,
-			Math.floor((rotatedX + interpolationRadius - cropX) / grid.cellW),
-		);
-		const maxY = Math.min(
-			image.height - 1,
-			Math.floor((rotatedY + interpolationRadius - cropY) / grid.cellH),
-		);
-		for (let y = minY; y <= maxY; y += 1) {
-			for (let x = minX; x <= maxX; x += 1) {
-				const offset = (y * image.width + x) * 4;
-				const luminance =
-					(77 * image.data[offset] +
-						150 * image.data[offset + 1] +
-						29 * image.data[offset + 2]) >>
-					8;
-				if (
-					image.data[offset + 3] < GEMINI_WATERMARK_LIMITS.alphaThreshold ||
-					luminance < GEMINI_WATERMARK_LIMITS.brightLuminanceMinimum
-				) {
-					continue;
-				}
-				data ??= new Uint8ClampedArray(image.data);
-				data[offset] = 0;
-				data[offset + 1] = 0;
-				data[offset + 2] = 0;
-				data[offset + 3] = 0;
-			}
-		}
-	}
-	return data ? { width: image.width, height: image.height, data } : image;
+export type GeminiWatermarkDetectionMask = {
+	image: RawImage;
+	mode: MappedRemovalMode;
 };
 
 /** 処理本体が採用した背景条件を再利用し、透かしの独立性を判定するマスクを返す。 */
@@ -449,38 +386,56 @@ export const createGeminiWatermarkDetectionMask = (
 	options: NormalizedProcessOptions,
 	automaticBackground: AutomaticBackgroundResult | undefined,
 	getProcessedBackgroundMask: () => RawImage,
-): RawImage => {
+): GeminiWatermarkDetectionMask => {
 	if (
 		(!options.preRemoveBackground && !options.postRemoveBackground) ||
 		options.bgRemovalScope === "off" ||
 		options.bgExtractionMethod === "none"
 	) {
 		// [Intended] 入力が既に透過済みなら、背景除去設定が無効でもそのアルファを根拠に判定する。
-		return inputImage;
+		return { image: inputImage, mode: "transparent" };
 	}
 	if (
 		options.bgExtractionMethod === "auto" &&
 		automaticBackground &&
 		!automaticBackground.rolledBack
 	) {
-		return automaticBackground.image;
+		return { image: automaticBackground.image, mode: "transparent" };
 	}
 	if (options.bgExtractionMethod !== "auto") {
 		// [Intended] selected / outer / all の違いを処理本体と同じマスクで尊重する。
-		return getProcessedBackgroundMask();
+		return { image: getProcessedBackgroundMask(), mode: "transparent" };
 	}
 
 	// [Intended] Auto が背景面積の大きさだけでロールバックした場合も、右下の星形が
 	// 角背景から独立しているかは保守的な単一角マスクで判定する。
 	const method = "top-left" as const;
-	return removeBackground(
-		inputImage,
-		options.backgroundTolerance,
-		options.bgRemovalScope,
-		options.bgConnectivity,
-		getBackgroundTargets(inputImage, method, options.bgRgb),
-		method,
-	);
+	if (automaticBackground) {
+		// [Intended] ロールバック結果は処理完了後には再利用されない原寸コピーなので、
+		// 追加の画像バッファを作らず検出マスクへ転用する。
+		floodFillTransparent(
+			automaticBackground.image,
+			0,
+			0,
+			options.backgroundTolerance,
+			undefined,
+			options.bgConnectivity,
+			detectBackgroundRamp(inputImage, options.backgroundTolerance),
+		);
+		return { image: automaticBackground.image, mode: "background" };
+	}
+	return {
+		image: removeBackground(
+			inputImage,
+			options.backgroundTolerance,
+			options.bgRemovalScope,
+			options.bgConnectivity,
+			getBackgroundTargets(inputImage, method, options.bgRgb),
+			method,
+		),
+		// [Intended] 確定出力が不透明なロールバック時は、透明穴ではなく周囲の背景色へ置換する。
+		mode: "background",
+	};
 };
 
 /** 確定済みの処理結果へ透かし除去だけを適用し、経路選択と出力形状を保持する。 */
@@ -490,11 +445,12 @@ export const applyGeminiWatermarkRemoval = (
 	processed: ProcessResult,
 	options: NormalizedProcessOptions,
 	appliedDeskewAngle: number,
+	mode: MappedRemovalMode,
 ): ProcessResult => {
 	if (options.geminiWatermarkRemoval === "off") {
 		return processed;
 	}
-	const removal = removeGeminiWatermark(inputImage, detectionMask);
+	const removal = detectGeminiWatermark(inputImage, detectionMask);
 	if (!removal.removed) return processed;
 
 	// [Intended] 検出・分類・トリミングの結果は透かし除去前のまま保ち、
@@ -506,6 +462,7 @@ export const applyGeminiWatermarkRemoval = (
 		inputImage.height,
 		removal.pixels,
 		appliedDeskewAngle,
+		mode,
 	);
 	const compareBeforeSanitized = clearMappedGeminiWatermark(
 		processed.compareBeforeSanitized,
@@ -514,6 +471,7 @@ export const applyGeminiWatermarkRemoval = (
 		inputImage.height,
 		removal.pixels,
 		appliedDeskewAngle,
+		mode,
 	);
 	options.debugHook?.("99-watermark-removed", result, {
 		removedPixels: removal.removedPixels,

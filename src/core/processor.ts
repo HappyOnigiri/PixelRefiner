@@ -259,10 +259,12 @@ const processImageCore = (
 		backgroundModel,
 		smallComponentRemoval,
 	};
-	let watermarkDetectionMask: RawImage | undefined;
+	let watermarkDetection:
+		| ReturnType<typeof createGeminiWatermarkDetectionMask>
+		| undefined;
 	const finishProcessing = (processed: ProcessResult): ProcessResult => {
 		if (o.geminiWatermarkRemoval === "off") return processed;
-		watermarkDetectionMask ??= createGeminiWatermarkDetectionMask(
+		watermarkDetection ??= createGeminiWatermarkDetectionMask(
 			inputImage,
 			o,
 			automaticBackground,
@@ -270,10 +272,11 @@ const processImageCore = (
 		);
 		return applyGeminiWatermarkRemoval(
 			inputImage,
-			watermarkDetectionMask,
+			watermarkDetection.image,
 			processed,
 			o,
 			appliedDeskewAngle,
+			watermarkDetection.mode,
 		);
 	};
 	const forcedResult = processForcedRoute(simpleRouteContext);
