@@ -239,9 +239,6 @@ const renderReportSidebar = (results: QualityResults): string => {
 	<div class="report-overview">
 		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>${results.summary.targetUnmet}</strong></p>
 		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>${results.summary.targetMissing}</strong></p>
-		<p><span data-i18n="changed">Changed</span>: <strong>${results.summary.changed}</strong></p>
-		<p><span data-i18n="unchanged">Unchanged</span>: <strong>${results.summary.unchanged}</strong></p>
-		<p><span data-i18n="new">New</span>: <strong>${results.summary.newCases}</strong></p>
 	</div>
 	${reportMetadata}
 	<div class="filter-panel">
