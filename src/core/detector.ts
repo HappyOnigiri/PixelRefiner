@@ -10,6 +10,12 @@ import { extractStrip, posterize } from "./ops";
 type Run = { start: number; length: number; color: [number, number, number] };
 type Segment = { start: number; runs: Run[] };
 
+/**
+ * 自動検出で各軸から抜き取るサンプルストリップの本数。
+ * [Policy] 検出の安定性と速度の釣り合いで決めた固定値。呼び出し側から変える手段は持たない。
+ */
+const DETECTION_STRIP_COUNT = 12;
+
 const quantize = (value: number, step: number): number => {
 	if (step <= 0) {
 		return value;
@@ -139,15 +145,10 @@ export type DetectOptions = {
 	detectionQuantStep?: number;
 	/**
 	 * 自動検出する最大セル数（outW/outH の上限）。
-	 * デフォルトは 128。
+	 * デフォルト: 512
 	 */
 	autoMaxCellsW?: number;
 	autoMaxCellsH?: number;
-	/**
-	 * 自動検出のサンプルストリップ数（各軸）。大きいほど安定するが遅くなる。
-	 * デフォルト: 12
-	 */
-	detectionStrips?: number;
 	/**
 	 * 背景色を推測し、検出前にマスクする（背景ノイズに対応するため）。
 	 * デフォルト: true
@@ -302,7 +303,7 @@ export const detectGrid = (
 		return picked;
 	};
 
-	const stripCount = options.detectionStrips ?? 12;
+	const stripCount = DETECTION_STRIP_COUNT;
 	const shouldMaskBackground = options.backgroundMask ?? true;
 	const backgroundMaskTolerance = Math.min(
 		PROCESS_RANGES.backgroundMaskTolerance.max,

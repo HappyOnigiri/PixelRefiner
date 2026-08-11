@@ -38,6 +38,7 @@ interface GridSearchFromTrimmedStrategy {
 		sampleWindow: number,
 		hint?: { outW: number; outH: number },
 		signalOptions?: Partial<GridSignalOptions>,
+		boundaryContrastOverride?: boolean,
 	) => GridEstimateFromTrimmed | null;
 }
 
@@ -431,6 +432,7 @@ export class FastGridSearchFromTrimmed
 		sampleWindow: number,
 		hint?: { outW: number; outH: number },
 		signalOptions?: Partial<GridSignalOptions>,
+		boundaryContrastOverride = true,
 	): GridEstimateFromTrimmed | null {
 		// 比率に基づいて outH を変化させ、outW を決定する（探索空間を制限する）
 		const outHMin = Math.max(
@@ -521,12 +523,11 @@ export class FastGridSearchFromTrimmed
 			boundaryContrast,
 		);
 		const reconEvidence = evidenceAt(evidence, coarse.bestOutH);
-		const harmonicOutH = findCoarserHarmonic(
-			evidence,
-			coarse.bestOutH,
-			reconEvidence,
-			outHMax,
-		);
+		// [Intended] 乗り換えを切っても、曖昧さの判定に使う境界コントラストの値は
+		// そのまま返す。候補選択の提示条件は採用格子の決め方とは別の判断だから。
+		const harmonicOutH = boundaryContrastOverride
+			? findCoarserHarmonic(evidence, coarse.bestOutH, reconEvidence, outHMax)
+			: 0;
 		const refineCenter = harmonicOutH > 0 ? harmonicOutH : coarse.bestOutH;
 		const refineRadius =
 			harmonicOutH > 0 ? BOUNDARY_CONTRAST_LIMITS.refineRadius : outHStep * 2;

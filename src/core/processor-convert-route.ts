@@ -27,6 +27,7 @@ import {
 } from "./image-operations";
 import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
+import { getBackgroundBehavior } from "./processor-options";
 import type { SimpleRouteContext } from "./processor-simple-routes";
 
 const gridForCandidate = (
@@ -94,6 +95,7 @@ export const processConvertRoute = (
 		backgroundDiagnostic,
 		backgroundModel,
 	} = context;
+	const behavior = getBackgroundBehavior(o);
 	let smallComponentRemoval = context.smallComponentRemoval;
 	// [Intended] 呼び出し元が同じマスクを算出済みなら再計算しない。
 	// 孤立成分の除去は working を破壊的に書き換えるため、2 度走らせると
@@ -110,6 +112,7 @@ export const processConvertRoute = (
 					bgTargets,
 					o.bgExtractionMethod,
 					backgroundModel,
+					behavior,
 				)
 			: undefined);
 	if (masked && !context.preparedMask && o.floatingMaxPixels > 0) {
@@ -186,6 +189,7 @@ export const processConvertRoute = (
 					bgTargets,
 					o.bgExtractionMethod,
 					backgroundModel,
+					behavior,
 				)
 			: finalResult;
 	const componentResult = removeSmallComponents(
@@ -199,6 +203,7 @@ export const processConvertRoute = (
 				o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off",
 			automaticBackground: o.bgExtractionMethod === "auto",
 			backgroundConfidence: backgroundDiagnostic?.confidence,
+			backgroundConfidenceGate: o.smallComponentBackgroundGate,
 		},
 	);
 	if (o.smallComponentMode !== "off") {
@@ -215,6 +220,7 @@ export const processConvertRoute = (
 			bgTargets,
 			o.bgExtractionMethod,
 			backgroundModel,
+			behavior,
 			backgroundDiagnostic,
 		);
 	}

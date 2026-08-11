@@ -13,6 +13,7 @@ import {
 	findOpaqueBounds,
 } from "./image-operations";
 import {
+	getBackgroundBehavior,
 	getDownsampleOptions,
 	type NormalizedProcessOptions,
 } from "./processor-options";
@@ -85,9 +86,18 @@ export const resolveProcessingGrid = ({
 					: undefined;
 			const est = getGridSearchFromTrimmedStrategy(
 				o.fastAutoGridFromTrimmed,
-			).search(cropped, croppedMask, sw, hint, o.gridSignals);
+			).search(
+				cropped,
+				croppedMask,
+				sw,
+				hint,
+				o.gridSignals,
+				o.boundaryContrastOverride,
+			);
 			const phaseAwareEstimate =
-				o.fastAutoGridFromTrimmed && hint === undefined
+				o.fastAutoGridFromTrimmed &&
+				o.phaseAwareGridSearch &&
+				hint === undefined
 					? searchPhaseAwareGrid(cropped, croppedMask, o.gridSignals)
 					: null;
 			log(
@@ -104,7 +114,7 @@ export const resolveProcessingGrid = ({
 				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
 				const isSmallAspectAdjustedGrid =
 					!phaseAwareReliable &&
-					o.processingMode === "auto" &&
+					o.smallAspectGridAlignment &&
 					o.bgExtractionMethod === "auto" &&
 					o.bgRemovalScope !== "off" &&
 					trimToContent &&
@@ -135,6 +145,8 @@ export const resolveProcessingGrid = ({
 						o.bgConnectivity,
 						bgTargets,
 						"top-left",
+						undefined,
+						getBackgroundBehavior(o),
 					);
 					const tightBounds = findOpaqueBounds(cornerMask, trimAlphaThreshold);
 					if (

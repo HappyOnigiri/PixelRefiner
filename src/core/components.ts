@@ -28,6 +28,11 @@ export type SmallComponentRemovalOptions = {
 	backgroundEnabled: boolean;
 	automaticBackground: boolean;
 	backgroundConfidence?: number;
+	/**
+	 * 背景モデルの信頼度が下限未満のときに除去を見送るか。
+	 * [Intended] 既定は従来どおり見送る。設定から切れるようにするためだけの受け口。
+	 */
+	backgroundConfidenceGate?: boolean;
 };
 
 export type SmallComponentRemovalResult = {
@@ -360,6 +365,7 @@ export const removeSmallComponents = (
 		};
 	}
 	if (
+		(options.backgroundConfidenceGate ?? true) &&
 		options.automaticBackground &&
 		(options.backgroundConfidence === undefined ||
 			options.backgroundConfidence < BACKGROUND_MODEL_LIMITS.minConfidence)

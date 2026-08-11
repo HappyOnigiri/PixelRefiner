@@ -13,7 +13,10 @@ import {
 	type MappedRemovalMode,
 } from "./gemini-watermark-mapping";
 import { cloneImage } from "./image-operations";
-import type { NormalizedProcessOptions } from "./processor-options";
+import {
+	getBackgroundBehavior,
+	type NormalizedProcessOptions,
+} from "./processor-options";
 
 type SearchRegion = {
 	x: number;
@@ -422,7 +425,9 @@ export const createGeminiWatermarkDetectionMask = (
 			options.backgroundTolerance,
 			undefined,
 			options.bgConnectivity,
-			detectBackgroundRamp(inputImage, options.backgroundTolerance),
+			options.backgroundRampFollow
+				? detectBackgroundRamp(inputImage, options.backgroundTolerance)
+				: undefined,
 		);
 		return { image: detectionMask, mode: "background" };
 	}
@@ -434,6 +439,8 @@ export const createGeminiWatermarkDetectionMask = (
 			options.bgConnectivity,
 			getBackgroundTargets(inputImage, method, options.bgRgb),
 			method,
+			undefined,
+			getBackgroundBehavior(options),
 		),
 		// [Intended] 確定出力が不透明なロールバック時は、透明穴ではなく周囲の背景色へ置換する。
 		mode: "background",

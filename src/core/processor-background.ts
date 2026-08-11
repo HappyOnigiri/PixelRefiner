@@ -5,7 +5,10 @@ import {
 	estimateBackgroundModel,
 	removeAutomaticBackground,
 } from "./background";
-import type { NormalizedProcessOptions } from "./processor-options";
+import {
+	getBackgroundBehavior,
+	type NormalizedProcessOptions,
+} from "./processor-options";
 
 export const prepareAutomaticBackground = (
 	image: RawImage,
@@ -26,8 +29,9 @@ export const prepareAutomaticBackground = (
 	}
 	// [Intended] 事前除去が無効な場合、除去済み画像は後段で使われず捨てられるため、
 	// 原寸画像に対してはモデル推定だけを行う。
+	const behavior = getBackgroundBehavior(options);
 	if (!options.preRemoveBackground) {
-		const model = estimateBackgroundModel(image);
+		const model = estimateBackgroundModel(image, behavior);
 		return {
 			backgroundModel: model,
 			backgroundDiagnostic: {
@@ -41,6 +45,8 @@ export const prepareAutomaticBackground = (
 		options.backgroundTolerance,
 		options.bgRemovalScope,
 		options.bgConnectivity,
+		undefined,
+		behavior,
 	);
 	return {
 		automaticBackground,

@@ -7,6 +7,7 @@ import {
 	PROCESS_RANGES,
 } from "../shared/config";
 import type {
+	AutoBehaviorSetting,
 	BackgroundRemovalScope,
 	Connectivity,
 	DetailLevel,
@@ -19,6 +20,7 @@ import type {
 	RGB,
 	SmallComponentRemovalMode,
 } from "../shared/types";
+import type { BackgroundBehavior } from "./background";
 import type { CellSamplingMode } from "./cell-sampler";
 import type { DetectOptions } from "./detector";
 import type { DownsampleOptions } from "./image-operations";
@@ -28,8 +30,30 @@ export type ProcessOptions = DetectOptions & {
 	processingMode?: ProcessingMode;
 	/** Convert 経路で採用する論理解像度。 */
 	detailLevel?: DetailLevel;
-	/** グリッド候補の各信号を比較検証するための内部向け切り替え。 */
+	/** グリッド候補の各信号を個別に有効／無効にする。 */
 	gridSignals?: Partial<GridSignalOptions>;
+	/** 縁のにじみ（ハロー）を背景色から遠ざける補正を行う。 */
+	backgroundDehalo?: boolean;
+	/** 縮小後の縁に残った背景色の汚染を、原寸の本来の色へ差し替える。 */
+	backgroundEdgeCleanup?: boolean;
+	/** なめらかなグラデーション背景を段差の連続としてたどる。 */
+	backgroundRampFollow?: boolean;
+	/** 消えすぎを検出したときに背景除去を丸ごと巻き戻す。 */
+	backgroundRemovalRollback?: boolean;
+	/** 境界帯の大半が透明なら、色による背景クラスタ推定を行わない。 */
+	alphaBorderBackgroundGuard?: boolean;
+	/** 背景モデルの信頼度が下限未満なら背景除去を見送る。 */
+	backgroundConfidenceGate?: boolean;
+	/** 背景モデルの信頼度が下限未満なら小成分除去を見送る。 */
+	smallComponentBackgroundGate?: boolean;
+	/** 位相を考慮した格子探索を行い、軸信頼度が十分なら再構成ベースより優先する。 */
+	phaseAwareGridSearch?: boolean;
+	/** 境界コントラストが明確に優る粗い倍音へ採用格子を乗り換える。 */
+	boundaryContrastOverride?: boolean;
+	/** 小さな論理解像度の格子で、角シードマスクの境界を基準領域に使う。 */
+	smallAspectGridAlignment?: AutoBehaviorSetting;
+	/** 透かし除去が成立したとき、末尾行の欠落を防ぐ互換サンプラーへ切り替える。 */
+	watermarkSamplingCompat?: AutoBehaviorSetting;
 	preRemoveBackground?: boolean;
 	postRemoveBackground?: boolean;
 	/**
@@ -173,6 +197,8 @@ export const createDefaultProcessOptions = () =>
 	({
 		detectionQuantStep: PROCESS_RANGES.detectionQuantStep.default,
 		backgroundMaskTolerance: PROCESS_RANGES.backgroundMaskTolerance.default,
+		autoMaxCellsW: PROCESS_RANGES.autoMaxCells.default,
+		autoMaxCellsH: PROCESS_RANGES.autoMaxCells.default,
 		backgroundTolerance: PROCESS_RANGES.backgroundTolerance.default,
 		sampleWindow: PROCESS_RANGES.sampleWindow.default,
 		maxSamplesPerCell: PROCESS_RANGES.maxSamplesPerCell.default,
@@ -195,6 +221,19 @@ export const createDefaultProcessOptions = () =>
 		preserveThinFeatures: PROCESS_DEFAULTS.preserveThinFeatures,
 		smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
 		geminiWatermarkRemoval: PROCESS_DEFAULTS.geminiWatermarkRemoval,
+		backgroundMask: PROCESS_DEFAULTS.backgroundMask,
+		gridSignals: { ...PROCESS_DEFAULTS.gridSignals },
+		backgroundDehalo: PROCESS_DEFAULTS.backgroundDehalo,
+		backgroundEdgeCleanup: PROCESS_DEFAULTS.backgroundEdgeCleanup,
+		backgroundRampFollow: PROCESS_DEFAULTS.backgroundRampFollow,
+		backgroundRemovalRollback: PROCESS_DEFAULTS.backgroundRemovalRollback,
+		alphaBorderBackgroundGuard: PROCESS_DEFAULTS.alphaBorderBackgroundGuard,
+		backgroundConfidenceGate: PROCESS_DEFAULTS.backgroundConfidenceGate,
+		smallComponentBackgroundGate: PROCESS_DEFAULTS.smallComponentBackgroundGate,
+		phaseAwareGridSearch: PROCESS_DEFAULTS.phaseAwareGridSearch,
+		boundaryContrastOverride: PROCESS_DEFAULTS.boundaryContrastOverride,
+		smallAspectGridAlignment: PROCESS_DEFAULTS.smallAspectGridAlignment,
+		watermarkSamplingCompat: PROCESS_DEFAULTS.watermarkSamplingCompat,
 		reduceColors: PROCESS_DEFAULTS.reduceColors,
 		reduceColorMode: PROCESS_DEFAULTS.reduceColorMode,
 		ditherMode: PROCESS_DEFAULTS.ditherMode,
@@ -247,6 +286,19 @@ export const normalizeProcessOptions = (
 	autoGridFromTrimmed: boolean;
 	fastAutoGridFromTrimmed: boolean;
 	gridSignals: GridSignalOptions;
+	backgroundDehalo: boolean;
+	backgroundEdgeCleanup: boolean;
+	backgroundRampFollow: boolean;
+	backgroundRemovalRollback: boolean;
+	alphaBorderBackgroundGuard: boolean;
+	backgroundConfidenceGate: boolean;
+	smallComponentBackgroundGate: boolean;
+	phaseAwareGridSearch: boolean;
+	boundaryContrastOverride: boolean;
+	/** 経路依存を解決済みの実効値。 */
+	smallAspectGridAlignment: boolean;
+	/** 経路依存を解決済みの実効値。 */
+	watermarkSamplingCompat: boolean;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
 	keepAspectRatio: boolean;
@@ -354,6 +406,23 @@ export const normalizeProcessOptions = (
 		...GRID_SIGNAL_DEFAULTS,
 		...raw.gridSignals,
 	};
+	// [Intended] "auto" は Auto 経路でだけ有効という従来の条件をそのまま表す。
+	// 明示指定された "on" / "off" は経路に関わらず優先する。
+	const resolveAutoBehavior = (
+		setting: AutoBehaviorSetting | undefined,
+		fallback: AutoBehaviorSetting,
+	): boolean => {
+		const value = setting ?? fallback;
+		return value === "auto" ? processingMode === "auto" : value === "on";
+	};
+	const smallAspectGridAlignment = resolveAutoBehavior(
+		raw.smallAspectGridAlignment,
+		PROCESS_DEFAULTS.smallAspectGridAlignment,
+	);
+	const watermarkSamplingCompat = resolveAutoBehavior(
+		raw.watermarkSamplingCompat,
+		PROCESS_DEFAULTS.watermarkSamplingCompat,
+	);
 	const makeSquare = raw.makeSquare ?? PROCESS_DEFAULTS.makeSquare;
 	const keepAspectRatio =
 		raw.keepAspectRatio ?? PROCESS_DEFAULTS.keepAspectRatio;
@@ -417,6 +486,28 @@ export const normalizeProcessOptions = (
 		autoGridFromTrimmed,
 		fastAutoGridFromTrimmed,
 		gridSignals,
+		backgroundDehalo: raw.backgroundDehalo ?? PROCESS_DEFAULTS.backgroundDehalo,
+		backgroundEdgeCleanup:
+			raw.backgroundEdgeCleanup ?? PROCESS_DEFAULTS.backgroundEdgeCleanup,
+		backgroundRampFollow:
+			raw.backgroundRampFollow ?? PROCESS_DEFAULTS.backgroundRampFollow,
+		backgroundRemovalRollback:
+			raw.backgroundRemovalRollback ??
+			PROCESS_DEFAULTS.backgroundRemovalRollback,
+		alphaBorderBackgroundGuard:
+			raw.alphaBorderBackgroundGuard ??
+			PROCESS_DEFAULTS.alphaBorderBackgroundGuard,
+		backgroundConfidenceGate:
+			raw.backgroundConfidenceGate ?? PROCESS_DEFAULTS.backgroundConfidenceGate,
+		smallComponentBackgroundGate:
+			raw.smallComponentBackgroundGate ??
+			PROCESS_DEFAULTS.smallComponentBackgroundGate,
+		phaseAwareGridSearch:
+			raw.phaseAwareGridSearch ?? PROCESS_DEFAULTS.phaseAwareGridSearch,
+		boundaryContrastOverride:
+			raw.boundaryContrastOverride ?? PROCESS_DEFAULTS.boundaryContrastOverride,
+		smallAspectGridAlignment,
+		watermarkSamplingCompat,
 		enableGridDetection,
 		makeSquare,
 		keepAspectRatio,
@@ -440,6 +531,22 @@ export const normalizeProcessOptions = (
 export type NormalizedProcessOptions = ReturnType<
 	typeof normalizeProcessOptions
 >;
+
+/**
+ * 背景処理の自動判定の有効／無効を、背景モジュールが受け取る形へまとめる。
+ *
+ * [Intended] 呼び出し側は正規化済みオプションだけを持ち回れば済むようにする。
+ * 個々のフラグ名を背景モジュールの語彙へ翻訳するのはここ 1 箇所に閉じる。
+ */
+export const getBackgroundBehavior = (
+	options: NormalizedProcessOptions,
+): BackgroundBehavior => ({
+	dehalo: options.backgroundDehalo,
+	rollback: options.backgroundRemovalRollback,
+	confidenceGate: options.backgroundConfidenceGate,
+	alphaBorderGuard: options.alphaBorderBackgroundGuard,
+	rampFollow: options.backgroundRampFollow,
+});
 
 export const getDownsampleOptions = (
 	options: NormalizedProcessOptions,
