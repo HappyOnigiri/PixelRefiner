@@ -327,37 +327,49 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(autoDetail).toContain(
 			'<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>',
 		);
-		expect(autoDetail).toContain('data-i18n="candidateModalWouldShow"');
-		expect(autoDetail).toContain(
+		expect(autoDetail).toContain('data-i18n="candidateModalWouldNotShow"');
+		// [Policy] 候補選択と WARNING の描画は、意図的に低信頼な入力を持つケースで見る。
+		// 正しく処理できるケースを標本にすると、検出の改善で標本が静かに失われる。
+		const modalCaseId = "show-ui-default-candidates";
+		const modalDetail = readFileSync(
+			path.join(reportRoot, "cases", modalCaseId, "index.html"),
+			"utf8",
+		);
+		expect(modalDetail).toContain('data-i18n="candidateModalWouldShow"');
+		expect(modalDetail).toContain(
 			'data-i18n="warningPresentationCandidateModal"',
 		);
 		// [Intended] WARNING は文言だけでなく、どの判定で付いたかまで詳細から辿れること。
-		expect(autoDetail).toContain(
+		expect(modalDetail).toContain(
 			'<h2 data-i18n="warningDetails">WARNING details</h2>',
 		);
-		expect(autoDetail).toContain(
+		expect(modalDetail).toContain(
 			'data-i18n="processingWarnings.LOW_GRID_CONFIDENCE"',
 		);
-		expect(autoDetail).toContain(
+		expect(modalDetail).toContain(
 			'data-i18n="warningTriggers.LOW_GRID_CONFIDENCE"',
 		);
-		expect(autoDetail).toContain(
+		expect(modalDetail).toContain(
 			'data-i18n="candidateModalReasons.LOW_GRID_CONFIDENCE"',
 		);
 		// [Intended] 候補選択モーダルが出る見込みのケースは、選択肢とその画像を詳細へ出す。
-		expect(autoDetail).toContain(
+		expect(modalDetail).toContain(
 			'<h3 data-i18n="candidateOptions">Candidate options</h3>',
 		);
-		expect(autoDetail).toContain('class="images candidate-options"');
-		const autoCandidateOptions =
-			results.cases.find((result) => result.id === autoCaseId)
+		expect(modalDetail).toContain('class="images candidate-options"');
+		const modalCandidateOptions =
+			results.cases.find((result) => result.id === modalCaseId)
 				?.candidateOptions ?? [];
-		expect(autoCandidateOptions.length).toBeGreaterThan(0);
-		for (const option of autoCandidateOptions) {
-			expect(autoDetail).toContain(`data-i18n="candidateKinds.${option.kind}"`);
+		expect(modalCandidateOptions.length).toBeGreaterThan(0);
+		for (const option of modalCandidateOptions) {
+			expect(modalDetail).toContain(
+				`data-i18n="candidateKinds.${option.kind}"`,
+			);
 			if (option.file === null) continue;
 			expect(existsSync(path.join(reportRoot, option.file))).toBe(true);
-			expect(autoDetail).toContain(`src="${path.posix.basename(option.file)}"`);
+			expect(modalDetail).toContain(
+				`src="${path.posix.basename(option.file)}"`,
+			);
 		}
 		// [Intended] 候補生成はモーダルが出る見込みのケースだけに限る。品質ゲートと
 		// 表示されないケースに候補 1 件あたり 1 回の追加処理を持ち込まないため。

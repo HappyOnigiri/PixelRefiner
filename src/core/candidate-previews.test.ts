@@ -316,7 +316,6 @@ describe("candidate previews", () => {
 		expect(plans[3]).toMatchObject({ outW: 8, outH: 8 });
 	});
 
-
 	it("resize_with_trimmingのAuto結果を候補計画へ含める", async () => {
 		const image = await readPngAsRawImage(
 			"test/fixtures/resize_with_trimming.png",
@@ -328,7 +327,9 @@ describe("candidate previews", () => {
 		expect(processed.result.width).toBe(46);
 		expect(processed.result.height).toBe(13);
 		expect(processed.result.data).toEqual(expected.data);
-		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
+		// 採用した格子が候補の最上位として確定する。以前はサブスコアの減点で
+		// 信頼度がしきい値をわずかに下回り、正しい出力なのに未確定になっていた。
+		expect(processed.analysis.selectedCandidateIndex).toBe(0);
 		const autoResultIndex = processed.analysis.autoResultCandidateIndex;
 		expect(autoResultIndex).toBeDefined();
 		const autoResultCandidate =

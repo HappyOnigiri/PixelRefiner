@@ -25,6 +25,19 @@ export type PixelGrid = {
 	candidates?: PixelGrid[];
 	detectionFailedAxes?: Axis[];
 	signalScores?: GridSignalScores;
+	/**
+	 * 予測セル境界に実エッジが集まる度合い（1.0 で偏りなし）。
+	 * [Intended] 「格子として妥当か」ではなく「そもそも格子が読み取れているか」を表す。
+	 * 候補同士の相対比較では曖昧さを検出できないため、絶対量として持ち回す。
+	 */
+	gridEvidence?: number;
+	/** 探索した全候補中の最大の境界コントラスト。 */
+	gridEvidenceMax?: number;
+	/**
+	 * 採用格子と、境界がもっとも揃う格子が食い違っているか。
+	 * [Intended] 指標同士が別の倍率を指している状態で、曖昧さの直接の証拠になる。
+	 */
+	gridEvidenceContested?: boolean;
 	/** 入力へ適用する傾き補正角度（度）。 */
 	angle?: number;
 };

@@ -1,5 +1,6 @@
 import {
 	BACKGROUND_MODEL_LIMITS,
+	BOUNDARY_CONTRAST_LIMITS,
 	PROCESS_ANALYSIS_THRESHOLDS,
 } from "../shared/config";
 import type {
@@ -102,6 +103,23 @@ export const detectedGridConfidenceWarnings = (
 		warnings.push("LOW_GRID_CONFIDENCE");
 	}
 	return warnings;
+};
+
+/**
+ * 格子そのものが読み取れていない入力か。
+ *
+ * [Intended] 候補同士の点差では曖昧さを検出できない。実測では、正しく処理できている
+ * fixture の点差が 0.0001 なのに対し、倍率を取り違えた画像が 0.0021 と逆転していた。
+ * 絶対量である境界コントラストなら、意図的に低信頼な fixture が 1.06、格子の無い
+ * 画像が 1.01、明確な格子が 2.1〜4.4 と素直に並ぶ。
+ */
+const hasWeakGridEvidence = (grid: PixelGrid): boolean => {
+	if (grid.gridEvidenceContested) return true;
+	const evidence = grid.gridEvidenceMax ?? grid.gridEvidence;
+	return (
+		evidence !== undefined &&
+		evidence < BOUNDARY_CONTRAST_LIMITS.confidentEvidence
+	);
 };
 
 const getGridConfidence = (
@@ -237,6 +255,7 @@ export const createProcessingAnalysis = (
 	if (
 		gridSafety.lowConfidence ||
 		!selectionConfirmed ||
+		hasWeakGridEvidence(grid) ||
 		(grid.detectionFailedAxes?.length ?? 0) > 0
 	) {
 		warnings.push("LOW_GRID_CONFIDENCE");

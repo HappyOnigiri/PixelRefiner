@@ -1,9 +1,14 @@
 import {
+	BOUNDARY_CONTRAST_LIMITS,
 	clampInt,
 	TRIMMED_GRID_SEARCH_LIMITS,
 	TRIMMED_GRID_SEARCH_WEIGHTS,
 } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
+import {
+	type BoundaryContrastEvaluator,
+	createBoundaryContrastEvaluator,
+} from "./grid-signals/boundary-contrast";
 import { downsample } from "./image-operations";
 
 type GridEstimateFromTrimmed = {
@@ -14,6 +19,12 @@ type GridEstimateFromTrimmed = {
 	offsetX: number;
 	offsetY: number;
 	score?: number;
+	/** この格子の境界コントラスト。 */
+	gridEvidence?: number;
+	/** 探索した全候補中の最大の境界コントラスト。曖昧さの判定に使う。 */
+	gridEvidenceMax?: number;
+	/** 採用格子と、境界がもっとも揃う格子が食い違っているか。 */
+	gridEvidenceContested?: boolean;
 	candidates?: GridEstimateFromTrimmed[];
 };
 
@@ -32,6 +43,125 @@ type GridSizeCandidate = {
 	outW: number;
 	outH: number;
 	score: number;
+	/** 予測セル境界に実エッジが集まる度合い。1.0 で偏りなし。 */
+	evidence: number;
+};
+
+/** 再構成スコアが最小の候補。 */
+const bestByScore = (results: GridSizeCandidate[]): GridSizeCandidate => {
+	let best = results[0];
+	for (let index = 1; index < results.length; index += 1) {
+		if (results[index].score < best.score) best = results[index];
+	}
+	return best;
+};
+
+/** 最良候補の 1/3・1/2・2 倍・3 倍にあたる出力サイズ。 */
+const harmonicOutHeights = (outH: number): number[] => [
+	Math.round(outH / 3),
+	Math.round(outH / 2),
+	outH * 2,
+	outH * 3,
+];
+
+/**
+ * 境界コントラストだけを 1 刻みで走査し、証拠が最も強い出力高さを返す。
+ *
+ * [Intended] 再構成誤差の走査は候補ごとにダウンサンプリングが要るため刻みを粗くしてあるが、
+ * 境界コントラストのピークは正解セル幅で鋭く立つので、粗い刻みでは飛び越えてしまう。
+ * この指標は軸プロファイルの走査だけで求まり、ダウンサンプリングを伴わないので
+ * 全高さを 1 刻みで見ても負荷が小さい。
+ */
+const scanBoundaryEvidence = (
+	croppedW: number,
+	croppedH: number,
+	ratio: number,
+	outHMin: number,
+	outHMax: number,
+	boundaryContrast: BoundaryContrastEvaluator,
+): {
+	bestOutH: number;
+	bestEvidence: number;
+	evidenceMax: number;
+	scores: Float64Array;
+	outHMin: number;
+} => {
+	let evidenceMax = 0;
+	let bestOutH = 0;
+	const scores = new Float64Array(Math.max(0, outHMax - outHMin + 1));
+	for (let outH = outHMin; outH <= outHMax; outH += 1) {
+		const outW = Math.max(2, Math.round(outH * ratio));
+		const cellW = croppedW / outW;
+		const cellH = croppedH / outH;
+		if (!(cellW > 1 && cellH > 1)) continue;
+		const evidence = boundaryContrast(cellW, cellH);
+		scores[outH - outHMin] = evidence;
+		if (evidence > evidenceMax) evidenceMax = evidence;
+	}
+	// [Intended] 最大値そのものを採る。正しい格子の 2 倍粗い読み方は境界がすべて実エッジに
+	// 乗るため証拠がほぼ並ぶので、「同等なら粗い方」にすると正解を機械的に半分にしてしまう
+	// （実測: 24x32 の合成スプライトが 12x16 になった）。粗い側へ倒すかどうかは、
+	// 再構成との優位比で判断する findCoarserHarmonic だけが決める。
+	let bestEvidence = 0;
+	for (let index = 0; index < scores.length; index += 1) {
+		const outH = outHMin + index;
+		if (outH < BOUNDARY_CONTRAST_LIMITS.minOverrideOutH) continue;
+		if (scores[index] > bestEvidence) {
+			bestOutH = outH;
+			bestEvidence = scores[index];
+		}
+	}
+	return { bestOutH, bestEvidence, evidenceMax, scores, outHMin };
+};
+
+type BoundaryEvidenceScan = ReturnType<typeof scanBoundaryEvidence>;
+
+const evidenceAt = (scan: BoundaryEvidenceScan, outH: number): number => {
+	const index = outH - scan.outHMin;
+	return index >= 0 && index < scan.scores.length ? scan.scores[index] : 0;
+};
+
+/**
+ * 再構成が選んだ格子が、より粗い倍音の過分割になっていないか調べる。
+ * 見つかればその倍音の出力高さ、無ければ 0 を返す。
+ *
+ * [Intended] 倍音の位置は端数やトリミング位置で数行ずれるため、厳密な整数比ではなく
+ * 各倍音の周囲を窓で探す。粗い倍音から順に見て、最初に条件を満たしたものを採る。
+ */
+const findCoarserHarmonic = (
+	scan: BoundaryEvidenceScan,
+	reconOutH: number,
+	reconEvidence: number,
+	outHMax: number,
+): number => {
+	const factors = BOUNDARY_CONTRAST_LIMITS.harmonicFactors;
+	for (let index = factors.length - 1; index >= 0; index -= 1) {
+		const center = reconOutH / factors[index];
+		if (center < BOUNDARY_CONTRAST_LIMITS.minOverrideOutH) continue;
+		const radius = Math.max(
+			1,
+			center * BOUNDARY_CONTRAST_LIMITS.harmonicWindow,
+		);
+		const from = Math.max(scan.outHMin, Math.round(center - radius));
+		const to = Math.min(outHMax, Math.round(center + radius));
+		let bestOutH = 0;
+		let bestEvidence = 0;
+		for (let outH = from; outH <= to; outH += 1) {
+			const evidence = evidenceAt(scan, outH);
+			if (evidence > bestEvidence) {
+				bestEvidence = evidence;
+				bestOutH = outH;
+			}
+		}
+		if (
+			bestOutH > 0 &&
+			bestEvidence >= BOUNDARY_CONTRAST_LIMITS.minEvidence &&
+			bestEvidence >= reconEvidence * BOUNDARY_CONTRAST_LIMITS.overrideRatio
+		) {
+			return bestOutH;
+		}
+	}
+	return 0;
 };
 
 const outputWidthsForHeight = (outH: number, ratio: number): number[] => {
@@ -49,11 +179,16 @@ const outputWidthsForHeight = (outH: number, ratio: number): number[] => {
 /**
  * 候補サイズをある程度「分散」させるため、outH の範囲をバケットに分け、各バケットから最良候補を選ぶ。
  * - スケールが大きく異なっても、互いに近すぎない候補を得られる。
- * - 最良候補は必ず含め、不足分はスコア順に補う。
+ * - 採用格子とその倍音は必ず含め、不足分はスコア順に補う。
+ *
+ * [Intended] バケットは outH の対数で切る。線形に切ると、セル 4px 側の候補が
+ * 大半のバケットを占め、粗い側（セル 20〜64px）が 1 バケットへ潰れる。
+ * 人がサイズを選ぶときの感覚も倍率＝対数なので、対数軸のほうが選択肢として自然。
  */
 const pickDistributedGridSizeCandidates = (
 	results: GridSizeCandidate[],
 	count: number,
+	best: GridSizeCandidate,
 ): GridSizeCandidate[] => {
 	if (results.length === 0) return [];
 
@@ -68,15 +203,16 @@ const pickDistributedGridSizeCandidates = (
 	}
 	if (minOutH === maxOutH) return byScore.slice(0, count);
 
-	const range = maxOutH - minOutH + 1;
-	const bucketCount = Math.min(count, range);
+	const logMin = Math.log(Math.max(1, minOutH));
+	const logRange = Math.log(Math.max(1, maxOutH)) - logMin;
+	const bucketCount = Math.min(count, maxOutH - minOutH + 1);
 	const bucketBest: (GridSizeCandidate | null)[] = Array.from(
 		{ length: bucketCount },
 		() => null,
 	);
 
 	for (const r of byScore) {
-		const t = (r.outH - minOutH) / Math.max(1, range - 1);
+		const t = logRange <= 0 ? 0 : (Math.log(r.outH) - logMin) / logRange;
 		const b = Math.min(
 			bucketCount - 1,
 			Math.max(0, Math.floor(t * bucketCount)),
@@ -87,28 +223,49 @@ const pickDistributedGridSizeCandidates = (
 
 	const selected: GridSizeCandidate[] = [];
 	const seen = new Set<string>();
+	const add = (candidate: GridSizeCandidate): boolean => {
+		const key = `${candidate.outW}x${candidate.outH}`;
+		if (seen.has(key)) return false;
+		selected.push(candidate);
+		seen.add(key);
+		return true;
+	};
 
-	// 最良候補は常に含める
-	const best = byScore[0];
-	selected.push(best);
-	seen.add(`${best.outW}x${best.outH}`);
+	// 採用格子は常に含める
+	add(best);
+
+	// [Intended] 採用格子の 1/3・1/2・2 倍・3 倍は必ず選択肢へ入れる。倍率の取り違えは
+	// ほぼ倍音関係で起きるので、候補選択で救えるのはこの兄弟が並んでいるときだけ。
+	const harmonics = harmonicOutHeights(best.outH);
+	for (let index = 0; index < harmonics.length; index += 1) {
+		const target = harmonics[index];
+		let nearest: GridSizeCandidate | null = null;
+		for (const r of byScore) {
+			if (
+				nearest === null ||
+				Math.abs(r.outH - target) < Math.abs(nearest.outH - target)
+			) {
+				nearest = r;
+			}
+		}
+		// 近い候補が無い倍音は飛ばす（探索範囲外の倍率）。
+		if (
+			nearest &&
+			Math.abs(nearest.outH - target) <= Math.max(1, target * 0.1)
+		) {
+			add(nearest);
+		}
+	}
 
 	for (const r of bucketBest) {
-		if (!r) continue;
-		const key = `${r.outW}x${r.outH}`;
-		if (seen.has(key)) continue;
-		selected.push(r);
-		seen.add(key);
 		if (selected.length >= count) break;
+		if (r) add(r);
 	}
 
 	// 空きがあれば、他の候補をスコア順に追加する
 	for (const r of byScore) {
 		if (selected.length >= count) break;
-		const key = `${r.outW}x${r.outH}`;
-		if (seen.has(key)) continue;
-		selected.push(r);
-		seen.add(key);
+		add(r);
 	}
 
 	// UI で見やすいようサイズ順に並べる
@@ -140,6 +297,7 @@ export class FastGridSearchFromTrimmed
 		outHMax: number,
 		outHStep: number,
 		pixelStride: number,
+		boundaryContrast: BoundaryContrastEvaluator,
 		ratioOverride?: number,
 	): { bestOutH: number; est: GridEstimateFromTrimmed } | null {
 		const ratio = ratioOverride ?? cropped.width / Math.max(1, cropped.height);
@@ -211,19 +369,28 @@ export class FastGridSearchFromTrimmed
 					TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty *
 					Math.sqrt(outW * outH);
 				const score = reconErr + complexityPenalty;
-				allResults.push({ outH, outW, score });
+				allResults.push({
+					outH,
+					outW,
+					score,
+					evidence: boundaryContrast(cellW, cellH),
+				});
 			}
 		}
 
 		if (allResults.length === 0) return null;
-		let best = allResults[0];
-		for (let index = 1; index < allResults.length; index += 1) {
-			if (allResults[index].score < best.score) best = allResults[index];
-		}
+		const best = bestByScore(allResults);
 		const picked = pickDistributedGridSizeCandidates(
 			allResults,
 			GRID_SIZE_CANDIDATE_COUNT,
+			best,
 		);
+		let evidenceMax = 0;
+		for (let index = 0; index < allResults.length; index += 1) {
+			if (allResults[index].evidence > evidenceMax) {
+				evidenceMax = allResults[index].evidence;
+			}
+		}
 		return {
 			bestOutH: best.outH,
 			est: {
@@ -234,6 +401,8 @@ export class FastGridSearchFromTrimmed
 				offsetX: 0,
 				offsetY: 0,
 				score: best.score,
+				gridEvidence: best.evidence,
+				gridEvidenceMax: evidenceMax,
 				candidates: picked.map((c) => ({
 					outW: c.outW,
 					outH: c.outH,
@@ -242,6 +411,7 @@ export class FastGridSearchFromTrimmed
 					offsetX: 0,
 					offsetY: 0,
 					score: c.score,
+					gridEvidence: c.evidence,
 				})),
 			},
 		};
@@ -254,12 +424,29 @@ export class FastGridSearchFromTrimmed
 		hint?: { outW: number; outH: number },
 	): GridEstimateFromTrimmed | null {
 		// 比率に基づいて outH を変化させ、outW を決定する（探索空間を制限する）
-		const outHMin = Math.max(2, Math.floor(cropped.height / 32));
-		// 1 セルが小さすぎる（= 過分割）と誤差は常に下がるため、少なくとも約 4px/セルを要求する
+		const outHMin = Math.max(
+			2,
+			Math.floor(
+				cropped.height / TRIMMED_GRID_SEARCH_LIMITS.reconstructionMaxCellPixels,
+			),
+		);
+		// [Intended] 境界コントラストだけは、より粗いセルまで見る。再構成側の下限を
+		// 広げると複雑度ペナルティの釣り合いが変わって既存の判断まで動くため、
+		// 探索範囲の拡張は「乗り換え先を見つける」用途に限る。
+		const evidenceOutHMin = Math.max(
+			2,
+			Math.floor(cropped.height / TRIMMED_GRID_SEARCH_LIMITS.maxCellPixels),
+		);
+		// 1 セルが小さすぎる（= 過分割）と誤差は常に下がるため、最小セル幅を要求する
 		const outHMax = Math.min(
 			512,
-			Math.max(outHMin, Math.floor(cropped.height / 4)),
+			Math.max(
+				outHMin,
+				Math.floor(cropped.height / TRIMMED_GRID_SEARCH_LIMITS.minCellPixels),
+			),
 		);
+		const boundaryContrast = createBoundaryContrastEvaluator(cropped, mask);
+		const ratio = cropped.width / Math.max(1, cropped.height);
 
 		// 画像が大きい場合は粗い刻みで候補を減らす
 		const span = outHMax - outHMin;
@@ -288,6 +475,7 @@ export class FastGridSearchFromTrimmed
 				r1,
 				1,
 				Math.max(1, Math.floor(pixelStride / 2)),
+				boundaryContrast,
 				ratioHint,
 			);
 			return refinedFromHint?.est ?? null;
@@ -301,13 +489,37 @@ export class FastGridSearchFromTrimmed
 			outHMax,
 			outHStep,
 			pixelStride,
+			boundaryContrast,
 		);
 		if (!coarse) return null;
 
-		// 粗い検索の最良候補周辺を細かく再走査する（範囲が狭いため刻みを小さくする）
-		const refineRadius = outHStep * 2;
-		const r0 = Math.max(outHMin, coarse.bestOutH - refineRadius);
-		const r1 = Math.min(outHMax, coarse.bestOutH + refineRadius);
+		// [Intended] 再構成誤差はセルを細かくするほど下がるので、正解の 2〜6 倍細かい
+		// 格子を選んでしまうことがある（実測: AI 生成のドット絵風画像 4 枚すべて）。
+		// 粗い側の倍音が明確に境界へ乗っているときだけ、そちらへ乗り換える。
+		// 乗り換え後の 1px 単位の詰めは、端数に強い再構成誤差へ戻して任せる。
+		const evidence = scanBoundaryEvidence(
+			cropped.width,
+			cropped.height,
+			ratio,
+			evidenceOutHMin,
+			outHMax,
+			boundaryContrast,
+		);
+		const reconEvidence = evidenceAt(evidence, coarse.bestOutH);
+		const harmonicOutH = findCoarserHarmonic(
+			evidence,
+			coarse.bestOutH,
+			reconEvidence,
+			outHMax,
+		);
+		const refineCenter = harmonicOutH > 0 ? harmonicOutH : coarse.bestOutH;
+		const refineRadius =
+			harmonicOutH > 0 ? BOUNDARY_CONTRAST_LIMITS.refineRadius : outHStep * 2;
+		// [Policy] 乗り換えたときだけ拡張下限まで降りる。乗り換えない入力の再走査範囲を
+		// 広げると、既存の入力で選ばれる格子が動いてしまう。
+		const rangeFloor = harmonicOutH > 0 ? evidenceOutHMin : outHMin;
+		const r0 = Math.max(rangeFloor, refineCenter - refineRadius);
+		const r1 = Math.min(outHMax, refineCenter + refineRadius);
 		const refined = this.scan(
 			cropped,
 			mask,
@@ -316,12 +528,25 @@ export class FastGridSearchFromTrimmed
 			r1,
 			1,
 			Math.max(1, Math.floor(pixelStride / 2)),
+			boundaryContrast,
 		);
 		// 注記:
-		// 候補リスト（UI でのサイズ調整用）には「粗い検索」の上位 3 件を使用する。
+		// 候補リスト（UI でのサイズ調整用）には「粗い検索」の分散候補を使用する。
 		// 最終的に採用するグリッドは「精密検索」の最良結果を維持する。
 		const best = refined?.est ?? coarse.est;
-		return { ...best, candidates: coarse.est.candidates };
+		// [Intended] 採用した倍率と、境界がもっとも揃う倍率が食い違っているなら、
+		// どちらを採るべきかは指標だけでは決まらない。利用者へ候補を出す根拠にする。
+		const contested =
+			evidence.bestOutH > 0 &&
+			Math.abs(best.outH - evidence.bestOutH) >
+				evidence.bestOutH * BOUNDARY_CONTRAST_LIMITS.contestedRatio;
+		return {
+			...best,
+			gridEvidence: evidenceAt(evidence, best.outH),
+			gridEvidenceMax: evidence.evidenceMax,
+			gridEvidenceContested: contested,
+			candidates: coarse.est.candidates,
+		};
 	}
 }
 
@@ -416,7 +641,9 @@ const legacySearchGridFromTrimmed = (
 			const complexityPenalty =
 				TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
-			allResults.push({ outH, outW, score });
+			// [Policy] 旧検出器は境界コントラストを測らない。採用格子の決め方を
+			// 変えないよう、証拠なし (0) として扱う。
+			allResults.push({ outH, outW, score, evidence: 0 });
 		}
 	}
 
@@ -428,6 +655,7 @@ const legacySearchGridFromTrimmed = (
 	const picked = pickDistributedGridSizeCandidates(
 		allResults,
 		GRID_SIZE_CANDIDATE_COUNT,
+		best,
 	);
 	return {
 		outW: best.outW,

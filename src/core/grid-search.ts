@@ -48,6 +48,10 @@ export type GridEstimateLike = {
 	score?: number;
 	scoreX?: number;
 	scoreY?: number;
+	signalScores?: GridSignalScores;
+	gridEvidence?: number;
+	gridEvidenceMax?: number;
+	gridEvidenceContested?: boolean;
 };
 
 export type DeskewGridCandidate = {
@@ -109,6 +113,12 @@ export const resolveGridEstimate = (
 			score: estimate.score ?? 0,
 			scoreX: estimate.scoreX,
 			scoreY: estimate.scoreY,
+			// [Intended] 計測済みのアンサンブル信号を捨てない。ここで落ちると候補評価が
+			// 未計測扱いになり、せっかく測った証拠が中立値へ丸められる。
+			signalScores: estimate.signalScores,
+			gridEvidence: estimate.gridEvidence,
+			gridEvidenceMax: estimate.gridEvidenceMax,
+			gridEvidenceContested: estimate.gridEvidenceContested,
 		};
 	}
 	const offsetX = phaseAware
@@ -145,6 +155,10 @@ export const resolveGridEstimate = (
 		score: estimate.score ?? 0,
 		scoreX: estimate.scoreX,
 		scoreY: estimate.scoreY,
+		signalScores: estimate.signalScores,
+		gridEvidence: estimate.gridEvidence,
+		gridEvidenceMax: estimate.gridEvidenceMax,
+		gridEvidenceContested: estimate.gridEvidenceContested,
 	};
 };
 
