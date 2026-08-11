@@ -357,7 +357,11 @@ export const processForcedRoute = (
 		canCleanBackgroundContaminatedEdges(
 			backgroundModel,
 			backgroundDiagnostic?.confidence,
-			backgroundDiagnostic?.removalRolledBack ?? false,
+			// [Intended] 「補正する画像の透過を作った除去」の巻き戻りだけを見る。
+			// 事後除去を行う経路ではその結果を、行わない経路では事前除去の結果を渡す。
+			o.postRemoveBackground
+				? postRemoval.rolledBack
+				: (backgroundDiagnostic?.preRemoval.rolledBack ?? false),
 			o.postRemoveBackground || (context.preBackgroundRemoved ?? false),
 		)
 	) {
