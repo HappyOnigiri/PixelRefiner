@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { IMAGE_SIZE_CLASS, IMAGE_SIZE_MISMATCH_CLASS } from "./images";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 
 describe("quality report image styles", () => {
@@ -6,6 +7,17 @@ describe("quality report image styles", () => {
 		for (const styles of [INDEX_REPORT_STYLES, DETAIL_REPORT_STYLES]) {
 			expect(styles).toMatch(
 				/\.image-stage img \{[^}]*max-width: 100%;[^}]*max-height: 100%;/,
+			);
+		}
+	});
+
+	// [Intended] 実寸とその警告色は一覧と詳細へ同じ規則を複製している。マークアップは
+	// class を出し続けるので、片方の規則だけ欠けても HTML の目視では気付けない。
+	it("styles the image size and its mismatch highlight in both views", () => {
+		for (const styles of [INDEX_REPORT_STYLES, DETAIL_REPORT_STYLES]) {
+			expect(styles).toContain(`.${IMAGE_SIZE_CLASS} {`);
+			expect(styles).toContain(
+				`.${IMAGE_SIZE_CLASS}.${IMAGE_SIZE_MISMATCH_CLASS} {`,
 			);
 		}
 	});

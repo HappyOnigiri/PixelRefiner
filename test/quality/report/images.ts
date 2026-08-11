@@ -24,6 +24,15 @@ const resultSizeMismatched = (result: QualityCaseResult): boolean => {
 };
 
 /**
+ * 実寸の class 名。CSS 側の規則と対応していることをテストで確かめるため、
+ * マークアップに直書きせずここから配る。
+ */
+export const IMAGE_SIZE_CLASS = "image-size";
+
+/** 目標と寸法が食い違う実寸へ足す修飾。 */
+export const IMAGE_SIZE_MISMATCH_CLASS = "size-mismatch";
+
+/**
  * 画像の見出しへ添える実寸。
  * [Intended] 翻訳は data-i18n を持つ要素の textContent を丸ごと置き換えるので、実寸は
  * 見出しの span の外へ出す。figcaption 直下へ置くと言語切り替えで消える。
@@ -31,8 +40,8 @@ const resultSizeMismatched = (result: QualityCaseResult): boolean => {
 const renderImageSize = (image: ReportImage): string => {
 	if (image.size === null) return "";
 	const className = image.sizeMismatched
-		? "image-size size-mismatch"
-		: "image-size";
+		? `${IMAGE_SIZE_CLASS} ${IMAGE_SIZE_MISMATCH_CLASS}`
+		: IMAGE_SIZE_CLASS;
 	return ` <small class="${className}">(${formatImageSize(image.size)})</small>`;
 };
 
