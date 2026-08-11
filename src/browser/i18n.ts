@@ -280,6 +280,8 @@ const resources = {
 		"warning.fallback_to_preserve": "安全のため元のサイズを維持しました。",
 		"warning.batch_partial_failure":
 			"{total}件中{failed}件を処理できませんでした。成功した画像はZIPに含まれています。",
+		"warning.pending_partial_failure":
+			"{total}件中{failed}件を変換できませんでした。画像リストで対象を確認できます。",
 		"warning.unknown": "不明な処理警告です（{code}）。",
 
 		"error.palette_limit":
@@ -566,6 +568,8 @@ const resources = {
 		"warning.fallback_to_preserve": "为安全起见，已保留原始尺寸。",
 		"warning.batch_partial_failure":
 			"{total} 张图片中有 {failed} 张处理失败。成功的图片已包含在 ZIP 中。",
+		"warning.pending_partial_failure":
+			"{total} 张图片中有 {failed} 张转换失败。可在图片列表中查看对象。",
 		"warning.unknown": "未知处理警告（{code}）。",
 
 		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
@@ -860,6 +864,8 @@ const resources = {
 			"The original size was preserved for safety.",
 		"warning.batch_partial_failure":
 			"{failed} of {total} images could not be processed. Successful images are included in the ZIP.",
+		"warning.pending_partial_failure":
+			"{failed} of {total} images could not be converted. Check the image list to see which ones.",
 		"warning.unknown": "Unknown processing warning ({code}).",
 
 		"error.palette_limit":

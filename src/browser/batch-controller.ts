@@ -14,6 +14,7 @@ import { createBatchItemOptions } from "./batch-options";
 import { failBatchProcessing } from "./batch-state";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
+import { createLoadingOverlay } from "./loading-overlay";
 import { showError, showWarning } from "./notifications";
 import { createProcessOptions, processor } from "./processing-controller";
 import type { ImageSession } from "./session";
@@ -37,6 +38,8 @@ export const setupBatchController = ({
 	processingState,
 	imageSession,
 }: BatchControllerOptions): void => {
+	const loadingOverlay = createLoadingOverlay(els);
+
 	const handleDownloadAll = async (scale: number) => {
 		const images = imageSession.getImages();
 		const startedImageIds = images.map((image) => image.id);
@@ -46,16 +49,9 @@ export const setupBatchController = ({
 			return;
 		}
 
-		const loadingText = els.loadingOverlay.querySelector(".loading-text");
-		els.loadingOverlay.style.display = "flex";
 		els.downloadAllButton.disabled = true;
 		els.downloadAllDropdownButton.disabled = true;
-		if (loadingText) {
-			loadingText.textContent = i18n.t("status.processing_batch", {
-				current: 0,
-				total: images.length,
-			});
-		}
+		loadingOverlay.showProgress(0, images.length);
 
 		try {
 			for (let index = 0; index < images.length; index += 1) {
@@ -96,12 +92,7 @@ export const setupBatchController = ({
 			processingCompleted = true;
 			const activeId = imageSession.getActiveImage()?.id;
 			if (activeId) imageSession.setActiveImage(activeId);
-			if (loadingText) {
-				loadingText.textContent = i18n.t("status.processing_batch", {
-					current: images.length,
-					total: images.length,
-				});
-			}
+			loadingOverlay.showProgress(images.length, images.length);
 
 			// [Intended] 処理開始後に追加・個別処理された画像を混ぜず、
 			// 開始時の入力と今回の Worker 結果だけで ZIP を構成する。
@@ -180,10 +171,9 @@ export const setupBatchController = ({
 				: failBatchProcessing(imageSession, startedImageIds, error);
 			showError(`${i18n.t("error.download_failed")}: ${message}`);
 		} finally {
-			els.loadingOverlay.style.display = "none";
+			loadingOverlay.hide();
 			els.downloadAllButton.disabled = false;
 			els.downloadAllDropdownButton.disabled = false;
-			if (loadingText) loadingText.textContent = i18n.t("status.processing");
 		}
 	};
 
