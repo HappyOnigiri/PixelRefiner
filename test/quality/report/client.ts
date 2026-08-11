@@ -123,6 +123,85 @@ export const runQualityReportClient = (): void => {
 			label: document.querySelector<HTMLElement>(`#active-${name}-label`),
 			active: "",
 		}));
+		const filterStorageKey = "pixel-refiner-quality-report-filters";
+		type SavedFilterState = {
+			search: string;
+			groups: Record<string, string>;
+		};
+		const isRecord = (value: unknown): value is Record<string, unknown> =>
+			typeof value === "object" && value !== null && !Array.isArray(value);
+		// [Workaround] file:// やプライベートブラウジングで保存領域が使えない場合も、
+		// レポートの絞り込み自体は継続できるように保存処理だけを無効化する。
+		const storage: Storage | null = (() => {
+			try {
+				return window.localStorage;
+			} catch {
+				return null;
+			}
+		})();
+		const emptyFilterState = (): SavedFilterState => ({
+			search: "",
+			groups: {},
+		});
+		const readFilterState = (): SavedFilterState => {
+			if (!storage) return emptyFilterState();
+			try {
+				const saved: unknown = JSON.parse(
+					storage.getItem(filterStorageKey) ?? "null",
+				);
+				if (!isRecord(saved)) return emptyFilterState();
+				const groups: Record<string, string> = {};
+				if (isRecord(saved.groups)) {
+					for (const [name, value] of Object.entries(saved.groups)) {
+						if (typeof value === "string") groups[name] = value;
+					}
+				}
+				return {
+					search: typeof saved.search === "string" ? saved.search : "",
+					groups,
+				};
+			} catch {
+				return emptyFilterState();
+			}
+		};
+		const savedFilterState = readFilterState();
+		search.value = savedFilterState.search;
+		const setGroupActive = (
+			group: (typeof groups)[number],
+			button: HTMLButtonElement,
+		): void => {
+			group.active = button.dataset[`${group.name}Filter`] ?? "";
+			for (const other of group.buttons) {
+				const active = other === button;
+				other.classList.toggle("active", active);
+				other.setAttribute("aria-pressed", String(active));
+			}
+		};
+		for (const group of groups) {
+			const savedActive = savedFilterState.groups[group.name];
+			const button =
+				group.buttons.find(
+					(candidate) =>
+						candidate.dataset[`${group.name}Filter`] === savedActive,
+				) ??
+				group.buttons.find(
+					(candidate) => candidate.dataset[`${group.name}Filter`] === "",
+				);
+			if (button) setGroupActive(group, button);
+		}
+		const saveFilterState = (): void => {
+			if (!storage) return;
+			try {
+				const savedGroups: Record<string, string> = {};
+				for (const group of groups) savedGroups[group.name] = group.active;
+				storage.setItem(
+					filterStorageKey,
+					JSON.stringify({ search: search.value, groups: savedGroups }),
+				);
+			} catch {
+				// [Intended] 保存できない環境でも、画面上の絞り込みは妨げない。
+			}
+		};
 
 		refreshFilter = (): void => {
 			const text = search.value.toLowerCase();
@@ -149,16 +228,15 @@ export const runQualityReportClient = (): void => {
 			}
 			if (visibleCount) visibleCount.textContent = String(visible);
 		};
-		search.addEventListener("input", refreshFilter);
+		search.addEventListener("input", () => {
+			saveFilterState();
+			refreshFilter();
+		});
 		for (const group of groups) {
 			for (const button of group.buttons) {
 				button.addEventListener("click", () => {
-					group.active = button.dataset[`${group.name}Filter`] ?? "";
-					for (const other of group.buttons) {
-						const active = other === button;
-						other.classList.toggle("active", active);
-						other.setAttribute("aria-pressed", String(active));
-					}
+					setGroupActive(group, button);
+					saveFilterState();
 					refreshFilter();
 				});
 			}
