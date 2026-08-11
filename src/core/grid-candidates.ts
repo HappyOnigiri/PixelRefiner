@@ -272,7 +272,7 @@ export const rankGridCandidates = (
 	return rerankGridCandidateReports(reports);
 };
 
-export const rerankGridCandidateReports = (
+const rerankGridCandidateReports = (
 	reports: GridCandidateReport[],
 ): GridCandidateReport[] => {
 	reports.sort(
