@@ -9,4 +9,11 @@ describe("quality report image styles", () => {
 			);
 		}
 	});
+
+	// [Intended] 劣化パターンのタグはケース詳細にしか出ない。一覧側へ残しても
+	// 参照されないまま、一覧にもタグがあるように読めてしまう。
+	it("keeps the tag style only where tags are rendered", () => {
+		expect(DETAIL_REPORT_STYLES).toContain(".badge, .tag {");
+		expect(INDEX_REPORT_STYLES).not.toContain(".tag");
+	});
 });

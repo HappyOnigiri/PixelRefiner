@@ -16,11 +16,24 @@ export const runQualityReportClient = (): void => {
 		navigator.language ??
 		"en"
 	).toLowerCase();
-	let locale = preferredLanguage.startsWith("ja")
-		? "ja"
-		: preferredLanguage.startsWith("zh")
-			? "zh-CN"
-			: "en";
+	// [Intended] 言語切り替えは一覧のサイドバーにしかないので、選択結果をクエリで運んで
+	// ケース詳細へ引き継ぐ。ブラウザ言語のままなら遷移先でも同じ判定になるため、
+	// 明示的に選ばれた言語だけをクエリとリンクに残す。
+	const requestedLocale = new URLSearchParams(window.location.search).get(
+		"locale",
+	);
+	const pinnedLocale =
+		requestedLocale !== null && requestedLocale in translations
+			? requestedLocale
+			: null;
+	let localePinned = pinnedLocale !== null;
+	let locale =
+		pinnedLocale ??
+		(preferredLanguage.startsWith("ja")
+			? "ja"
+			: preferredLanguage.startsWith("zh")
+				? "zh-CN"
+				: "en");
 	let messages = translations[locale];
 
 	const translate = (key: string): string | undefined => {
@@ -64,6 +77,37 @@ export const runQualityReportClient = (): void => {
 	const localeButtons = [
 		...document.querySelectorAll<HTMLButtonElement>("[data-locale]"),
 	];
+	const localeLinks = [
+		...document.querySelectorAll<HTMLAnchorElement>(
+			"a.detail-link, a.back-link",
+		),
+	];
+	const persistLocale = (): void => {
+		for (const link of localeLinks) {
+			const href = link.getAttribute("href");
+			if (href === null) continue;
+			// [Intended] href は相対のまま組み直す。絶対URLへ直すと file:// で開いた
+			// レポートのリンクが壊れる。
+			const [target, hash] = href.split("#");
+			const [pathOnly] = target.split("?");
+			link.setAttribute(
+				"href",
+				`${pathOnly}?locale=${encodeURIComponent(locale)}` +
+					(hash === undefined ? "" : `#${hash}`),
+			);
+		}
+		try {
+			const url = new URL(window.location.href);
+			url.searchParams.set("locale", locale);
+			window.history.replaceState(
+				null,
+				"",
+				`${url.pathname}${url.search}${url.hash}`,
+			);
+		} catch {
+			// [Workaround] URLを更新できない環境でも、表示言語の切り替えは妨げない。
+		}
+	};
 	let refreshFilter = (): void => {};
 	const setLocale = (nextLocale: string): void => {
 		if (!(nextLocale in translations)) return;
@@ -75,12 +119,14 @@ export const runQualityReportClient = (): void => {
 			button.classList.toggle("active", active);
 			button.setAttribute("aria-pressed", String(active));
 		}
+		if (localePinned) persistLocale();
 		refreshFilter();
 	};
 	for (const button of localeButtons) {
-		button.addEventListener("click", () =>
-			setLocale(button.dataset.locale ?? "en"),
-		);
+		button.addEventListener("click", () => {
+			localePinned = true;
+			setLocale(button.dataset.locale ?? "en");
+		});
 	}
 	setLocale(locale);
 

@@ -67,7 +67,7 @@ a { color: #b9a7ff; }
 .target-failures { margin: -6px 0 12px; color: #ffb0b0; }
 .detail-link { display: inline-block; padding: 8px 12px; border: 1px solid #635a70; border-radius: 6px; background: #302a39; text-decoration: none; }
 .detail-link:hover { border-color: #c2b4ff; background: #3b3346; }
-.badge, .tag { display: inline-block; padding: 3px 7px; border-radius: 999px; font-size: .75em; background: #393241; }
+.badge { display: inline-block; padding: 3px 7px; border-radius: 999px; font-size: .75em; background: #393241; }
 .badge.failed, .badge.target-unmet { background: #7a2930; }
 .badge.passed, .badge.target-met { background: #236044; }
 .badge.target-missing { background: #48536b; }
