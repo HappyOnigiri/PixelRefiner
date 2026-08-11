@@ -8,7 +8,9 @@
 
 ## Localization
 
-When adding or changing `data-i18n` or `data-i18n-attr` attributes, register their keys in the `ja`, `en`, and `zh-CN` resources in `src/browser/i18n.ts`.
+When adding or changing `data-i18n` or `data-i18n-attr` attributes in the app UI (`index.html` and `src/browser`), register their keys in the `ja`, `en`, and `zh-CN` resources in `src/browser/i18n.ts`.
+
+The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in the `en`, `ja`, and `zh-CN` resources in `test/quality/report/translations.ts` instead. Do not add report-only keys to `src/browser/i18n.ts`.
 
 ## Intent Comments
 

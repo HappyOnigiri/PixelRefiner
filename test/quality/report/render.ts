@@ -310,7 +310,6 @@ const renderReportSidebar = (results: QualityResults): string => {
 	<div class="report-overview">
 		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>${results.summary.targetUnmet}</strong></p>
 		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>${results.summary.targetMissing}</strong></p>
-		<p><span data-i18n="regressed">Regressed</span>: <strong>${results.summary.regressed}</strong></p>
 	</div>
 	${reportMetadata}
 	<div class="filter-panel">
@@ -337,17 +336,11 @@ const renderReportSidebar = (results: QualityResults): string => {
 				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true">
 					<span data-i18n="allChanges">All</span>: ${results.summary.caseCount}
 				</button>
-				<button class="filter-button" type="button" data-change-filter="regressed" aria-pressed="false">
-					<span data-i18n="regressed">regressed</span>: ${results.summary.regressed}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="improved" aria-pressed="false">
-					<span data-i18n="improved">improved</span>: ${results.summary.improved}
+				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
+					<span data-i18n="changed">changed</span>: ${results.summary.changed}
 				</button>
 				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false">
 					<span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
-					<span data-i18n="changed">changed</span>: ${results.summary.changed}
 				</button>
 				<button class="filter-button" type="button" data-change-filter="new" aria-pressed="false">
 					<span data-i18n="new">new</span>: ${results.summary.newCases}
@@ -395,11 +388,9 @@ const renderReportSidebar = (results: QualityResults): string => {
 export const renderHtml = (results: QualityResults): string => {
 	const targetOrder = { unmet: 0, missing: 1, met: 2 };
 	const changeOrder = {
-		regressed: 0,
-		new: 1,
-		changed: 2,
-		improved: 3,
-		unchanged: 4,
+		changed: 0,
+		unchanged: 1,
+		new: 2,
 	};
 	const sortedCases = [...results.cases].sort(
 		(left, right) =>
@@ -470,7 +461,7 @@ export const renderHtml = (results: QualityResults): string => {
 				["result", "Result", result.files.result],
 				["groundTruthDifference", "Target difference", result.files.diff],
 			]);
-			return `<article class="case target-${targetState} ${result.changeStatus}"
+			return `<article class="case target-${targetState}"
 			data-quality="${targetState}" data-change="${result.changeStatus}"
 			data-parameter="${result.parameterMode}"
 			data-search="${escapeHtml(searchable)}">
@@ -538,10 +529,38 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 		["backgroundMask", "Background mask", result.files.backgroundMask],
 	]);
 	const warnings = renderProcessingWarnings(result.warnings);
-	const metricState = (key: string): string => {
-		if (result.regressedMetrics.includes(key)) return "regressed";
-		if (result.improvedMetrics.includes(key)) return "improved";
-		return "unchanged";
+	const metricState = (
+		key: string,
+		hasBaseline: boolean,
+	): { className: string; translationKey: string; label: string } => {
+		// [Intended] ベースライン未登録のケースは Baseline 列も Delta 列も "-" になるので、
+		// 「前回基準と同じ」と断定せず判定不能として出す。
+		if (!hasBaseline) {
+			return {
+				className: "metric-unchanged",
+				translationKey: "notAvailable",
+				label: "not available",
+			};
+		}
+		if (result.regressedMetrics.includes(key)) {
+			return {
+				className: "metric-regressed",
+				translationKey: "metricRegressed",
+				label: "metric regressed",
+			};
+		}
+		if (result.improvedMetrics.includes(key)) {
+			return {
+				className: "metric-improved",
+				translationKey: "metricImproved",
+				label: "metric improved",
+			};
+		}
+		return {
+			className: "metric-unchanged",
+			translationKey: "metricUnchanged",
+			label: "metric unchanged",
+		};
 	};
 	const metricRow = (
 		key: string,
@@ -554,14 +573,14 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 			delta === undefined
 				? "-"
 				: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
-		const state = metricState(key);
-		return `<tr class="${state}">
+		const state = metricState(key, baseline !== undefined);
+		return `<tr class="${state.className}">
 			<th data-i18n="${key}">${key}</th>
 			<td>${escapeHtml(target)}</td>
 			<td>${formatMetric(baseline)}</td>
 			<td>${formatMetric(current)}</td>
 			<td>${deltaText}</td>
-			<td data-i18n="${state}">${state}</td>
+			<td data-i18n="${state.translationKey}">${state.label}</td>
 		</tr>`;
 	};
 	const baselineMetrics = result.baselineMetrics;
@@ -614,6 +633,18 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 				: `>= ${result.expectation.minSmallComponentRetention}`,
 		),
 	].join("\n");
+	// [Intended] 指標テーブルの行は数値指標だけなので、catastrophicFailure や status の
+	// ような非数値の回帰は表に現れない。ゲートが落ちた理由をレポートから辿れるように、
+	// regressedMetrics のキーを漏らさず列挙する。
+	const regressedMetricsSummary =
+		result.regressedMetrics.length === 0
+			? '<span data-i18n="none">none</span>'
+			: result.regressedMetrics
+					.map(
+						(key) =>
+							`<span data-i18n="${escapeHtml(key)}">${escapeHtml(key)}</span>`,
+					)
+					.join(", ");
 	const changedPixels =
 		result.changedPixelCount === null
 			? "-"
@@ -663,6 +694,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 					<tbody>${metricRows}</tbody>
 				</table>
 			</div>
+			<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>
 		</section>
 		${renderTargetComparison(result)}
 		${renderCandidateModalDetail(result)}
@@ -720,9 +752,8 @@ export const renderMarkdown = (results: QualityResults): string => {
 - Target unmet: ${summary.targetUnmet}
 - Cannot assess: ${summary.targetMissing}
 - Changed: ${summary.changed}
+- Unchanged: ${summary.unchanged}
 - New: ${summary.newCases}
-- Regressed: ${summary.regressed}
-- Improved: ${summary.improved}
 - Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%
 - Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%
 - Confidence/correctness correlation: ${

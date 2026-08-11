@@ -10,12 +10,7 @@ export const QUALITY_REPORT_VERSION = "4";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
-export type QualityChangeStatus =
-	| "improved"
-	| "regressed"
-	| "changed"
-	| "unchanged"
-	| "new";
+export type QualityChangeStatus = "changed" | "unchanged" | "new";
 
 /** 固定した目標と、その目標に紐づく合格条件に対する品質判定。 */
 export type QualityTargetStatus = "met" | "unmet" | "missing";
@@ -228,11 +223,8 @@ export type QualityResults = {
 		passed: number;
 		failed: number;
 		changed: number;
-		improved: number;
-		regressed: number;
 		unchanged: number;
 		newCases: number;
-		blockingFailures: number;
 		/** オプション指定ありのケース数 */
 		explicitCases: number;
 		/** 自動判定（UI 既定のみ）のケース数 */

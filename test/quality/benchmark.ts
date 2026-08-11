@@ -214,8 +214,6 @@ export const runQualityCase = (
 	const changeStatus = classifyChange(
 		baselineImage !== null,
 		imageComparison.changed,
-		metricComparison.regressed,
-		metricComparison.improved,
 	);
 	const caseDirectory = qualityCaseDirectory(qualityCase.id);
 	const files = {

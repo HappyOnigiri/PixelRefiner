@@ -3,6 +3,7 @@ import { PROCESS_DEFAULTS } from "../shared/config";
 import {
 	applyQuickSettingsToOptions,
 	BUILT_IN_PRESETS,
+	createUiInitialProcessOptions,
 	QUICK_SETTINGS_DEFAULTS,
 } from "./quick-settings";
 
@@ -14,6 +15,25 @@ describe("quick settings", () => {
 			outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 			trimToContent: PROCESS_DEFAULTS.trimToContent,
 		});
+	});
+
+	it("builds UI initial options from processing defaults and Auto settings", () => {
+		const options = createUiInitialProcessOptions();
+
+		expect(options).toMatchObject({
+			processingMode: PROCESS_DEFAULTS.processingMode,
+			detailLevel: PROCESS_DEFAULTS.detailLevel,
+			preRemoveBackground: true,
+			postRemoveBackground: true,
+			bgExtractionMethod: "auto",
+			bgRemovalScope: "outer",
+			trimToContent: PROCESS_DEFAULTS.trimToContent,
+			ditherMode: "none",
+			ditherStrength: 0,
+		});
+		expect(options.reduceColors).toBeUndefined();
+		expect(options.reduceColorMode).toBeUndefined();
+		expect(options.colorCount).toBeUndefined();
 	});
 
 	it("delegates automatic color selection to the processing route", () => {

@@ -121,12 +121,7 @@ export const compareImages = (
 export const classifyChange = (
 	hasBaseline: boolean,
 	imageChanged: boolean,
-	regressed: string[],
-	improved: string[],
 ): QualityChangeStatus => {
 	if (!hasBaseline) return "new";
-	if (regressed.length > 0) return "regressed";
-	if (!imageChanged) return "unchanged";
-	if (improved.length > 0) return "improved";
-	return "changed";
+	return imageChanged ? "changed" : "unchanged";
 };
