@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Elements } from "./app-elements";
 import { createProcessingState } from "./app-state";
+import { QUICK_SETTINGS_DEFAULTS } from "./quick-settings";
 import { setupQuickSettingsControls } from "./quick-settings-controls";
 
 class MockControl extends EventTarget {
@@ -28,7 +29,7 @@ const controlNames = [
 	"bgColorInput",
 	"preRemoveCheck",
 	"postRemoveCheck",
-	"bgRemovalScopeSelect",
+	"quickBgRemovalScopeSelect",
 	"bgConnectivitySelect",
 	"toleranceInput",
 	"toleranceSlider",
@@ -61,6 +62,7 @@ const createElements = (): MockElements => {
 	controls.quickDetailLevelSelect.value = "balanced";
 	controls.quickColorsSelect.value = "auto";
 	controls.quickBackgroundSelect.value = "auto";
+	controls.quickBgRemovalScopeSelect.value = "auto";
 	controls.quickDitheringSelect.value = "off";
 	controls.quickOutlineStyleSelect.value = "none";
 	controls.quickAutoTrimCheck.checked = true;
@@ -130,6 +132,7 @@ describe("quick settings controls", () => {
 				detailLevel: "balanced",
 				colors: "32",
 				background: "keep",
+				bgRemovalScope: "auto",
 				dithering: "subtle",
 				outlineStyle: "none",
 				trimToContent: true,
@@ -140,5 +143,33 @@ describe("quick settings controls", () => {
 		expect(clearCandidateSelections).toHaveBeenCalledOnce();
 		expect(els.smallComponentModeSelect.value).toBe("auto");
 		expect(els.alphaAwareMedoidCheck.checked).toBe(false);
+	});
+
+	it("reads the background removal scope from the quick settings", () => {
+		const els = createElements();
+		const { controls } = setup(els);
+
+		expect(controls.getQuickSettings().bgRemovalScope).toBe("auto");
+
+		els.quickBgRemovalScopeSelect.value = "all";
+		els.quickBgRemovalScopeSelect.dispatchEvent(new Event("change"));
+
+		expect(controls.getQuickSettings().bgRemovalScope).toBe("all");
+		// 背景の抽出方法は変えていないので、背景ドメインは custom へ落とさない。
+		expect(els.quickBackgroundSelect.value).toBe("auto");
+		expect(els.builtInPresetSelect.value).toBe("custom");
+	});
+
+	it("applies the scope carried by a preset", () => {
+		const els = createElements();
+		const { controls } = setup(els);
+		els.quickBgRemovalScopeSelect.value = "all";
+
+		controls.applyQuickSettings(
+			{ ...QUICK_SETTINGS_DEFAULTS, bgRemovalScope: "outer" },
+			"crisp-sprite",
+		);
+
+		expect(els.quickBgRemovalScopeSelect.value).toBe("outer");
 	});
 });

@@ -252,6 +252,11 @@ export const BACKGROUND_MODEL_LIMITS = {
 	maxContentLossRatio: 0.92,
 	baseOklabTolerance: 0.018,
 	maxOklabTolerance: 0.2,
+	// [Intended] 内側の閉領域は「背景の穴」と「被写体の塗り面」の区別が画素だけでは付かない。
+	// 外周連結の背景と同じ許容で拾うと白背景キャラの白い目まで消えるため、内側だけは
+	// 通常許容にこの係数を掛けた厳しい一致を要求する。1/3 は合成ケースと実 fixture の
+	// 比較で、背景に近いだけの塗り面を落としつつ本当の穴を取れる水準として選んだ。
+	enclosedToleranceRatio: 1 / 3,
 	varianceScale: 2.5,
 	varianceConfidenceScale: 0.012,
 	maxBorderSamples: 262_144,
@@ -576,8 +581,8 @@ export const PROCESS_DEFAULTS = {
 	preRemoveBackground: true,
 	postRemoveBackground: true,
 	bgExtractionMethod: "auto",
-	// 背景除去の範囲（off/selected/outer/all）
-	bgRemovalScope: "outer",
+	// 背景除去の範囲（off/selected/outer/auto/all）
+	bgRemovalScope: "auto",
 	// 連結探索に対角方向（8 近傍）を含めるか（4=いいえ、8=はい）
 	bgConnectivity: "4",
 	// 処理後にコンテンツの境界ボックスまでトリミングする（デフォルトは ON）

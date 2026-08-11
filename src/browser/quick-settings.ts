@@ -2,6 +2,7 @@ import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
+	BackgroundRemovalScope,
 	DetailLevel,
 	OutlineStyle,
 	ProcessingMode,
@@ -16,6 +17,7 @@ export type QuickSettingsState = {
 	detailLevel: DetailLevel;
 	colors: QuickColors;
 	background: QuickBackground;
+	bgRemovalScope: BackgroundRemovalScope;
 	dithering: QuickDithering;
 	outlineStyle: OutlineStyle;
 	trimToContent: boolean;
@@ -32,6 +34,7 @@ export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	detailLevel: PROCESS_DEFAULTS.detailLevel,
 	colors: "auto",
 	background: "auto",
+	bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
 	dithering: "off",
 	outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 	trimToContent: PROCESS_DEFAULTS.trimToContent,
@@ -90,6 +93,20 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	},
 ] as const;
 
+/**
+ * Auto 抽出では角シードが無く "selected" が "outer" と同じ結果になるため、
+ * 実際に渡すオプションでは "outer" へ寄せる。
+ *
+ * [Intended] 色を指定する抽出も角シードは持たないが、"selected" では画像全体の
+ * 一致画素からフラッドフィルするため内側の閉領域まで落ちる。"outer" とは結果が
+ * 異なるので寄せない。
+ */
+const resolveBgRemovalScope = (
+	scope: BackgroundRemovalScope,
+	method: NonNullable<ProcessOptions["bgExtractionMethod"]>,
+): BackgroundRemovalScope =>
+	scope === "selected" && method === "auto" ? "outer" : scope;
+
 export const applyQuickSettingsToOptions = (
 	advanced: ProcessOptions,
 	quick: QuickSettingsState,
@@ -119,14 +136,23 @@ export const applyQuickSettingsToOptions = (
 		options.postRemoveBackground = false;
 	} else if (quick.background === "auto") {
 		options.bgExtractionMethod = "auto";
-		options.bgRemovalScope = "outer";
+		options.bgRemovalScope = resolveBgRemovalScope(
+			quick.bgRemovalScope,
+			"auto",
+		);
 		options.preRemoveBackground = true;
 		options.postRemoveBackground = true;
 	} else if (quick.background === "pick") {
 		options.bgExtractionMethod = "rgb";
-		options.bgRemovalScope = "outer";
+		options.bgRemovalScope = resolveBgRemovalScope(quick.bgRemovalScope, "rgb");
 		options.preRemoveBackground = true;
 		options.postRemoveBackground = true;
+	} else if (options.bgExtractionMethod !== "none") {
+		// 背景が custom（詳細設定の抽出方法を使う）でも、範囲はかんたん設定が持つ。
+		options.bgRemovalScope = resolveBgRemovalScope(
+			quick.bgRemovalScope,
+			options.bgExtractionMethod ?? PROCESS_DEFAULTS.bgExtractionMethod,
+		);
 	}
 
 	if (quick.dithering === "off") {

@@ -1,10 +1,14 @@
-import { BACKGROUND_RAMP_LIMITS } from "../shared/config";
+import {
+	BACKGROUND_MODEL_LIMITS,
+	BACKGROUND_RAMP_LIMITS,
+} from "../shared/config";
 import type {
 	BackgroundRemovalScope,
 	Connectivity,
 	RawImage,
 } from "../shared/types";
 import { type BackgroundModel, removeAutomaticBackground } from "./background";
+import { addEnclosedBackground } from "./enclosed-background";
 import { type FloodFillRamp, floodFillTransparent } from "./floodfill";
 import { cloneImage } from "./image-operations";
 
@@ -245,6 +249,69 @@ export const removeBackgroundByFloodFillLegacy = (
 	});
 };
 
+/**
+ * 外周の背景を除去した画像に対し、被写体に囲まれた背景色の閉領域を透過する。
+ *
+ * [Intended] 指定色そのものに近い閉領域だけを対象にするため、成分の平均色へ
+ * 通常許容よりも厳しい一致（enclosedToleranceRatio 倍）を要求する。指定色に近いだけの
+ * 塗り面（線画の内側、フキダシ、白背景の白い目）を残すのが狙い。
+ */
+const removeEnclosedTargets = (
+	img: RawImage,
+	tolerance: number,
+	connectivity: Connectivity,
+	bgTargets: Array<[number, number, number]>,
+): void => {
+	if (bgTargets.length === 0) return;
+	const pixelCount = img.width * img.height;
+	const candidates = new Uint8Array(pixelCount);
+	for (let pixel = 0; pixel < pixelCount; pixel += 1) {
+		const offset = pixel * 4;
+		if (img.data[offset + 3] === 0) continue;
+		if (
+			isCandidate(
+				img.data[offset],
+				img.data[offset + 1],
+				img.data[offset + 2],
+				bgTargets,
+				tolerance,
+			)
+		) {
+			candidates[pixel] = 1;
+		}
+	}
+	const strictTolerance =
+		tolerance * BACKGROUND_MODEL_LIMITS.enclosedToleranceRatio;
+	const selected = new Uint8Array(pixelCount);
+	addEnclosedBackground(
+		img,
+		candidates,
+		selected,
+		connectivity,
+		(pixels, size) => {
+			let sumR = 0;
+			let sumG = 0;
+			let sumB = 0;
+			for (let index = 0; index < size; index += 1) {
+				const offset = pixels[index] * 4;
+				sumR += img.data[offset];
+				sumG += img.data[offset + 1];
+				sumB += img.data[offset + 2];
+			}
+			return isCandidate(
+				sumR / size,
+				sumG / size,
+				sumB / size,
+				bgTargets,
+				strictTolerance,
+			);
+		},
+	);
+	for (let pixel = 0; pixel < pixelCount; pixel += 1) {
+		if (selected[pixel]) img.data[pixel * 4 + 3] = 0;
+	}
+};
+
 export const removeBackground = (
 	img: RawImage,
 	tolerance: number,
@@ -289,11 +356,11 @@ export const removeBackground = (
 		);
 	}
 
-	if (bgRemovalScope === "outer") {
+	if (bgRemovalScope === "outer" || bgRemovalScope === "auto") {
 		const w = img.width;
 		const h = img.height;
 		const border = getBorderPixels(w, h);
-		return fillWithRampFallback(img, tolerance, (out, ramp) => {
+		const outer = fillWithRampFallback(img, tolerance, (out, ramp) => {
 			const visited = new Uint8Array(w * h);
 			const data = out.data;
 
@@ -333,6 +400,10 @@ export const removeBackground = (
 				fillFrom(x, y);
 			}
 		});
+		if (bgRemovalScope === "auto") {
+			removeEnclosedTargets(outer, tolerance, bgConnectivity, bgTargets);
+		}
+		return outer;
 	}
 
 	// bgRemovalScope === "all": 旧仕様互換の挙動

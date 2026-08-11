@@ -7,7 +7,8 @@
 			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。auto の出力（88x61）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		},
 		"auto-high-resolution": {
-			"source": "restore-high-resolution-pixel-grid"
+			"source": "restore-high-resolution-pixel-grid",
+			"note": "auto の出力（140x212）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		},
 		"auto-inner-background-removal": {
 			"source": "remove-inner-background-auto-grid"

@@ -538,6 +538,40 @@
                     </div>
                   </label>
                   <label class="setting-item">
+                    <span class="label-text">
+                      <span data-i18n="setting.bg_removal_scope"
+                        >Background Removal Scope</span
+                      >
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
+                        data-tooltip="Range of background to make transparent.&#10;&#10;Auto: Outer background, plus enclosed holes that clearly match the background color.&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + every inner area matching the background color."
+                        >?</span
+                      >
+                    </span>
+                    <select id="quick-bg-removal-scope">
+                      <option
+                        value="auto"
+                        data-i18n="option.bg_scope_auto"
+                        selected
+                      >
+                        Auto
+                      </option>
+                      <option
+                        value="selected"
+                        data-i18n="option.bg_scope_selected"
+                      >
+                        Selected only
+                      </option>
+                      <option value="outer" data-i18n="option.bg_scope_outer">
+                        Outer all
+                      </option>
+                      <option value="all" data-i18n="option.bg_scope_all">
+                        All
+                      </option>
+                    </select>
+                  </label>
+                  <label class="setting-item">
                     <span class="label-text" data-i18n="setting.dithering"
                       >Dithering</span
                     >
@@ -1185,38 +1219,6 @@
                           >
                         </span>
                         <input id="post-remove" type="checkbox" />
-                      </label>
-
-                      <label class="setting-item">
-                        <span class="label-text">
-                          <span data-i18n="setting.bg_removal_scope"
-                            >Background Removal Scope</span
-                          >
-                          <span
-                            class="help"
-                            data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
-                            data-tooltip="Range of background to make transparent.&#10;&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + inner holes (e.g. donut hole)."
-                            >?</span
-                          >
-                        </span>
-                        <select id="bg-removal-scope">
-                          <option
-                            value="selected"
-                            data-i18n="option.bg_scope_selected"
-                          >
-                            Selected only
-                          </option>
-                          <option
-                            value="outer"
-                            data-i18n="option.bg_scope_outer"
-                            selected
-                          >
-                            Outer all
-                          </option>
-                          <option value="all" data-i18n="option.bg_scope_all">
-                            All
-                          </option>
-                        </select>
                       </label>
 
                       <label class="setting-item">
