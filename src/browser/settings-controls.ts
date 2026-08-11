@@ -365,6 +365,7 @@ export const setupSettingsControls = ({
 			els.quantStepInput,
 			els.quantStepSlider,
 			els.fastAutoGridFromTrimmedCheck,
+			...gridDetectionAdvancedControls(els),
 		].forEach((el) => {
 			setDisabledClass(el, !isAutoOrHint);
 		});
@@ -470,6 +471,7 @@ export const setupSettingsControls = ({
 			els.bgConnectivitySelect,
 			els.smallComponentModeSelect,
 			els.geminiWatermarkRemovalSelect,
+			...backgroundDependentAdvancedControls(els),
 		].forEach((el) => {
 			const item = el.closest(".setting-item");
 			if (item) {
