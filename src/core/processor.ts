@@ -85,7 +85,7 @@ const processImageCore = (
 	const o = normalizeProcessOptions(options);
 	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(inputImage) : 0;
 	const bgTargetsStart = performance.now();
-	// [Intended] 回転で生じる透明な拡張角ではなく、利用者が指定した元画像の角から背景色を取得する。
+	// [Intended] 背景色は加工前の入力画像の角から取得し、後段の加工結果に左右されないようにする。
 	const bgTargets =
 		o.bgRemovalScope !== "off"
 			? getBackgroundTargets(inputImage, o.bgExtractionMethod, o.bgRgb, 16)
