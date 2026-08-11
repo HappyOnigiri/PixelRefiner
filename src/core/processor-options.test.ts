@@ -12,6 +12,7 @@ describe("small-component options", () => {
 		const options = normalizeProcessOptions({});
 
 		expect(options.smallComponentMode).toBe("auto");
+		expect(options.geminiWatermarkRemoval).toBe("auto");
 		expect(options.floatingMaxPixels).toBe(0);
 	});
 

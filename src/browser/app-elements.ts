@@ -40,6 +40,7 @@ export type Elements = {
 	outlineColorInput: HTMLInputElement;
 
 	smallComponentModeSelect: HTMLSelectElement;
+	geminiWatermarkRemovalSelect: HTMLSelectElement;
 	zoomOutputCheck: HTMLInputElement;
 	gridOutputCheck: HTMLInputElement;
 	outputPanel: HTMLElement;
@@ -164,6 +165,9 @@ export const getElements = (): Elements => {
 		outlineColorInput: get<HTMLInputElement>("outline-color"),
 
 		smallComponentModeSelect: get<HTMLSelectElement>("small-component-mode"),
+		geminiWatermarkRemovalSelect: get<HTMLSelectElement>(
+			"gemini-watermark-removal",
+		),
 		zoomOutputCheck: get<HTMLInputElement>("zoom-output"),
 		gridOutputCheck: get<HTMLInputElement>("grid-output"),
 		outputPanel: get<HTMLElement>("output-panel"),

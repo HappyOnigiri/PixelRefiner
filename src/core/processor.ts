@@ -17,6 +17,7 @@ import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { removeSmallComponents } from "./components";
 import { rotateRawImageExpanded } from "./deskew";
 import { detectGrid } from "./detector";
+import { applyGeminiWatermarkRemoval } from "./gemini-watermark";
 import {
 	rankGridCandidates,
 	rerankGridCandidateReports,
@@ -87,7 +88,7 @@ export {
 	LegacyGridSearchFromTrimmed,
 } from "./trimmed-grid-search";
 
-export const processImage = (
+const processImageCore = (
 	inputImage: RawImage,
 	options: ProcessOptions = {},
 ): ProcessResult => {
@@ -879,4 +880,13 @@ export const processImage = (
 		compareBeforeSanitized,
 		analysis,
 	};
+};
+
+export const processImage = (
+	inputImage: RawImage,
+	options: ProcessOptions = {},
+): ProcessResult => {
+	const processed = processImageCore(inputImage, options);
+	const normalized = normalizeProcessOptions(options);
+	return applyGeminiWatermarkRemoval(inputImage, processed, normalized);
 };

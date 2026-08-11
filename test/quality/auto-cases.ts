@@ -47,6 +47,7 @@ const ADVANCED_DEFAULTS: ProcessOptions = {
 	keepAspectRatio: PROCESS_DEFAULTS.keepAspectRatio,
 	cellSamplingMode: PROCESS_DEFAULTS.cellSamplingMode,
 	smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
+	geminiWatermarkRemoval: PROCESS_DEFAULTS.geminiWatermarkRemoval,
 	reduceColors: PROCESS_DEFAULTS.reduceColors,
 	reduceColorMode: PROCESS_DEFAULTS.reduceColorMode,
 	colorCount: PROCESS_DEFAULTS.colorCount,

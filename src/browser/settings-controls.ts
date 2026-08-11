@@ -210,6 +210,8 @@ export const setupSettingsControls = ({
 		els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
 		els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
 		els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
+		els.geminiWatermarkRemovalSelect.value =
+			PROCESS_DEFAULTS.geminiWatermarkRemoval;
 		els.alphaAwareMedoidCheck.checked =
 			(PROCESS_DEFAULTS.cellSamplingMode as string) === "alpha-aware-medoid";
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
@@ -449,6 +451,7 @@ export const setupSettingsControls = ({
 			els.bgRemovalScopeSelect,
 			els.bgConnectivitySelect,
 			els.smallComponentModeSelect,
+			els.geminiWatermarkRemovalSelect,
 		].forEach((el) => {
 			const item = el.closest(".setting-item");
 			if (item) {
@@ -537,6 +540,7 @@ export const setupSettingsControls = ({
 		els.bgRemovalScopeSelect,
 		els.bgConnectivitySelect,
 		els.smallComponentModeSelect,
+		els.geminiWatermarkRemovalSelect,
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
 		els.makeSquareCheck,

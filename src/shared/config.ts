@@ -36,6 +36,27 @@ export const PROCESS_RANGES = {
 	deskewAngle: { min: -3, max: 3, default: 0 } as const,
 } as const satisfies Record<string, IntRange | RGB>;
 
+/** Gemini の右下ウォーターマークを、透過後の独立成分として識別する条件。 */
+export const GEMINI_WATERMARK_LIMITS = {
+	alphaThreshold: 16,
+	minimumImageDimension: 48,
+	minimumComponentPixels: 24,
+	minimumDimensionRatio: 0.018,
+	maximumDimensionRatio: 0.12,
+	maximumAspectRatio: 1.35,
+	minimumCenterRatio: 0.7,
+	minimumMarginRatio: 0.002,
+	maximumMarginRatio: 0.1,
+	minimumFillRatio: 0.28,
+	maximumFillRatio: 0.78,
+	cornerSizeRatio: 0.25,
+	maximumCornerPixelRatio: 0.08,
+	minimumSymmetryRatio: 0.7,
+	minimumBrightPixelRatio: 0.85,
+	brightLuminanceMinimum: 168,
+	minimumSubjectSizeRatio: 2,
+} as const;
+
 /**
  * ブラーや補間でにじんだアルファから、論理セルが実際に塗られていたかを判定する条件。
  *
@@ -590,6 +611,7 @@ export const PROCESS_DEFAULTS = {
 	// [Intended] UIに専門パラメータを増やさず、Auto経路だけで微小な傾きを補正する。
 	enableDeskew: true,
 	smallComponentMode: "auto",
+	geminiWatermarkRemoval: "auto",
 
 	// [Intended] 公開済みの旧オプション用。新しい既定処理には使用しない。
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,
