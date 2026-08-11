@@ -360,11 +360,19 @@ export const detectGrid = (
 
 	// 高解像度対応: 1000px 超の画像では、4〜5px のドットに対して 128 では小さすぎる。
 	// より細かいグリッドに対応するため、デフォルトを 512 に引き上げる。
+	const clampAutoMaxCells = (value: number | undefined): number =>
+		Math.min(
+			PROCESS_RANGES.autoMaxCells.max,
+			Math.max(
+				PROCESS_RANGES.autoMaxCells.min,
+				Math.trunc(value ?? PROCESS_RANGES.autoMaxCells.default),
+			),
+		);
 	const expMinX = Math.min(w, 8);
-	const expMaxX = options.autoMaxCellsW ?? 512;
+	const expMaxX = clampAutoMaxCells(options.autoMaxCellsW);
 	const twX = 2.0;
 	const expMinY = Math.min(h, 8);
-	const expMaxY = options.autoMaxCellsH ?? 512;
+	const expMaxY = clampAutoMaxCells(options.autoMaxCellsH);
 	const twY = 2.0;
 
 	type BoundaryData = { runLengths: number[]; boundaries: number[] };
