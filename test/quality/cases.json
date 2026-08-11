@@ -578,7 +578,7 @@
   {
     "id": "restore-high-resolution-pixel-grid",
     "featureIds": ["PRF-001", "PRF-020", "high-resolution-grid"],
-    "optionNames": ["autoGridFromTrimmed"],
+    "optionNames": ["autoGridFromTrimmed", "floatingMaxPixels"],
     "profile": "full",
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
@@ -592,7 +592,8 @@
       "sampleWindow": 3,
       "trimToContent": true,
       "trimAlphaThreshold": 16,
-      "autoGridFromTrimmed": true
+      "autoGridFromTrimmed": true,
+      "floatingMaxPixels": 1000
     },
     "input": "test/fixtures/high_resolution.png",
     "expected": "test/fixtures/high_resolution-expect.png",

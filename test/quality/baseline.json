@@ -126,8 +126,8 @@
     {
       "id": "restore-high-resolution-pixel-grid",
       "status": "passed",
-      "outputWidth": 177,
-      "outputHeight": 206,
+      "outputWidth": 140,
+      "outputHeight": 212,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
