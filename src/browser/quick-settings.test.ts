@@ -14,6 +14,7 @@ describe("quick settings", () => {
 			detailLevel: PROCESS_DEFAULTS.detailLevel,
 			outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 			trimToContent: PROCESS_DEFAULTS.trimToContent,
+			bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
 		});
 	});
 
@@ -26,7 +27,7 @@ describe("quick settings", () => {
 			preRemoveBackground: true,
 			postRemoveBackground: true,
 			bgExtractionMethod: "auto",
-			bgRemovalScope: "outer",
+			bgRemovalScope: "auto",
 			trimToContent: PROCESS_DEFAULTS.trimToContent,
 			ditherMode: "none",
 			ditherStrength: 0,
@@ -103,7 +104,7 @@ describe("quick settings", () => {
 			bgRgb: "#123456",
 			preRemoveBackground: true,
 			postRemoveBackground: true,
-			bgRemovalScope: "outer",
+			bgRemovalScope: "auto",
 			ditherMode: "floyd-steinberg",
 			ditherStrength: 60,
 		});

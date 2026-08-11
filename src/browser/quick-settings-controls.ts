@@ -2,6 +2,7 @@ import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
+	BackgroundRemovalScope,
 	DetailLevel,
 	OutlineStyle,
 	ProcessingMode,
@@ -44,6 +45,8 @@ export const setupQuickSettingsControls = ({
 		detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
 		colors: els.quickColorsSelect.value as QuickColors,
 		background: els.quickBackgroundSelect.value as QuickBackground,
+		bgRemovalScope: els.quickBgRemovalScopeSelect
+			.value as BackgroundRemovalScope,
 		dithering: els.quickDitheringSelect.value as QuickDithering,
 		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
 		trimToContent: els.quickAutoTrimCheck.checked,
@@ -112,7 +115,6 @@ export const setupQuickSettingsControls = ({
 				PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
 			els.preRemoveCheck.checked = defaults.preRemoveBackground;
 			els.postRemoveCheck.checked = defaults.postRemoveBackground;
-			els.bgRemovalScopeSelect.value = defaults.bgRemovalScope;
 			els.bgConnectivitySelect.value = defaults.bgConnectivity;
 			els.smallComponentModeSelect.value = defaults.smallComponentMode;
 			els.alphaAwareMedoidCheck.checked =
@@ -128,6 +130,7 @@ export const setupQuickSettingsControls = ({
 		els.quickDetailLevelSelect.value = settings.detailLevel;
 		els.quickColorsSelect.value = settings.colors;
 		els.quickBackgroundSelect.value = settings.background;
+		els.quickBgRemovalScopeSelect.value = settings.bgRemovalScope;
 		els.quickDitheringSelect.value = settings.dithering;
 		els.quickOutlineStyleSelect.value = settings.outlineStyle;
 		els.quickAutoTrimCheck.checked = settings.trimToContent;
@@ -140,6 +143,7 @@ export const setupQuickSettingsControls = ({
 		els.quickDetailLevelSelect,
 		els.quickColorsSelect,
 		els.quickBackgroundSelect,
+		els.quickBgRemovalScopeSelect,
 		els.quickDitheringSelect,
 		els.quickOutlineStyleSelect,
 		els.quickAutoTrimCheck,
@@ -174,7 +178,6 @@ export const setupQuickSettingsControls = ({
 		els.bgColorInput,
 		els.preRemoveCheck,
 		els.postRemoveCheck,
-		els.bgRemovalScopeSelect,
 		els.bgConnectivitySelect,
 	].forEach((el) => {
 		el.addEventListener("change", markBackgroundCustom);
@@ -215,7 +218,6 @@ export const setupQuickSettingsControls = ({
 		els.toleranceSlider,
 		els.preRemoveCheck,
 		els.postRemoveCheck,
-		els.bgRemovalScopeSelect,
 		els.bgConnectivitySelect,
 		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,

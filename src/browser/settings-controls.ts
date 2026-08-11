@@ -219,7 +219,7 @@ export const setupSettingsControls = ({
 
 		els.preRemoveCheck.checked = defaults.preRemoveBackground;
 		els.postRemoveCheck.checked = defaults.postRemoveBackground;
-		els.bgRemovalScopeSelect.value = defaults.bgRemovalScope;
+		els.quickBgRemovalScopeSelect.value = defaults.bgRemovalScope;
 		els.bgConnectivitySelect.value = defaults.bgConnectivity;
 		els.smallComponentModeSelect.value = defaults.smallComponentMode;
 		els.geminiWatermarkRemovalSelect.value = defaults.geminiWatermarkRemoval;
@@ -460,7 +460,7 @@ export const setupSettingsControls = ({
 			els.toleranceSlider,
 			els.preRemoveCheck,
 			els.postRemoveCheck,
-			els.bgRemovalScopeSelect,
+			els.quickBgRemovalScopeSelect,
 			els.bgConnectivitySelect,
 			els.smallComponentModeSelect,
 			els.geminiWatermarkRemovalSelect,
@@ -471,17 +471,20 @@ export const setupSettingsControls = ({
 			}
 		});
 
-		// [Intended] Auto には角の選択が無く、"selected" は "outer" と同じ結果になるため選ばせない。
-		const isAutoMethod = els.bgExtractionMethod.value === "auto";
+		// [Intended] Auto と RGB 指定には角の選択が無く、"selected" は "outer" と同じ結果に
+		// なるため選ばせない。角シードを持つのは角指定の抽出方式だけである。
+		const hasNoCornerSeed =
+			els.bgExtractionMethod.value === "auto" ||
+			els.bgExtractionMethod.value === "rgb";
 		const selectedScopeOption =
-			els.bgRemovalScopeSelect.querySelector<HTMLOptionElement>(
+			els.quickBgRemovalScopeSelect.querySelector<HTMLOptionElement>(
 				'option[value="selected"]',
 			);
 		if (selectedScopeOption) {
-			selectedScopeOption.disabled = isAutoMethod;
+			selectedScopeOption.disabled = hasNoCornerSeed;
 		}
-		if (isAutoMethod && els.bgRemovalScopeSelect.value === "selected") {
-			els.bgRemovalScopeSelect.value = "outer";
+		if (hasNoCornerSeed && els.quickBgRemovalScopeSelect.value === "selected") {
+			els.quickBgRemovalScopeSelect.value = "outer";
 		}
 
 		const rgbContainer = els.rgbPickerContainer;
@@ -549,7 +552,6 @@ export const setupSettingsControls = ({
 		els.alphaAwareMedoidCheck,
 		els.preRemoveCheck,
 		els.postRemoveCheck,
-		els.bgRemovalScopeSelect,
 		els.bgConnectivitySelect,
 		els.smallComponentModeSelect,
 		els.geminiWatermarkRemovalSelect,

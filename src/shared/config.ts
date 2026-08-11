@@ -599,8 +599,8 @@ export const PROCESS_DEFAULTS = {
 	preRemoveBackground: true,
 	postRemoveBackground: true,
 	bgExtractionMethod: "auto",
-	// 背景除去の範囲（off/selected/outer/all）
-	bgRemovalScope: "outer",
+	// 背景除去の範囲（off/selected/outer/auto/all）
+	bgRemovalScope: "auto",
 	// 連結探索に対角方向（8 近傍）を含めるか（4=いいえ、8=はい）
 	bgConnectivity: "4",
 	// 処理後にコンテンツの境界ボックスまでトリミングする（デフォルトは ON）
