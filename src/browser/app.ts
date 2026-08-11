@@ -327,10 +327,12 @@ export const initApp = (): void => {
 
 		// RawImage の作成は高速なため、逐次処理で問題ない。
 		const failedNames: string[] = [];
+		let addedCount = 0;
 		for (const file of imageFiles) {
 			try {
 				const raw = await imageToRawImage(file);
 				imageSession.addImage(file, raw);
+				addedCount += 1;
 			} catch {
 				// [Intended] 1 枚の読み込み失敗で、残りの画像を取りこぼさない。
 				failedNames.push(file.name);
@@ -340,9 +342,12 @@ export const initApp = (): void => {
 			showError(`${i18n.t("error.load_failed")}: ${failedNames.join(", ")}`);
 		}
 
+		// [Intended] 1 枚も追加できなかったときは、表示中の画像を切り替えず変換も始めない。
+		// 読み込みに失敗しただけで、ユーザーが見ていた画像が別の画像へ移らないようにする。
+		if (addedCount === 0) return;
+
 		// 最後に追加した画像を選択（ユーザー要望）
 		const allImages = imageSession.getImages();
-		if (allImages.length === 0) return;
 		const lastImage = allImages[allImages.length - 1];
 		imageSession.setActiveImage(lastImage.id);
 		// [Intended] 自動処理が OFF のときは読み込みを契機に変換しない。OFF は処理ボタンで
