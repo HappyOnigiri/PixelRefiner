@@ -22,6 +22,7 @@ import { i18n } from "./i18n";
 import { drawRawImageToCanvas, imageToRawImage } from "./io";
 import { createModalControllerFactory } from "./modal-controller";
 import { showError } from "./notifications";
+import { createProcessPendingImages } from "./pending-processing";
 import { setupPresetControls } from "./preset-controls";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { createRunProcessing } from "./processing-controller";
@@ -141,9 +142,10 @@ export const initApp = (): void => {
 				els.inputSize.textContent = `${item.original.width}x${item.original.height} px`;
 
 				// 保留中かつ自動処理が ON なら処理を開始
-				// 注: 複数画像では上で自動処理を強制的に OFF にするため、ロジックを変えない限りこれは単一画像でのみ実行される。
+				// [Intended] 未処理の画像はキュー経由でまとめて変換する。ここで直接処理すると
+				// アクティブになった画像だけが変換され、残りが保留のまま取り残される。
 				if (item.status === "pending" && els.autoProcessToggle.checked) {
-					runProcessing();
+					void processPendingImages();
 				}
 
 				// 方法が RGB の場合は背景抽出色を更新
@@ -233,6 +235,12 @@ export const initApp = (): void => {
 		updateBgColorFromMethod: () => updateBgColorFromMethod(),
 		candidateChooser,
 	});
+	const processPendingImages = createProcessPendingImages({
+		els,
+		processingState,
+		imageSession,
+		runProcessing,
+	});
 	const {
 		updateRgbInputs,
 		updateProcessButtonVisibility,
@@ -317,24 +325,28 @@ export const initApp = (): void => {
 			return;
 		}
 
-		try {
-			// 1 枚ずつ処理するか Promise.all にするか？
-			// RawImage の作成は高速なため、逐次処理で問題ない。
-
-			for (const file of imageFiles) {
+		// RawImage の作成は高速なため、逐次処理で問題ない。
+		const failedNames: string[] = [];
+		for (const file of imageFiles) {
+			try {
 				const raw = await imageToRawImage(file);
 				imageSession.addImage(file, raw);
+			} catch {
+				// [Intended] 1 枚の読み込み失敗で、残りの画像を取りこぼさない。
+				failedNames.push(file.name);
 			}
-
-			// 最後に追加した画像を選択（ユーザー要望）
-			const allImages = imageSession.getImages();
-			if (allImages.length > 0) {
-				const lastImage = allImages[allImages.length - 1];
-				imageSession.setActiveImage(lastImage.id);
-			}
-		} catch (err) {
-			showError(`${i18n.t("error.load_failed")}: ${(err as Error).message}`);
 		}
+		if (failedNames.length > 0) {
+			showError(`${i18n.t("error.load_failed")}: ${failedNames.join(", ")}`);
+		}
+
+		// 最後に追加した画像を選択（ユーザー要望）
+		const allImages = imageSession.getImages();
+		if (allImages.length === 0) return;
+		const lastImage = allImages[allImages.length - 1];
+		imageSession.setActiveImage(lastImage.id);
+		// 追加した画像を一覧順にすべて変換する
+		void processPendingImages();
 	};
 
 	els.clearAllButton.addEventListener("click", () => {
