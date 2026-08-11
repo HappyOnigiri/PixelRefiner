@@ -244,6 +244,22 @@ describe("candidate previews", () => {
 		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
 	});
 
+	it("Auto実結果の再処理では元のヒント設定を引き継ぐ", () => {
+		const value = analysis("scaled-pixel");
+		value.autoResultCandidateIndex = 0;
+		const selection = selectCandidatePlans(value)[0];
+		expect(selection.processingMode).toBe("auto");
+		expect(
+			candidateProcessOptions({ hintPixelsW: 10, hintPixelsH: 12 }, selection),
+		).toMatchObject({
+			processingMode: "auto",
+			hintPixelsW: 10,
+			hintPixelsH: 12,
+			forcePixelsW: undefined,
+			forcePixelsH: undefined,
+		});
+	});
+
 	it("Auto実結果の実出力サイズを細かめ・粗めの基準にする", () => {
 		const value = analysis("scaled-pixel");
 		// 8x8 の候補を採用したが、検出後のトリミングで実出力は 3x3 まで縮んだ状況。

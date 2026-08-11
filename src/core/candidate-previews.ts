@@ -156,7 +156,14 @@ export const candidateProcessOptions = (
 		hintPixelsW: undefined,
 		hintPixelsH: undefined,
 	};
-	if (selection.processingMode === "auto") return options;
+	// [Intended] Auto 実結果の再現は初回と同じ入力で Auto を再実行することが前提なので、
+	// グリッド検出の検索開始点となるヒントは消さない。消すと検出結果が変わり、
+	// 候補として提示した実結果を再現できない。
+	if (selection.processingMode === "auto") {
+		options.hintPixelsW = base.hintPixelsW;
+		options.hintPixelsH = base.hintPixelsH;
+		return options;
+	}
 	if (selection.processingMode === "refine") {
 		options.forcePixelsW = selection.outW;
 		options.forcePixelsH = selection.outH;
