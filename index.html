@@ -402,16 +402,32 @@
                 <!-- JavaScript がここへ追加する -->
               </div>
               <div class="batch-options">
-                <label>
-                  <input id="shared-palette-toggle" type="checkbox" />
-                  <span data-i18n="ui.shared_palette">Shared palette</span>
-                </label>
-                <label>
-                  <input id="include-diagnostics-toggle" type="checkbox" />
-                  <span data-i18n="ui.include_diagnostics"
-                    >Include diagnostics</span
+                <div class="batch-option">
+                  <label>
+                    <input id="shared-palette-toggle" type="checkbox" />
+                    <span data-i18n="ui.shared_palette">Shared palette</span>
+                  </label>
+                  <span
+                    class="help"
+                    data-i18n-attr="data-tooltip:tooltip.help.shared_palette"
+                    data-tooltip="Reduces colors with a single palette shared by every image.&#10;&#10;A common palette is built from all processed images, limited to the color count setting, and reapplied to each image.&#10;Useful when colors must match across character variations or animation frames."
+                    >?</span
                   >
-                </label>
+                </div>
+                <div class="batch-option">
+                  <label>
+                    <input id="include-diagnostics-toggle" type="checkbox" />
+                    <span data-i18n="ui.include_diagnostics"
+                      >Include diagnostics</span
+                    >
+                  </label>
+                  <span
+                    class="help"
+                    data-i18n-attr="data-tooltip:tooltip.help.include_diagnostics"
+                    data-tooltip="Adds diagnostics.json to the ZIP download.&#10;&#10;It records the input and output filenames, detected input type, processing route, confidence, and warning codes for each image.&#10;Useful for narrowing down images that need a second look after a large batch."
+                    >?</span
+                  >
+                </div>
               </div>
             </section>
 

@@ -87,7 +87,13 @@ describe("I18nManager", () => {
 			expect(i18n.t("ui.include_diagnostics")).not.toBe(
 				"ui.include_diagnostics",
 			);
-			expect(i18n.t("batch.route.convert")).not.toBe("batch.route.convert");
+			expect(i18n.t("batch.status.done")).not.toBe("batch.status.done");
+			expect(i18n.t("tooltip.help.shared_palette")).not.toBe(
+				"tooltip.help.shared_palette",
+			);
+			expect(i18n.t("tooltip.help.include_diagnostics")).not.toBe(
+				"tooltip.help.include_diagnostics",
+			);
 			expect(
 				i18n.t("warning.batch_partial_failure", { failed: 1, total: 3 }),
 			).toContain("1");
