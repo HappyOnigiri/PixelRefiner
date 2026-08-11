@@ -6,7 +6,7 @@ import type {
 import { evaluateAutoGridDegeneracy } from "./auto-grid-guard";
 import {
 	canCleanBackgroundContaminatedEdges,
-	cleanBackgroundContaminatedEdges,
+	cleanBackgroundContaminatedEdgesInPlace,
 } from "./background-edge-cleanup";
 import {
 	getBackgroundTargets,
@@ -595,7 +595,7 @@ const processImageCore = (
 		)
 	) {
 		const cleanupStart = performance.now();
-		const cleaned = cleanBackgroundContaminatedEdges(
+		const cleaned = cleanBackgroundContaminatedEdgesInPlace(
 			result,
 			working,
 			trimmedGrid,

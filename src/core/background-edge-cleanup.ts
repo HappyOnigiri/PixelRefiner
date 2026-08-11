@@ -271,8 +271,10 @@ const probeMixingLine = (
  *
  * [Policy] アルファは触らない。シルエット・出力サイズ・トリミング・格子検出の結果を
  * 一切動かさず、色だけを直す。背景の許容を広げてオブジェクトを欠けさせないための制約。
+ *
+ * image を破壊的に更新し、差し替えた画素数を返す（新しい画像は返さない）。
  */
-export const cleanBackgroundContaminatedEdges = (
+export const cleanBackgroundContaminatedEdgesInPlace = (
 	image: RawImage,
 	source: RawImage,
 	grid: PixelGrid,
