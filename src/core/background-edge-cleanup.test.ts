@@ -174,7 +174,7 @@ describe("cleanBackgroundContaminatedEdgesInPlace", () => {
 	});
 
 	// 黒背景・赤方向の混色線で、線からのずれの許容を境界の両側から確かめる。
-	// 出力色は [100,0,0] なので許容は min(maxLineOffAxis, lineNoiseFloor + 50) = 32。
+	// 出力色は [100,0,0] なので許容は min(maxLineOffAxis, lineNoiseFloor + 50) = 48。
 	const offAxisCase = (
 		offAxis: number,
 	): { image: RawImage; cleaned: number } => {
@@ -194,14 +194,14 @@ describe("cleanBackgroundContaminatedEdgesInPlace", () => {
 	};
 
 	it("混色線からのずれが許容内なら、より遠い色へ差し替える", () => {
-		const { image, cleaned } = offAxisCase(30);
+		const { image, cleaned } = offAxisCase(46);
 
 		expect(cleaned).toBe(2);
-		expect(colorAt(image, 0, 0)).toEqual([150, 30, 0, 255]);
+		expect(colorAt(image, 0, 0)).toEqual([150, 46, 0, 255]);
 	});
 
 	it("混色線からのずれが許容を超えたら差し替えない", () => {
-		const { image, cleaned } = offAxisCase(40);
+		const { image, cleaned } = offAxisCase(50);
 
 		expect(cleaned).toBe(0);
 		expect(colorAt(image, 0, 0)).toEqual([100, 0, 0, 255]);
@@ -328,16 +328,12 @@ describe("cleanBackgroundContaminatedEdgesInPlace", () => {
 });
 
 describe("canCleanBackgroundContaminatedEdges", () => {
-	const diagnostic = (confidence: number, removalRolledBack = false) => ({
-		confidence,
-		removalRolledBack,
-	});
-
 	it("背景モデルがあり、除去が適用され、信頼度が足りていれば行う", () => {
 		expect(
 			canCleanBackgroundContaminatedEdges(
 				greenModel(),
-				diagnostic(BACKGROUND_MODEL_LIMITS.minConfidence),
+				BACKGROUND_MODEL_LIMITS.minConfidence,
+				false,
 				true,
 			),
 		).toBe(true);
@@ -345,7 +341,7 @@ describe("canCleanBackgroundContaminatedEdges", () => {
 
 	it("背景除去が適用されていない経路では行わない", () => {
 		expect(
-			canCleanBackgroundContaminatedEdges(greenModel(), diagnostic(1), false),
+			canCleanBackgroundContaminatedEdges(greenModel(), 1, false, false),
 		).toBe(false);
 	});
 
@@ -353,25 +349,22 @@ describe("canCleanBackgroundContaminatedEdges", () => {
 		expect(
 			canCleanBackgroundContaminatedEdges(
 				greenModel(),
-				diagnostic(BACKGROUND_MODEL_LIMITS.minConfidence - 0.01),
+				BACKGROUND_MODEL_LIMITS.minConfidence - 0.01,
+				false,
 				true,
 			),
 		).toBe(false);
 	});
 
-	it("消えすぎ検出で除去を巻き戻した場合は行わない", () => {
+	it("補正する画像の透過を作った除去が巻き戻った場合は行わない", () => {
 		expect(
-			canCleanBackgroundContaminatedEdges(
-				greenModel(),
-				diagnostic(1, true),
-				true,
-			),
+			canCleanBackgroundContaminatedEdges(greenModel(), 1, true, true),
 		).toBe(false);
 	});
 
 	it("背景モデルが無ければ行わない", () => {
-		expect(
-			canCleanBackgroundContaminatedEdges(undefined, diagnostic(1), true),
-		).toBe(false);
+		expect(canCleanBackgroundContaminatedEdges(undefined, 1, false, true)).toBe(
+			false,
+		);
 	});
 });

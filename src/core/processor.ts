@@ -568,6 +568,10 @@ const processImageCore = (
 	}
 
 	const postBgStart = performance.now();
+	// [Intended] 縁の汚染除去は「補正する画像の透過を作った除去」が成立したかだけを見たい。
+	// backgroundDiagnostic は原寸の事前除去のロールバックも保持するため、後段除去の結果を
+	// 別の受け皿で取り、診断へは従来どおり合流させる。
+	const postRemovalOutcome = { removalRolledBack: false };
 	const result = o.postRemoveBackground
 		? removeBackground(
 				trimmed,
@@ -577,9 +581,12 @@ const processImageCore = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
-				backgroundDiagnostic,
+				postRemovalOutcome,
 			)
 		: trimmed;
+	if (postRemovalOutcome.removalRolledBack && backgroundDiagnostic) {
+		backgroundDiagnostic.removalRolledBack = true;
+	}
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
@@ -590,7 +597,10 @@ const processImageCore = (
 	if (
 		canCleanBackgroundContaminatedEdges(
 			backgroundModel,
-			backgroundDiagnostic,
+			backgroundDiagnostic?.confidence,
+			o.postRemoveBackground
+				? postRemovalOutcome.removalRolledBack
+				: (automaticBackground?.rolledBack ?? false),
 			o.postRemoveBackground || preBackgroundRemoved,
 		)
 	) {

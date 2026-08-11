@@ -2,31 +2,30 @@ import {
 	BACKGROUND_EDGE_CLEANUP_LIMITS,
 	BACKGROUND_MODEL_LIMITS,
 } from "../shared/config";
-import type {
-	BackgroundDiagnostic,
-	PixelGrid,
-	RawImage,
-} from "../shared/types";
+import type { PixelGrid, RawImage } from "../shared/types";
 import type { BackgroundModel } from "./background";
 
 /**
  * 縁の色の差し替えを行ってよいかを判定する。
  *
  * [Policy] 判定材料は背景クラスタ色なので、背景除去が実際に適用された経路でだけ行う。
- * 信頼度が下限未満で除去を見送った場合と、消えすぎ検出で除去を巻き戻した場合は、
- * その背景色を信用してはいけないと判定済みなので、色も動かさない。
+ * 信頼度が下限未満で除去を見送った場合は、その背景色を信用してはいけないと判定済みなので
+ * 色も動かさない。
+ *
+ * [Intended] removalRolledBack は「補正する画像の透過を作った除去」の結果だけを渡す。
+ * 消えすぎ検出のロールバックは被写体が小さい画像でも起きるため、別の解像度で巻き戻った
+ * ことを理由に色の補正まで止めると、背景の面積が大きい入力で汚染が残ったままになる。
  */
 export const canCleanBackgroundContaminatedEdges = (
 	model: BackgroundModel | undefined,
-	diagnostic: BackgroundDiagnostic | undefined,
+	confidence: number | undefined,
+	removalRolledBack: boolean,
 	backgroundRemoved: boolean,
 ): model is BackgroundModel => {
-	if (!backgroundRemoved) return false;
+	if (!backgroundRemoved || removalRolledBack) return false;
 	if (model === undefined || model.clusters.length === 0) return false;
-	if (diagnostic?.removalRolledBack === true) return false;
 	return (
-		(diagnostic?.confidence ?? model.confidence) >=
-		BACKGROUND_MODEL_LIMITS.minConfidence
+		(confidence ?? model.confidence) >= BACKGROUND_MODEL_LIMITS.minConfidence
 	);
 };
 
