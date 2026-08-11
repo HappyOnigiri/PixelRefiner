@@ -5,7 +5,33 @@ import {
 	normalizeProcessOptions,
 } from "./processor-options";
 
+/**
+ * createDefaultProcessOptions が意図的に含めない PROCESS_DEFAULTS のキー。
+ *
+ * [Intended] ここに挙げていない既定値の取りこぼしはテストで落とす。
+ * 新しい既定値を除外する場合は理由とともに追加する。
+ */
+const EXCLUDED_DEFAULT_KEYS = new Set<string>([
+	// UI のグリッド検出モード。ProcessOptions には対応する項目がない。
+	"gridDetectionMode",
+	// バッチ処理の設定。単体処理の既定には含めない。
+	"sharedPalette",
+	// 診断出力の設定。呼び出し側が必要なときだけ指定する。
+	"includeDiagnosticSummary",
+	// 非推奨の旧オプション。normalizeProcessOptions が既定 0 を与える。
+	"floatingMaxPixels",
+]);
+
 describe("default process options", () => {
+	it("covers every shared process default that is not excluded", () => {
+		const options = createDefaultProcessOptions() as Record<string, unknown>;
+
+		for (const [key, value] of Object.entries(PROCESS_DEFAULTS)) {
+			if (EXCLUDED_DEFAULT_KEYS.has(key)) continue;
+			expect(options[key]).toEqual(value);
+		}
+	});
+
 	it("builds complete defaults from the shared configuration", () => {
 		const options = createDefaultProcessOptions();
 
