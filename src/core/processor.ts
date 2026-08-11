@@ -261,13 +261,7 @@ const processImageCore = (
 	};
 	let watermarkDetectionMask: RawImage | undefined;
 	const finishProcessing = (processed: ProcessResult): ProcessResult => {
-		if (
-			o.geminiWatermarkRemoval === "off" ||
-			o.forcePixelsW !== undefined ||
-			o.forcePixelsH !== undefined
-		) {
-			return processed;
-		}
+		if (o.geminiWatermarkRemoval === "off") return processed;
 		watermarkDetectionMask ??= createGeminiWatermarkDetectionMask(
 			inputImage,
 			o,

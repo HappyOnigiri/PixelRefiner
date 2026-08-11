@@ -222,6 +222,43 @@ describe("Gemini watermark removal", () => {
 		expect(automatic.grid).toEqual(disabled.grid);
 	});
 
+	it("maps removal through a forced-size crop", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const options = {
+			processingMode: "convert" as const,
+			forcePixelsW: 20,
+			forcePixelsH: 20,
+			bgExtractionMethod: "top-left" as const,
+			bgRemovalScope: "outer" as const,
+			backgroundTolerance: 0,
+			trimToContent: true,
+			smallComponentMode: "off" as const,
+		};
+		const automatic = processImage(image, options);
+		const disabled = processImage(image, {
+			...options,
+			geminiWatermarkRemoval: "off",
+		});
+		let removed = 0;
+		for (
+			let pixel = 0;
+			pixel < automatic.result.width * automatic.result.height;
+			pixel += 1
+		) {
+			const offset = pixel * 4;
+			if (
+				automatic.result.data[offset + 3] === 0 &&
+				disabled.result.data[offset + 3] !== 0
+			) {
+				removed += 1;
+			}
+		}
+		expect(removed).toBeGreaterThan(0);
+		expect(automatic.grid).toEqual(disabled.grid);
+		expect(automatic.grid.cropX).toBeGreaterThan(0);
+		expect(automatic.grid.cropY).toBeGreaterThan(0);
+	});
+
 	for (const fixture of [
 		"high_resolution",
 		"inner_background_removal",

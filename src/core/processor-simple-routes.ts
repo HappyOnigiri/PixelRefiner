@@ -340,7 +340,8 @@ export const processForcedRoute = (
 	);
 
 	// 補正済み比較: パイプラインと同じセルサンプリングを使用する。
-	let finalGridForForce = g;
+	// [Intended] 元画像座標へ対応付ける後処理が切り抜き原点を失わないよう、返却グリッドにも保持する。
+	let finalGridForForce = forcedTrimmedGridForOriginal;
 	if (o.makeSquare) {
 		const w = finalResult.width;
 		const h = finalResult.height;

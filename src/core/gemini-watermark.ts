@@ -491,12 +491,7 @@ export const applyGeminiWatermarkRemoval = (
 	options: NormalizedProcessOptions,
 	appliedDeskewAngle: number,
 ): ProcessResult => {
-	if (
-		options.geminiWatermarkRemoval === "off" ||
-		// [Policy] 強制サイズ経路は返却グリッドに元画像の切り抜き原点を保持しないため、誤消去を避ける。
-		options.forcePixelsW !== undefined ||
-		options.forcePixelsH !== undefined
-	) {
+	if (options.geminiWatermarkRemoval === "off") {
 		return processed;
 	}
 	const removal = removeGeminiWatermark(inputImage, detectionMask);
