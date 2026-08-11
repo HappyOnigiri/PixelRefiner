@@ -579,6 +579,9 @@ export const processImage = (
 	const preserveCandidateIndex = rankedGridCandidates.findIndex(
 		(candidate) => candidate.method === "preserve",
 	);
+	// [Policy] Auto 実結果を候補として指せるのは、位置が rankedGridCandidates 上で
+	// 一意に決まる preserve / refine 経路だけ。convert 経路の出力は検出候補では
+	// 表現できないため対象外とする。
 	const autoResultCandidateIndex =
 		o.processingMode !== "auto"
 			? undefined
@@ -594,7 +597,6 @@ export const processImage = (
 				route: "convert",
 				method: "auto-convert",
 				classificationResult,
-				autoResultCandidateIndex,
 				preparedMask: maskedForDebugOrAuto ?? undefined,
 			});
 		}

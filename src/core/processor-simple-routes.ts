@@ -415,7 +415,9 @@ export const processForcedRoute = (
 		context.additionalWarnings,
 		undefined,
 		smallComponentRemoval,
-		context.autoResultCandidateIndex,
+		// [Policy] forced 経路は processingMode で明示指定された固定サイズ処理で、
+		// Auto 実結果の位置を持たない。呼び出し元も設定しないため常に渡さない。
+		undefined,
 	);
 	log("Processing analysis", analysis);
 	return {
