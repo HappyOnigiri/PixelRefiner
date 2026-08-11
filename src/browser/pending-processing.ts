@@ -73,7 +73,13 @@ export const createProcessPendingImages = ({
 	return createPendingImageQueue({
 		getImages: () => imageSession.getImages(),
 		getActiveImageId: () => imageSession.getActiveImage()?.id ?? null,
-		processActiveImage: () => runProcessing(),
+		processActiveImage: async () => {
+			// [Intended] アクティブな画像も進捗に含める。通常経路は進捗を更新しないため、
+			// ここで更新しないと 1 つ前の枚数が表示されたままになる。
+			showProgress();
+			// [Intended] 続けて次の画像を変換するため、1 枚ごとにオーバーレイを閉じさせない。
+			await runProcessing({ keepLoadingOverlay: true });
+		},
 		processInactiveImage,
 		onDrained: (attemptedIds) => {
 			loadingOverlay.hide();

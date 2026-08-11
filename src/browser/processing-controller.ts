@@ -56,6 +56,11 @@ type ProcessingControllerOptions = {
 
 export type RunProcessingOptions = {
 	showCandidates?: boolean;
+	/**
+	 * 処理の終わりに読み込みオーバーレイを閉じない。
+	 * 複数画像を続けて変換する呼び出し側が、1 枚ごとの閉じ直しによる点滅を避けるために使う。
+	 */
+	keepLoadingOverlay?: boolean;
 };
 
 const parseOptionalInt = (
@@ -198,8 +203,9 @@ export const createRunProcessing = ({
 
 	const runProcessing = async (
 		selection?: CandidateSelection,
-		showCandidates = true,
+		options: RunProcessingOptions = {},
 	) => {
+		const showCandidates = options.showCandidates !== false;
 		const images = imageSession.getImages();
 		if (images.length === 0) return;
 		const generation = ++latestGeneration;
@@ -394,7 +400,10 @@ export const createRunProcessing = ({
 		} finally {
 			// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
 			mainResultViewer.setLoading(false);
-			els.loadingOverlay.style.display = "none";
+			// [Intended] 続けて別の画像を変換する呼び出し側は、オーバーレイの開閉を自分で行う。
+			if (!options.keepLoadingOverlay) {
+				els.loadingOverlay.style.display = "none";
+			}
 			els.outputPanel.classList.remove("is-processing");
 			els.outputPanel.removeAttribute("aria-busy");
 			els.processButton.disabled = false;
@@ -408,6 +417,5 @@ export const createRunProcessing = ({
 			await runProcessing(selection);
 		},
 	});
-	return (options?: RunProcessingOptions) =>
-		runProcessing(undefined, options?.showCandidates !== false);
+	return (options?: RunProcessingOptions) => runProcessing(undefined, options);
 };
