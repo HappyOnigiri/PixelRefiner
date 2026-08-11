@@ -3,6 +3,7 @@ import path from "node:path";
 import { Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { reportRoot } from "./benchmark";
+import { readPng } from "./image";
 import { loadCases, selectCasesForProfile } from "./manifest";
 import { aggregateQualityReport } from "./report/aggregate";
 import { renderHtml } from "./report/render";
@@ -373,8 +374,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		}
 		// [Policy] UI 既定のまま処理する auto 側にも、警告と候補選択の標本を必ず 1 件残す。
 		// 明示オプションのケースだけを標本にすると、既定経路で候補が出るかを誰も見ていない
-		// 状態になる。この入力は論理セルを 2 通りに読めるため、目標へも届いていない。
-		const autoModalCaseId = "auto-quality-prf400-ambiguous-grid-scale";
+		// 状態になる。この入力はセル境界がアンチエイリアスで鈍っており、採用した格子より
+		// 強い境界証拠を持つ倍率が別にあるため、目標へも届いていない。
+		const autoModalCaseId = "auto-quality-prf400-soft-edged-sprite";
 		const autoModalResult = results.cases.find(
 			(result) => result.id === autoModalCaseId,
 		);
@@ -471,6 +473,25 @@ describe.skipIf(!enabled)("quality report", () => {
 				expect(existsSync(path.join(reportRoot, result.files.baseline))).toBe(
 					true,
 				);
+			}
+		}
+		// [Intended] レポートに載る寸法は、書き出した画像そのものを読み直して突き合わせる。
+		// 生成側は背景マスクを出力と同寸だと決め打ちするなど実装への暗黙の依存を持つため、
+		// その前提が崩れたときに表示だけが実物とずれた状態で残らないようにする。
+		for (const result of results.cases) {
+			for (const [key, file] of Object.entries(result.files)) {
+				const size = result.imageSizes[key as keyof typeof result.files];
+				if (file === null) {
+					expect([result.id, key, size]).toEqual([result.id, key, null]);
+					continue;
+				}
+				const image = readPng(path.join(reportRoot, file));
+				expect([result.id, key, size?.width, size?.height]).toEqual([
+					result.id,
+					key,
+					image.width,
+					image.height,
+				]);
 			}
 		}
 	}, 120_000);
