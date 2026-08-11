@@ -21,6 +21,7 @@ import {
 	calculateTargetMetrics,
 	createBackgroundMaskImage,
 	createDiffImage,
+	diffImageSize,
 	targetQualityFailures,
 } from "./metrics";
 import {
@@ -33,6 +34,7 @@ import type {
 	QualityCandidateOption,
 	QualityCaseResult,
 	QualityImageCase,
+	QualityImageSize,
 } from "./types";
 
 const REPORT_ROOT = path.resolve("tmp/quality-report/latest");
@@ -137,6 +139,9 @@ const buildCandidateOptions = (
 			};
 		}
 	});
+
+const imageSize = (image: RawImage | null): QualityImageSize | null =>
+	image === null ? null : { width: image.width, height: image.height };
 
 const failedAssertions = (
 	qualityCase: QualityImageCase,
@@ -278,6 +283,22 @@ export const runQualityCase = (
 			baselineImage === null ? null : `${caseDirectory}/baseline-diff.png`,
 		backgroundMask: `${caseDirectory}/background-mask.png`,
 	};
+	const imageSizes = {
+		groundTruth: imageSize(targetImage),
+		input: imageSize(input),
+		baseline: imageSize(baselineImage),
+		result: imageSize(currentRun.result),
+		diff:
+			targetImage === null
+				? null
+				: diffImageSize(currentRun.result, targetImage),
+		baselineDiff:
+			baselineImage === null
+				? null
+				: diffImageSize(currentRun.result, baselineImage),
+		// [Intended] 背景マスクは出力画像から作るので、常に出力と同じ寸法になる。
+		backgroundMask: imageSize(currentRun.result),
+	};
 	const selectedCandidate =
 		currentRun.analysis.gridCandidates[
 			currentRun.analysis.selectedCandidateIndex ?? 0
@@ -398,6 +419,7 @@ export const runQualityCase = (
 				? (autoTargetSource(qualityCase.id) ?? null)
 				: null,
 		files,
+		imageSizes,
 	};
 };
 

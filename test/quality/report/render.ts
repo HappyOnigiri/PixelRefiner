@@ -7,6 +7,11 @@ import {
 } from "./auto-diagnostics";
 import { runQualityReportClient } from "./client";
 import { escapeHtml, formatConfidence, formatMetric } from "./format";
+import {
+	renderAllImages,
+	renderImageDialog,
+	renderPrimaryImages,
+} from "./images";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 import { renderTargetComparison, TARGET_STATE_KEYS } from "./target-section";
 import { REPORT_TRANSLATIONS } from "./translations";
@@ -225,12 +230,6 @@ const describeCase = (
 	};
 };
 
-const renderImageDialog = (): string => `
-<dialog id="image-dialog">
-	<button id="dialog-close">&times;</button>
-	<div class="image-stage dialog-stage"><img alt=""></div>
-</dialog>`;
-
 const renderReportSidebar = (results: QualityResults): string => {
 	const repositoryUrl = escapeHtml(results.metadata.repositoryUrl);
 	const commitUrl = (commit: string): string =>
@@ -400,25 +399,7 @@ export const renderHtml = (results: QualityResults): string => {
 				...result.warnings,
 				...result.degradationPatterns,
 			].join(" ");
-			const renderImages = (
-				images: Array<[string, string, string | null]>,
-			): string =>
-				images
-					.filter(
-						(image): image is [string, string, string] => image[2] !== null,
-					)
-					.map(
-						([key, label, source]) =>
-							`<figure><figcaption data-i18n="${key}">${label}</figcaption>` +
-							`<div class="image-stage"><img src="${escapeHtml(source)}" alt="${label}" ` +
-							`data-i18n-alt="${key}" loading="lazy"></div></figure>`,
-					)
-					.join("");
-			const primaryImages = renderImages([
-				["groundTruth", "Target", result.files.groundTruth],
-				["result", "Result", result.files.result],
-				["groundTruthDifference", "Target difference", result.files.diff],
-			]);
+			const primaryImages = renderPrimaryImages(result);
 			return `<article class="case target-${targetState}"
 			data-quality="${targetState}" data-change="${result.changeStatus}"
 			data-parameter="${result.parameterMode}"
@@ -463,29 +444,7 @@ ${renderImageDialog()}
 export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const description = describeCase(result);
 	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];
-	const renderImages = (
-		images: Array<[string, string, string | null]>,
-	): string =>
-		images
-			.filter((image): image is [string, string, string] => image[2] !== null)
-			.map(([key, label, source]) => {
-				const fileName = escapeHtml(path.posix.basename(source));
-				return (
-					`<figure><figcaption data-i18n="${key}">${label}</figcaption>` +
-					`<div class="image-stage"><img src="${fileName}" alt="${label}" ` +
-					`data-i18n-alt="${key}" loading="lazy"></div></figure>`
-				);
-			})
-			.join("");
-	const allImages = renderImages([
-		["input", "Input", result.files.input],
-		["groundTruth", "Ground truth", result.files.groundTruth],
-		["baseline", "Baseline", result.files.baseline],
-		["result", "Result", result.files.result],
-		["groundTruthDifference", "Ground-truth difference", result.files.diff],
-		["baselineDifference", "Baseline difference", result.files.baselineDiff],
-		["backgroundMask", "Background mask", result.files.backgroundMask],
-	]);
+	const allImages = renderAllImages(result);
 	const metricState = (
 		key: string,
 		hasBaseline: boolean,

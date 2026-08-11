@@ -10,7 +10,7 @@ import type {
 	ProcessingMode,
 } from "../../src/shared/types";
 
-export const QUALITY_REPORT_VERSION = "5";
+export const QUALITY_REPORT_VERSION = "6";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
@@ -169,6 +169,24 @@ export type QualityBaseline = {
 	cases: QualityBaselineCase[];
 };
 
+/** レポートへ書き出した画像 1 枚の実寸。 */
+export type QualityImageSize = {
+	width: number;
+	height: number;
+};
+
+export type QualityCaseFiles = {
+	/** 目標画像。登録のない auto ケースでは存在しない。 */
+	groundTruth: string | null;
+	input: string;
+	baseline: string | null;
+	result: string;
+	/** 目標との差分。目標がないケースでは存在しない。 */
+	diff: string | null;
+	baselineDiff: string | null;
+	backgroundMask: string;
+};
+
 export type QualityCaseResult = {
 	id: string;
 	featureIds: string[];
@@ -229,17 +247,12 @@ export type QualityCaseResult = {
 	 * explicit ケースはケース定義の正解画像そのものが目標なので null。
 	 */
 	targetSource: string | null;
-	files: {
-		/** 目標画像。登録のない auto ケースでは存在しない。 */
-		groundTruth: string | null;
-		input: string;
-		baseline: string | null;
-		result: string;
-		/** 目標との差分。目標がないケースでは存在しない。 */
-		diff: string | null;
-		baselineDiff: string | null;
-		backgroundMask: string;
-	};
+	files: QualityCaseFiles;
+	/**
+	 * レポートへ書き出した各画像の実寸。存在しない画像は null。
+	 * [Intended] files と同じキーで持ち、画像とサイズの対応をキー名だけで辿れるようにする。
+	 */
+	imageSizes: { [Key in keyof QualityCaseFiles]: QualityImageSize | null };
 };
 
 export type QualityResults = {

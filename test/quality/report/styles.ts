@@ -79,6 +79,8 @@ a { color: #b9a7ff; }
 .badge.has-candidate-selection { background: #1f5f6b; }
 .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 .images figure { margin: 0; }
+.image-size { color: #d6cce4; font-weight: 400; }
+.image-size.size-mismatch { color: #ff8f8f; font-weight: 700; }
 .image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 220px; }
 .image-stage img {
 	display: block;
@@ -137,6 +139,8 @@ a { color: #b9a7ff; }
 .badge.parameter-explicit { background: #3d3550; }
 .images { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .images figure { margin: 0; }
+.image-size { color: #d6cce4; font-weight: 400; }
+.image-size.size-mismatch { color: #ff8f8f; font-weight: 700; }
 .image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 280px; }
 .image-stage img {
 	display: block;
