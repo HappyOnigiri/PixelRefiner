@@ -69,11 +69,11 @@ describe("quality comparison", () => {
 			meanRgbaError: 11,
 			edgeF1: 0.9,
 		};
+		// [Intended] 指標の悪化・改善は前回比較の状態に入らない。上の真理値表が
+		// classifyChange の引数を hasBaseline と imageChanged だけに閉じていることを示す。
 		const comparison = compareMetrics(changedMetrics, baseline);
 		expect(comparison.regressed).toEqual(["meanRgbaError"]);
 		expect(comparison.improved).toEqual(["edgeF1"]);
-		expect(classifyChange(true, true)).toBe("changed");
-		expect(classifyChange(true, false)).toBe("unchanged");
 	});
 
 	it("treats size changes as image changes", () => {
