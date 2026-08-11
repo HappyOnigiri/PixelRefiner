@@ -144,7 +144,14 @@ const findCoarserHarmonic = (
 			1,
 			center * BOUNDARY_CONTRAST_LIMITS.harmonicWindow,
 		);
-		const from = Math.max(scan.outHMin, Math.round(center - radius));
+		// [Intended] 窓の下端にも minOverrideOutH を掛ける。中心だけを見ていると、
+		// 中心が下限ちょうどの倍音で窓が下限を割り、周期の繰り返しが足りない
+		// 出力高さが乗り換え先に選ばれる。
+		const from = Math.max(
+			scan.outHMin,
+			BOUNDARY_CONTRAST_LIMITS.minOverrideOutH,
+			Math.round(center - radius),
+		);
 		const to = Math.min(outHMax, Math.round(center + radius));
 		let bestOutH = 0;
 		let bestEvidence = 0;
