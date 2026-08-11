@@ -77,18 +77,9 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		passed: cases.filter((result) => result.status === "passed").length,
 		failed: cases.filter((result) => result.status === "failed").length,
 		changed: cases.filter((result) => result.changeStatus === "changed").length,
-		improved: cases.filter((result) => result.changeStatus === "improved")
-			.length,
-		regressed: cases.filter((result) => result.changeStatus === "regressed")
-			.length,
 		unchanged: cases.filter((result) => result.changeStatus === "unchanged")
 			.length,
 		newCases: cases.filter((result) => result.changeStatus === "new").length,
-		blockingFailures: cases.filter(
-			(result) =>
-				result.changeStatus === "regressed" ||
-				(result.changeStatus === "new" && result.status === "failed"),
-		).length,
 		explicitCases: cases.filter((result) => result.parameterMode === "explicit")
 			.length,
 		autoCases: cases.filter((result) => result.parameterMode === "auto").length,

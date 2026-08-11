@@ -17,6 +17,15 @@ function linearToSrgb(c: number): number {
 }
 
 /**
+ * RGB を `#rrggbb` 形式の文字列へ変換する。
+ */
+export function rgbToHex(rgb: RGB): string {
+	return `#${[rgb.r, rgb.g, rgb.b]
+		.map((value) => value.toString(16).padStart(2, "0"))
+		.join("")}`;
+}
+
+/**
  * RGB から Oklab への変換
  */
 export function rgbToOklab(rgb: RGB): Oklab {

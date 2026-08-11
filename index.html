@@ -1250,6 +1250,35 @@
 
                       <label class="setting-item">
                         <span class="label-text">
+                          <span data-i18n="setting.gemini_watermark_removal"
+                            >Gemini Watermark Removal</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.gemini_watermark_removal"
+                            data-tooltip="Automatically removes a Gemini watermark only when background transparency leaves it as an isolated bright diamond in the bottom-right corner. Marks touching the subject are kept."
+                            >?</span
+                          >
+                        </span>
+                        <select id="gemini-watermark-removal">
+                          <option
+                            value="auto"
+                            data-i18n="option.gemini_watermark_auto"
+                            selected
+                          >
+                            Auto
+                          </option>
+                          <option
+                            value="off"
+                            data-i18n="option.gemini_watermark_off"
+                          >
+                            Off
+                          </option>
+                        </select>
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
                           <span data-i18n="setting.small_component_mode"
                             >Small Detail Cleanup</span
                           >

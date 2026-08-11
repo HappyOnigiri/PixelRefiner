@@ -1,4 +1,6 @@
-import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
+import { rgbToHex } from "../core/colorUtils";
+import { createDefaultProcessOptions } from "../core/processor-options";
+import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
 	DetailLevel,
 	OutlineStyle,
@@ -97,31 +99,29 @@ export const setupQuickSettingsControls = ({
 	) => {
 		clearCandidateSelections();
 		if (presetId !== "custom") {
-			els.quantStepInput.value = String(
-				PROCESS_RANGES.detectionQuantStep.default,
-			);
+			const defaults = createDefaultProcessOptions();
+			els.quantStepInput.value = String(defaults.detectionQuantStep);
 			els.quantStepSlider.value = els.quantStepInput.value;
-			els.sampleWindowInput.value = String(PROCESS_RANGES.sampleWindow.default);
+			els.sampleWindowInput.value = String(defaults.sampleWindow);
 			els.sampleWindowSlider.value = els.sampleWindowInput.value;
-			els.toleranceInput.value = String(
-				PROCESS_RANGES.backgroundTolerance.default,
-			);
+			els.toleranceInput.value = String(defaults.backgroundTolerance);
 			els.toleranceSlider.value = els.toleranceInput.value;
 			els.forcePixelsWInput.value = "";
 			els.forcePixelsHInput.value = "";
-			els.gridDetectionModeSelect.value = "auto";
-			els.preRemoveCheck.checked = PROCESS_DEFAULTS.preRemoveBackground;
-			els.postRemoveCheck.checked = PROCESS_DEFAULTS.postRemoveBackground;
-			els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
-			els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
-			els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
+			els.gridDetectionModeSelect.value =
+				PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
+			els.preRemoveCheck.checked = defaults.preRemoveBackground;
+			els.postRemoveCheck.checked = defaults.postRemoveBackground;
+			els.bgRemovalScopeSelect.value = defaults.bgRemovalScope;
+			els.bgConnectivitySelect.value = defaults.bgConnectivity;
+			els.smallComponentModeSelect.value = defaults.smallComponentMode;
 			els.alphaAwareMedoidCheck.checked =
-				(PROCESS_DEFAULTS.cellSamplingMode as string) === "alpha-aware-medoid";
+				(defaults.cellSamplingMode as string) === "alpha-aware-medoid";
 			els.fastAutoGridFromTrimmedCheck.checked =
-				PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
-			els.makeSquareCheck.checked = PROCESS_DEFAULTS.makeSquare;
-			els.keepAspectRatioCheck.checked = PROCESS_DEFAULTS.keepAspectRatio;
-			els.outlineColorInput.value = "#ffffff";
+				defaults.fastAutoGridFromTrimmed;
+			els.makeSquareCheck.checked = defaults.makeSquare;
+			els.keepAspectRatioCheck.checked = defaults.keepAspectRatio;
+			els.outlineColorInput.value = rgbToHex(defaults.outlineColor);
 			processingState.currentFixedPalette = undefined;
 		}
 		els.quickProcessingModeSelect.value = settings.processingMode;

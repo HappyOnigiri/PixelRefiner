@@ -94,6 +94,8 @@ export type DetailLevel = "coarse" | "balanced" | "detailed";
 
 export type SmallComponentRemovalMode = "off" | "light" | "auto" | "strong";
 
+export type GeminiWatermarkRemovalMode = "off" | "auto";
+
 export type SmallComponentRemovalDiagnostic = {
 	mode: SmallComponentRemovalMode | "legacy";
 	applied: boolean;

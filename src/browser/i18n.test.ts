@@ -192,4 +192,19 @@ describe("I18nManager", () => {
 			}
 		}
 	});
+
+	it("registers Gemini watermark controls in every language", () => {
+		const i18n = new I18nManager();
+		for (const language of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(language);
+			for (const key of [
+				"setting.gemini_watermark_removal",
+				"tooltip.help.gemini_watermark_removal",
+				"option.gemini_watermark_auto",
+				"option.gemini_watermark_off",
+			] as const) {
+				expect(i18n.t(key)).not.toBe(key);
+			}
+		}
+	});
 });
