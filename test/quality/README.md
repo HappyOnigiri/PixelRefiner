@@ -103,11 +103,14 @@ questions.
 
 For cases with explicit options the target is the `expected` image already
 registered in `cases.json`. Auto cases have no ground truth of their own, so
-their target is the approved baseline of the explicit case that processes the
-same fixture, copied once into [`targets/`](./targets) and pinned there. The
-mapping and the reason for each hand-picked entry live in
-[`auto-targets.json`](./auto-targets.json); auto cases that cannot have a target
-are listed under `excluded` with the reason.
+their initial target is the approved baseline of the explicit case that processes
+the same fixture, copied once into [`targets/`](./targets) and pinned there. When
+a review finds the auto output itself good enough — usually because the explicit
+options cannot produce what the auto route should aim for — that output replaces
+the target and the `note` records the decision, while `source` stays as the
+origin of the inherited allowances. The mapping and the reason for each
+hand-picked entry live in [`auto-targets.json`](./auto-targets.json); auto cases
+that cannot have a target are listed under `excluded` with the reason.
 
 ```sh
 pnpm run quality:targets:init   # copy target images for newly registered cases
