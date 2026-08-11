@@ -405,10 +405,12 @@ export const createRunProcessing = ({
 			if (!options.suppressErrorNotification) showError(msg);
 			imageSession.setImageStatus(currentItem.id, "error", msg);
 		} finally {
-			// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
-			mainResultViewer.setLoading(false);
 			// [Intended] 続けて別の画像を変換する呼び出し側は、オーバーレイの開閉を自分で行う。
+			// mainResultViewer の読み込み表示は els.loadingOverlay と同じ要素なので、
+			// ここで閉じると呼び出し側が開いたままにできない。
 			if (!options.keepLoadingOverlay) {
+				// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
+				mainResultViewer.setLoading(false);
 				els.loadingOverlay.style.display = "none";
 			}
 			els.outputPanel.classList.remove("is-processing");
