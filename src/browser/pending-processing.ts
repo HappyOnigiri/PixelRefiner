@@ -2,6 +2,7 @@ import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import { createBatchItemOptions } from "./batch-options";
 import { i18n } from "./i18n";
+import { createLoadingOverlay } from "./loading-overlay";
 import { showWarning } from "./notifications";
 import { createPendingImageQueue } from "./pending-queue";
 import type { RunProcessingOptions } from "./processing-controller";
@@ -26,25 +27,19 @@ export const createProcessPendingImages = ({
 	imageSession,
 	runProcessing,
 }: PendingProcessingOptions): (() => Promise<void>) => {
-	const setLoadingText = (text: string) => {
-		const loadingText = els.loadingOverlay.querySelector(".loading-text");
-		if (loadingText) loadingText.textContent = text;
-	};
+	const loadingOverlay = createLoadingOverlay(els);
 
 	// 一覧のうち何枚目を処理しているかを進捗として示す
-	const showInactiveProgress = () => {
+	const showProgress = () => {
 		const images = imageSession.getImages();
 		let finished = 0;
 		for (let index = 0; index < images.length; index += 1) {
 			const status = images[index].status;
 			if (status === "done" || status === "error") finished += 1;
 		}
-		els.loadingOverlay.style.display = "flex";
-		setLoadingText(
-			i18n.t("status.processing_batch", {
-				current: Math.min(finished + 1, images.length),
-				total: images.length,
-			}),
+		loadingOverlay.showProgress(
+			Math.min(finished + 1, images.length),
+			images.length,
 		);
 	};
 
@@ -52,7 +47,7 @@ export const createProcessPendingImages = ({
 		const item = imageSession.getImages().find((image) => image.id === id);
 		if (!item) return;
 		imageSession.setImageStatus(id, "processing");
-		showInactiveProgress();
+		showProgress();
 		try {
 			// [Intended] 候補プレビューで確定済みの方針は、一括変換でも画像ごとに引き継ぐ。
 			const options = createBatchItemOptions(
@@ -81,8 +76,7 @@ export const createProcessPendingImages = ({
 		processActiveImage: () => runProcessing(),
 		processInactiveImage,
 		onDrained: (attemptedIds) => {
-			els.loadingOverlay.style.display = "none";
-			setLoadingText(i18n.t("status.processing"));
+			loadingOverlay.hide();
 			if (attemptedIds.length === 0) return;
 			const images = imageSession.getImages();
 			let failed = 0;
