@@ -469,7 +469,17 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 					.join(", ");
 	const metricState = (
 		key: string,
+		hasBaseline: boolean,
 	): { className: string; translationKey: string; label: string } => {
+		// [Intended] ベースライン未登録のケースは Baseline 列も Delta 列も "-" になるので、
+		// 「前回基準と同じ」と断定せず判定不能として出す。
+		if (!hasBaseline) {
+			return {
+				className: "metric-unchanged",
+				translationKey: "notAvailable",
+				label: "not available",
+			};
+		}
 		if (result.regressedMetrics.includes(key)) {
 			return {
 				className: "metric-regressed",
@@ -501,7 +511,7 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 			delta === undefined
 				? "-"
 				: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
-		const state = metricState(key);
+		const state = metricState(key, baseline !== undefined);
 		return `<tr class="${state.className}">
 			<th data-i18n="${key}">${key}</th>
 			<td>${escapeHtml(target)}</td>
