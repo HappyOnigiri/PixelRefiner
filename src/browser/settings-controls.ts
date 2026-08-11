@@ -4,6 +4,8 @@ import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import {
 	advancedSettingControls,
 	applyAdvancedSettingDefaults,
+	backgroundDependentAdvancedControls,
+	gridDetectionAdvancedControls,
 } from "./advanced-settings-fields";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -320,6 +322,7 @@ export const setupSettingsControls = ({
 		els.gridDetectionModeSelect,
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
+		...gridDetectionAdvancedControls(els),
 	].forEach((el) => {
 		el.addEventListener("change", clearCandidateSelections);
 		el.addEventListener("input", clearCandidateSelections);

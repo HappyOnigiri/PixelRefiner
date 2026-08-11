@@ -41,6 +41,44 @@ export const advancedSettingControls = (
 	els.trimAlphaThresholdInput,
 ];
 
+/**
+ * 格子検出でしか効かない詳細設定。
+ *
+ * [Intended] 候補選択のクリア対象と、グリッド検出モードに応じた無効表示が
+ * 同じ一覧を見るようにする。片方だけに足すと、設定を変えても候補の固定サイズが
+ * 残る／効かない項目が有効に見える、という壊れ方をする。
+ */
+export const gridDetectionAdvancedControls = (
+	els: Elements,
+): Array<HTMLInputElement | HTMLSelectElement> => [
+	els.autoGridFromTrimmedCheck,
+	els.phaseAwareGridSearchCheck,
+	els.boundaryContrastOverrideCheck,
+	els.detectionBackgroundMaskCheck,
+	els.backgroundMaskToleranceInput,
+	els.gridSignalColorBoundaryCheck,
+	els.gridSignalLuminanceAlphaCheck,
+	els.gridSignalAutocorrelationCheck,
+	els.gridSignalReconstructionCheck,
+	els.gridSignalLocalPhaseCheck,
+	els.autoMaxCellsWInput,
+	els.autoMaxCellsHInput,
+];
+
+/**
+ * 背景抽出が無効なら効かない詳細設定。
+ *
+ * [Intended] createProcessOptions が bgEnabled で強制 false にしている項目に限る。
+ * 巻き戻しや信頼度ゲートは背景抽出が無効でも透かし除去の経路で効くため含めない。
+ */
+export const backgroundDependentAdvancedControls = (
+	els: Elements,
+): Array<HTMLInputElement | HTMLSelectElement> => [
+	els.backgroundDehaloCheck,
+	els.backgroundEdgeCleanupCheck,
+	els.backgroundRampFollowCheck,
+];
+
 /** 詳細設定へ公開した項目に既定値を反映する。 */
 export const applyAdvancedSettingDefaults = (
 	els: Elements,
