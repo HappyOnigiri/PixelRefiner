@@ -57,13 +57,24 @@ const bestByScore = (results: GridSizeCandidate[]): GridSizeCandidate => {
 	return best;
 };
 
-/** 最良候補の 1/3・1/2・2 倍・3 倍にあたる出力サイズ。 */
-const harmonicOutHeights = (outH: number): number[] => [
-	Math.round(outH / 3),
-	Math.round(outH / 2),
-	outH * 2,
-	outH * 3,
-];
+/**
+ * 最良候補の倍音にあたる出力サイズ。粗い側（1/f）と細かい側（f 倍）の両方。
+ *
+ * [Intended] 倍率は乗り換え判定と同じ config の係数から採る。ここだけ独自の係数を
+ * 持つと、乗り換えが発火しなかったときに正解サイズが候補一覧へ入らない倍率
+ * （実測では 4 倍・6 倍細かい格子）が生まれる。
+ */
+const harmonicOutHeights = (outH: number): number[] => {
+	const factors = BOUNDARY_CONTRAST_LIMITS.harmonicFactors;
+	const heights: number[] = [];
+	for (let index = factors.length - 1; index >= 0; index -= 1) {
+		heights.push(Math.round(outH / factors[index]));
+	}
+	for (let index = 0; index < factors.length; index += 1) {
+		heights.push(outH * factors[index]);
+	}
+	return heights;
+};
 
 /**
  * 境界コントラストだけを 1 刻みで走査し、証拠が最も強い出力高さを返す。
@@ -241,7 +252,7 @@ const pickDistributedGridSizeCandidates = (
 	// 採用格子は常に含める
 	add(best);
 
-	// [Intended] 採用格子の 1/3・1/2・2 倍・3 倍は必ず選択肢へ入れる。倍率の取り違えは
+	// [Intended] 採用格子の倍音は必ず選択肢へ入れる。倍率の取り違えは
 	// ほぼ倍音関係で起きるので、候補選択で救えるのはこの兄弟が並んでいるときだけ。
 	const harmonics = harmonicOutHeights(best.outH);
 	for (let index = 0; index < harmonics.length; index += 1) {
@@ -258,7 +269,8 @@ const pickDistributedGridSizeCandidates = (
 		// 近い候補が無い倍音は飛ばす（探索範囲外の倍率）。
 		if (
 			nearest &&
-			Math.abs(nearest.outH - target) <= Math.max(1, target * 0.1)
+			Math.abs(nearest.outH - target) <=
+				Math.max(1, target * BOUNDARY_CONTRAST_LIMITS.harmonicWindow)
 		) {
 			add(nearest);
 		}
