@@ -349,7 +349,7 @@ export const renderHtml = (results: QualityResults): string => {
 			const targetFailures =
 				result.targetFailedAssertions.length === 0
 					? ""
-					: `<p class="target-failures"><strong data-i18n="failed">Target unmet</strong>: ` +
+					: `<p class="target-failures"><strong data-i18n="targetUnmet">Target unmet</strong>: ` +
 						result.targetFailedAssertions
 							.map(
 								(assertion) =>
@@ -587,6 +587,12 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const tags = result.degradationPatterns
 		.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
 		.join(" ");
+	// [Intended] 実行時間はベースラインを持たない指標なので、指標比較の表には入れず
+	// 単独の行で出す。表へ足すと Baseline も Delta も "-" のまま判定列だけが埋まり、
+	// 前回基準と比べられる指標と見分けがつかなくなる。
+	const processingTime =
+		'<p><strong data-i18n="processingTime">Time</strong>: ' +
+		`${result.metrics.runtimeMs.toFixed(2)}ms</p>`;
 	return `<!doctype html>
 <html lang="en">
 <head>
@@ -603,11 +609,14 @@ ${DETAIL_REPORT_STYLES}	</style>
 			${escapeHtml(result.id)}
 			<span class="badge target-${result.targetStatus}" data-i18n="${targetStateKey}">${result.targetStatus}</span>
 			<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
+			<span class="badge parameter-${result.parameterMode}"
+				data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
 		</h1>
 		<p class="case-description" data-description-en="${escapeHtml(description.en)}"
 			data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
 		<p>${tags}</p>
 		<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
+		${processingTime}
 		<section>
 			<h2 data-i18n="diagnostics">All images and settings</h2>
 			<div class="images">${allImages}</div>

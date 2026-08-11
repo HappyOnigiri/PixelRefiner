@@ -69,7 +69,7 @@ export const renderTargetComparison = (result: QualityCaseResult): string => {
 	const failures =
 		result.targetFailedAssertions.length === 0
 			? ""
-			: `<p><strong data-i18n="failed">Target unmet</strong>: ` +
+			: `<p><strong data-i18n="targetUnmet">Target unmet</strong>: ` +
 				result.targetFailedAssertions
 					.map(
 						(assertion) =>

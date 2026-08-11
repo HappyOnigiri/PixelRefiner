@@ -271,6 +271,11 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(compactDetail).toContain('class="case-description"');
 		expect(compactDetail).toContain('class="image-stage dialog-stage"');
+		// [Intended] 一覧カードと同じ属性を詳細でも読み取れるようにする。
+		expect(compactDetail).toContain('class="badge parameter-explicit"');
+		expect(compactDetail).toContain(
+			'<strong data-i18n="processingTime">Time</strong>',
+		);
 		for (const imageKey of [
 			"input",
 			"groundTruth",
@@ -299,6 +304,7 @@ describe.skipIf(!enabled)("quality report", () => {
 				"<code>remove-background-trim-resize-46x13</code>",
 		);
 		expect(autoDetail).toContain('data-i18n="sizeMatches"');
+		expect(autoDetail).toContain('class="badge parameter-auto"');
 		expect(results.summary.targetMissing).toBe(0);
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
