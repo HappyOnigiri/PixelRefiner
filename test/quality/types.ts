@@ -251,8 +251,14 @@ export type QualityCaseResult = {
 	/**
 	 * レポートへ書き出した各画像の実寸。存在しない画像は null。
 	 * [Intended] files と同じキーで持ち、画像とサイズの対応をキー名だけで辿れるようにする。
+	 * null 許容も files に合わせる。常に書き出す画像の寸法を入れ忘れたときに、
+	 * 型検査を通り抜けてレポートから寸法が黙って消えることを防ぐ。
 	 */
-	imageSizes: { [Key in keyof QualityCaseFiles]: QualityImageSize | null };
+	imageSizes: {
+		[Key in keyof QualityCaseFiles]: null extends QualityCaseFiles[Key]
+			? QualityImageSize | null
+			: QualityImageSize;
+	};
 };
 
 export type QualityResults = {

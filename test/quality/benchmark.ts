@@ -140,8 +140,14 @@ const buildCandidateOptions = (
 		}
 	});
 
-const imageSize = (image: RawImage | null): QualityImageSize | null =>
-	image === null ? null : { width: image.width, height: image.height };
+const imageSize = (image: RawImage): QualityImageSize => ({
+	width: image.width,
+	height: image.height,
+});
+
+/** 存在しない画像を持つキー用。files の null 許容と対応させる。 */
+const optionalImageSize = (image: RawImage | null): QualityImageSize | null =>
+	image === null ? null : imageSize(image);
 
 const failedAssertions = (
 	qualityCase: QualityImageCase,
@@ -284,9 +290,9 @@ export const runQualityCase = (
 		backgroundMask: `${caseDirectory}/background-mask.png`,
 	};
 	const imageSizes = {
-		groundTruth: imageSize(targetImage),
+		groundTruth: optionalImageSize(targetImage),
 		input: imageSize(input),
-		baseline: imageSize(baselineImage),
+		baseline: optionalImageSize(baselineImage),
 		result: imageSize(currentRun.result),
 		diff:
 			targetImage === null
