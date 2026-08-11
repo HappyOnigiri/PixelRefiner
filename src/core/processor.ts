@@ -153,7 +153,6 @@ const processImageCore = (
 		}
 		return preRemovedInput;
 	};
-	const img = inputImage;
 	const startTime = performance.now();
 	const log = (...args: unknown[]) => {
 		if (o.debug) {
@@ -162,8 +161,8 @@ const processImageCore = (
 	};
 
 	log("Processing started", {
-		width: img.width,
-		height: img.height,
+		width: inputImage.width,
+		height: inputImage.height,
 		options: o,
 	});
 
@@ -175,7 +174,7 @@ const processImageCore = (
 	const workingStart = performance.now();
 	let working: RawImage;
 	if (!o.preRemoveBackground) {
-		working = cloneImage(img);
+		working = cloneImage(inputImage);
 	} else if (
 		o.bgRemovalScope !== "off" &&
 		o.bgExtractionMethod !== "none" &&
@@ -185,13 +184,13 @@ const processImageCore = (
 	} else if (o.bgExtractionMethod === "auto") {
 		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
 		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
-		working = cloneImage(img);
+		working = cloneImage(inputImage);
 	} else {
-		working = cloneImage(img);
+		working = cloneImage(inputImage);
 	}
 	const watermarkGeometry = prepareGeminiWatermarkGeometry({
 		inputImage,
-		image: img,
+		image: inputImage,
 		working,
 		options: o,
 		automaticBackground,
@@ -206,7 +205,7 @@ const processImageCore = (
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
 	);
 
-	o.debugHook?.("00-input", img);
+	o.debugHook?.("00-input", inputImage);
 	o.debugHook?.("01-working", working, {
 		preRemoveBackground: o.preRemoveBackground,
 	});
@@ -216,7 +215,7 @@ const processImageCore = (
 
 	let smallComponentRemoval: SmallComponentRemovalDiagnostic | undefined;
 	const simpleRouteContext: SimpleRouteContext = {
-		img,
+		img: inputImage,
 		o,
 		working,
 		bgTargets,
@@ -339,7 +338,7 @@ const processImageCore = (
 		gridMethod,
 	);
 	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
-	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
+	// 加工前の入力画像を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
 		o.processingMode === "auto"
 			? classifyInput(geometryWorking, rankedGridCandidates)
@@ -437,9 +436,9 @@ const processImageCore = (
 	});
 
 	// 「処理前」比較: 元画像をリサイズするだけ（補正なし）。
-	let compareBefore = cropRawImageNearestFromGrid(img, grid);
+	let compareBefore = cropRawImageNearestFromGrid(inputImage, grid);
 	// 「処理前（補正済み）」比較: 同じグリッドとセルサンプリングで元画像をダウンサンプリングする。
-	let compareBeforeSanitized = downsample(img, grid, downsampleOptions);
+	let compareBeforeSanitized = downsample(inputImage, grid, downsampleOptions);
 
 	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
 	const logicalMask = needsLogicalMask
@@ -501,7 +500,7 @@ const processImageCore = (
 			};
 
 			// 更新済みのトリミンググリッドを使って処理前比較を再計算する
-			compareBefore = cropRawImageNearestFromGrid(img, trimmedGrid);
+			compareBefore = cropRawImageNearestFromGrid(inputImage, trimmedGrid);
 			compareBeforeSanitized = cropRawImage(
 				compareBeforeSanitized,
 				b.x,
@@ -745,7 +744,7 @@ const processImageCore = (
 
 	const extracted = extractUsedColors(finalResult);
 	const analysis = createProcessingAnalysis(
-		img,
+		inputImage,
 		finalResult,
 		compareBeforeSanitized,
 		diagnosticGrid,
