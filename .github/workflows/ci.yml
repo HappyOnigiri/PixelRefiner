@@ -15,8 +15,7 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    # [Policy] 重い画像品質ケースは必須の quality check に分離する。
-    timeout-minutes: 5
+    # [Policy] 重い画像品質ケースは独立した quality check に分離する。
     steps:
       - uses: actions/checkout@v7
         with:

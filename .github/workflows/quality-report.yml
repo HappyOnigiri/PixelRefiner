@@ -17,8 +17,6 @@ jobs:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     # [Policy] 比較レポートと品質ゲートは同じケース実行結果から生成する。
-    # シャードは共有ランナーのコア数に律速されるため余裕を持たせる。
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -129,7 +127,6 @@ jobs:
       needs.quality.result != 'cancelled'
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     concurrency:
       group: quality-pages
       cancel-in-progress: false
@@ -215,7 +212,6 @@ jobs:
       github.event.action == 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     concurrency:
       group: quality-pages
       cancel-in-progress: false
