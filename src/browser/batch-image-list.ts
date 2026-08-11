@@ -20,31 +20,21 @@ export const renderBatchImageList = ({
 	for (let index = 0; index < images.length; index += 1) {
 		const image = images[index];
 		const item = document.createElement("div");
-		item.className = [
-			"image-item",
-			image.id === activeId ? "active" : "",
-			image.attention ? "attention" : "",
-		]
+		item.className = ["image-item", image.id === activeId ? "active" : ""]
 			.filter(Boolean)
 			.join(" ");
 		item.dataset.status = image.status;
-		const confidence =
-			image.analysis?.classificationConfidence ?? image.analysis?.confidence;
-		const diagnostic = image.analysis
-			? `${i18n.t(`batch.route.${image.analysis.route}`)} ${Math.round((confidence ?? 0) * 100)}%`
-			: i18n.t(`batch.status.${image.status}`);
+		// [Intended] 一覧では判定方式と信頼度を見せない。数値は達成率と誤読されやすく、
+		// 判定の詳細は画像を選択したときの結果表示と診断サマリーが受け持つ。
+		const statusLabel = i18n.t(`batch.status.${image.status}`);
 		item.title = image.error
-			? `${image.file.name}\n${diagnostic}\n${image.error}`
-			: `${image.file.name}\n${diagnostic}`;
+			? `${image.file.name}\n${statusLabel}\n${image.error}`
+			: `${image.file.name}\n${statusLabel}`;
 		item.setAttribute("aria-label", item.title);
 
 		const thumbnail = document.createElement("img");
 		thumbnail.src = image.thumbnail;
 		item.appendChild(thumbnail);
-		const diagnosticLabel = document.createElement("div");
-		diagnosticLabel.className = "image-item-diagnostic";
-		diagnosticLabel.textContent = diagnostic;
-		item.appendChild(diagnosticLabel);
 		const status = document.createElement("div");
 		status.className = "status-indicator";
 		item.appendChild(status);
