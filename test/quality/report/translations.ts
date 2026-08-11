@@ -15,8 +15,29 @@ export const REPORT_TRANSLATIONS = {
 		inputKind: "Input kind",
 		route: "Route",
 		confidence: "Confidence (diagnostic)",
+		classificationConfidence: "Classification confidence",
+		gridConfidence: "Grid confidence",
 		notAvailable: "not available",
-		warnings: "Warnings",
+		hasWarnings: "WARNING present",
+		hasCandidateSelection: "candidate selection shown",
+		warningDetails: "WARNING details",
+		warningTrigger: "Raised by",
+		candidateDiagnostics: "Auto candidate diagnostic",
+		candidateModal: "Candidate modal",
+		candidateModalWouldShow: "expected to show",
+		candidateModalWouldNotShow: "not expected to show",
+		candidateModalNotApplicable: "not applicable",
+		warningPresentation: "WARNING presentation",
+		warningPresentationCandidateModal: "candidate modal",
+		warningPresentationToast: "toast notification",
+		warningPresentationNone: "none",
+		candidateModalReason: "Decision reason",
+		candidatePlanCount: "Candidate plans",
+		candidateOptions: "Candidate options",
+		candidateOptionsUnavailable: "No candidate option was generated",
+		candidateOptionFailed: "generation failed",
+		candidateRecommended: "Recommended",
+		colorCount: "Colors",
 		none: "none",
 		topCandidates: "Top candidates",
 		metrics: "Metrics",
@@ -97,6 +118,59 @@ export const REPORT_TRANSLATIONS = {
 			"catastrophic-failure": "catastrophic failure",
 			"output-size": "output size",
 		},
+		processingWarnings: {
+			LOW_GRID_CONFIDENCE: "Grid confidence is low. Please check the result.",
+			BACKGROUND_UNCERTAIN: "The background detection is uncertain.",
+			BACKGROUND_REMOVAL_SKIPPED:
+				"Background removal was skipped because too much would have been removed.",
+			CONTENT_LOSS_RISK:
+				"Processing may have removed a large amount of content.",
+			ONE_AXIS_DETECTION_FAILED: "The grid could not be detected on one axis.",
+			EXTREME_OUTPUT_SIZE: "The output size is extremely large.",
+			NO_CONTENT: "No processable content was detected.",
+			FALLBACK_TO_PRESERVE: "The original size was preserved for safety.",
+		},
+		// [Policy] どの判定でその WARNING が付いたかを書く。利用者向けの文言
+		// （processingWarnings）とは別に、レポートの読者が原因を追える説明を持たせる。
+		warningTriggers: {
+			LOW_GRID_CONFIDENCE:
+				"The selected grid candidate's confidence is below the threshold, the two axis scores " +
+				"disagree, the output would be degenerate or extremely small, or one axis failed detection.",
+			BACKGROUND_UNCERTAIN:
+				"The automatic background model's confidence is below the minimum.",
+			BACKGROUND_REMOVAL_SKIPPED:
+				"Background removal was rolled back because too much would have been removed.",
+			CONTENT_LOSS_RISK:
+				"The foreground ratio dropped more than the allowed limit between input and output.",
+			ONE_AXIS_DETECTION_FAILED:
+				"Grid detection failed on exactly one of the two axes.",
+			EXTREME_OUTPUT_SIZE:
+				"The output would be degenerate or extremely small, or its width or height exceeds the limit.",
+			NO_CONTENT: "The input had no foreground pixel to process.",
+			FALLBACK_TO_PRESERVE:
+				"Auto fell back to keeping the original size because its decision was low confidence " +
+				"or the detected grid was degenerate.",
+		},
+		candidateModalReasons: {
+			LOW_GRID_CONFIDENCE:
+				"Grid confidence is low and candidates can be offered",
+			NO_WARNING: "No warning was raised",
+			NO_LOW_GRID_CONFIDENCE:
+				"A warning was raised, but not about low grid confidence",
+			NO_CANDIDATE_PREVIEW: "No candidate could be offered",
+			CANDIDATE_SELECTION_EXISTS: "A candidate has already been selected",
+			SHOW_CANDIDATES_DISABLED:
+				"Candidate selection is disabled in the settings",
+			NOT_INITIAL: "This is not the initial processing run",
+			NOT_AUTO: "The processing mode is not Auto",
+		},
+		candidateKinds: {
+			recommended: "Recommended",
+			finer: "Finer",
+			coarser: "Coarser",
+			preserve: "Keep original size",
+			convert: "Convert option",
+		},
 	},
 	ja: {
 		title: "品質レポート",
@@ -114,8 +188,29 @@ export const REPORT_TRANSLATIONS = {
 		inputKind: "入力種別",
 		route: "処理ルート",
 		confidence: "信頼度（診断値）",
+		classificationConfidence: "自動分類信頼度",
+		gridConfidence: "グリッド信頼度",
 		notAvailable: "取得不可",
-		warnings: "警告",
+		hasWarnings: "WARNINGあり",
+		hasCandidateSelection: "候補選択あり",
+		warningDetails: "WARNINGの詳細",
+		warningTrigger: "判定条件",
+		candidateDiagnostics: "Auto候補モーダル診断",
+		candidateModal: "候補選択モーダル",
+		candidateModalWouldShow: "表示される想定",
+		candidateModalWouldNotShow: "表示されない",
+		candidateModalNotApplicable: "対象外",
+		warningPresentation: "WARNINGの表示先",
+		warningPresentationCandidateModal: "候補モーダル",
+		warningPresentationToast: "通常通知",
+		warningPresentationNone: "なし",
+		candidateModalReason: "判定理由",
+		candidatePlanCount: "候補プラン数",
+		candidateOptions: "候補選択の選択肢",
+		candidateOptionsUnavailable: "生成された選択肢はありません",
+		candidateOptionFailed: "選択肢の生成に失敗",
+		candidateRecommended: "おすすめ",
+		colorCount: "色数",
 		none: "なし",
 		topCandidates: "上位候補",
 		metrics: "評価指標",
@@ -194,6 +289,52 @@ export const REPORT_TRANSLATIONS = {
 			"catastrophic-failure": "致命的な失敗",
 			"output-size": "出力サイズ",
 		},
+		processingWarnings: {
+			LOW_GRID_CONFIDENCE:
+				"グリッド判定の信頼度が低いため、結果を確認してください。",
+			BACKGROUND_UNCERTAIN: "背景の判定が不確かです。",
+			BACKGROUND_REMOVAL_SKIPPED:
+				"背景が消えすぎると判定したため、背景の透過を中止しました。",
+			CONTENT_LOSS_RISK: "処理によって内容が大きく失われた可能性があります。",
+			ONE_AXIS_DETECTION_FAILED: "片方向のグリッドを検出できませんでした。",
+			EXTREME_OUTPUT_SIZE: "出力サイズが非常に大きくなっています。",
+			NO_CONTENT: "処理対象の内容を検出できませんでした。",
+			FALLBACK_TO_PRESERVE: "安全のため元のサイズを維持しました。",
+		},
+		// [Policy] どの判定でその WARNING が付いたかを書く。利用者向けの文言
+		// （processingWarnings）とは別に、レポートの読者が原因を追える説明を持たせる。
+		warningTriggers: {
+			LOW_GRID_CONFIDENCE:
+				"採用したグリッド候補の信頼度が閾値未満、縦横のスコアが食い違う、" +
+				"出力が退化または極小になる、片軸の検出に失敗した、のいずれかを検出した。",
+			BACKGROUND_UNCERTAIN: "自動背景モデルの信頼度が下限を下回った。",
+			BACKGROUND_REMOVAL_SKIPPED:
+				"背景が消えすぎると判定し、背景除去をロールバックした。",
+			CONTENT_LOSS_RISK: "処理の前後で前景の割合が上限を超えて減った。",
+			ONE_AXIS_DETECTION_FAILED: "グリッド検出で縦横のうち片方だけ失敗した。",
+			EXTREME_OUTPUT_SIZE:
+				"出力が退化または極小になる、あるいは出力の幅か高さが上限を超えた。",
+			NO_CONTENT: "処理前の前景画素が無く、処理対象が存在しない。",
+			FALLBACK_TO_PRESERVE:
+				"Autoの判定が低信頼、または検出したグリッドが縮退したため、原寸維持へ退避した。",
+		},
+		candidateModalReasons: {
+			LOW_GRID_CONFIDENCE: "グリッド信頼度が低く、候補を提示できる",
+			NO_WARNING: "WARNINGが無い",
+			NO_LOW_GRID_CONFIDENCE: "WARNINGはあるが、グリッド信頼度の低下ではない",
+			NO_CANDIDATE_PREVIEW: "提示できる候補が無い",
+			CANDIDATE_SELECTION_EXISTS: "すでに候補を選択済み",
+			SHOW_CANDIDATES_DISABLED: "候補選択の表示が設定で無効",
+			NOT_INITIAL: "初回処理ではない",
+			NOT_AUTO: "Auto以外の処理モード",
+		},
+		candidateKinds: {
+			recommended: "推奨候補",
+			finer: "細かめ",
+			coarser: "粗め",
+			preserve: "原寸維持",
+			convert: "Convert候補",
+		},
 	},
 	"zh-CN": {
 		title: "PixelRefiner 质量报告",
@@ -211,8 +352,29 @@ export const REPORT_TRANSLATIONS = {
 		inputKind: "输入类型",
 		route: "处理路径",
 		confidence: "置信度（诊断值）",
+		classificationConfidence: "自动分类置信度",
+		gridConfidence: "网格置信度",
 		notAvailable: "不可用",
-		warnings: "警告",
+		hasWarnings: "存在 WARNING",
+		hasCandidateSelection: "有候选选择",
+		warningDetails: "WARNING 详情",
+		warningTrigger: "判定条件",
+		candidateDiagnostics: "Auto 候选模态诊断",
+		candidateModal: "候选选择模态",
+		candidateModalWouldShow: "预计显示",
+		candidateModalWouldNotShow: "预计不显示",
+		candidateModalNotApplicable: "不适用",
+		warningPresentation: "WARNING 显示位置",
+		warningPresentationCandidateModal: "候选模态",
+		warningPresentationToast: "普通通知",
+		warningPresentationNone: "无",
+		candidateModalReason: "判定原因",
+		candidatePlanCount: "候选方案数",
+		candidateOptions: "候选选择项",
+		candidateOptionsUnavailable: "未生成候选项",
+		candidateOptionFailed: "候选项生成失败",
+		candidateRecommended: "推荐",
+		colorCount: "色数",
 		none: "无",
 		topCandidates: "候选前三名",
 		metrics: "指标",
@@ -290,6 +452,49 @@ export const REPORT_TRANSLATIONS = {
 			"deterministic-output": "输出可重复性",
 			"catastrophic-failure": "灾难性失败",
 			"output-size": "输出尺寸",
+		},
+		processingWarnings: {
+			LOW_GRID_CONFIDENCE: "网格置信度较低，请检查结果。",
+			BACKGROUND_UNCERTAIN: "背景判断存在不确定性。",
+			BACKGROUND_REMOVAL_SKIPPED:
+				"检测到背景可能被过度移除，已中止背景透明化。",
+			CONTENT_LOSS_RISK: "处理可能导致大量内容丢失。",
+			ONE_AXIS_DETECTION_FAILED: "无法检测一个方向的网格。",
+			EXTREME_OUTPUT_SIZE: "输出尺寸非常大。",
+			NO_CONTENT: "未检测到可处理的内容。",
+			FALLBACK_TO_PRESERVE: "为安全起见，已保留原始尺寸。",
+		},
+		// [Policy] どの判定でその WARNING が付いたかを書く。利用者向けの文言
+		// （processingWarnings）とは別に、レポートの読者が原因を追える説明を持たせる。
+		warningTriggers: {
+			LOW_GRID_CONFIDENCE:
+				"采用的网格方案置信度低于阈值、两轴评分不一致、输出会退化或极小、" +
+				"或某一轴检测失败。",
+			BACKGROUND_UNCERTAIN: "自动背景模型的置信度低于下限。",
+			BACKGROUND_REMOVAL_SKIPPED: "判断背景会被过度移除，已回滚背景透明化。",
+			CONTENT_LOSS_RISK: "处理前后前景比例的下降超过上限。",
+			ONE_AXIS_DETECTION_FAILED: "网格检测仅在一个方向上失败。",
+			EXTREME_OUTPUT_SIZE: "输出会退化或极小，或输出的宽或高超过上限。",
+			NO_CONTENT: "处理前不存在前景像素，没有可处理的内容。",
+			FALLBACK_TO_PRESERVE:
+				"Auto 的判定置信度低，或检测到的网格退化，因此退回保持原尺寸。",
+		},
+		candidateModalReasons: {
+			LOW_GRID_CONFIDENCE: "网格置信度低，可以提供候选",
+			NO_WARNING: "没有 WARNING",
+			NO_LOW_GRID_CONFIDENCE: "有 WARNING，但不是网格置信度低",
+			NO_CANDIDATE_PREVIEW: "没有可提供的候选",
+			CANDIDATE_SELECTION_EXISTS: "已经选择过候选",
+			SHOW_CANDIDATES_DISABLED: "设置中已关闭候选选择",
+			NOT_INITIAL: "不是首次处理",
+			NOT_AUTO: "处理模式不是 Auto",
+		},
+		candidateKinds: {
+			recommended: "推荐方案",
+			finer: "更精细",
+			coarser: "更粗犷",
+			preserve: "保持原尺寸",
+			convert: "转换方案",
 		},
 	},
 } as const;

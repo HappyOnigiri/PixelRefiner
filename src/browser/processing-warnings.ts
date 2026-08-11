@@ -29,5 +29,5 @@ export const translateProcessingWarnings = (
 
 export const shouldNotifyProcessingWarnings = (
 	codes: readonly string[],
-	candidateModalShown: boolean,
-): boolean => codes.length > 0 && !candidateModalShown;
+	candidateModalDisplayed: boolean,
+): boolean => codes.length > 0 && !candidateModalDisplayed;

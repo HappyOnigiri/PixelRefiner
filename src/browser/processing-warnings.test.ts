@@ -43,6 +43,12 @@ describe("shouldNotifyProcessingWarnings", () => {
 		);
 	});
 
+	it("候補モーダルの対象外の WARNING も通常通知へ送る", () => {
+		expect(shouldNotifyProcessingWarnings(["CONTENT_LOSS_RISK"], false)).toBe(
+			true,
+		);
+	});
+
 	it("警告がない場合は通知しない", () => {
 		expect(shouldNotifyProcessingWarnings([], false)).toBe(false);
 	});
