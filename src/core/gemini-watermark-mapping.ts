@@ -25,27 +25,12 @@ const rotatedSize = (
 	};
 };
 
-const isBrightOpaquePixel = (
-	image: RawImage,
-	x: number,
-	y: number,
-): boolean => {
-	const offset = (y * image.width + x) * 4;
-	const luminance =
-		(77 * image.data[offset] +
-			150 * image.data[offset + 1] +
-			29 * image.data[offset + 2]) >>
-		8;
-	return (
-		image.data[offset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold &&
-		luminance >= GEMINI_WATERMARK_LIMITS.brightLuminanceMinimum
-	);
-};
-
 const findNearbyBackgroundOffset = (
 	image: RawImage,
-	x: number,
-	y: number,
+	boundMinX: number,
+	boundMinY: number,
+	boundMaxX: number,
+	boundMaxY: number,
 ): number => {
 	const maximumRadius =
 		Math.ceil(
@@ -53,38 +38,38 @@ const findNearbyBackgroundOffset = (
 				GEMINI_WATERMARK_LIMITS.maximumDimensionRatio,
 		) + 2;
 	for (let radius = 1; radius <= maximumRadius; radius += 1) {
-		const minX = Math.max(0, x - radius);
-		const maxX = Math.min(image.width - 1, x + radius);
-		const minY = Math.max(0, y - radius);
-		const maxY = Math.min(image.height - 1, y + radius);
+		const minX = Math.max(0, boundMinX - radius);
+		const maxX = Math.min(image.width - 1, boundMaxX + radius);
+		const minY = Math.max(0, boundMinY - radius);
+		const maxY = Math.min(image.height - 1, boundMaxY + radius);
 		for (let candidateX = minX; candidateX <= maxX; candidateX += 1) {
-			if (!isBrightOpaquePixel(image, candidateX, minY)) {
-				const offset = (minY * image.width + candidateX) * 4;
-				if (image.data[offset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold) {
-					return offset;
+			const topOffset = (minY * image.width + candidateX) * 4;
+			if (image.data[topOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold) {
+				return topOffset;
+			}
+			if (maxY !== minY) {
+				const bottomOffset = (maxY * image.width + candidateX) * 4;
+				if (
+					image.data[bottomOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
+				) {
+					return bottomOffset;
 				}
-			}
-			if (maxY === minY || isBrightOpaquePixel(image, candidateX, maxY)) {
-				continue;
-			}
-			const offset = (maxY * image.width + candidateX) * 4;
-			if (image.data[offset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold) {
-				return offset;
 			}
 		}
 		for (let candidateY = minY + 1; candidateY < maxY; candidateY += 1) {
-			if (!isBrightOpaquePixel(image, minX, candidateY)) {
-				const offset = (candidateY * image.width + minX) * 4;
-				if (image.data[offset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold) {
-					return offset;
+			const leftOffset = (candidateY * image.width + minX) * 4;
+			if (
+				image.data[leftOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
+			) {
+				return leftOffset;
+			}
+			if (maxX !== minX) {
+				const rightOffset = (candidateY * image.width + maxX) * 4;
+				if (
+					image.data[rightOffset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold
+				) {
+					return rightOffset;
 				}
-			}
-			if (maxX === minX || isBrightOpaquePixel(image, maxX, candidateY)) {
-				continue;
-			}
-			const offset = (candidateY * image.width + maxX) * 4;
-			if (image.data[offset + 3] >= GEMINI_WATERMARK_LIMITS.alphaThreshold) {
-				return offset;
 			}
 		}
 	}
@@ -110,6 +95,73 @@ export const clearMappedGeminiWatermark = (
 	const outputCenterX = (rotation.width - 1) / 2;
 	const outputCenterY = (rotation.height - 1) / 2;
 	const interpolationRadius = Math.abs(angle) > 1e-9 ? 1 : 0.5;
+	let sourceMinX = sourceWidth;
+	let sourceMinY = sourceHeight;
+	let sourceMaxX = 0;
+	let sourceMaxY = 0;
+	for (let index = 0; index < sourcePixels.length; index += 1) {
+		const sourcePixel = sourcePixels[index];
+		const sourceX = sourcePixel % sourceWidth;
+		const sourceY = (sourcePixel / sourceWidth) | 0;
+		sourceMinX = Math.min(sourceMinX, sourceX);
+		sourceMinY = Math.min(sourceMinY, sourceY);
+		sourceMaxX = Math.max(sourceMaxX, sourceX);
+		sourceMaxY = Math.max(sourceMaxY, sourceY);
+	}
+	let mappedMinX = image.width;
+	let mappedMinY = image.height;
+	let mappedMaxX = 0;
+	let mappedMaxY = 0;
+	for (let corner = 0; corner < 4; corner += 1) {
+		const sourceX = corner % 2 === 0 ? sourceMinX : sourceMaxX;
+		const sourceY = corner < 2 ? sourceMinY : sourceMaxY;
+		const centeredX = sourceX - sourceCenterX;
+		const centeredY = sourceY - sourceCenterY;
+		const rotatedX =
+			rotation.cosine * centeredX - rotation.sine * centeredY + outputCenterX;
+		const rotatedY =
+			rotation.sine * centeredX + rotation.cosine * centeredY + outputCenterY;
+		mappedMinX = Math.min(
+			mappedMinX,
+			Math.max(
+				0,
+				Math.floor((rotatedX - interpolationRadius - cropX) / grid.cellW),
+			),
+		);
+		mappedMinY = Math.min(
+			mappedMinY,
+			Math.max(
+				0,
+				Math.floor((rotatedY - interpolationRadius - cropY) / grid.cellH),
+			),
+		);
+		mappedMaxX = Math.max(
+			mappedMaxX,
+			Math.min(
+				image.width - 1,
+				Math.floor((rotatedX + interpolationRadius - cropX) / grid.cellW),
+			),
+		);
+		mappedMaxY = Math.max(
+			mappedMaxY,
+			Math.min(
+				image.height - 1,
+				Math.floor((rotatedY + interpolationRadius - cropY) / grid.cellH),
+			),
+		);
+	}
+	if (mappedMinX > mappedMaxX || mappedMinY > mappedMaxY) return image;
+	const backgroundOffset =
+		mode === "background"
+			? findNearbyBackgroundOffset(
+					image,
+					mappedMinX,
+					mappedMinY,
+					mappedMaxX,
+					mappedMaxY,
+				)
+			: -1;
+	if (mode === "background" && backgroundOffset < 0) return image;
 	let data: Uint8ClampedArray | undefined;
 	for (let index = 0; index < sourcePixels.length; index += 1) {
 		const sourcePixel = sourcePixels[index];
@@ -140,10 +192,6 @@ export const clearMappedGeminiWatermark = (
 		for (let y = minY; y <= maxY; y += 1) {
 			for (let x = minX; x <= maxX; x += 1) {
 				const offset = (y * image.width + x) * 4;
-				if (!isBrightOpaquePixel(image, x, y)) continue;
-				const backgroundOffset =
-					mode === "background" ? findNearbyBackgroundOffset(image, x, y) : -1;
-				if (mode === "background" && backgroundOffset < 0) continue;
 				data ??= new Uint8ClampedArray(image.data);
 				if (backgroundOffset >= 0) {
 					data[offset] = image.data[backgroundOffset];

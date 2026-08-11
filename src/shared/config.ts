@@ -43,7 +43,7 @@ export const GEMINI_WATERMARK_LIMITS = {
 	minimumComponentPixels: 24,
 	minimumDimensionRatio: 0.018,
 	maximumDimensionRatio: 0.12,
-	maximumAspectRatio: 1.35,
+	maximumAspectRatio: 1.1,
 	minimumCenterRatio: 0.7,
 	minimumMarginRatio: 0.002,
 	maximumMarginRatio: 0.1,
