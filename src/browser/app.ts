@@ -333,8 +333,10 @@ export const initApp = (): void => {
 				const raw = await imageToRawImage(file);
 				imageSession.addImage(file, raw);
 				addedCount += 1;
-			} catch {
+			} catch (error) {
 				// [Intended] 1 枚の読み込み失敗で、残りの画像を取りこぼさない。
+				// 通知はファイル名の集約にとどめるため、失敗の原因はコンソールに残す。
+				console.error(`Failed to load image: ${file.name}`, error);
 				failedNames.push(file.name);
 			}
 		}
