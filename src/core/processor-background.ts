@@ -36,7 +36,6 @@ export const prepareAutomaticBackground = (
 			backgroundModel: model,
 			backgroundDiagnostic: {
 				confidence: model.confidence,
-				removalRolledBack: false,
 				preRemoval: { attempted: false, rolledBack: false, removed: false },
 			},
 		};
@@ -52,7 +51,6 @@ export const prepareAutomaticBackground = (
 		backgroundModel: automaticBackground.model,
 		backgroundDiagnostic: {
 			confidence: automaticBackground.model.confidence,
-			removalRolledBack: automaticBackground.rolledBack,
 			preRemoval: {
 				attempted: true,
 				rolledBack: automaticBackground.rolledBack,
@@ -64,24 +62,34 @@ export const prepareAutomaticBackground = (
 	};
 };
 
-/**
- * 事後除去の結果を診断へ合流させ、出力向けのロールバック判定を確定する。
- *
- * [Intended] 事前除去は原寸、事後除去は出力解像度で別々に消えすぎ判定を行うため、
- * 片方だけがロールバックすることがある。ロールバックした段階は入力をそのまま返すだけなので、
- * もう一方が透過を作っていれば出力には背景の透過が残る。「透過を中止した」と伝えてよいのは、
- * どこかの段階が消えすぎで巻き戻り、かつどの段階も透過を作らなかったときに限る。
- * ロールバックしなかった段階を成功と見なすと、除去対象が無くて何も消さなかった段階が
- * 巻き戻りを打ち消し、透過が一切ない出力でも中止を伝えられなくなる。
- */
+/** 事後除去の実施結果を診断へ記録する。 */
 export const applyPostRemovalOutcome = (
 	diagnostic: BackgroundDiagnostic | undefined,
 	postRemoval: BackgroundRemovalStageOutcome,
 ): void => {
 	if (!diagnostic) return;
-	const stages = [diagnostic.preRemoval, postRemoval];
-	const attempted = stages.filter((stage) => stage.attempted);
-	diagnostic.removalRolledBack =
-		attempted.some((stage) => stage.rolledBack) &&
-		!attempted.some((stage) => stage.removed);
+	diagnostic.postRemoval = postRemoval;
+};
+
+/**
+ * 利用者へ「背景の透過を中止した」と伝えてよいかを、段階ごとの結果から判定する。
+ *
+ * [Intended] 事前除去は原寸、事後除去は出力解像度で別々に消えすぎ判定を行うため、
+ * 片方だけがロールバックすることがある。ロールバックした段階は入力をそのまま返すだけなので、
+ * もう一方が透過を作っていれば出力には背景の透過が残る。中止を伝えてよいのは、
+ * どこかの段階が消えすぎで巻き戻り、かつどの段階も透過を作らなかったときに限る。
+ * ロールバックしなかった段階を成功と見なすと、除去対象が無くて何も消さなかった段階が
+ * 巻き戻りを打ち消し、透過が一切ない出力でも中止を伝えられなくなる。
+ */
+export const hasSkippedBackgroundRemoval = (
+	diagnostic: BackgroundDiagnostic,
+): boolean => {
+	const stages = [diagnostic.preRemoval, diagnostic.postRemoval];
+	let rolledBack = false;
+	for (const stage of stages) {
+		if (stage === undefined || !stage.attempted) continue;
+		if (stage.removed) return false;
+		if (stage.rolledBack) rolledBack = true;
+	}
+	return rolledBack;
 };

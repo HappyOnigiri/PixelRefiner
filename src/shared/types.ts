@@ -225,17 +225,17 @@ export type BackgroundRemovalStageOutcome = {
 export type BackgroundDiagnostic = {
 	confidence: number;
 	/**
-	 * 消えすぎ検出により、出力へ背景の透過が一切入らなかったか。
-	 * [Intended] 段階ごとの生の結果ではなく、利用者へ「透過を中止した」と伝えてよいかを表す。
-	 * 事後除去の結果が出るまでは事前除去の結果を暫定値として持つ。
-	 */
-	removalRolledBack: boolean;
-	/**
 	 * 原寸に対する事前除去の実施結果。
 	 * [Intended] 事前除去と事後除去は解像度が違うため消えすぎ判定も別々に出る。
 	 * 出力向けの結論を出すには段階ごとの結果を残しておく必要がある。
 	 */
 	preRemoval: BackgroundRemovalStageOutcome;
+	/**
+	 * 出力解像度に対する事後除去の実施結果。事後除去の段階を通る前は未設定。
+	 * [Intended] 「透過を中止した」と伝えてよいかは段階ごとの結果から導く。結論を欄として
+	 * 持たせると、書き換えを忘れた経路で古い結論がそのまま警告になる。
+	 */
+	postRemoval?: BackgroundRemovalStageOutcome;
 };
 
 export type ProcessingAnalysis = {

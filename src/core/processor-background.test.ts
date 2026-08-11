@@ -3,7 +3,10 @@ import type {
 	BackgroundDiagnostic,
 	BackgroundRemovalStageOutcome,
 } from "../shared/types";
-import { applyPostRemovalOutcome } from "./processor-background";
+import {
+	applyPostRemovalOutcome,
+	hasSkippedBackgroundRemoval,
+} from "./processor-background";
 
 const notApplied: BackgroundRemovalStageOutcome = {
 	attempted: false,
@@ -26,66 +29,61 @@ const removedNothing: BackgroundRemovalStageOutcome = {
 	removed: false,
 };
 
-const diagnostic = (
+const skippedAfter = (
 	preRemoval: BackgroundRemovalStageOutcome,
-): BackgroundDiagnostic => ({
-	confidence: 0.9,
-	removalRolledBack: preRemoval.rolledBack,
-	preRemoval,
-});
+	postRemoval: BackgroundRemovalStageOutcome,
+): boolean => {
+	const diagnostic: BackgroundDiagnostic = { confidence: 0.9, preRemoval };
+	applyPostRemovalOutcome(diagnostic, postRemoval);
 
-describe("applyPostRemovalOutcome", () => {
+	expect(diagnostic.postRemoval).toBe(postRemoval);
+	return hasSkippedBackgroundRemoval(diagnostic);
+};
+
+describe("hasSkippedBackgroundRemoval", () => {
 	it("reports a rollback only when every applied stage rolled back", () => {
-		const both = diagnostic(rolledBack);
-		applyPostRemovalOutcome(both, rolledBack);
-
-		expect(both.removalRolledBack).toBe(true);
+		expect(skippedAfter(rolledBack, rolledBack)).toBe(true);
 	});
 
 	it("clears a full-resolution rollback when the post-processing removal succeeds", () => {
-		const preOnly = diagnostic(rolledBack);
-		applyPostRemovalOutcome(preOnly, madeTransparency);
-
-		expect(preOnly.removalRolledBack).toBe(false);
+		expect(skippedAfter(rolledBack, madeTransparency)).toBe(false);
 	});
 
 	it("keeps the transparency made by the pre-processing removal out of the warning", () => {
-		const postOnly = diagnostic(madeTransparency);
-		applyPostRemovalOutcome(postOnly, rolledBack);
-
-		expect(postOnly.removalRolledBack).toBe(false);
+		expect(skippedAfter(madeTransparency, rolledBack)).toBe(false);
 	});
 
 	it("keeps the rollback when the remaining stage removed nothing", () => {
-		const nothingLeft = diagnostic(rolledBack);
-		applyPostRemovalOutcome(nothingLeft, removedNothing);
-
-		expect(nothingLeft.removalRolledBack).toBe(true);
+		expect(skippedAfter(rolledBack, removedNothing)).toBe(true);
 	});
 
 	it("uses the remaining stage when the pre-processing removal is disabled", () => {
-		const skipped = diagnostic(notApplied);
-		applyPostRemovalOutcome(skipped, rolledBack);
-
-		expect(skipped.removalRolledBack).toBe(true);
-
-		const removed = diagnostic(notApplied);
-		applyPostRemovalOutcome(removed, madeTransparency);
-
-		expect(removed.removalRolledBack).toBe(false);
+		expect(skippedAfter(notApplied, rolledBack)).toBe(true);
+		expect(skippedAfter(notApplied, madeTransparency)).toBe(false);
 	});
 
 	it("reports no rollback when a stage removed nothing without rolling back", () => {
-		const idle = diagnostic(removedNothing);
-		applyPostRemovalOutcome(idle, notApplied);
-
-		expect(idle.removalRolledBack).toBe(false);
+		expect(skippedAfter(removedNothing, notApplied)).toBe(false);
 	});
 
 	it("reports no rollback when no removal stage runs", () => {
-		const none = diagnostic(notApplied);
-		applyPostRemovalOutcome(none, notApplied);
+		expect(skippedAfter(notApplied, notApplied)).toBe(false);
+	});
 
-		expect(none.removalRolledBack).toBe(false);
+	it("judges by the pre-processing stage alone while the post-processing stage is unrecorded", () => {
+		// [Intended] 結論を欄として持たず段階から導くため、事後除去を記録しない経路では
+		// 事前除去の結果だけで判定される。古い結論が残ったまま警告になることはない。
+		expect(
+			hasSkippedBackgroundRemoval({
+				confidence: 0.9,
+				preRemoval: rolledBack,
+			}),
+		).toBe(true);
+		expect(
+			hasSkippedBackgroundRemoval({
+				confidence: 0.9,
+				preRemoval: madeTransparency,
+			}),
+		).toBe(false);
 	});
 });
