@@ -220,10 +220,90 @@ const findAxisPhase = (
 		: null;
 };
 
+/**
+ * 採用格子でセル代表色を取り、元画像との平均絶対誤差を測る。
+ * 背景マスクが透けている画素は評価から外し、評価点が無ければ null を返す。
+ *
+ * [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
+ */
+const measureReconstructionError = (
+	cropped: RawImage,
+	mask: RawImage,
+	grid: PixelGrid,
+	sampleWindow: number,
+	pixelStride: number,
+): number | null => {
+	const croppedData = cropped.data;
+	const croppedW = cropped.width;
+	const croppedH = cropped.height;
+	const maskData = mask.data;
+	const cropX = grid.cropX ?? 0;
+	const cropY = grid.cropY ?? 0;
+	const outW = grid.outW ?? 1;
+	const outH = grid.outH ?? 1;
+	const small = downsample(cropped, grid, sampleWindow);
+	const smallData = small.data;
+	let err = 0;
+	let n = 0;
+	for (let y = 0; y < croppedH; y += pixelStride) {
+		const rowOffset = y * croppedW;
+		for (let x = 0; x < croppedW; x += pixelStride) {
+			const pixelIdx = rowOffset + x;
+			if (maskData[pixelIdx * 4 + 3] < 16) continue;
+
+			const i = Math.min(
+				outW - 1,
+				Math.max(0, Math.floor((x - cropX) / grid.cellW)),
+			);
+			const j = Math.min(
+				outH - 1,
+				Math.max(0, Math.floor((y - cropY) / grid.cellH)),
+			);
+			const srcIdx = pixelIdx * 4;
+			const dstIdx = (j * outW + i) * 4;
+			err +=
+				Math.abs(croppedData[srcIdx] - smallData[dstIdx]) +
+				Math.abs(croppedData[srcIdx + 1] - smallData[dstIdx + 1]) +
+				Math.abs(croppedData[srcIdx + 2] - smallData[dstIdx + 2]);
+			n += 1;
+		}
+	}
+	return n === 0 ? null : err / n;
+};
+
+/** 位相を与えたときに、その格子でセル代表色を取るための投影を組む。 */
+const gridForPhase = (
+	width: number,
+	height: number,
+	cellW: number,
+	cellH: number,
+	phaseX: number,
+	phaseY: number,
+): PixelGrid => {
+	// 位相をずらした格子は画像左端の手前から始まるので、被覆は切り上げで数える。
+	const cropX = phaseX > 0 ? phaseX - cellW : 0;
+	const cropY = phaseY > 0 ? phaseY - cellH : 0;
+	return {
+		cellW,
+		cellH,
+		offsetX: phaseX,
+		offsetY: phaseY,
+		outW: Math.max(1, Math.ceil((width - cropX) / cellW)),
+		outH: Math.max(1, Math.ceil((height - cropY) / cellH)),
+		cropX,
+		cropY,
+		cropW: width,
+		cropH: height,
+		score: 0,
+	};
+};
+
 const measurePhase = (
 	axes: AxisBoundaryContrastEvaluator,
 	cellW: number,
 	cellH: number,
+	reconstructionError: (grid: PixelGrid) => number | null,
+	cropped: RawImage,
 ): { offsetX: number; offsetY: number; phaseMeasured: boolean } => {
 	const phaseX = findAxisPhase(axes.x, cellW);
 	const phaseY = findAxisPhase(axes.y, cellH);
@@ -231,6 +311,24 @@ const measurePhase = (
 	// もう一方はキャンバス起点のまま残り、どちらの根拠とも合わない格子になる。
 	if (phaseX === null || phaseY === null) {
 		return { offsetX: 0, offsetY: 0, phaseMeasured: false };
+	}
+	// 位相 0 は「BBox の縁でちょうど境界が合っている」という結論なので、
+	// 投影は BBox 起点へ寄せたまま、セル内のずらしだけを持たない。
+	const aligned = { offsetX: 0, offsetY: 0, phaseMeasured: true };
+	if (phaseX === 0 && phaseY === 0) return aligned;
+	// [Intended] 境界コントラストが最大の位相は、必ずしも正しい境界とは限らない。
+	// セル内部の輪郭やハイライトが同じ位置に並ぶ画像では、真の境界より内部の線が
+	// 強く出て位相が数 px ずれる（実測: セル 10px でセル内 localX=3 に線を置いた
+	// 合成画像で、倍率は 8x8 を正しく選びながら位相が 3 と読まれた）。位相をずらした
+	// ほうがセル代表色の再構成誤差も下がることを確かめてから採用する。
+	const shifted = reconstructionError(
+		gridForPhase(cropped.width, cropped.height, cellW, cellH, phaseX, phaseY),
+	);
+	const unshifted = reconstructionError(
+		gridForPhase(cropped.width, cropped.height, cellW, cellH, 0, 0),
+	);
+	if (shifted === null || unshifted === null || shifted >= unshifted) {
+		return aligned;
 	}
 	return { offsetX: phaseX, offsetY: phaseY, phaseMeasured: true };
 };
@@ -372,10 +470,8 @@ export class FastGridSearchFromTrimmed
 		ratioOverride?: number,
 	): { bestOutH: number; est: GridEstimateFromTrimmed } | null {
 		const ratio = ratioOverride ?? cropped.width / Math.max(1, cropped.height);
-		const croppedData = cropped.data;
 		const croppedW = cropped.width;
 		const croppedH = cropped.height;
-		const maskData = mask.data;
 
 		const allResults: GridSizeCandidate[] = [];
 
@@ -402,38 +498,15 @@ export class FastGridSearchFromTrimmed
 					cropH: croppedH,
 					score: 0,
 				};
-				// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
-				const small = downsample(cropped, grid, sampleWindow);
-				const smallData = small.data;
+				const reconErr = measureReconstructionError(
+					cropped,
+					mask,
+					grid,
+					sampleWindow,
+					pixelStride,
+				);
+				if (reconErr === null) continue;
 
-				// 再構成誤差（背景のマスク alpha=0 は無視する）
-				let err = 0;
-				let n = 0;
-				for (let y = 0; y < croppedH; y += pixelStride) {
-					const rowOffset = y * croppedW;
-					for (let x = 0; x < croppedW; x += pixelStride) {
-						const pixelIdx = rowOffset + x;
-						const ma = maskData[pixelIdx * 4 + 3];
-						if (ma < 16) continue;
-
-						const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
-						const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
-						const srcIdx = pixelIdx * 4;
-						const r0 = croppedData[srcIdx];
-						const g0 = croppedData[srcIdx + 1];
-						const b0 = croppedData[srcIdx + 2];
-
-						const dstIdx = (j * outW + i) * 4;
-						const r1 = smallData[dstIdx];
-						const g1 = smallData[dstIdx + 1];
-						const b1 = smallData[dstIdx + 2];
-						err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
-						n += 1;
-					}
-				}
-				if (n === 0) continue;
-
-				const reconErr = err / n;
 				// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
 				// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
 				const complexityPenalty =
@@ -610,7 +683,20 @@ export class FastGridSearchFromTrimmed
 				evidence.bestOutH * BOUNDARY_CONTRAST_LIMITS.contestedRatio;
 		return {
 			...best,
-			...measurePhase(axisContrast, best.cellW, best.cellH),
+			...measurePhase(
+				axisContrast,
+				best.cellW,
+				best.cellH,
+				(grid) =>
+					measureReconstructionError(
+						cropped,
+						mask,
+						grid,
+						sampleWindow,
+						Math.max(1, Math.floor(pixelStride / 2)),
+					),
+				cropped,
+			),
 			gridEvidence: evidenceAt(evidence, best.outH),
 			gridEvidenceMax: evidence.bestEvidence,
 			gridEvidenceContested: contested,

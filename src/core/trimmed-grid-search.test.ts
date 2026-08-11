@@ -93,6 +93,35 @@ describe("fast grid search from trimmed", () => {
 		expect(estimate?.outH).toBe(11);
 	});
 
+	it("セル内の反復線が境界より強い入力では、位相をずらさない", () => {
+		// [Intended] セル 10px の各セル内 localX/localY=3 に明るい線を敷いた 80x80。
+		// 境界コントラストの最大は内部の線に立つため、そのまま採ると位相が 3 ずれる。
+		// 再構成誤差での裏取りが効けば、位相をずらさない格子が返る。
+		const size = 80;
+		const cell = 10;
+		const data = new Uint8ClampedArray(size * size * 4);
+		for (let y = 0; y < size; y += 1) {
+			for (let x = 0; x < size; x += 1) {
+				const base =
+					(Math.floor(x / cell) + Math.floor(y / cell)) % 2 === 0 ? 40 : 200;
+				const value = x % cell === 3 || y % cell === 3 ? 255 : base;
+				const offset = (y * size + x) * 4;
+				data[offset] = value;
+				data[offset + 1] = value;
+				data[offset + 2] = value;
+				data[offset + 3] = 255;
+			}
+		}
+		const innerLine: RawImage = { width: size, height: size, data };
+		const estimate = strategy.search(innerLine, innerLine, 3);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outW).toBe(8);
+		expect(estimate?.outH).toBe(8);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
 	it("候補一覧には採用格子の倍音が含まれる", () => {
 		const estimate = strategy.search(image, image, 3);
 		const outHeights = (estimate?.candidates ?? []).map(
