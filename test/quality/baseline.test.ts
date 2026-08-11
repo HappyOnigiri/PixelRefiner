@@ -46,9 +46,9 @@ describe("quality baseline", () => {
 });
 
 describe("isBaselineImageDeclaredUpdated", () => {
-	// [Intended] head 側の実ファイル（test/quality/baseline/auto-wide-red.png）を基準に、
+	// [Intended] head 側の実ファイル（test/quality/baseline/auto-quality-nearest-4x.png）を基準に、
 	// 「PR ベース時点の旧ベースライン」役の一時ディレクトリを組み立てて比較する。
-	const caseId = "auto-wide-red";
+	const caseId = "auto-quality-nearest-4x";
 	const headBytes = readFileSync(
 		path.resolve("test/quality/baseline", `${caseId}.png`),
 	);

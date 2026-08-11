@@ -1,15 +1,10 @@
 {
 	"comment": "自動判定ケースの目標画像の由来。source は同じ入力を処理する explicit ケースで、その承認済みベースラインを test/quality/targets/<case id>.png へ固定してある。",
-	"excluded": {
-		"auto-quality-prf420-shared-palette-companion": "共有パレットの相方入力で、単体処理の期待出力が定義されていない。"
-	},
+	"excluded": {},
 	"targets": {
 		"auto-auto-grid-detection": {
 			"source": "trim-auto-grid",
 			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。"
-		},
-		"auto-dithering-floyd-steinberg": {
-			"source": "convert-monochrome-floyd-steinberg"
 		},
 		"auto-high-resolution": {
 			"source": "restore-high-resolution-pixel-grid"
@@ -19,9 +14,6 @@
 		},
 		"auto-no-trimming": {
 			"source": "remove-background-preserve-canvas"
-		},
-		"auto-palette-conversion-gb": {
-			"source": "convert-game-boy-pocket-palette"
 		},
 		"auto-quality-prf500-rotated-neg-0-25": {
 			"source": "restore-neg-quarter-degree-rotation"
@@ -56,12 +48,6 @@
 		"auto-quality-bilinear": {
 			"source": "restore-bilinear-to-8x8"
 		},
-		"auto-quality-continuous-tone": {
-			"source": "convert-continuous-tone-balanced"
-		},
-		"auto-quality-convert-illustration": {
-			"source": "convert-illustration-detailed"
-		},
 		"auto-quality-crop-shift-1px": {
 			"source": "restore-crop-shifts-to-8x8",
 			"note": "同系統の crop-shift 復元ケース。入力の一致する explicit ケースが無いため 3px 版から借りる。"
@@ -72,9 +58,6 @@
 		},
 		"auto-quality-crop-shift-3px": {
 			"source": "restore-crop-shifts-to-8x8"
-		},
-		"auto-quality-deterministic-quantization": {
-			"source": "convert-deterministic-auto-palette"
 		},
 		"auto-quality-gaussian-blur": {
 			"source": "restore-gaussian-blur-to-8x8"
@@ -133,23 +116,11 @@
 		"auto-quality-prf130-cell-sampling": {
 			"source": "restore-thin-features-and-alpha-coverage"
 		},
-		"auto-quality-prf200-gradient-background": {
-			"source": "remove-gradient-background-with-border-model"
-		},
-		"auto-quality-prf210-isolated-noise": {
-			"source": "remove-isolated-small-noise"
-		},
-		"auto-quality-prf210-protected-details": {
-			"source": "retain-protected-small-details"
-		},
 		"auto-quality-prf210-uncertain-background": {
 			"source": "skip-small-removal-on-uncertain-background"
 		},
 		"auto-quality-prf400-ui-low-confidence": {
 			"source": "show-ui-default-candidates"
-		},
-		"auto-quality-prf420-shared-palette-target": {
-			"source": "share-balanced-palette-across-batch"
 		},
 		"auto-quality-rgb-noise": {
 			"source": "restore-rgb-noise-to-8x8"
@@ -162,12 +133,6 @@
 		},
 		"auto-resize-with-trimming": {
 			"source": "remove-background-trim-resize-46x13"
-		},
-		"auto-tall-red": {
-			"source": "pad-tall-image-to-square"
-		},
-		"auto-wide-red": {
-			"source": "pad-wide-image-to-square"
 		}
 	}
 }

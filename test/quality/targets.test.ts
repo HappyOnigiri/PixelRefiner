@@ -49,11 +49,11 @@ describe("quality auto targets", () => {
 	it.skipIf(initMode)("rejects a target whose source case is gone", () => {
 		const errors = validateAutoTargets(
 			loadCases().filter(
-				(qualityCase) => qualityCase.id !== "pad-tall-image-to-square",
+				(qualityCase) => qualityCase.id !== "restore-nearest-4x-to-8x8",
 			),
 		);
 		expect(errors).toContain(
-			"auto-tall-red: unknown target source case pad-tall-image-to-square",
+			"auto-quality-nearest-4x: unknown target source case restore-nearest-4x-to-8x8",
 		);
 	});
 

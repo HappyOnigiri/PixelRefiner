@@ -608,17 +608,6 @@
       "catastrophicFailure": false
     },
     {
-      "id": "auto-dithering-floyd-steinberg",
-      "status": "passed",
-      "outputWidth": 45,
-      "outputHeight": 45,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
       "id": "auto-high-resolution",
       "status": "passed",
       "outputWidth": 169,
@@ -645,17 +634,6 @@
       "status": "passed",
       "outputWidth": 97,
       "outputHeight": 53,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-palette-conversion-gb",
-      "status": "passed",
-      "outputWidth": 134,
-      "outputHeight": 134,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -784,28 +762,6 @@
       "catastrophicFailure": false
     },
     {
-      "id": "auto-quality-continuous-tone",
-      "status": "passed",
-      "outputWidth": 24,
-      "outputHeight": 16,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-quality-convert-illustration",
-      "status": "passed",
-      "outputWidth": 16,
-      "outputHeight": 12,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
       "id": "auto-quality-crop-shift-1px",
       "status": "passed",
       "outputWidth": 8,
@@ -832,17 +788,6 @@
       "status": "passed",
       "outputWidth": 8,
       "outputHeight": 8,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-quality-deterministic-quantization",
-      "status": "passed",
-      "outputWidth": 32,
-      "outputHeight": 32,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -1059,39 +1004,6 @@
       "catastrophicFailure": false
     },
     {
-      "id": "auto-quality-prf200-gradient-background",
-      "status": "passed",
-      "outputWidth": 10,
-      "outputHeight": 10,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-quality-prf210-isolated-noise",
-      "status": "passed",
-      "outputWidth": 6,
-      "outputHeight": 7,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-quality-prf210-protected-details",
-      "status": "passed",
-      "outputWidth": 13,
-      "outputHeight": 12,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
       "id": "auto-quality-prf210-uncertain-background",
       "status": "passed",
       "outputWidth": 20,
@@ -1107,28 +1019,6 @@
       "status": "passed",
       "outputWidth": 2,
       "outputHeight": 2,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-quality-prf420-shared-palette-companion",
-      "status": "passed",
-      "outputWidth": 4,
-      "outputHeight": 4,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-quality-prf420-shared-palette-target",
-      "status": "passed",
-      "outputWidth": 8,
-      "outputHeight": 8,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -1173,28 +1063,6 @@
       "status": "passed",
       "outputWidth": 90,
       "outputHeight": 27,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-tall-red",
-      "status": "passed",
-      "outputWidth": 4,
-      "outputHeight": 10,
-      "meanRgbaError": 0,
-      "edgeF1": 1,
-      "backgroundMaskIou": 1,
-      "smallComponentRetention": 1,
-      "catastrophicFailure": false
-    },
-    {
-      "id": "auto-wide-red",
-      "status": "passed",
-      "outputWidth": 10,
-      "outputHeight": 4,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

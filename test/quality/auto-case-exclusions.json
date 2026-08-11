@@ -1,0 +1,17 @@
+{
+	"comment": "fixture から自動生成する Auto 品質ケースの除外理由。専用オプションや複数画像を前提とし、画像単体の Auto 変換を評価しない入力を登録する。",
+	"excluded": {
+		"auto-dithering-floyd-steinberg": "モノクロ減色と Floyd-Steinberg ディザリングを明示して使う専用変換ケース。",
+		"auto-palette-conversion-gb": "Game Boy Pocket パレットを明示して使う専用変換ケース。",
+		"auto-quality-continuous-tone": "連続階調画像をピクセルアート化する専用変換ケース。",
+		"auto-quality-convert-illustration": "イラストを詳細度指定付きでピクセルアート化する専用変換ケース。",
+		"auto-quality-deterministic-quantization": "色数とディザリングを明示する量子化の再現性確認用ケース。",
+		"auto-quality-prf200-gradient-background": "グラデーション背景抽出だけを検証する専用ケース。",
+		"auto-quality-prf210-isolated-noise": "背景と小要素除去を固定して孤立ノイズだけを検証する専用ケース。",
+		"auto-quality-prf210-protected-details": "背景と小要素除去を固定して保護対象だけを検証する専用ケース。",
+		"auto-quality-prf420-shared-palette-companion": "共有パレット生成の補助入力で、単体処理の期待出力を持たない。",
+		"auto-quality-prf420-shared-palette-target": "複数画像の共有パレットを明示して使うバッチ専用ケース。",
+		"auto-tall-red": "正方形化オプションだけを検証する専用ケース。",
+		"auto-wide-red": "正方形化オプションだけを検証する専用ケース。"
+	}
+}

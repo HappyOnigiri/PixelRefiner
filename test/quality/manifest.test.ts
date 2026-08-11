@@ -20,6 +20,28 @@ describe("quality manifest", () => {
 		expect(validateManifest(cases)).toEqual([]);
 	});
 
+	it("excludes option-specific fixtures from auto cases", () => {
+		const ids = new Set(cases.map((qualityCase) => qualityCase.id));
+		for (const id of [
+			"auto-dithering-floyd-steinberg",
+			"auto-palette-conversion-gb",
+			"auto-quality-continuous-tone",
+			"auto-quality-convert-illustration",
+			"auto-quality-deterministic-quantization",
+			"auto-quality-prf200-gradient-background",
+			"auto-quality-prf210-isolated-noise",
+			"auto-quality-prf210-protected-details",
+			"auto-quality-prf420-shared-palette-companion",
+			"auto-quality-prf420-shared-palette-target",
+			"auto-tall-red",
+			"auto-wide-red",
+		]) {
+			expect(ids.has(id), id).toBe(false);
+		}
+		// [Intended] 出力サイズも含め、Auto が目標へ到達する品質対象として残す。
+		expect(ids.has("auto-resize-with-trimming")).toBe(true);
+	});
+
 	it.each([
 		{
 			name: "duplicate IDs",

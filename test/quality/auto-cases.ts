@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
 	applyQuickSettingsToOptions,
@@ -9,6 +9,21 @@ import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../../src/shared/config";
 import type { FixtureAssetProvenance, QualityImageCase } from "./types";
 
 const FIXTURE_DIRECTORY = "test/fixtures";
+const EXCLUSION_REGISTRY_PATH = path.resolve(
+	"test/quality/auto-case-exclusions.json",
+);
+
+type AutoCaseExclusionRegistry = {
+	comment: string;
+	excluded: Record<string, string>;
+};
+
+export const loadAutoCaseExclusions = (): Record<string, string> =>
+	(
+		JSON.parse(
+			readFileSync(EXCLUSION_REGISTRY_PATH, "utf8"),
+		) as AutoCaseExclusionRegistry
+	).excluded;
 
 // [Intended] index.html の詳細設定は初期表示で PROCESS_DEFAULTS / PROCESS_RANGES の
 // 既定値を持ち、内蔵プリセットを選ぶと quick-settings-controls がこの既定値へ戻す。
@@ -65,6 +80,7 @@ const caseIdForFixture = (fileName: string): string =>
 export const buildAutoCases = (
 	explicitCases: QualityImageCase[],
 	fixtureRoot: string = path.resolve(FIXTURE_DIRECTORY),
+	exclusions: Record<string, string> = loadAutoCaseExclusions(),
 ): QualityImageCase[] => {
 	// [Intended] 期待値として使われている fixture は自動判定の入力にしない。
 	// 期待値は処理後の姿であり、入力に回すと二重処理を測ることになる。
@@ -78,6 +94,12 @@ export const buildAutoCases = (
 				provenanceByFile.set(asset.file, asset);
 		}
 	}
+	for (const [caseId, reason] of Object.entries(exclusions)) {
+		if (reason.trim().length === 0) {
+			throw new Error(`Auto-case exclusion requires a reason: ${caseId}`);
+		}
+	}
+	const matchedExclusions = new Set<string>();
 	const autoCases: QualityImageCase[] = [];
 	for (const fileName of readdirSync(fixtureRoot).sort()) {
 		if (!fileName.endsWith(".png")) continue;
@@ -85,8 +107,15 @@ export const buildAutoCases = (
 		if (expectedFiles.has(file)) continue;
 		const provenance = provenanceByFile.get(file);
 		if (provenance === undefined) continue;
+		const caseId = caseIdForFixture(fileName);
+		// [Policy] 専用オプションや複数画像を前提とする fixture は、理由を台帳へ残して
+		// 画像単体の Auto 品質レポートから除外する。explicit ケース自体は引き続き測定する。
+		if (caseId in exclusions) {
+			matchedExclusions.add(caseId);
+			continue;
+		}
 		autoCases.push({
-			id: caseIdForFixture(fileName),
+			id: caseId,
 			featureIds: ["PRF-400"],
 			profile: "full",
 			parameterMode: "auto",
@@ -104,6 +133,11 @@ export const buildAutoCases = (
 			expectation: {},
 			assets: [provenance],
 		});
+	}
+	for (const caseId of Object.keys(exclusions)) {
+		if (!matchedExclusions.has(caseId)) {
+			throw new Error(`Unknown auto-case exclusion: ${caseId}`);
+		}
 	}
 	return autoCases;
 };

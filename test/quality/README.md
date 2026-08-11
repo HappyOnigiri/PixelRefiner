@@ -67,7 +67,10 @@ as unassessable rather than passed.
    pattern, and provenance for every referenced asset.
    A matching auto case appears automatically, so register its target in
    [`auto-targets.json`](./auto-targets.json) and run
-   `pnpm run quality:targets:init`.
+   `pnpm run quality:targets:init`. If the fixture requires dedicated options or
+   multiple images and should not be evaluated as a single-image Auto case,
+   register the reason in
+   [`auto-case-exclusions.json`](./auto-case-exclusions.json) instead.
 3. Add or update the case text in `describeCase` in
    [`benchmark.ts`](./benchmark.ts). The description must make the test intent
    understandable on its own: identify the relevant input characteristics, the
@@ -79,8 +82,9 @@ as unassessable rather than passed.
 Manifest validation fails for duplicate case IDs, missing required degradation
 patterns, missing provenance, fixture files that no case references, or assets
 whose terms do not permit modification and redistribution. The same manifest is
-parameterized by the quality test and rendered in full by the HTML report, so a
-case cannot be excluded only from the report.
+parameterized by the quality test and rendered in full by the HTML report. Auto
+case exclusions therefore happen while building the manifest rather than only
+hiding report entries; their explicit cases remain in the report.
 
 ## Target images
 
