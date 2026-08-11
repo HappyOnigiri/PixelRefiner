@@ -313,7 +313,10 @@ describe("processing router", () => {
 				),
 			),
 		);
-		const processed = processImage(image, { debug: false });
+		const processed = processImage(image, {
+			debug: false,
+			cellSamplingMode: "alpha-aware-medoid",
+		});
 
 		expect(processed.analysis.route).toBe("refine");
 		expect(processed.result.width).toBe(6);

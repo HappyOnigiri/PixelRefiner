@@ -67,6 +67,8 @@ export const SOFT_ALPHA_CELL_LIMITS = {
 	maxBleedPeak: 192,
 	/** セル内の被覆（重み付き平均アルファ）がこの値未満なら、被覆は半分未満。 */
 	maxBleedCoverage: 128,
+	/** 面積被覆アルファを保持しない場合に、不透明な論理セルへ丸める下限。 */
+	hardEdgeCoverageThreshold: 128,
 } as const;
 
 /**
@@ -581,8 +583,9 @@ export const PROCESS_DEFAULTS = {
 	keepAspectRatio: false,
 	// グリッド検出モード（UI 用）
 	gridDetectionMode: "auto",
-	// [Intended] UIにはアルゴリズム名を出さず、Autoで頑健なセル復元を使う。
-	cellSamplingMode: "alpha-aware-medoid",
+	// [Intended] 既定では補間由来の中間 alpha を面積被覆として残さず、
+	// 必要な場合だけ詳細設定から alpha-aware-medoid を有効にする。
+	cellSamplingMode: "hard-alpha-medoid",
 	preserveThinFeatures: true,
 	// [Intended] UIに専門パラメータを増やさず、Auto経路だけで微小な傾きを補正する。
 	enableDeskew: true,

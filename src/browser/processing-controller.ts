@@ -127,6 +127,9 @@ export const createProcessOptions = (
 			: "4",
 		backgroundTolerance: tolerance,
 		sampleWindow,
+		cellSamplingMode: els.alphaAwareMedoidCheck.checked
+			? "alpha-aware-medoid"
+			: "hard-alpha-medoid",
 		trimToContent: els.trimToContentCheck.checked,
 		fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 		makeSquare: els.makeSquareCheck.checked,

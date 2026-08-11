@@ -598,6 +598,7 @@ describe("processImage", () => {
 				backgroundTolerance: 0,
 				trimToContent: true,
 				smallComponentMode: "auto" as const,
+				cellSamplingMode: "alpha-aware-medoid" as const,
 			};
 			const twoTimes = processImage(createScaledInput(2), options);
 			const fourTimes = processImage(createScaledInput(4), options);
@@ -623,6 +624,7 @@ describe("processImage", () => {
 				backgroundTolerance: 0,
 				trimToContent: true,
 				smallComponentMode: "auto" as const,
+				cellSamplingMode: "alpha-aware-medoid" as const,
 			};
 			const noisy = processImage(createScaledInput(2), options);
 			const clean = processImage(createScaledInput(2, false), options);

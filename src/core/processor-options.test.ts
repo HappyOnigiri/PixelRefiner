@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { normalizeProcessOptions } from "./processor-options";
 
 describe("small-component options", () => {
+	it("disables alpha-aware medoid sampling for new callers", () => {
+		const options = normalizeProcessOptions({});
+
+		expect(options.cellSamplingMode).toBe("hard-alpha-medoid");
+	});
+
 	it("uses Auto for new callers", () => {
 		const options = normalizeProcessOptions({});
 
