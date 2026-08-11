@@ -223,17 +223,17 @@ const resources = {
 		"tooltip.help.small_aspect_grid_alignment":
 			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。\n\n「常に無効」にすると、Auto の経路判定でも小さな格子が許可されなくなり、等倍のまま仕上げる経路へ切り替わる場合があります。",
 		"tooltip.help.max_samples_per_cell":
-			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。",
+			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.cell_alpha_threshold":
-			"セル内で色の候補として扱うために必要な、最低限のアルファ値です。",
+			"セル内で色の候補として扱うために必要な、最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.auto_max_cells_w":
-			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。",
+			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.auto_max_cells_h":
-			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。",
+			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.detection_background_mask":
 			"背景色を推測して格子検出の前に隠します。背景のノイズが検出結果を引っぱるのを防ぎます。",
 		"tooltip.help.background_mask_tolerance":
-			"検出用の背景マスクが背景色とみなす、チャンネルごとの色差です。",
+			"検出用の背景マスクが背景色とみなす、チャンネルごとの色差です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.grid_signal_color_boundary":
 			"格子候補の採点に色境界の信号を含めます。",
 		"tooltip.help.grid_signal_luminance_alpha":
@@ -261,7 +261,7 @@ const resources = {
 		"tooltip.help.watermark_sampling_compat":
 			"透かしを消したあと、末尾の行が欠けるのを防ぐために互換の中央値サンプラーへ切り替えます。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。",
 		"tooltip.help.trim_alpha_threshold":
-			"トリミング範囲を求めるときに、内容とみなすために必要な最低限のアルファ値です。",
+			"トリミング範囲を求めるときに、内容とみなすために必要な最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.force_width":
 			"指定ピクセル（横）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.force_height":
@@ -592,17 +592,17 @@ const resources = {
 		"tooltip.help.small_aspect_grid_alignment":
 			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。\n\n设为「始终关闭」时，Auto 的路径判定也将不再允许小网格，可能改为按原尺寸完成的路径。",
 		"tooltip.help.max_samples_per_cell":
-			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。",
+			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.cell_alpha_threshold":
-			"像素在单元格内被视为颜色候选所需的最低 Alpha 值。",
+			"像素在单元格内被视为颜色候选所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.auto_max_cells_w":
-			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。",
+			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.auto_max_cells_h":
-			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。",
+			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.detection_background_mask":
 			"在网格检测前推测并遮罩背景色，避免背景噪点影响检测结果。",
 		"tooltip.help.background_mask_tolerance":
-			"检测用背景遮罩视为背景的各通道色差。",
+			"检测用背景遮罩视为背景的各通道色差。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.grid_signal_color_boundary":
 			"在网格候选评分中纳入颜色边界信号。",
 		"tooltip.help.grid_signal_luminance_alpha":
@@ -630,7 +630,7 @@ const resources = {
 		"tooltip.help.watermark_sampling_compat":
 			"移除水印后切换到兼容的中值采样器，以避免末行缺失。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。",
 		"tooltip.help.trim_alpha_threshold":
-			"计算裁剪范围时，像素被视为内容所需的最低 Alpha 值。",
+			"计算裁剪范围时，像素被视为内容所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.force_width":
 			"指定像素宽度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该宽度。\n\n范围：1 到 1024 (默认：自动)",
 		"tooltip.help.force_height":
@@ -962,17 +962,17 @@ const resources = {
 		"tooltip.help.small_aspect_grid_alignment":
 			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.\n\nWith Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route.",
 		"tooltip.help.max_samples_per_cell":
-			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.",
+			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.cell_alpha_threshold":
-			"Minimum alpha for a pixel to be considered a colour candidate inside a cell.",
+			"Minimum alpha for a pixel to be considered a colour candidate inside a cell.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.auto_max_cells_w":
-			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.",
+			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.auto_max_cells_h":
-			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.",
+			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.detection_background_mask":
 			"Guesses the background colour and masks it before grid detection so that background noise does not bias the result.",
 		"tooltip.help.background_mask_tolerance":
-			"Per-channel colour difference the detection background mask treats as background.",
+			"Per-channel colour difference the detection background mask treats as background.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.grid_signal_color_boundary":
 			"Includes the colour-boundary signal when scoring grid candidates.",
 		"tooltip.help.grid_signal_luminance_alpha":
@@ -1000,7 +1000,7 @@ const resources = {
 		"tooltip.help.watermark_sampling_compat":
 			"Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.",
 		"tooltip.help.trim_alpha_threshold":
-			"Minimum alpha for a pixel to count as content when computing the trimming bounds.",
+			"Minimum alpha for a pixel to count as content when computing the trimming bounds.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.force_width":
 			"Specified pixel width.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.force_height":
