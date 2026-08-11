@@ -1,4 +1,8 @@
-import { DESKEW_LIMITS, GRID_SEARCH_LIMITS } from "../shared/config";
+import {
+	DESKEW_LIMITS,
+	GRID_SEARCH_LIMITS,
+	TRIMMED_GRID_SEARCH_LIMITS,
+} from "../shared/config";
 import type {
 	PixelGrid,
 	ProcessResult,
@@ -381,6 +385,8 @@ const processImageCore = (
 
 	let grid: PixelGrid | null = null;
 	let gridMethod = "detect-grid";
+	let downsampleOptions = getDownsampleOptions(o);
+	let allowSmallTrimmedGrid = false;
 
 	if (autoGridFromTrimmed && maskedForDebugOrAuto) {
 		log("Auto grid from trimmed mode");
@@ -424,6 +430,60 @@ const processImageCore = (
 					(phaseAwareEstimate.scoreY ?? 0) >=
 						GRID_SEARCH_LIMITS.axisConfidenceThreshold;
 				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
+				const isSmallAspectAdjustedGrid =
+					!phaseAwareReliable &&
+					o.processingMode === "auto" &&
+					o.bgExtractionMethod === "auto" &&
+					o.bgRemovalScope !== "off" &&
+					trimToContent &&
+					(selectedEstimate.outW ?? 0) <=
+						TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputWidth &&
+					(selectedEstimate.outH ?? 0) <=
+						TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputHeight &&
+					(selectedEstimate.outW ?? 0) !==
+						Math.max(
+							2,
+							Math.round(
+								(selectedEstimate.outH ?? 0) * (b.w / Math.max(1, b.h)),
+							),
+						);
+				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
+				// [Intended] トリミング領域で推定した格子は、元画像の左上へ投影せず
+				// コンテンツ BBox をそのままサンプリング領域として使う。
+				const alignToTrimmedBounds = isSmallAspectAdjustedGrid;
+				let gridBounds = b;
+				let gridEstimate = selectedEstimate;
+				if (isSmallAspectAdjustedGrid) {
+					// [Intended] 自動背景推定が残す薄い外周は、論理セルのアスペクト比を
+					// 乱すため、角から得たマスクの境界を格子の基準領域に使用する。
+					const cornerMask = removeBackground(
+						img,
+						o.backgroundTolerance,
+						o.bgRemovalScope,
+						o.bgConnectivity,
+						bgTargets,
+						"top-left",
+					);
+					const tightBounds = findOpaqueBounds(cornerMask, trimAlphaThreshold);
+					if (
+						tightBounds &&
+						tightBounds.x >= b.x &&
+						tightBounds.y >= b.y &&
+						tightBounds.x + tightBounds.w <= b.x + b.w &&
+						tightBounds.y + tightBounds.h <= b.y + b.h
+					) {
+						gridBounds = tightBounds;
+						gridEstimate = {
+							...selectedEstimate,
+							cellW: tightBounds.w / Math.max(1, selectedEstimate.outW),
+							cellH: tightBounds.h / Math.max(1, selectedEstimate.outH),
+						};
+						downsampleOptions = getDownsampleOptions({
+							...o,
+							cellSamplingMode: "legacy-median",
+						});
+					}
+				}
 				gridMethod = phaseAwareReliable
 					? "phase-aware-grid-search"
 					: appliedDeskewAngle !== 0
@@ -450,17 +510,32 @@ const processImageCore = (
 				];
 				grid = {
 					...resolveGridEstimate(
-						selectedEstimate,
+						gridEstimate,
 						working,
-						b,
+						gridBounds,
 						phaseAwareReliable,
+						alignToTrimmedBounds,
 					),
 					candidates: includeCandidates
 						? searchCandidates?.map((entry) => {
 								const c = "candidate" in entry ? entry.candidate : entry;
 								const phaseAware = "phaseAware" in entry;
+								const candidateEstimate =
+									alignToTrimmedBounds && !phaseAware
+										? {
+												...c,
+												cellW: gridBounds.w / Math.max(1, c.outW ?? 1),
+												cellH: gridBounds.h / Math.max(1, c.outH ?? 1),
+											}
+										: c;
 								return {
-									...resolveGridEstimate(c, working, b, phaseAware),
+									...resolveGridEstimate(
+										candidateEstimate,
+										working,
+										gridBounds,
+										phaseAware,
+										alignToTrimmedBounds && !phaseAware,
+									),
 									angle: appliedDeskewAngle,
 								};
 							})
@@ -470,7 +545,7 @@ const processImageCore = (
 				o.debugHook?.("04-grid-crop", working, {
 					grid,
 					autoFromTrimmed: true,
-					bounds: b,
+					bounds: gridBounds,
 				});
 			}
 		}
@@ -526,6 +601,7 @@ const processImageCore = (
 		? selectAutoProcessingRoute(
 				classificationResult.classification,
 				selectedCandidateConfidence,
+				allowSmallTrimmedGrid,
 			)
 		: { route: "refine" as const, fellBackToPreserve: false };
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
@@ -573,7 +649,7 @@ const processImageCore = (
 	// [Intended] 選択した出力グリッドは後でトリミングまたはパディングされる場合がある一方で、
 	// 候補診断は検出器で共有する座標空間に保つ。
 	const diagnosticGrid = grid;
-	const down = downsample(working, grid, getDownsampleOptions(o));
+	const down = downsample(working, grid, downsampleOptions);
 	log(
 		`Downsampling done in ${(performance.now() - downsampleStart).toFixed(2)}ms`,
 	);
@@ -585,7 +661,7 @@ const processImageCore = (
 	// 「処理前」比較: 元画像をリサイズするだけ（補正なし）。
 	let compareBefore = cropRawImageNearestFromGrid(img, grid);
 	// 「処理前（補正済み）」比較: 同じグリッドとセルサンプリングで元画像をダウンサンプリングする。
-	let compareBeforeSanitized = downsample(img, grid, getDownsampleOptions(o));
+	let compareBeforeSanitized = downsample(img, grid, downsampleOptions);
 
 	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
 	const logicalMask = needsLogicalMask

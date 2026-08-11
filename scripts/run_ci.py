@@ -72,32 +72,21 @@ def execute_phase(phase_name, tasks):
     return True
 
 def main():
-    # フェーズ 1: 修正（自動修正タスク）
-    # コードを変更する可能性があるため、検査より先に実行する
-    fix_tasks = [
-        ("TS Fix", ["make", "ts-fix-diff"], False),
-        ("HTML Fix", ["make", "html-fix-diff"], False),
-    ]
-
-    # 修正フェーズが空の場合も多いが、分かりやすいよう明示する。
-    if not execute_phase("Auto Fix Phase", fix_tasks):
-        print("Fix phase failed. Stopping.")
-        sys.exit(1)
-
-    # フェーズ 2: 検査（検証タスク）
-    # 修正後のコードを検査する
+    # [Policy] CI は読み取り専用とし、ファイルを変更する処理は make fix に分離する。
     check_tasks = [
         ("TS Check", ["make", "ts-check-diff"], False),
         ("HTML Check", ["make", "html-check-diff"], False),
         ("Type Check", ["make", "type-check"], False),
         ("Custom Rules", ["make", "check-ts-rules"], False),
+        ("Architecture Check", ["make", "check-architecture"], False),
         ("TS Line Length", ["make", "check-ts-line-length"], False),
         ("File Line Count", ["make", "check-file-line-count"], True),
         ("Unit Tests", ["make", "test-unit"], False),
+        ("Production Build", ["make", "build"], False),
     ]
 
     if not execute_phase("Check Phase", check_tasks):
-        print("Check phase failed.")
+        print("Check phase failed. If formatting changes are needed, run 'make fix' and retry 'make ci'.")
         sys.exit(1)
 
     print("\n[DONE] All CI tasks passed!")

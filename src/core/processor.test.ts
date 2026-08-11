@@ -347,6 +347,16 @@ describe("processImage", () => {
 			expect(gridTrim.outW).toBe(46);
 			expect(gridTrim.outH).toBe(13);
 		});
+
+		it("should make the same 46x13 result with Auto defaults", () => {
+			const { result, grid } = processImage(img, { debug: false });
+
+			expect(result.width).toBe(46);
+			expect(result.height).toBe(13);
+			expect(grid.outW).toBe(46);
+			expect(grid.outH).toBe(13);
+			expectSameImage(result, expected, getExpectPath("resize_with_trimming"));
+		});
 	});
 
 	describe("auto_grid_detection", () => {

@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { normalizeProcessOptions } from "./processor-options";
 
 describe("small-component options", () => {
+	it("uses an environment-independent debug default", () => {
+		const options = normalizeProcessOptions({});
+
+		expect(options.debug).toBe(false);
+	});
+
 	it("disables alpha-aware medoid sampling for new callers", () => {
 		const options = normalizeProcessOptions({});
 

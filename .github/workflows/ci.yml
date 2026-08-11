@@ -39,10 +39,10 @@ jobs:
           PIXEL_REFINER_DIFF_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: make ci
 
-      - name: Fail if auto-fix produced diffs
+      - name: Verify CI is read-only
         run: |
           git diff --exit-code || {
-            echo "::error::Auto-fix produced diffs. Run 'make ci' locally and commit the changes."
+            echo "::error::make ci produced tracked file changes. Run 'make fix' locally and commit the changes."
             git diff --stat
             exit 1
           }

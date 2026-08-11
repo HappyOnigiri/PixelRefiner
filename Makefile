@@ -1,21 +1,28 @@
-.PHONY: ci quality report ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-unit test-debug type-check check-ts-rules check-ts-line-length check-file-line-count check-file-line-count-all setup
+.PHONY: ci fix build quality report ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-unit test-debug type-check check-ts-rules check-ts-line-length check-file-line-count check-file-line-count-all check-architecture setup
 
 # repomix を実行してファイルを tmp/repomix/ にまとめる
 repomix:
 	mkdir -p tmp/repomix
 	# 完全版
-	pnpm dlx repomix --output tmp/repomix/repomix-full.txt
+	pnpm exec repomix --output tmp/repomix/repomix-full.txt
 	# ロックファイル、画像、ライセンスなどを除く版
-	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
+	pnpm exec repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
 	# さらにテストファイルを除く版
-	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
+	pnpm exec repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
 # 通常 CI のエントリーポイント（ローカルおよび GitHub Actions）
+# [Policy] 検証中に追跡ファイルを書き換えない。修正は fix ターゲットで明示的に行う。
 # [Policy] 重い画像品質ケースは quality ターゲットと Quality Report workflow が担う。
-# 方針: 自動修正を実行し、GitHub Actions で git diff --exit-code により差分を検出する
 # 注: このターゲットを変更する場合は .github/workflows/ci.yml も確認する
 ci:
 	python3 scripts/run_ci.py
+
+fix:
+	$(MAKE) ts-fix-diff
+	$(MAKE) html-fix-diff
+
+build:
+	pnpm run build
 
 quality:
 	pnpm run test:quality:full
@@ -40,6 +47,9 @@ type-check:
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
 
+check-architecture:
+	python3 scripts/check_architecture.py
+
 check-ts-line-length:
 	python3 scripts/check_ts_line_length.py
 
@@ -60,7 +70,7 @@ ts-check-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx @biomejs/biome@latest check $$files
+	pnpm exec biome check $$files
 
 # 変更された TS/TSX ファイルに安全な Biome 修正（整形、import の整理など）を適用する
 ts-fix-diff:
@@ -74,7 +84,7 @@ ts-fix-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx @biomejs/biome@latest check --write $$files
+	pnpm exec biome check --write $$files
 
 html-check-diff:
 	@files="$$( ( \
@@ -87,7 +97,7 @@ html-check-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx prettier@latest --check $$files
+	pnpm exec prettier --check $$files
 
 html-fix-diff:
 	@files="$$( ( \
@@ -100,7 +110,7 @@ html-fix-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx prettier@latest --write $$files
+	pnpm exec prettier --write $$files
 
 setup:
 	corepack enable

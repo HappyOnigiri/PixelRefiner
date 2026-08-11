@@ -654,8 +654,8 @@
     {
       "id": "auto-resize-with-trimming",
       "status": "passed",
-      "outputWidth": 90,
-      "outputHeight": 26,
+      "outputWidth": 46,
+      "outputHeight": 13,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

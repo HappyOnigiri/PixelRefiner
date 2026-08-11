@@ -250,9 +250,15 @@ export const routeForClassification = (
 export const selectAutoProcessingRoute = (
 	classification: InputClassification,
 	selectedGridConfidence: number | undefined,
+	allowSmallTrimmedGrid = false,
 ): { route: ProcessingRoute; fellBackToPreserve: boolean } => {
 	const route = routeForClassification(classification);
 	if (route !== "refine") return { route, fellBackToPreserve: false };
+	if (allowSmallTrimmedGrid) {
+		// [Intended] 小さな論理解像度へ合わせたトリミング格子は、余白を含む
+		// 候補評価で信頼度がわずかに下がるため、採用済みの格子を保持する。
+		return { route, fellBackToPreserve: false };
+	}
 	if (
 		selectedGridConfidence !== undefined &&
 		selectedGridConfidence >=

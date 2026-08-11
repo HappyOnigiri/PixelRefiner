@@ -39,6 +39,8 @@ export type PhaseAwareGridEstimate = PixelGrid & {
 };
 
 export type GridEstimateLike = {
+	outW?: number;
+	outH?: number;
 	cellW: number;
 	cellH: number;
 	offsetX: number;
@@ -86,7 +88,29 @@ export const resolveGridEstimate = (
 	source: Pick<RawImage, "width" | "height">,
 	bboxOrigin: { x: number; y: number },
 	phaseAware: boolean,
+	alignToBounds = false,
 ): PixelGrid => {
+	// [Intended] コンテンツ BBox 基準の候補は、元キャンバスの左上へ投影せず
+	// BBox 内のセル数・位相をそのまま採用する。
+	if (alignToBounds) {
+		const outW = Math.max(1, estimate.outW ?? 1);
+		const outH = Math.max(1, estimate.outH ?? 1);
+		return {
+			cellW: estimate.cellW,
+			cellH: estimate.cellH,
+			offsetX: 0,
+			offsetY: 0,
+			cropX: bboxOrigin.x,
+			cropY: bboxOrigin.y,
+			cropW: outW * estimate.cellW,
+			cropH: outH * estimate.cellH,
+			outW,
+			outH,
+			score: estimate.score ?? 0,
+			scoreX: estimate.scoreX,
+			scoreY: estimate.scoreY,
+		};
+	}
 	const offsetX = phaseAware
 		? normalizeGridPhase(bboxOrigin.x + estimate.offsetX, estimate.cellW)
 		: 0;

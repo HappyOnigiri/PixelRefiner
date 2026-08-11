@@ -1,4 +1,8 @@
-import { clampInt, TRIMMED_GRID_SEARCH_WEIGHTS } from "../shared/config";
+import {
+	clampInt,
+	TRIMMED_GRID_SEARCH_LIMITS,
+	TRIMMED_GRID_SEARCH_WEIGHTS,
+} from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 import { downsample } from "./image-operations";
 
@@ -28,6 +32,18 @@ type GridSizeCandidate = {
 	outW: number;
 	outH: number;
 	score: number;
+};
+
+const outputWidthsForHeight = (outH: number, ratio: number): number[] => {
+	const rounded = Math.max(2, Math.round(outH * ratio));
+	const roundedUp = Math.max(2, Math.ceil(outH * ratio));
+	// [Intended] 小さな出力では幅 1px の差が論理セルの倍率へ大きく影響するため、
+	// 切り上げ候補も評価する。大きな出力では丸め誤差が相対的に小さく、
+	// 候補を増やすと別の高解像度格子を誤採用しやすい。
+	return rounded === roundedUp ||
+		outH > TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputHeight
+		? [rounded]
+		: [rounded, roundedUp];
 };
 
 /**
@@ -127,14 +143,6 @@ export class FastGridSearchFromTrimmed
 		ratioOverride?: number,
 	): { bestOutH: number; est: GridEstimateFromTrimmed } | null {
 		const ratio = ratioOverride ?? cropped.width / Math.max(1, cropped.height);
-		let best: {
-			outW: number;
-			outH: number;
-			cellW: number;
-			cellH: number;
-			score: number;
-		} | null = null;
-
 		const croppedData = cropped.data;
 		const croppedW = cropped.width;
 		const croppedH = cropped.height;
@@ -143,72 +151,75 @@ export class FastGridSearchFromTrimmed
 		const allResults: GridSizeCandidate[] = [];
 
 		for (let outH = outHMin; outH <= outHMax; outH += outHStep) {
-			const outW = Math.max(2, Math.round(outH * ratio));
-			if (outW > 600 || outH > 600) continue;
+			const widths = outputWidthsForHeight(outH, ratio);
+			for (let widthIndex = 0; widthIndex < widths.length; widthIndex += 1) {
+				const outW = widths[widthIndex];
+				if (outW > 600 || outH > 600) continue;
 
-			const cellW = croppedW / outW;
-			const cellH = croppedH / outH;
-			if (!(cellW > 1 && cellH > 1)) continue;
+				const cellW = croppedW / outW;
+				const cellH = croppedH / outH;
+				if (!(cellW > 1 && cellH > 1)) continue;
 
-			const grid: PixelGrid = {
-				cellW,
-				cellH,
-				offsetX: 0,
-				offsetY: 0,
-				outW,
-				outH,
-				cropX: 0,
-				cropY: 0,
-				cropW: croppedW,
-				cropH: croppedH,
-				score: 0,
-			};
-			// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
-			const small = downsample(cropped, grid, sampleWindow);
-			const smallData = small.data;
+				const grid: PixelGrid = {
+					cellW,
+					cellH,
+					offsetX: 0,
+					offsetY: 0,
+					outW,
+					outH,
+					cropX: 0,
+					cropY: 0,
+					cropW: croppedW,
+					cropH: croppedH,
+					score: 0,
+				};
+				// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
+				const small = downsample(cropped, grid, sampleWindow);
+				const smallData = small.data;
 
-			// 再構成誤差（背景のマスク alpha=0 は無視する）
-			let err = 0;
-			let n = 0;
-			for (let y = 0; y < croppedH; y += pixelStride) {
-				const rowOffset = y * croppedW;
-				for (let x = 0; x < croppedW; x += pixelStride) {
-					const pixelIdx = rowOffset + x;
-					const ma = maskData[pixelIdx * 4 + 3];
-					if (ma < 16) continue;
+				// 再構成誤差（背景のマスク alpha=0 は無視する）
+				let err = 0;
+				let n = 0;
+				for (let y = 0; y < croppedH; y += pixelStride) {
+					const rowOffset = y * croppedW;
+					for (let x = 0; x < croppedW; x += pixelStride) {
+						const pixelIdx = rowOffset + x;
+						const ma = maskData[pixelIdx * 4 + 3];
+						if (ma < 16) continue;
 
-					const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
-					const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
+						const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
+						const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
+						const srcIdx = pixelIdx * 4;
+						const r0 = croppedData[srcIdx];
+						const g0 = croppedData[srcIdx + 1];
+						const b0 = croppedData[srcIdx + 2];
 
-					const srcIdx = pixelIdx * 4;
-					const r0 = croppedData[srcIdx];
-					const g0 = croppedData[srcIdx + 1];
-					const b0 = croppedData[srcIdx + 2];
-
-					const dstIdx = (j * outW + i) * 4;
-					const r1 = smallData[dstIdx];
-					const g1 = smallData[dstIdx + 1];
-					const b1 = smallData[dstIdx + 2];
-					err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
-					n += 1;
+						const dstIdx = (j * outW + i) * 4;
+						const r1 = smallData[dstIdx];
+						const g1 = smallData[dstIdx + 1];
+						const b1 = smallData[dstIdx + 2];
+						err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
+						n += 1;
+					}
 				}
-			}
-			if (n === 0) continue;
+				if (n === 0) continue;
 
-			const reconErr = err / n;
-			// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
-			// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
-			const complexityPenalty =
-				TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
-			const score = reconErr + complexityPenalty;
-			allResults.push({ outH, outW, score });
-
-			if (!best || score < best.score) {
-				best = { outW, outH, cellW, cellH, score };
+				const reconErr = err / n;
+				// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
+				// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
+				const complexityPenalty =
+					TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty *
+					Math.sqrt(outW * outH);
+				const score = reconErr + complexityPenalty;
+				allResults.push({ outH, outW, score });
 			}
 		}
 
-		if (!best) return null;
+		if (allResults.length === 0) return null;
+		let best = allResults[0];
+		for (let index = 1; index < allResults.length; index += 1) {
+			if (allResults[index].score < best.score) best = allResults[index];
+		}
 		const picked = pickDistributedGridSizeCandidates(
 			allResults,
 			GRID_SIZE_CANDIDATE_COUNT,
@@ -218,8 +229,8 @@ export class FastGridSearchFromTrimmed
 			est: {
 				outW: best.outW,
 				outH: best.outH,
-				cellW: best.cellW,
-				cellH: best.cellH,
+				cellW: croppedW / best.outW,
+				cellH: croppedH / best.outH,
 				offsetX: 0,
 				offsetY: 0,
 				score: best.score,
@@ -337,88 +348,83 @@ const legacySearchGridFromTrimmed = (
 		Math.max(outHMin, Math.floor(cropped.height / 4)),
 	);
 
-	let best: {
-		outW: number;
-		outH: number;
-		cellW: number;
-		cellH: number;
-		score: number;
-	} | null = null;
 	const allResults: GridSizeCandidate[] = [];
 
 	const h0 = hint ? Math.max(outHMin, hint.outH - 12) : outHMin;
 	const h1 = hint ? Math.min(outHMax, hint.outH + 12) : outHMax;
 
 	for (let outH = h0; outH <= h1; outH += 1) {
-		const outW = Math.max(2, Math.round(outH * ratio));
-		if (outW > 600 || outH > 600) continue;
+		const widths = outputWidthsForHeight(outH, ratio);
+		for (let widthIndex = 0; widthIndex < widths.length; widthIndex += 1) {
+			const outW = widths[widthIndex];
+			if (outW > 600 || outH > 600) continue;
 
-		const cellW = cropped.width / outW;
-		const cellH = cropped.height / outH;
-		if (!(cellW > 1 && cellH > 1)) continue;
+			const cellW = cropped.width / outW;
+			const cellH = cropped.height / outH;
+			if (!(cellW > 1 && cellH > 1)) continue;
 
-		const grid: PixelGrid = {
-			cellW,
-			cellH,
-			offsetX: 0,
-			offsetY: 0,
-			outW,
-			outH,
-			cropX: 0,
-			cropY: 0,
-			cropW: cropped.width,
-			cropH: cropped.height,
-			score: 0,
-		};
-		// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
-		const small = downsample(cropped, grid, sampleWindow);
+			const grid: PixelGrid = {
+				cellW,
+				cellH,
+				offsetX: 0,
+				offsetY: 0,
+				outW,
+				outH,
+				cropX: 0,
+				cropY: 0,
+				cropW: cropped.width,
+				cropH: cropped.height,
+				score: 0,
+			};
+			// [Intended] 候補数が多い探索では計算量を抑えるため互換サンプラーで再構成誤差を近似する。
+			const small = downsample(cropped, grid, sampleWindow);
 
-		// 再構成誤差（背景のマスク alpha=0 は無視する）
-		let err = 0;
-		let n = 0;
-		const croppedData = cropped.data;
-		const croppedW = cropped.width;
-		const maskData = mask.data;
-		const smallData = small.data;
+			// 再構成誤差（背景のマスク alpha=0 は無視する）
+			let err = 0;
+			let n = 0;
+			const croppedData = cropped.data;
+			const croppedW = cropped.width;
+			const maskData = mask.data;
+			const smallData = small.data;
 
-		for (let y = 0; y < cropped.height; y += 1) {
-			const rowOffset = y * croppedW;
-			for (let x = 0; x < croppedW; x += 1) {
-				const pixelIdx = rowOffset + x;
-				const ma = maskData[pixelIdx * 4 + 3];
-				if (ma < 16) continue;
-				const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
-				const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
+			for (let y = 0; y < cropped.height; y += 1) {
+				const rowOffset = y * croppedW;
+				for (let x = 0; x < croppedW; x += 1) {
+					const pixelIdx = rowOffset + x;
+					const ma = maskData[pixelIdx * 4 + 3];
+					if (ma < 16) continue;
+					const i = Math.min(outW - 1, Math.max(0, Math.floor(x / cellW)));
+					const j = Math.min(outH - 1, Math.max(0, Math.floor(y / cellH)));
+					const srcIdx = pixelIdx * 4;
+					const r0 = croppedData[srcIdx];
+					const g0 = croppedData[srcIdx + 1];
+					const b0 = croppedData[srcIdx + 2];
 
-				const srcIdx = pixelIdx * 4;
-				const r0 = croppedData[srcIdx];
-				const g0 = croppedData[srcIdx + 1];
-				const b0 = croppedData[srcIdx + 2];
-
-				const dstIdx = (j * outW + i) * 4;
-				const r1 = smallData[dstIdx];
-				const g1 = smallData[dstIdx + 1];
-				const b1 = smallData[dstIdx + 2];
-				err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
-				n += 1;
+					const dstIdx = (j * outW + i) * 4;
+					const r1 = smallData[dstIdx];
+					const g1 = smallData[dstIdx + 1];
+					const b1 = smallData[dstIdx + 2];
+					err += Math.abs(r0 - r1) + Math.abs(g0 - g1) + Math.abs(b0 - b1);
+					n += 1;
+				}
 			}
-		}
-		if (n === 0) continue;
+			if (n === 0) continue;
 
-		const reconErr = err / n;
-		// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
-		// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
-		const complexityPenalty =
-			TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
-		const score = reconErr + complexityPenalty;
-		allResults.push({ outH, outW, score });
-
-		if (!best || score < best.score) {
-			best = { outW, outH, cellW, cellH, score };
+			const reconErr = err / n;
+			// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
+			// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
+			const complexityPenalty =
+				TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
+			const score = reconErr + complexityPenalty;
+			allResults.push({ outH, outW, score });
 		}
 	}
 
-	if (!best) return null;
+	if (allResults.length === 0) return null;
+	let best = allResults[0];
+	for (let index = 1; index < allResults.length; index += 1) {
+		if (allResults[index].score < best.score) best = allResults[index];
+	}
 	const picked = pickDistributedGridSizeCandidates(
 		allResults,
 		GRID_SIZE_CANDIDATE_COUNT,
@@ -426,8 +432,8 @@ const legacySearchGridFromTrimmed = (
 	return {
 		outW: best.outW,
 		outH: best.outH,
-		cellW: best.cellW,
-		cellH: best.cellH,
+		cellW: cropped.width / best.outW,
+		cellH: cropped.height / best.outH,
 		offsetX: 0,
 		offsetY: 0,
 		score: best.score,
