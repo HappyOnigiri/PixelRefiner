@@ -194,14 +194,15 @@ const renderReportSidebar = (results: QualityResults): string => {
 		`${repositoryUrl}/commit/${encodeURIComponent(commit)}`;
 	const shortCommit = (commit: string): string =>
 		escapeHtml(commit.slice(0, 7));
-	return `<aside class="sidebar">
-	<h1 data-i18n="title">PixelRefiner quality report</h1>
-	<div class="report-overview">
-		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>${results.summary.targetUnmet}</strong></p>
-		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>${results.summary.targetMissing}</strong></p>
-		<p><span data-i18n="regressed">Regressed</span>: <strong>${results.summary.regressed}</strong></p>
-	</div>
-	<section class="report-meta" aria-labelledby="report-meta-title">
+	const generatedAt = `<dt data-i18n="generatedAt">Generated</dt>
+			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd>`;
+	const reportMetadata =
+		results.metadata.prNumber === "local"
+			? `<section class="report-meta" aria-labelledby="report-meta-title">
+		<h2 id="report-meta-title" data-i18n="localReport">Viewing locally</h2>
+		<dl>${generatedAt}</dl>
+	</section>`
+			: `<section class="report-meta" aria-labelledby="report-meta-title">
 		<h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2>
 		<dl>
 			<dt data-i18n="pullRequest">Pull request</dt>
@@ -215,12 +216,19 @@ const renderReportSidebar = (results: QualityResults): string => {
 			<dt data-i18n="baselineCommit">Baseline snapshot</dt>
 			<dd><a href="${commitUrl(results.metadata.baselineCommit)}"
 				title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd>
-			<dt data-i18n="generatedAt">Generated</dt>
-			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd>
+			${generatedAt}
 			<dt data-i18n="workflow">Workflow</dt>
 			<dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd>
 		</dl>
-	</section>
+	</section>`;
+	return `<aside class="sidebar">
+	<h1 data-i18n="title">PixelRefiner quality report</h1>
+	<div class="report-overview">
+		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>${results.summary.targetUnmet}</strong></p>
+		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>${results.summary.targetMissing}</strong></p>
+		<p><span data-i18n="regressed">Regressed</span>: <strong>${results.summary.regressed}</strong></p>
+	</div>
+	${reportMetadata}
 	<div class="filter-panel">
 		<fieldset class="filter-group">
 			<legend data-i18n="language">Language</legend>

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { reportRoot } from "./benchmark";
 import { loadCases, selectCasesForProfile } from "./manifest";
 import { aggregateQualityReport } from "./report/aggregate";
+import { renderHtml } from "./report/render";
 
 const enabled = process.env.QUALITY_REPORT === "1";
 
@@ -31,6 +32,18 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-i18n="title"');
 		expect(html).toContain('<div class="report-layout">');
 		expect(html).toContain('<aside class="sidebar">');
+		const reportMetaStart = html.indexOf('<section class="report-meta"');
+		const reportMetaEnd = html.indexOf("</section>", reportMetaStart);
+		const reportMeta = html.slice(reportMetaStart, reportMetaEnd);
+		expect(reportMeta).toContain('data-i18n="localReport"');
+		expect(reportMeta).toContain("Viewing locally");
+		expect(reportMeta).toContain('data-i18n="generatedAt"');
+		expect(reportMeta).not.toContain('data-i18n="reportDetails"');
+		expect(reportMeta).not.toContain('data-i18n="pullRequest"');
+		expect(reportMeta).not.toContain('data-i18n="headCommit"');
+		expect(reportMeta).not.toContain('data-i18n="baseCommit"');
+		expect(reportMeta).not.toContain('data-i18n="baselineCommit"');
+		expect(reportMeta).not.toContain('data-i18n="workflow"');
 		expect(html).not.toContain("<header");
 		expect(html).not.toContain("<select");
 		expect(html).toContain('<legend data-i18n="language">');
@@ -260,18 +273,28 @@ describe.skipIf(!enabled)("quality report", () => {
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
 		expect(markdown).toContain("|Confidence (diagnostic)|");
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
-		expect(html).toContain(
-			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
+		const remoteMetadata = {
+			...results.metadata,
+			prNumber: "92",
+			headCommit: "1234567890abcdef",
+			baseCommit: "abcdef1234567890",
+			workflowRunUrl: `${results.metadata.repositoryUrl}/actions/runs/123`,
+		};
+		const remoteHtml = renderHtml({ ...results, metadata: remoteMetadata });
+		expect(remoteHtml).toContain('data-i18n="reportDetails"');
+		expect(remoteHtml).not.toContain('data-i18n="localReport"');
+		expect(remoteHtml).toContain(
+			`href="${results.metadata.repositoryUrl}/pull/92"`,
 		);
 		for (const commit of [
-			results.metadata.headCommit,
-			results.metadata.baseCommit,
-			results.metadata.baselineCommit,
+			remoteMetadata.headCommit,
+			remoteMetadata.baseCommit,
+			remoteMetadata.baselineCommit,
 		]) {
-			expect(html).toContain(
+			expect(remoteHtml).toContain(
 				`href="${results.metadata.repositoryUrl}/commit/${encodeURIComponent(commit)}"`,
 			);
-			expect(html).toContain(`<code>${commit.slice(0, 7)}</code>`);
+			expect(remoteHtml).toContain(`<code>${commit.slice(0, 7)}</code>`);
 		}
 		expect(html).toContain(
 			`<time datetime="${results.metadata.generatedAt}">${results.metadata.generatedAt}</time>`,
