@@ -576,6 +576,17 @@ export const processImage = (
 				allowSmallTrimmedGrid,
 			)
 		: { route: "refine" as const, fellBackToPreserve: false };
+	const preserveCandidateIndex = rankedGridCandidates.findIndex(
+		(candidate) => candidate.method === "preserve",
+	);
+	const autoResultCandidateIndex =
+		o.processingMode !== "auto"
+			? undefined
+			: autoRoute.route === "preserve"
+				? preserveCandidateIndex
+				: autoRoute.route === "refine"
+					? selectedCandidateIndex
+					: undefined;
 	if (autoRoute.route !== "refine" || autoRoute.fellBackToPreserve) {
 		if (autoRoute.route === "convert") {
 			return processConvertRoute({
@@ -583,6 +594,7 @@ export const processImage = (
 				route: "convert",
 				method: "auto-convert",
 				classificationResult,
+				autoResultCandidateIndex,
 				preparedMask: maskedForDebugOrAuto ?? undefined,
 			});
 		}
@@ -594,6 +606,7 @@ export const processImage = (
 				: `auto-${autoRoute.route}`,
 			classificationResult,
 			rankedCandidates: rankedGridCandidates,
+			autoResultCandidateIndex,
 			additionalWarnings: [
 				...(autoRoute.fellBackToPreserve
 					? (["FALLBACK_TO_PRESERVE"] as const)
@@ -734,6 +747,7 @@ export const processImage = (
 				method: "auto-degenerate-grid-preserve",
 				classificationResult,
 				rankedCandidates: rankedGridCandidates,
+				autoResultCandidateIndex: preserveCandidateIndex,
 				additionalWarnings: [
 					"FALLBACK_TO_PRESERVE",
 					// [Intended] 縮退で棄却したグリッドも候補としては提示したいので、
@@ -945,6 +959,7 @@ export const processImage = (
 		[],
 		undefined,
 		smallComponentRemoval,
+		autoResultCandidateIndex,
 	);
 	log("Processing analysis", analysis);
 	return {

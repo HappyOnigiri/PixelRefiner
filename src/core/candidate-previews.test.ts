@@ -217,4 +217,64 @@ describe("candidate previews", () => {
 		);
 		expect(visualResults.size).toBe(refined.length);
 	});
+
+	it("低信頼時も先頭でないAuto実結果を推奨候補として一度だけ含める", () => {
+		const value = analysis("scaled-pixel");
+		value.autoResultCandidateIndex = 1;
+
+		const plans = selectCandidatePlans(value);
+
+		expect(plans[0]).toMatchObject({
+			kind: "auto-result",
+			recommended: true,
+			processingMode: "auto",
+			outW: 32,
+			outH: 32,
+		});
+		expect(
+			plans.filter((plan) => plan.outW === 32 && plan.outH === 32),
+		).toHaveLength(1);
+		expect(plans.some((plan) => plan.kind === "recommended")).toBe(false);
+		expect(plans.length).toBeLessThanOrEqual(4);
+	});
+
+	it("resize_with_trimmingのAuto結果を候補計画へ含める", async () => {
+		const image = await readPngAsRawImage(
+			"test/fixtures/resize_with_trimming.png",
+		);
+		const expected = await readPngAsRawImage(
+			"test/fixtures/resize_with_trimming-expect.png",
+		);
+		const processed = processImage(image, { debug: false });
+		expect(processed.result.width).toBe(46);
+		expect(processed.result.height).toBe(13);
+		expect(processed.result.data).toEqual(expected.data);
+		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
+		const autoResultIndex = processed.analysis.autoResultCandidateIndex;
+		expect(autoResultIndex).toBeDefined();
+		const autoResultCandidate =
+			processed.analysis.gridCandidates[autoResultIndex ?? -1];
+		expect(autoResultCandidate).toMatchObject({ outW: 46, outH: 13 });
+
+		const plans = selectCandidatePlans(processed.analysis);
+		expect(plans[0]).toMatchObject({
+			kind: "auto-result",
+			recommended: true,
+			processingMode: "auto",
+			outW: 46,
+			outH: 13,
+		});
+		expect(
+			plans.filter((plan) => plan.outW === 46 && plan.outH === 13),
+		).toHaveLength(1);
+		expect(plans.length).toBeLessThanOrEqual(4);
+
+		const reselected = processImage(
+			image,
+			candidateProcessOptions({ debug: false }, plans[0]),
+		);
+		expect(reselected.result.width).toBe(46);
+		expect(reselected.result.height).toBe(13);
+		expect(reselected.result.data).toEqual(processed.result.data);
+	});
 });

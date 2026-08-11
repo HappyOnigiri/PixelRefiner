@@ -47,6 +47,8 @@ export type SimpleRouteContext = {
 	classificationResult?: InputClassificationResult;
 	additionalWarnings?: ProcessingWarningCode[];
 	rankedCandidates?: GridCandidateReport[];
+	/** Auto 経路が実際に採用した検出候補の位置。 */
+	autoResultCandidateIndex?: number;
 	smallComponentRemoval?: SmallComponentRemovalDiagnostic;
 	/**
 	 * 呼び出し元で算出済みの背景マスク。
@@ -413,6 +415,7 @@ export const processForcedRoute = (
 		context.additionalWarnings,
 		undefined,
 		smallComponentRemoval,
+		context.autoResultCandidateIndex,
 	);
 	log("Processing analysis", analysis);
 	return {
@@ -686,6 +689,7 @@ export const processGridDisabledRoute = (
 		context.additionalWarnings,
 		undefined,
 		smallComponentRemoval,
+		context.autoResultCandidateIndex,
 	);
 	log("Processing analysis", analysis);
 	return {

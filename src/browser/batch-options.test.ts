@@ -34,6 +34,21 @@ describe("batch item options", () => {
 			forcePixelsW: 8,
 			forcePixelsH: 8,
 		});
+
+		const autoResult = createBatchItemOptions(
+			{ processingMode: "auto", forcePixelsW: 8, forcePixelsH: 8 },
+			{
+				id: "auto-result:46x13:0",
+				kind: "auto-result",
+				recommended: true,
+				processingMode: "auto",
+				outW: 46,
+				outH: 13,
+			},
+		);
+		expect(autoResult).toMatchObject({ processingMode: "auto" });
+		expect(autoResult.forcePixelsW).toBeUndefined();
+		expect(autoResult.forcePixelsH).toBeUndefined();
 	});
 
 	it("keeps dither controls visible for shared-palette processing", () => {

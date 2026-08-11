@@ -310,6 +310,7 @@ export const processConvertRoute = (
 		context.additionalWarnings,
 		selectedCandidateIndex,
 		smallComponentRemoval,
+		context.autoResultCandidateIndex,
 	);
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
 	return {

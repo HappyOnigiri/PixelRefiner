@@ -5,6 +5,7 @@ import type {
 	GridCandidateReport,
 	InputClassification,
 	ProcessingAnalysis,
+	ProcessingMode,
 	RawImage,
 } from "../shared/types";
 import { resizeRawImageNearest } from "./image-operations";
@@ -35,15 +36,32 @@ const isSimilar = (
 	);
 };
 
+const isSameCandidate = (
+	left: GridCandidateReport,
+	right: GridCandidateReport,
+): boolean =>
+	left.outW === right.outW &&
+	left.outH === right.outH &&
+	left.cropX === right.cropX &&
+	left.cropY === right.cropY &&
+	left.cropW === right.cropW &&
+	left.cropH === right.cropH &&
+	left.grid.cellW === right.grid.cellW &&
+	left.grid.cellH === right.grid.cellH &&
+	left.grid.offsetX === right.grid.offsetX &&
+	left.grid.offsetY === right.grid.offsetY &&
+	(left.angle ?? 0) === (right.angle ?? 0);
+
 const selectionForGrid = (
 	candidate: GridCandidateReport,
 	kind: CandidateSelection["kind"],
 	recommended = false,
+	processingMode: ProcessingMode = "refine",
 ): CandidateSelection => ({
 	id: `${kind}:${candidate.outW}x${candidate.outH}:${candidate.angle ?? 0}`,
 	kind,
 	recommended,
-	processingMode: "refine",
+	processingMode,
 	outW: candidate.outW,
 	outH: candidate.outH,
 	angle: candidate.angle,
@@ -53,36 +71,58 @@ export const selectCandidatePlans = (
 	analysis: ProcessingAnalysis,
 	classification: InputClassification | undefined = analysis.classification,
 ): CandidateSelection[] => {
+	const autoResultCandidate =
+		analysis.autoResultCandidateIndex !== undefined
+			? analysis.gridCandidates[analysis.autoResultCandidateIndex]
+			: undefined;
 	const grids = analysis.gridCandidates.filter(
 		(candidate) => candidate.method !== "preserve",
 	);
 	const plans: CandidateSelection[] = [];
-	if (grids.length > 0) {
-		const recommended = grids[0];
-		plans.push(selectionForGrid(recommended, "recommended", true));
+	const recommended = autoResultCandidate ?? grids[0];
+	if (recommended) {
+		const isAutoResult = autoResultCandidate !== undefined;
+		plans.push(
+			selectionForGrid(
+				recommended,
+				isAutoResult ? "auto-result" : "recommended",
+				true,
+				isAutoResult ? "auto" : "refine",
+			),
+		);
 		const byArea = [...grids].sort((left, right) => area(left) - area(right));
 		const recommendedArea = area(recommended);
+		const isAlternative = (candidate: GridCandidateReport): boolean =>
+			!isSameCandidate(candidate, recommended) &&
+			!plans.some(
+				(plan) =>
+					plan.outW === candidate.outW &&
+					plan.outH === candidate.outH &&
+					(plan.angle ?? 0) === (candidate.angle ?? 0),
+			) &&
+			!isSimilar(candidate, recommended);
 		const coarser = [...byArea]
 			.reverse()
 			.find(
 				(candidate) =>
-					area(candidate) < recommendedArea &&
-					!isSimilar(candidate, recommended),
+					area(candidate) < recommendedArea && isAlternative(candidate),
 			);
 		const finer = byArea.find(
 			(candidate) =>
-				area(candidate) > recommendedArea && !isSimilar(candidate, recommended),
+				area(candidate) > recommendedArea && isAlternative(candidate),
 		);
 		if (finer) plans.push(selectionForGrid(finer, "finer"));
 		if (coarser) plans.push(selectionForGrid(coarser, "coarser"));
 	}
 
-	plans.push({
-		id: "preserve",
-		kind: "preserve",
-		recommended: grids.length === 0,
-		processingMode: "preserve",
-	});
+	if (!plans.some((plan) => plan.kind === "preserve")) {
+		plans.push({
+			id: "preserve",
+			kind: "preserve",
+			recommended: recommended === undefined,
+			processingMode: "preserve",
+		});
+	}
 
 	if (
 		plans.length < CANDIDATE_PREVIEW_LIMITS.maxCandidates &&
@@ -112,6 +152,7 @@ export const candidateProcessOptions = (
 		hintPixelsW: undefined,
 		hintPixelsH: undefined,
 	};
+	if (selection.processingMode === "auto") return options;
 	if (selection.processingMode === "refine") {
 		options.forcePixelsW = selection.outW;
 		options.forcePixelsH = selection.outH;

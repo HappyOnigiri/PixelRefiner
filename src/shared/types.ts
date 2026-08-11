@@ -212,6 +212,12 @@ export type ProcessingAnalysis = {
 	warnings: ProcessingWarningCode[];
 	gridCandidates: GridCandidateReport[];
 	selectedCandidateIndex?: number;
+	/**
+	 * Auto 処理が実際に採用した候補の位置。
+	 * [Intended] 低信頼時に selectedCandidateIndex が未確定でも、候補 UI から
+	 * 実際の Auto 結果を識別して再選択できるようにする。
+	 */
+	autoResultCandidateIndex?: number;
 	foregroundRatioBefore?: number;
 	foregroundRatioAfter?: number;
 	contentLossRatio?: number;
@@ -234,6 +240,7 @@ export type ProcessResult = {
 
 export type CandidateKind =
 	| "recommended"
+	| "auto-result"
 	| "finer"
 	| "coarser"
 	| "preserve"
@@ -243,7 +250,7 @@ export type CandidateSelection = {
 	id: string;
 	kind: CandidateKind;
 	recommended: boolean;
-	processingMode: ProcessingRoute;
+	processingMode: ProcessingMode;
 	outW?: number;
 	outH?: number;
 	detailLevel?: DetailLevel;
