@@ -222,18 +222,18 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(reviewCase).toContain(
 			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
 		);
-		const targetUnmetId = "auto-resize-with-trimming";
-		const targetUnmetIdIndex = html.indexOf(targetUnmetId);
-		const targetUnmetStart = html.lastIndexOf("<article", targetUnmetIdIndex);
-		const targetUnmetEnd = html.indexOf("</article>", targetUnmetIdIndex);
-		const targetUnmetCase = html.slice(targetUnmetStart, targetUnmetEnd);
-		expect(targetUnmetCase).toContain('data-quality="unmet"');
-		expect(targetUnmetCase).toContain('data-i18n="targetUnmet"');
-		expect(targetUnmetCase).not.toContain('data-i18n="passed"');
-		expect(targetUnmetCase).toContain(
+		const targetMetId = "auto-resize-with-trimming";
+		const targetMetIdIndex = html.indexOf(targetMetId);
+		const targetMetStart = html.lastIndexOf("<article", targetMetIdIndex);
+		const targetMetEnd = html.indexOf("</article>", targetMetIdIndex);
+		const targetMetCase = html.slice(targetMetStart, targetMetEnd);
+		expect(targetMetCase).toContain('data-quality="met"');
+		expect(targetMetCase).toContain('data-i18n="targetMet"');
+		expect(targetMetCase).not.toContain('data-i18n="targetUnmet"');
+		expect(targetMetCase).not.toContain(
 			'data-i18n="assertions.exact-image-match"',
 		);
-		expect(targetUnmetCase).toContain('data-i18n="assertions.output-size"');
+		expect(targetMetCase).not.toContain('data-i18n="assertions.output-size"');
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),
 			"utf8",
