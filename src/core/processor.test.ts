@@ -5,6 +5,7 @@ import { processImage } from "./processor";
 import {
 	cleanDebugDir,
 	expectSameImage,
+	expectSimilarImage,
 	getExpectPath,
 	makeDebugHook,
 	readPngAsRawImage,
@@ -355,7 +356,9 @@ describe("processImage", () => {
 			expect(result.height).toBe(13);
 			expect(grid.outW).toBe(46);
 			expect(grid.outH).toBe(13);
-			expectSameImage(result, expected, getExpectPath("resize_with_trimming"));
+			// Auto は縁の背景色の汚染を落とすため、期待値画像にわずかな緑が残る 2 画素で
+			// 数階調ずれる。シルエットの一致は厳密に確認する。
+			expectSimilarImage(result, expected, 16);
 		});
 	});
 

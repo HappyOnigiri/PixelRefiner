@@ -4,6 +4,7 @@ import type {
 	SmallComponentRemovalDiagnostic,
 } from "../shared/types";
 import { evaluateAutoGridDegeneracy } from "./auto-grid-guard";
+import { cleanBackgroundContaminatedEdges } from "./background-edge-cleanup";
 import {
 	getBackgroundTargets,
 	removeBackground,
@@ -576,6 +577,23 @@ const processImageCore = (
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
+
+	// [Policy] 縁の汚染除去は背景クラスタ色を必要とするため auto 経路だけで行う。
+	// 角シードや RGB 指定の経路は利用者が背景色を確定させており、手書きの期待値画像と
+	// 完全一致することを前提にしているので触らない。
+	if (backgroundModel && o.postRemoveBackground) {
+		const cleanupStart = performance.now();
+		const cleaned = cleanBackgroundContaminatedEdges(
+			result,
+			working,
+			trimmedGrid,
+			backgroundModel,
+		);
+		log(
+			`Background edge cleanup done in ${(performance.now() - cleanupStart).toFixed(2)}ms`,
+			{ cleaned },
+		);
+	}
 
 	// 色削減
 	let finalResult = result;

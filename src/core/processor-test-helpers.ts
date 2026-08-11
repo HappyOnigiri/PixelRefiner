@@ -95,6 +95,43 @@ export const expectSameImage = (
 	);
 };
 
+/**
+ * アルファは完全に一致し、RGB はチャンネルあたり maxChannelDelta までのずれを許して比較する。
+ *
+ * [Intended] Auto 経路は縁に残った背景色の汚染を原寸の色へ差し替えるため、手書きの期待値画像に
+ * わずかな背景色が残っている画素では数階調ずれる。この比較の目的は「Auto が手動指定と同じ
+ * 出力へ到達する」ことの確認なので、シルエット（アルファ）の一致は厳密に要求したうえで、
+ * 汚染除去による色の差だけを許容する。
+ */
+export const expectSimilarImage = (
+	actual: RawImage,
+	expected: RawImage,
+	maxChannelDelta: number,
+): void => {
+	expect(actual.width).toBe(expected.width);
+	expect(actual.height).toBe(expected.height);
+	const a = normalizeTransparentRgb(actual);
+	const b = normalizeTransparentRgb(expected);
+	for (let pixel = 0; pixel < actual.width * actual.height; pixel += 1) {
+		const offset = pixel * 4;
+		const x = pixel % actual.width;
+		const y = (pixel / actual.width) | 0;
+		if (a[offset + 3] !== b[offset + 3]) {
+			throw new Error(
+				`Alpha mismatch at (${x},${y}) actual=${a[offset + 3]} expected=${b[offset + 3]}`,
+			);
+		}
+		for (let channel = 0; channel < 3; channel += 1) {
+			const delta = Math.abs(a[offset + channel] - b[offset + channel]);
+			if (delta > maxChannelDelta) {
+				throw new Error(
+					`Color mismatch at (${x},${y}) channel=${channel} actual=${a[offset + channel]} expected=${b[offset + channel]} delta=${delta}`,
+				);
+			}
+		}
+	}
+};
+
 export const getExpectPath = (fixtureBase: string): string =>
 	fileURLToPath(
 		new URL(`../../test/fixtures/${fixtureBase}-expect.png`, import.meta.url),
