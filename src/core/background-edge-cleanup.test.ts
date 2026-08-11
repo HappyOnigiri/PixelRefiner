@@ -152,9 +152,9 @@ describe("cleanBackgroundContaminatedEdges", () => {
 	});
 
 	it("背景と無関係な向きの色は、より遠い色があっても差し替えない", () => {
-		// セル内は暗い赤と明るい赤。混色線（背景→暗い赤）から明るい赤は大きく外れる。
+		// 同じセルに、背景からの距離は出力色より遠いが混色線から大きく外れる色を置く。
 		const source = createImage(8, 8, (_x, y) =>
-			y < 4 ? [120, 20, 20, 255] : [40, 250, 250, 255],
+			y < 2 ? [120, 20, 20, 255] : [255, 20, 255, 255],
 		);
 		const image = createImage(2, 2, (_x, y) =>
 			y === 0 ? [120, 20, 20, 255] : [0, 0, 0, 0],
@@ -164,6 +164,40 @@ describe("cleanBackgroundContaminatedEdges", () => {
 			cleanBackgroundContaminatedEdges(image, source, grid, greenModel()),
 		).toBe(0);
 		expect(colorAt(image, 0, 0)).toEqual([120, 20, 20, 255]);
+	});
+
+	// 黒背景・赤方向の混色線で、線からのずれの許容を境界の両側から確かめる。
+	// 出力色は [100,0,0] なので許容は min(maxLineOffAxis, lineNoiseFloor + 50) = 32。
+	const offAxisCase = (
+		offAxis: number,
+	): { image: RawImage; cleaned: number } => {
+		const source = createImage(8, 8, (_x, y) =>
+			y < 2 ? [100, 0, 0, 255] : [150, offAxis, 0, 255],
+		);
+		const image = createImage(2, 2, (_x, y) =>
+			y === 0 ? [100, 0, 0, 255] : [0, 0, 0, 0],
+		);
+		const cleaned = cleanBackgroundContaminatedEdges(
+			image,
+			source,
+			grid,
+			singleClusterModel([0, 0, 0]),
+		);
+		return { image, cleaned };
+	};
+
+	it("混色線からのずれが許容内なら、より遠い色へ差し替える", () => {
+		const { image, cleaned } = offAxisCase(30);
+
+		expect(cleaned).toBe(2);
+		expect(colorAt(image, 0, 0)).toEqual([150, 30, 0, 255]);
+	});
+
+	it("混色線からのずれが許容を超えたら差し替えない", () => {
+		const { image, cleaned } = offAxisCase(40);
+
+		expect(cleaned).toBe(0);
+		expect(colorAt(image, 0, 0)).toEqual([100, 0, 0, 255]);
 	});
 
 	it("同じセルに濃淡がある被写体で、汚染のない縁の色を暗い側へ寄せない", () => {
