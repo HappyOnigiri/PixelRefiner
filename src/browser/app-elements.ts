@@ -15,7 +15,33 @@ export type Elements = {
 	forcePixelsHInput: HTMLInputElement;
 	sampleWindowInput: HTMLInputElement;
 	sampleWindowSlider: HTMLInputElement;
-	alphaAwareMedoidCheck: HTMLInputElement;
+	// 詳細設定（Auto の自動判定と検出器の調整）
+	cellSamplingModeSelect: HTMLSelectElement;
+	smallAspectGridAlignmentSelect: HTMLSelectElement;
+	watermarkSamplingCompatSelect: HTMLSelectElement;
+	preserveThinFeaturesCheck: HTMLInputElement;
+	autoGridFromTrimmedCheck: HTMLInputElement;
+	phaseAwareGridSearchCheck: HTMLInputElement;
+	boundaryContrastOverrideCheck: HTMLInputElement;
+	detectionBackgroundMaskCheck: HTMLInputElement;
+	gridSignalColorBoundaryCheck: HTMLInputElement;
+	gridSignalLuminanceAlphaCheck: HTMLInputElement;
+	gridSignalAutocorrelationCheck: HTMLInputElement;
+	gridSignalReconstructionCheck: HTMLInputElement;
+	gridSignalLocalPhaseCheck: HTMLInputElement;
+	backgroundDehaloCheck: HTMLInputElement;
+	backgroundEdgeCleanupCheck: HTMLInputElement;
+	backgroundRampFollowCheck: HTMLInputElement;
+	backgroundRemovalRollbackCheck: HTMLInputElement;
+	alphaBorderBackgroundGuardCheck: HTMLInputElement;
+	backgroundConfidenceGateCheck: HTMLInputElement;
+	smallComponentBackgroundGateCheck: HTMLInputElement;
+	maxSamplesPerCellInput: HTMLInputElement;
+	cellAlphaThresholdInput: HTMLInputElement;
+	autoMaxCellsWInput: HTMLInputElement;
+	autoMaxCellsHInput: HTMLInputElement;
+	backgroundMaskToleranceInput: HTMLInputElement;
+	trimAlphaThresholdInput: HTMLInputElement;
 	toleranceInput: HTMLInputElement;
 	toleranceSlider: HTMLInputElement;
 	preRemoveCheck: HTMLInputElement;
@@ -138,7 +164,61 @@ export const getElements = (): Elements => {
 		forcePixelsHInput: get<HTMLInputElement>("force-pixels-h"),
 		sampleWindowInput: get<HTMLInputElement>("sample-window"),
 		sampleWindowSlider: get<HTMLInputElement>("sample-window-slider"),
-		alphaAwareMedoidCheck: get<HTMLInputElement>("alpha-aware-medoid"),
+		// 詳細設定（Auto の自動判定と検出器の調整）
+		cellSamplingModeSelect: get<HTMLSelectElement>("cell-sampling-mode"),
+		smallAspectGridAlignmentSelect: get<HTMLSelectElement>(
+			"small-aspect-grid-alignment",
+		),
+		watermarkSamplingCompatSelect: get<HTMLSelectElement>(
+			"watermark-sampling-compat",
+		),
+		preserveThinFeaturesCheck: get<HTMLInputElement>("preserve-thin-features"),
+		autoGridFromTrimmedCheck: get<HTMLInputElement>("auto-grid-from-trimmed"),
+		phaseAwareGridSearchCheck: get<HTMLInputElement>("phase-aware-grid-search"),
+		boundaryContrastOverrideCheck: get<HTMLInputElement>(
+			"boundary-contrast-override",
+		),
+		detectionBackgroundMaskCheck: get<HTMLInputElement>(
+			"detection-background-mask",
+		),
+		gridSignalColorBoundaryCheck: get<HTMLInputElement>(
+			"grid-signal-color-boundary",
+		),
+		gridSignalLuminanceAlphaCheck: get<HTMLInputElement>(
+			"grid-signal-luminance-alpha",
+		),
+		gridSignalAutocorrelationCheck: get<HTMLInputElement>(
+			"grid-signal-autocorrelation",
+		),
+		gridSignalReconstructionCheck: get<HTMLInputElement>(
+			"grid-signal-reconstruction",
+		),
+		gridSignalLocalPhaseCheck: get<HTMLInputElement>("grid-signal-local-phase"),
+		backgroundDehaloCheck: get<HTMLInputElement>("background-dehalo"),
+		backgroundEdgeCleanupCheck: get<HTMLInputElement>(
+			"background-edge-cleanup",
+		),
+		backgroundRampFollowCheck: get<HTMLInputElement>("background-ramp-follow"),
+		backgroundRemovalRollbackCheck: get<HTMLInputElement>(
+			"background-removal-rollback",
+		),
+		alphaBorderBackgroundGuardCheck: get<HTMLInputElement>(
+			"alpha-border-background-guard",
+		),
+		backgroundConfidenceGateCheck: get<HTMLInputElement>(
+			"background-confidence-gate",
+		),
+		smallComponentBackgroundGateCheck: get<HTMLInputElement>(
+			"small-component-background-gate",
+		),
+		maxSamplesPerCellInput: get<HTMLInputElement>("max-samples-per-cell"),
+		cellAlphaThresholdInput: get<HTMLInputElement>("cell-alpha-threshold"),
+		autoMaxCellsWInput: get<HTMLInputElement>("auto-max-cells-w"),
+		autoMaxCellsHInput: get<HTMLInputElement>("auto-max-cells-h"),
+		backgroundMaskToleranceInput: get<HTMLInputElement>(
+			"background-mask-tolerance",
+		),
+		trimAlphaThresholdInput: get<HTMLInputElement>("trim-alpha-threshold"),
 		toleranceInput: get<HTMLInputElement>("tolerance"),
 		toleranceSlider: get<HTMLInputElement>("tolerance-slider"),
 		preRemoveCheck: get<HTMLInputElement>("pre-remove"),

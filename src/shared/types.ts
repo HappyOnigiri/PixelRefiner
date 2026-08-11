@@ -43,6 +43,15 @@ export type PixelGrid = {
 	gridEvidenceContested?: boolean;
 };
 
+/**
+ * 以前は `processingMode === "auto"` でしか働かなかった挙動の指定。
+ *
+ * [Intended] "auto" は従来どおり Auto 経路でだけ有効になる。"on" / "off" を選ぶと
+ * 経路に関係なく固定できるので、手動 refine でも Auto と同じ出力を再現できる。
+ * 既定を "auto" に置くことで、設定を公開しても既存の出力は変わらない。
+ */
+export type AutoBehaviorSetting = "auto" | "on" | "off";
+
 export type GridSignalOptions = {
 	colorBoundary: boolean;
 	luminanceAlphaGradient: boolean;

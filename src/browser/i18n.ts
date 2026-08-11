@@ -126,7 +126,38 @@ const resources = {
 		"setting.grid_mode": "グリッド検出モード",
 		"setting.quant_step": "減色段階",
 		"setting.sample_window": "グリッド探索のサンプル範囲",
-		"setting.preserve_partial_alpha": "半透明エッジを保持",
+		"setting.cell_sampling_mode": "セル色のサンプリング",
+		"setting.preserve_thin_features": "細い線を保護",
+		"setting.auto_grid_from_trimmed": "内容から格子を推定",
+		"setting.phase_aware_grid_search": "位相考慮の格子探索",
+		"setting.boundary_contrast_override": "境界コントラストで乗り換え",
+		"setting.small_aspect_grid_alignment": "小さな格子の基準合わせ",
+		"setting.max_samples_per_cell": "セルごとの最大サンプル数",
+		"setting.cell_alpha_threshold": "セル色のアルファ下限",
+		"setting.auto_max_cells_w": "最大セル数（幅）",
+		"setting.auto_max_cells_h": "最大セル数（高さ）",
+		"setting.detection_background_mask": "検出前に背景をマスク",
+		"setting.background_mask_tolerance": "検出マスクの許容差",
+		"setting.grid_signal_color_boundary": "信号: 色境界",
+		"setting.grid_signal_luminance_alpha": "信号: 輝度・アルファ",
+		"setting.grid_signal_autocorrelation": "信号: 自己相関",
+		"setting.grid_signal_reconstruction": "信号: 再構成誤差",
+		"setting.grid_signal_local_phase": "信号: 局所位相",
+		"setting.background_dehalo": "縁のにじみを補正",
+		"setting.background_edge_cleanup": "縁の汚染色を差し替え",
+		"setting.background_ramp_follow": "グラデーション背景を追従",
+		"setting.background_removal_rollback": "消えすぎたら巻き戻す",
+		"setting.alpha_border_background_guard": "既存の透過を信用する",
+		"setting.background_confidence_gate": "背景の信頼度を要求",
+		"setting.small_component_background_gate": "整理も背景の信頼度に従う",
+		"setting.watermark_sampling_compat": "透かし除去後のサンプリング",
+		"setting.trim_alpha_threshold": "トリミングのアルファ下限",
+		"option.cell_sampling_hard": "ハードアルファ（既定）",
+		"option.cell_sampling_alpha_aware": "半透明を保持",
+		"option.cell_sampling_legacy": "互換（中央値）",
+		"option.auto_behavior_auto": "Auto（処理方法に従う）",
+		"option.auto_behavior_on": "常に有効",
+		"option.auto_behavior_off": "常に無効",
 		"setting.force_width": "強制幅 (px)",
 		"setting.force_height": "強制高さ (px)",
 		"setting.fast_mode": "高速モード",
@@ -176,8 +207,58 @@ const resources = {
 			"グリッド検出用の減色レベルを設定します。\n\n【大】色がまとまりノイズに強くなりますが、微妙な色の違いが消える場合があります。\n【小】色の境界を細かく拾いますが、ノイズを誤検出するリスクが高まります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.sample_window":
 			"Auto・Hintでグリッドサイズ候補を比較する際の参照範囲（ピクセル数）です。\n\n【大】グリッド検出がノイズに強くなりますが、細かな境界を見落とす可能性があります。\n【小】細かな境界を捉えやすくなりますが、位置ズレやノイズの影響を強く受けます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
-		"tooltip.help.preserve_partial_alpha":
-			"ONにすると、alpha-aware medoidで面積被覆アルファを保持します。意図的に柔らかい輪郭や半透明を残したい場合に有効です。\nOFFにすると、ハードなアルファ境界を優先し、補間で生じた半端な透過を残しにくくします。",
+		"tooltip.help.cell_sampling_mode":
+			"論理ピクセル 1 つの代表色をどう選ぶかを決めます。\n\nハードアルファ: 補間で生じた中間の透明度を残しません。\n半透明を保持: 面積被覆としての半透明を残します。意図的に柔らかい縁向けです。\n互換: 旧方式の中央値サンプラーです。透かし除去後に自動で使われるのもこれです。",
+		"tooltip.help.preserve_thin_features":
+			"セルを横切る少数派の色を、線や輪郭として残します。切ると細部が面色に飲まれます。",
+		"tooltip.help.auto_grid_from_trimmed":
+			"背景を除いた内容の範囲から出力格子を推定します。\n切ると、画像全体を走査する旧来の検出器だけで判断します。",
+		"tooltip.help.phase_aware_grid_search":
+			"位相を考慮した探索も行い、縦横どちらの軸も十分に確からしい場合はそちらを採用します。",
+		"tooltip.help.boundary_contrast_override":
+			"セル境界が実際のエッジに明確によく乗る粗い倍率が見つかったとき、採用する格子をそちらへ乗り換えます。",
+		"tooltip.help.small_aspect_grid_alignment":
+			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。\n\n「常に無効」にすると、Auto の経路判定でも小さな格子が許可されなくなり、等倍のまま仕上げる経路へ切り替わる場合があります。",
+		"tooltip.help.max_samples_per_cell":
+			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.cell_alpha_threshold":
+			"セル内で色の候補として扱うために必要な、最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.auto_max_cells_w":
+			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.auto_max_cells_h":
+			"旧来の検出器が自動検出するセル数の上限です。「内容から格子を推定」を切ったときに効きます。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.detection_background_mask":
+			"背景色を推測して格子検出の前に隠します。背景のノイズが検出結果を引っぱるのを防ぎます。",
+		"tooltip.help.background_mask_tolerance":
+			"検出用の背景マスクが背景色とみなす、チャンネルごとの色差です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
+		"tooltip.help.grid_signal_color_boundary":
+			"格子候補の採点に色境界の信号を含めます。",
+		"tooltip.help.grid_signal_luminance_alpha":
+			"格子候補の採点に輝度勾配とアルファ勾配の信号を含めます。",
+		"tooltip.help.grid_signal_autocorrelation":
+			"格子候補の採点に自己相関の信号を含めます。",
+		"tooltip.help.grid_signal_reconstruction":
+			"格子候補の採点に再構成誤差の信号を含めます。",
+		"tooltip.help.grid_signal_local_phase":
+			"格子候補の採点に局所位相の安定性を含めます。",
+		"tooltip.help.background_dehalo":
+			"背景を消したあと、アンチエイリアスの縁を背景色から遠ざけて残った色かぶりを薄めます。",
+		"tooltip.help.background_edge_cleanup":
+			"縮小後の縁に背景色が混ざって残った画素を、原寸の本来の色へ差し替えます。",
+		"tooltip.help.background_ramp_follow":
+			"なめらかに変化する背景を、絶対的な色差ではなく小さな段差の連なりとしてたどります。",
+		"tooltip.help.background_removal_rollback":
+			"背景除去で可視画素のほとんどが消えてしまう場合に、その除去を丸ごと取り消します。",
+		"tooltip.help.alpha_border_background_guard":
+			"画像の縁の多くがすでに透明なら、色から背景を推定しません。切り抜き済みの画像の輪郭が削れるのを防ぎます。",
+		"tooltip.help.background_confidence_gate":
+			"推定した背景モデルの確からしさが足りないときは、背景除去そのものを見送ります。",
+		"tooltip.help.small_component_background_gate":
+			"推定した背景モデルの確からしさが足りないときは、「小さな要素の整理」も見送ります。",
+		"tooltip.help.watermark_sampling_compat":
+			"透かしを消したあと、末尾の行が欠けるのを防ぐために互換の中央値サンプラーへ切り替えます。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。",
+		"tooltip.help.trim_alpha_threshold":
+			"トリミング範囲を求めるときに、内容とみなすために必要な最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.force_width":
 			"指定ピクセル（横）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.force_height":
@@ -419,7 +500,38 @@ const resources = {
 		"setting.grid_mode": "网格检测模式",
 		"setting.quant_step": "量化步长",
 		"setting.sample_window": "网格搜索采样范围",
-		"setting.preserve_partial_alpha": "保留半透明边缘",
+		"setting.cell_sampling_mode": "单元格颜色采样",
+		"setting.preserve_thin_features": "保护细线",
+		"setting.auto_grid_from_trimmed": "从内容推定网格",
+		"setting.phase_aware_grid_search": "相位感知网格搜索",
+		"setting.boundary_contrast_override": "按边界对比度切换",
+		"setting.small_aspect_grid_alignment": "小网格基准对齐",
+		"setting.max_samples_per_cell": "每单元格最大采样数",
+		"setting.cell_alpha_threshold": "单元格 Alpha 下限",
+		"setting.auto_max_cells_w": "最大单元格数（宽）",
+		"setting.auto_max_cells_h": "最大单元格数（高）",
+		"setting.detection_background_mask": "检测前遮罩背景",
+		"setting.background_mask_tolerance": "检测遮罩容差",
+		"setting.grid_signal_color_boundary": "信号：颜色边界",
+		"setting.grid_signal_luminance_alpha": "信号：亮度／Alpha",
+		"setting.grid_signal_autocorrelation": "信号：自相关",
+		"setting.grid_signal_reconstruction": "信号：重建误差",
+		"setting.grid_signal_local_phase": "信号：局部相位",
+		"setting.background_dehalo": "修正边缘光晕",
+		"setting.background_edge_cleanup": "替换边缘污染色",
+		"setting.background_ramp_follow": "跟随渐变背景",
+		"setting.background_removal_rollback": "过度移除时回滚",
+		"setting.alpha_border_background_guard": "信任已有透明度",
+		"setting.background_confidence_gate": "要求背景可信",
+		"setting.small_component_background_gate": "清理依赖背景可信度",
+		"setting.watermark_sampling_compat": "水印移除后的采样",
+		"setting.trim_alpha_threshold": "裁剪 Alpha 下限",
+		"option.cell_sampling_hard": "硬 Alpha（默认）",
+		"option.cell_sampling_alpha_aware": "保留半透明",
+		"option.cell_sampling_legacy": "兼容（中值）",
+		"option.auto_behavior_auto": "Auto（跟随处理方式）",
+		"option.auto_behavior_on": "始终启用",
+		"option.auto_behavior_off": "始终禁用",
 		"setting.force_width": "强制宽度 (px)",
 		"setting.force_height": "强制高度 (px)",
 		"setting.fast_mode": "快速模式",
@@ -468,8 +580,58 @@ const resources = {
 			"设置网格检测使用的减色级别。\n\n高：颜色会被归并，更抗噪，但细微色差可能丢失。\n低：能捕捉更细的颜色边界，但更容易误判噪点。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.sample_window":
 			"在自动和提示模式下比较网格尺寸候选项时使用的参考范围（像素数）。\n\n高：网格检测更能抵抗噪点，但可能忽略细微边界。\n低：更容易捕捉细微边界，但更容易受错位和噪点影响。\n\n范围：{min} 到 {max} (默认：{default})",
-		"tooltip.help.preserve_partial_alpha":
-			"开启后使用 alpha-aware medoid 保留面积覆盖率产生的透明度，适合有意保留柔和或半透明边缘的图片。\n关闭后优先生成硬透明边缘，减少保留插值产生的不完全透明。",
+		"tooltip.help.cell_sampling_mode":
+			"决定如何选择每个逻辑像素的代表色。\n\n硬 Alpha：不保留插值产生的中间透明度。\n保留半透明：保留作为面积覆盖的半透明，适合刻意柔和的边缘。\n兼容：旧版中值采样器，水印移除后也会自动使用。",
+		"tooltip.help.preserve_thin_features":
+			"保护横跨单元格的少数色，使细线与轮廓在缩小后仍然保留。",
+		"tooltip.help.auto_grid_from_trimmed":
+			"从去除背景后的内容范围推定输出网格。\n关闭时仅使用扫描整幅图像的旧版检测器。",
+		"tooltip.help.phase_aware_grid_search":
+			"同时执行相位感知搜索，当两个轴都足够可信时优先采用其结果。",
+		"tooltip.help.boundary_contrast_override":
+			"当更粗的倍率其单元格边界明显更贴合真实边缘时，将采用的网格切换过去。",
+		"tooltip.help.small_aspect_grid_alignment":
+			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。\n\n设为「始终关闭」时，Auto 的路径判定也将不再允许小网格，可能改为按原尺寸完成的路径。",
+		"tooltip.help.max_samples_per_cell":
+			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.cell_alpha_threshold":
+			"像素在单元格内被视为颜色候选所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.auto_max_cells_w":
+			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.auto_max_cells_h":
+			"旧版检测器自动检测的单元格数上限。关闭「从内容推定网格」时生效。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.detection_background_mask":
+			"在网格检测前推测并遮罩背景色，避免背景噪点影响检测结果。",
+		"tooltip.help.background_mask_tolerance":
+			"检测用背景遮罩视为背景的各通道色差。\n\n范围：{min} 到 {max} (默认：{default})",
+		"tooltip.help.grid_signal_color_boundary":
+			"在网格候选评分中纳入颜色边界信号。",
+		"tooltip.help.grid_signal_luminance_alpha":
+			"在网格候选评分中纳入亮度梯度与 Alpha 梯度信号。",
+		"tooltip.help.grid_signal_autocorrelation":
+			"在网格候选评分中纳入自相关信号。",
+		"tooltip.help.grid_signal_reconstruction":
+			"在网格候选评分中纳入重建误差信号。",
+		"tooltip.help.grid_signal_local_phase":
+			"在网格候选评分中纳入局部相位稳定性信号。",
+		"tooltip.help.background_dehalo":
+			"移除背景后，将抗锯齿边缘推离背景色，减轻残留的偏色。",
+		"tooltip.help.background_edge_cleanup":
+			"将缩小后仍带有背景色的边缘像素替换为原始尺寸下的本来颜色。",
+		"tooltip.help.background_ramp_follow":
+			"将平滑渐变的背景视为一连串细小台阶来追踪，而非依据绝对色差。",
+		"tooltip.help.background_removal_rollback":
+			"当背景移除会抹掉几乎所有可见像素时，整体撤销该次移除。",
+		"tooltip.help.alpha_border_background_guard":
+			"当图像边缘大部分已透明时，不再依据颜色推定背景，避免削掉已抠图图像的轮廓。",
+		"tooltip.help.background_confidence_gate":
+			"当推定的背景模型可信度不足时，直接跳过背景移除。",
+		"tooltip.help.small_component_background_gate":
+			"当推定的背景模型可信度不足时，同样跳过「细小元素整理」。",
+		"tooltip.help.watermark_sampling_compat":
+			"移除水印后切换到兼容的中值采样器，以避免末行缺失。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。",
+		"tooltip.help.trim_alpha_threshold":
+			"计算裁剪范围时，像素被视为内容所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.force_width":
 			"指定像素宽度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该宽度。\n\n范围：1 到 1024 (默认：自动)",
 		"tooltip.help.force_height":
@@ -711,7 +873,38 @@ const resources = {
 		"setting.grid_mode": "Grid Detection Mode",
 		"setting.quant_step": "Quantization Step",
 		"setting.sample_window": "Grid Sampling Window",
-		"setting.preserve_partial_alpha": "Preserve Semi-transparent Edges",
+		"setting.cell_sampling_mode": "Cell Color Sampling",
+		"setting.preserve_thin_features": "Preserve Thin Features",
+		"setting.auto_grid_from_trimmed": "Estimate Grid From Content",
+		"setting.phase_aware_grid_search": "Phase-aware Grid Search",
+		"setting.boundary_contrast_override": "Boundary Contrast Override",
+		"setting.small_aspect_grid_alignment": "Small Grid Alignment",
+		"setting.max_samples_per_cell": "Max Samples per Cell",
+		"setting.cell_alpha_threshold": "Cell Alpha Threshold",
+		"setting.auto_max_cells_w": "Max Cells (Width)",
+		"setting.auto_max_cells_h": "Max Cells (Height)",
+		"setting.detection_background_mask": "Mask Background For Detection",
+		"setting.background_mask_tolerance": "Detection Mask Tolerance",
+		"setting.grid_signal_color_boundary": "Signal: Colour Boundary",
+		"setting.grid_signal_luminance_alpha": "Signal: Luminance / Alpha",
+		"setting.grid_signal_autocorrelation": "Signal: Autocorrelation",
+		"setting.grid_signal_reconstruction": "Signal: Reconstruction",
+		"setting.grid_signal_local_phase": "Signal: Local Phase",
+		"setting.background_dehalo": "Reduce Edge Halo",
+		"setting.background_edge_cleanup": "Clean Contaminated Edges",
+		"setting.background_ramp_follow": "Follow Gradient Background",
+		"setting.background_removal_rollback": "Roll Back Over-removal",
+		"setting.alpha_border_background_guard": "Trust Existing Transparency",
+		"setting.background_confidence_gate": "Require Confident Background",
+		"setting.small_component_background_gate": "Gate Cleanup On Background",
+		"setting.watermark_sampling_compat": "Watermark Sampling Fallback",
+		"setting.trim_alpha_threshold": "Trim Alpha Threshold",
+		"option.cell_sampling_hard": "Hard Alpha (Default)",
+		"option.cell_sampling_alpha_aware": "Alpha Aware",
+		"option.cell_sampling_legacy": "Compatible (Median)",
+		"option.auto_behavior_auto": "Auto (Follow Processing Mode)",
+		"option.auto_behavior_on": "Always On",
+		"option.auto_behavior_off": "Always Off",
 		"setting.force_width": "Force Width (px)",
 		"setting.force_height": "Force Height (px)",
 		"setting.fast_mode": "Fast Mode",
@@ -761,8 +954,58 @@ const resources = {
 			"Sets the color reduction level for grid detection.\n\nHigh: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.\nLow: Picks up fine color boundaries, but increases the risk of false noise detection.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.sample_window":
 			"The reference range (in pixels) used to compare grid-size candidates in Auto and Hint modes.\n\nHigh: Grid detection is more resistant to noise, but fine boundaries may be overlooked.\nLow: Grid detection follows fine boundaries, but is more affected by misalignment and noise.\n\nRange: {min} to {max} (Default: {default})",
-		"tooltip.help.preserve_partial_alpha":
-			"When ON, preserves area-coverage alpha with alpha-aware medoid sampling. This is useful for intentionally soft or semi-transparent edges.\nWhen OFF, favors hard alpha edges and avoids retaining partial transparency introduced by interpolation.",
+		"tooltip.help.cell_sampling_mode":
+			"How the representative colour of each logical pixel is chosen.\n\nHard Alpha: Avoids keeping partial transparency introduced by interpolation.\nAlpha Aware: Preserves area-coverage alpha for intentionally soft edges.\nCompatible: The legacy median sampler, also used automatically after watermark removal.",
+		"tooltip.help.preserve_thin_features":
+			"Protects minority colours that cross a cell so that thin lines and outlines survive downsampling.",
+		"tooltip.help.auto_grid_from_trimmed":
+			"Estimates the output grid from the trimmed content area.\nWhen OFF, only the fallback detector that scans the whole canvas is used.",
+		"tooltip.help.phase_aware_grid_search":
+			"Also runs a phase-aware search and prefers its result when both axes are confident enough.",
+		"tooltip.help.boundary_contrast_override":
+			"Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges.",
+		"tooltip.help.small_aspect_grid_alignment":
+			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.\n\nWith Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route.",
+		"tooltip.help.max_samples_per_cell":
+			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.cell_alpha_threshold":
+			"Minimum alpha for a pixel to be considered a colour candidate inside a cell.\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.auto_max_cells_w":
+			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.auto_max_cells_h":
+			"Upper bound on the cell count found by the fallback detector. Applies when grid estimation from content is off.\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.detection_background_mask":
+			"Guesses the background colour and masks it before grid detection so that background noise does not bias the result.",
+		"tooltip.help.background_mask_tolerance":
+			"Per-channel colour difference the detection background mask treats as background.\n\nRange: {min} to {max} (Default: {default})",
+		"tooltip.help.grid_signal_color_boundary":
+			"Includes the colour-boundary signal when scoring grid candidates.",
+		"tooltip.help.grid_signal_luminance_alpha":
+			"Includes the luminance and alpha gradient signals when scoring grid candidates.",
+		"tooltip.help.grid_signal_autocorrelation":
+			"Includes the autocorrelation signal when scoring grid candidates.",
+		"tooltip.help.grid_signal_reconstruction":
+			"Includes the reconstruction-error signal when scoring grid candidates.",
+		"tooltip.help.grid_signal_local_phase":
+			"Includes the local phase stability signal when scoring grid candidates.",
+		"tooltip.help.background_dehalo":
+			"Pushes anti-aliased edge pixels away from the background colour after removal.",
+		"tooltip.help.background_edge_cleanup":
+			"Replaces edge pixels that still carry the background colour after downscaling with their original colour.",
+		"tooltip.help.background_ramp_follow":
+			"Follows a smooth gradient background as a chain of small steps instead of an absolute colour difference.",
+		"tooltip.help.background_removal_rollback":
+			"Discards the whole background removal when it would erase almost all of the visible pixels.",
+		"tooltip.help.alpha_border_background_guard":
+			"Skips colour-cluster estimation when most of the border band is already transparent, which protects the outline of pre-cut images.",
+		"tooltip.help.background_confidence_gate":
+			"Skips background removal entirely when the estimated background model is not confident enough.",
+		"tooltip.help.small_component_background_gate":
+			"Skips the small-detail cleanup when the estimated background model is not confident enough.",
+		"tooltip.help.watermark_sampling_compat":
+			"Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.",
+		"tooltip.help.trim_alpha_threshold":
+			"Minimum alpha for a pixel to count as content when computing the trimming bounds.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.force_width":
 			"Specified pixel width.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.force_height":

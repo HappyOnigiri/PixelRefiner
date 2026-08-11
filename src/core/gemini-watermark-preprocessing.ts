@@ -9,6 +9,7 @@ import {
 } from "./gemini-watermark";
 import { downsample } from "./image-operations";
 import {
+	getBackgroundBehavior,
 	getDownsampleOptions,
 	type NormalizedProcessOptions,
 } from "./processor-options";
@@ -54,7 +55,7 @@ export const getGeminiWatermarkDownsampleOptions = (
 	removed: boolean,
 ): ReturnType<typeof getDownsampleOptions> =>
 	getDownsampleOptions(
-		removed && options.processingMode === "auto"
+		removed && options.watermarkSamplingCompatEnabled
 			? { ...options, cellSamplingMode: "legacy-median" }
 			: options,
 	);
@@ -95,6 +96,7 @@ export const prepareGeminiWatermarkAwareAutoMask = (
 		input.backgroundTargets,
 		input.options.bgExtractionMethod,
 		input.backgroundModel,
+		getBackgroundBehavior(input.options),
 	);
 };
 
@@ -155,6 +157,7 @@ export const prepareGeminiWatermarkGeometry = (
 		backgroundTargets,
 		backgroundMethod,
 		input.backgroundModel,
+		getBackgroundBehavior(input.options),
 	);
 	return { image, working, mask, removed, finish };
 };

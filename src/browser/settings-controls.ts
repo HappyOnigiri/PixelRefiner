@@ -1,6 +1,12 @@
 import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
+import {
+	advancedSettingControls,
+	applyAdvancedSettingDefaults,
+	backgroundDependentAdvancedControls,
+	gridDetectionAdvancedControls,
+} from "./advanced-settings-fields";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import { isDitherSettingsEnabled } from "./batch-options";
@@ -162,6 +168,54 @@ export const setupSettingsControls = ({
 		}
 	});
 
+	/**
+	 * ツールチップ内の {min} / {max} / {default} を設定ファイルの範囲で置き換える。
+	 *
+	 * [Intended] i18n.updatePage() は data-tooltip を翻訳リソースの原文で上書きするため、
+	 * 置換は必ず翻訳の適用後（言語切替のたび）に行う。
+	 */
+	const applyTooltipRanges = () => {
+		const applyTooltipRange = (
+			id: string,
+			range: { min: number; max: number; default: number },
+		) => {
+			const el = document.getElementById(id);
+			if (!el) return;
+			const cur = el.getAttribute("data-tooltip");
+			if (!cur) return;
+			el.setAttribute(
+				"data-tooltip",
+				cur
+					.replace(/\{min\}/g, String(range.min))
+					.replace(/\{max\}/g, String(range.max))
+					.replace(/\{default\}/g, String(range.default)),
+			);
+		};
+		applyTooltipRange("help-quant-step", PROCESS_RANGES.detectionQuantStep);
+		applyTooltipRange("help-sample-window", PROCESS_RANGES.sampleWindow);
+		applyTooltipRange("help-tolerance", PROCESS_RANGES.backgroundTolerance);
+		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
+		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
+		applyTooltipRange(
+			"help-max-samples-per-cell",
+			PROCESS_RANGES.maxSamplesPerCell,
+		);
+		applyTooltipRange(
+			"help-cell-alpha-threshold",
+			PROCESS_RANGES.cellAlphaThreshold,
+		);
+		applyTooltipRange("help-auto-max-cells-w", PROCESS_RANGES.autoMaxCells);
+		applyTooltipRange("help-auto-max-cells-h", PROCESS_RANGES.autoMaxCells);
+		applyTooltipRange(
+			"help-background-mask-tolerance",
+			PROCESS_RANGES.backgroundMaskTolerance,
+		);
+		applyTooltipRange(
+			"help-trim-alpha-threshold",
+			PROCESS_RANGES.trimAlphaThreshold,
+		);
+	};
+
 	// 設定ファイルの既定値・範囲を UI に適用
 	const applyConfigToUi = () => {
 		const defaults = createDefaultProcessOptions();
@@ -223,8 +277,7 @@ export const setupSettingsControls = ({
 		els.bgConnectivitySelect.value = defaults.bgConnectivity;
 		els.smallComponentModeSelect.value = defaults.smallComponentMode;
 		els.geminiWatermarkRemovalSelect.value = defaults.geminiWatermarkRemoval;
-		els.alphaAwareMedoidCheck.checked =
-			(defaults.cellSamplingMode as string) === "alpha-aware-medoid";
+		applyAdvancedSettingDefaults(els, defaults);
 		els.trimToContentCheck.checked = defaults.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked = defaults.fastAutoGridFromTrimmed;
 		els.makeSquareCheck.checked = defaults.makeSquare;
@@ -247,34 +300,13 @@ export const setupSettingsControls = ({
 		els.builtInPresetSelect.value = "auto";
 		syncQuickSettingsToAdvanced();
 
-		const applyTooltipRange = (
-			id: string,
-			range: { min: number; max: number; default: number },
-		) => {
-			const el = document.getElementById(id);
-			if (!el) return;
-			const cur = el.getAttribute("data-tooltip");
-			if (!cur) return;
-			el.setAttribute(
-				"data-tooltip",
-				cur
-					.replace(/\{min\}/g, String(range.min))
-					.replace(/\{max\}/g, String(range.max))
-					.replace(/\{default\}/g, String(range.default)),
-			);
-		};
-		applyTooltipRange("help-quant-step", PROCESS_RANGES.detectionQuantStep);
-		applyTooltipRange("help-sample-window", PROCESS_RANGES.sampleWindow);
-		applyTooltipRange("help-tolerance", PROCESS_RANGES.backgroundTolerance);
-		applyTooltipRange("help-color-count", PROCESS_RANGES.colorCount);
-		applyTooltipRange("help-dither-strength", PROCESS_RANGES.ditherStrength);
-
 		// 言語切替ボタンのイベントリスナー
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
 			el.addEventListener("click", () => {
 				const lang = el.getAttribute("data-lang-btn") as Language | null;
 				if (lang) {
 					i18n.setLanguage(lang);
+					applyTooltipRanges();
 					onLanguageChange();
 				}
 			});
@@ -282,6 +314,7 @@ export const setupSettingsControls = ({
 
 		// 初期翻訳を適用
 		i18n.updatePage();
+		applyTooltipRanges();
 	};
 
 	// 自動処理の状態に応じて処理ボタンの表示を切り替え
@@ -317,6 +350,7 @@ export const setupSettingsControls = ({
 		els.gridDetectionModeSelect,
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
+		...gridDetectionAdvancedControls(els),
 	].forEach((el) => {
 		el.addEventListener("change", clearCandidateSelections);
 		el.addEventListener("input", clearCandidateSelections);
@@ -359,6 +393,7 @@ export const setupSettingsControls = ({
 			els.quantStepInput,
 			els.quantStepSlider,
 			els.fastAutoGridFromTrimmedCheck,
+			...gridDetectionAdvancedControls(els),
 		].forEach((el) => {
 			setDisabledClass(el, !isAutoOrHint);
 		});
@@ -464,6 +499,7 @@ export const setupSettingsControls = ({
 			els.bgConnectivitySelect,
 			els.smallComponentModeSelect,
 			els.geminiWatermarkRemovalSelect,
+			...backgroundDependentAdvancedControls(els),
 		].forEach((el) => {
 			const item = el.closest(".setting-item");
 			if (item) {
@@ -551,7 +587,7 @@ export const setupSettingsControls = ({
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
-		els.alphaAwareMedoidCheck,
+		...advancedSettingControls(els),
 		els.preRemoveCheck,
 		els.postRemoveCheck,
 		els.bgConnectivitySelect,

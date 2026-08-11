@@ -8,7 +8,12 @@ import type {
 	Connectivity,
 	RawImage,
 } from "../shared/types";
-import { type BackgroundModel, removeAutomaticBackground } from "./background";
+import {
+	type BackgroundBehavior,
+	type BackgroundModel,
+	DEFAULT_BACKGROUND_BEHAVIOR,
+	removeAutomaticBackground,
+} from "./background";
 import { addEnclosedBackground } from "./enclosed-background";
 import { type FloodFillRamp, floodFillTransparent } from "./floodfill";
 import { cloneImage } from "./image-operations";
@@ -138,12 +143,17 @@ const fillWithRampFallback = (
 	img: RawImage,
 	tolerance: number,
 	fill: (target: RawImage, ramp: FloodFillRamp | undefined) => void,
+	behavior: BackgroundBehavior = DEFAULT_BACKGROUND_BEHAVIOR,
 ): RawImage => {
-	const ramp = detectBackgroundRamp(img, tolerance);
+	const ramp = behavior.rampFollow
+		? detectBackgroundRamp(img, tolerance)
+		: undefined;
 	if (ramp !== undefined) {
-		const opaqueBefore = countOpaquePixels(img);
 		const ramped = cloneImage(img);
 		fill(ramped, ramp);
+		// 巻き戻しが無効なら除去率を測る必要がないので、全画素走査へ入る前に返す。
+		if (!behavior.rollback) return ramped;
+		const opaqueBefore = countOpaquePixels(img);
 		const removed = opaqueBefore - countOpaquePixels(ramped);
 		if (
 			opaqueBefore === 0 ||
@@ -190,6 +200,7 @@ export const removeBackgroundByFloodFillLegacy = (
 		| "top-right"
 		| "bottom-right"
 		| "rgb",
+	behavior: BackgroundBehavior = DEFAULT_BACKGROUND_BEHAVIOR,
 ): RawImage => {
 	if (method === "none") return cloneImage(img);
 
@@ -201,37 +212,42 @@ export const removeBackgroundByFloodFillLegacy = (
 	if (method === "rgb") {
 		if (bgTargets.length === 0) return cloneImage(img);
 		const src32 = new Uint32Array(img.data.buffer);
-		return fillWithRampFallback(img, tolerance, (out, ramp) => {
-			const visited = new Uint8Array(w * h);
-			for (let y = 0; y < h; y += 1) {
-				const row = y * w;
-				for (let x = 0; x < w; x += 1) {
-					const idx = row + x;
-					if (visited[idx]) continue;
+		return fillWithRampFallback(
+			img,
+			tolerance,
+			(out, ramp) => {
+				const visited = new Uint8Array(w * h);
+				for (let y = 0; y < h; y += 1) {
+					const row = y * w;
+					for (let x = 0; x < w; x += 1) {
+						const idx = row + x;
+						if (visited[idx]) continue;
 
-					const pixel = src32[idx];
-					const r = pixel & 0xff;
-					const g = (pixel >> 8) & 0xff;
-					const b = (pixel >> 16) & 0xff;
+						const pixel = src32[idx];
+						const r = pixel & 0xff;
+						const g = (pixel >> 8) & 0xff;
+						const b = (pixel >> 16) & 0xff;
 
-					if (isCandidate(r, g, b, bgTargets, tolerance)) {
-						const a = out.data[idx * 4 + 3];
-						if (a !== 0) {
-							floodFillTransparent(
-								out,
-								x,
-								y,
-								tolerance,
-								visited,
-								connectivity,
-								ramp,
-							);
+						if (isCandidate(r, g, b, bgTargets, tolerance)) {
+							const a = out.data[idx * 4 + 3];
+							if (a !== 0) {
+								floodFillTransparent(
+									out,
+									x,
+									y,
+									tolerance,
+									visited,
+									connectivity,
+									ramp,
+								);
+							}
 						}
+						visited[idx] = 1;
 					}
-					visited[idx] = 1;
 				}
-			}
-		});
+			},
+			behavior,
+		);
 	}
 
 	// 角の方式: 選択した角からのみフラッドフィルする（旧来の挙動）。
@@ -245,9 +261,22 @@ export const removeBackgroundByFloodFillLegacy = (
 		sx = w - 1;
 		sy = h - 1;
 	}
-	return fillWithRampFallback(img, tolerance, (out, ramp) => {
-		floodFillTransparent(out, sx, sy, tolerance, undefined, connectivity, ramp);
-	});
+	return fillWithRampFallback(
+		img,
+		tolerance,
+		(out, ramp) => {
+			floodFillTransparent(
+				out,
+				sx,
+				sy,
+				tolerance,
+				undefined,
+				connectivity,
+				ramp,
+			);
+		},
+		behavior,
+	);
 };
 
 /**
@@ -328,6 +357,7 @@ export const removeBackground = (
 		| "bottom-right"
 		| "rgb",
 	automaticModel?: BackgroundModel,
+	behavior: BackgroundBehavior = DEFAULT_BACKGROUND_BEHAVIOR,
 	// [Intended] 自動除去のロールバックと除去の有無は呼び出し側の診断へ集約する必要が
 	// あるため、戻り値を画像のままにして、この出力引数へ書き戻す。
 	outcome?: BackgroundRemovalStageOutcome,
@@ -341,6 +371,7 @@ export const removeBackground = (
 			bgRemovalScope,
 			bgConnectivity,
 			automaticModel,
+			behavior,
 		);
 		if (outcome) {
 			if (automatic.rolledBack) outcome.rolledBack = true;
@@ -357,6 +388,7 @@ export const removeBackground = (
 			bgConnectivity,
 			bgTargets,
 			method,
+			behavior,
 		);
 	}
 
@@ -364,46 +396,57 @@ export const removeBackground = (
 		const w = img.width;
 		const h = img.height;
 		const border = getBorderPixels(w, h);
-		const outer = fillWithRampFallback(img, tolerance, (out, ramp) => {
-			const visited = new Uint8Array(w * h);
-			const data = out.data;
+		const outer = fillWithRampFallback(
+			img,
+			tolerance,
+			(out, ramp) => {
+				const visited = new Uint8Array(w * h);
+				const data = out.data;
 
-			const fillFrom = (sx: number, sy: number): void => {
-				if (sx < 0 || sy < 0 || sx >= w || sy >= h) return;
-				const idx = sy * w + sx;
-				if (visited[idx]) return;
-				const i = idx * 4;
-				if (data[i + 3] === 0) return;
-				if (bgTargets.length > 0) {
-					const r = data[i];
-					const g = data[i + 1];
-					const b = data[i + 2];
-					if (!isCandidate(r, g, b, bgTargets, tolerance)) return;
-				}
-				floodFillTransparent(
-					out,
-					sx,
-					sy,
-					tolerance,
-					visited,
-					bgConnectivity,
-					ramp,
-				);
-			};
+				const fillFrom = (sx: number, sy: number): void => {
+					if (sx < 0 || sy < 0 || sx >= w || sy >= h) return;
+					const idx = sy * w + sx;
+					if (visited[idx]) return;
+					const i = idx * 4;
+					if (data[i + 3] === 0) return;
+					if (bgTargets.length > 0) {
+						const r = data[i];
+						const g = data[i + 1];
+						const b = data[i + 2];
+						if (!isCandidate(r, g, b, bgTargets, tolerance)) return;
+					}
+					floodFillTransparent(
+						out,
+						sx,
+						sy,
+						tolerance,
+						visited,
+						bgConnectivity,
+						ramp,
+					);
+				};
 
-			for (const [x, y] of border) {
-				const idx = y * w + x;
-				const i = idx * 4;
-				if (data[i + 3] === 0) continue;
-				if (
-					bgTargets.length > 0 &&
-					!isCandidate(data[i], data[i + 1], data[i + 2], bgTargets, tolerance)
-				) {
-					continue;
+				for (const [x, y] of border) {
+					const idx = y * w + x;
+					const i = idx * 4;
+					if (data[i + 3] === 0) continue;
+					if (
+						bgTargets.length > 0 &&
+						!isCandidate(
+							data[i],
+							data[i + 1],
+							data[i + 2],
+							bgTargets,
+							tolerance,
+						)
+					) {
+						continue;
+					}
+					fillFrom(x, y);
 				}
-				fillFrom(x, y);
-			}
-		});
+			},
+			behavior,
+		);
 		if (bgRemovalScope === "auto") {
 			removeEnclosedTargets(outer, tolerance, bgConnectivity, bgTargets);
 		}
@@ -420,6 +463,7 @@ export const removeBackground = (
 		"4",
 		bgTargets,
 		method,
+		behavior,
 	);
 	if (bgTargets.length === 0) return out;
 
