@@ -38,8 +38,6 @@ export type PixelGrid = {
 	 * [Intended] 指標同士が別の倍率を指している状態で、曖昧さの直接の証拠になる。
 	 */
 	gridEvidenceContested?: boolean;
-	/** 入力へ適用する傾き補正角度（度）。 */
-	angle?: number;
 };
 
 export type GridSignalOptions = {
@@ -188,7 +186,6 @@ export type GridCandidateSubscores = {
 
 export type GridCandidateReport = {
 	grid: PixelGrid;
-	angle?: number;
 	outW: number;
 	outH: number;
 	cropX: number;
@@ -276,7 +273,6 @@ export type CandidateSelection = {
 	outW?: number;
 	outH?: number;
 	detailLevel?: DetailLevel;
-	angle?: number;
 };
 
 export type CandidatePreview = CandidateSelection & {

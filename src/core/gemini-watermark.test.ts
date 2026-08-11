@@ -353,64 +353,6 @@ describe("Gemini watermark removal", () => {
 		expect(removedBrightCells).toBeGreaterThan(0);
 	});
 
-	it("maps removal through an explicit deskew rotation", () => {
-		const image = withOpaqueBackground(createSyntheticImage(false));
-		const options = {
-			processingMode: "preserve" as const,
-			enableGridDetection: false,
-			deskewAngle: 2,
-			bgExtractionMethod: "top-left" as const,
-			bgRemovalScope: "outer" as const,
-			backgroundTolerance: 0,
-			trimToContent: false,
-			smallComponentMode: "off" as const,
-		};
-		const automatic = processImage(image, options);
-		const disabled = processImage(image, {
-			...options,
-			geminiWatermarkRemoval: "off",
-		});
-		let removed = 0;
-		let brightRemaining = 0;
-		for (
-			let pixel = 0;
-			pixel < automatic.result.width * automatic.result.height;
-			pixel += 1
-		) {
-			const offset = pixel * 4;
-			if (
-				automatic.result.data[offset + 3] === 0 &&
-				disabled.result.data[offset + 3] !== 0
-			) {
-				const luminance =
-					(77 * disabled.result.data[offset] +
-						150 * disabled.result.data[offset + 1] +
-						29 * disabled.result.data[offset + 2]) >>
-					8;
-				expect(luminance).toBeGreaterThanOrEqual(168);
-				removed += 1;
-			}
-			const x = pixel % automatic.result.width;
-			const y = (pixel / automatic.result.width) | 0;
-			const luminance =
-				(77 * automatic.result.data[offset] +
-					150 * automatic.result.data[offset + 1] +
-					29 * automatic.result.data[offset + 2]) >>
-				8;
-			if (
-				x >= automatic.result.width * 0.7 &&
-				y >= automatic.result.height * 0.7 &&
-				automatic.result.data[offset + 3] !== 0 &&
-				luminance >= 168
-			) {
-				brightRemaining += 1;
-			}
-		}
-		expect(removed).toBeGreaterThan(0);
-		expect(brightRemaining).toBe(0);
-		expect(automatic.grid).toEqual(disabled.grid);
-	});
-
 	it("excludes the watermark from forced-size crop bounds", () => {
 		const image = withOpaqueBackground(createSyntheticImage(false));
 		const options = {

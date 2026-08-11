@@ -32,8 +32,6 @@ export const PROCESS_RANGES = {
 	ditherStrength: { min: 0, max: 100, default: 0 } as const,
 	// アウトライン
 	outlineColor: { r: 255, g: 255, b: 255 }, // デフォルトの白
-	// 自動傾き補正で扱う角度（度）
-	deskewAngle: { min: -3, max: 3, default: 0 } as const,
 } as const satisfies Record<string, IntRange | RGB>;
 
 /** Gemini の右下ウォーターマークを、透過後の独立成分として識別する条件。 */
@@ -434,27 +432,11 @@ export const GRID_SEARCH_LIMITS = {
 	 * 辺の長さの二乗order で伸びる。実測で 2816x1536 の領域は 1 枚 19 秒を要し、
 	 * それでも軸信頼度のしきい値には届かず結果は捨てられていた。処理時間の上限を
 	 * 守るため、これを超える領域は再構成ベースの探索だけで判断する。
-	 *
-	 * 値は DESKEW_LIMITS.maximumInputPixels に回転で拡張される分の余裕を足して決める。
-	 * 傾き補正は回転後の領域でこの探索を呼ぶため、上限が近すぎると入力が上限内でも
-	 * 回転後だけ超えて角度候補が黙って捨てられる。
 	 */
 	maxPhaseAwarePixels: 1_200_000,
 	localRegionCount: 4,
 	minimumAutocorrelationSamples: 3,
 	fullResolutionSampleLimit: 16384,
-} as const;
-
-export const DESKEW_LIMITS = {
-	angleStep: 0.25,
-	maxAnalysisDimension: 256,
-	minimumInputDimension: 64,
-	maximumInputPixels: 1_000_000,
-	fullResolutionCandidateLimit: 3,
-	minimumConfidence: 0.3,
-	minimumConfidenceGain: 0.005,
-	// 0度から満点までの残り幅に対して必要な、絶対スコア改善量の割合。
-	minimumScoreHeadroomGain: 0.001,
 } as const;
 
 export const RETRO_PALETTES: Record<
@@ -687,8 +669,6 @@ export const PROCESS_DEFAULTS = {
 	// 必要な場合だけ詳細設定から alpha-aware-medoid を有効にする。
 	cellSamplingMode: "hard-alpha-medoid",
 	preserveThinFeatures: true,
-	// [Intended] UIに専門パラメータを増やさず、Auto経路だけで微小な傾きを補正する。
-	enableDeskew: true,
 	smallComponentMode: "auto",
 	geminiWatermarkRemoval: "auto",
 
@@ -709,14 +689,6 @@ export const PROCESS_DEFAULTS = {
 
 export const clampInt = (value: number, range: IntRange): number => {
 	const v = Number.isFinite(value) ? Math.trunc(value) : range.default;
-	return Math.min(range.max, Math.max(range.min, v));
-};
-
-export const clampNumber = (
-	value: number,
-	range: { min: number; max: number; default: number },
-): number => {
-	const v = Number.isFinite(value) ? value : range.default;
 	return Math.min(range.max, Math.max(range.min, v));
 };
 

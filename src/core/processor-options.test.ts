@@ -58,7 +58,6 @@ describe("default process options", () => {
 			keepAspectRatio: PROCESS_DEFAULTS.keepAspectRatio,
 			cellSamplingMode: PROCESS_DEFAULTS.cellSamplingMode,
 			preserveThinFeatures: PROCESS_DEFAULTS.preserveThinFeatures,
-			enableDeskew: PROCESS_DEFAULTS.enableDeskew,
 			smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
 			geminiWatermarkRemoval: PROCESS_DEFAULTS.geminiWatermarkRemoval,
 			reduceColors: PROCESS_DEFAULTS.reduceColors,

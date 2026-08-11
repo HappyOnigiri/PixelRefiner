@@ -1,4 +1,3 @@
-import { DESKEW_LIMITS } from "../shared/config";
 import type {
 	ProcessResult,
 	RawImage,
@@ -14,17 +13,12 @@ import {
 import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { removeSmallComponents } from "./components";
-import { rotateRawImageExpanded } from "./deskew";
 import {
 	downsampleGeminiWatermarkGeometry,
 	prepareGeminiWatermarkAwareAutoMask,
 	prepareGeminiWatermarkGeometry,
 } from "./gemini-watermark-preprocessing";
-import {
-	rankGridCandidates,
-	rerankGridCandidateReports,
-} from "./grid-candidates";
-import { type DeskewGridSearchResult, searchDeskewedGrid } from "./grid-search";
+import { rankGridCandidates } from "./grid-candidates";
 import {
 	cloneImage,
 	cropRawImage,
@@ -91,7 +85,7 @@ const processImageCore = (
 	const o = normalizeProcessOptions(options);
 	const sourceAspectRatio = o.keepAspectRatio ? getAspectRatio(inputImage) : 0;
 	const bgTargetsStart = performance.now();
-	// [Intended] 回転で生じる透明な拡張角ではなく、利用者が指定した元画像の角から背景色を取得する。
+	// [Intended] 背景色は加工前の入力画像の角から取得し、後段の加工結果に左右されないようにする。
 	const bgTargets =
 		o.bgRemovalScope !== "off"
 			? getBackgroundTargets(inputImage, o.bgExtractionMethod, o.bgRgb, 16)
@@ -159,36 +153,6 @@ const processImageCore = (
 		}
 		return preRemovedInput;
 	};
-	let deskewSearch: DeskewGridSearchResult | null = null;
-	let appliedDeskewAngle = o.deskewAngle;
-	let img = inputImage;
-	if (appliedDeskewAngle !== 0) {
-		img = rotateRawImageExpanded(inputImage, appliedDeskewAngle);
-	} else if (
-		o.enableDeskew &&
-		o.enableGridDetection &&
-		o.autoGridFromTrimmed &&
-		o.fastAutoGridFromTrimmed &&
-		o.hintPixelsW === undefined &&
-		o.hintPixelsH === undefined &&
-		o.forcePixelsW === undefined &&
-		o.forcePixelsH === undefined &&
-		(o.processingMode === "auto" || o.processingMode === "refine") &&
-		Math.min(inputImage.width, inputImage.height) >=
-			DESKEW_LIMITS.minimumInputDimension &&
-		// [Policy] 上位角度のフル解像度評価が処理時間を占有しないよう、自動補正の画素数を制限する。
-		inputImage.width * inputImage.height <= DESKEW_LIMITS.maximumInputPixels
-	) {
-		const deskewMask =
-			o.bgRemovalScope === "off" || o.bgExtractionMethod === "none"
-				? inputImage
-				: getBackgroundMaskedInput();
-		deskewSearch = searchDeskewedGrid(inputImage, deskewMask, o.gridSignals);
-		if (deskewSearch) {
-			appliedDeskewAngle = deskewSearch.angle;
-			img = deskewSearch.image;
-		}
-	}
 	const startTime = performance.now();
 	const log = (...args: unknown[]) => {
 		if (o.debug) {
@@ -197,8 +161,8 @@ const processImageCore = (
 	};
 
 	log("Processing started", {
-		width: img.width,
-		height: img.height,
+		width: inputImage.width,
+		height: inputImage.height,
 		options: o,
 	});
 
@@ -210,34 +174,29 @@ const processImageCore = (
 	const workingStart = performance.now();
 	let working: RawImage;
 	if (!o.preRemoveBackground) {
-		working = cloneImage(img);
+		working = cloneImage(inputImage);
 	} else if (
 		o.bgRemovalScope !== "off" &&
 		o.bgExtractionMethod !== "none" &&
 		!(o.bgExtractionMethod === "auto" && !backgroundModel)
 	) {
-		const maskedInput = getPreRemovedInput();
-		working =
-			appliedDeskewAngle === 0
-				? cloneImage(maskedInput)
-				: rotateRawImageExpanded(maskedInput, appliedDeskewAngle);
+		working = cloneImage(getPreRemovedInput());
 	} else if (o.bgExtractionMethod === "auto") {
 		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
 		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
-		working = cloneImage(img);
+		working = cloneImage(inputImage);
 	} else {
-		working = cloneImage(img);
+		working = cloneImage(inputImage);
 	}
 	const watermarkGeometry = prepareGeminiWatermarkGeometry({
 		inputImage,
-		image: img,
+		image: inputImage,
 		working,
 		options: o,
 		automaticBackground,
 		getBackgroundMaskedInput,
 		backgroundTargets: bgTargets,
 		backgroundModel,
-		appliedDeskewAngle,
 	});
 	const geometryImage = watermarkGeometry.image;
 	const geometryWorking = watermarkGeometry.working;
@@ -246,7 +205,7 @@ const processImageCore = (
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
 	);
 
-	o.debugHook?.("00-input", img);
+	o.debugHook?.("00-input", inputImage);
 	o.debugHook?.("01-working", working, {
 		preRemoveBackground: o.preRemoveBackground,
 	});
@@ -256,7 +215,7 @@ const processImageCore = (
 
 	let smallComponentRemoval: SmallComponentRemovalDiagnostic | undefined;
 	const simpleRouteContext: SimpleRouteContext = {
-		img,
+		img: inputImage,
 		o,
 		working,
 		bgTargets,
@@ -307,11 +266,8 @@ const processImageCore = (
 			o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0,
 		),
 		preparedMask: preparedWatermarkMask,
-		appliedDeskewAngle,
 		options: o,
-		working,
 		geometryWorking,
-		getBackgroundMaskedInput,
 		backgroundTargets: bgTargets,
 		backgroundModel,
 	});
@@ -370,37 +326,17 @@ const processImageCore = (
 			maskedForDebugOrAuto,
 			bgTargets,
 			trimAlphaThreshold,
-			appliedDeskewAngle,
 			watermarkRemovedFromGeometry,
 			log,
 		});
 
-	let rankedGridCandidates = rankGridCandidates(
+	const rankedGridCandidates = rankGridCandidates(
 		geometryWorking,
 		grid,
 		gridMethod,
 	);
-	if (deskewSearch) {
-		const additional = deskewSearch.candidates
-			.filter((candidate) => candidate.angle !== appliedDeskewAngle)
-			.flatMap((candidate) =>
-				rankGridCandidates(
-					candidate.image,
-					{
-						...candidate.estimate,
-						angle: candidate.angle,
-						candidates: undefined,
-					},
-					"deskewed-phase-aware-grid-search",
-				).filter((report) => report.method !== "preserve"),
-			);
-		rankedGridCandidates = rerankGridCandidateReports([
-			...rankedGridCandidates,
-			...additional,
-		]);
-	}
 	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
-	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
+	// 加工前の入力画像を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
 		o.processingMode === "auto"
 			? classifyInput(geometryWorking, rankedGridCandidates)
@@ -498,9 +434,9 @@ const processImageCore = (
 	});
 
 	// 「処理前」比較: 元画像をリサイズするだけ（補正なし）。
-	let compareBefore = cropRawImageNearestFromGrid(img, grid);
+	let compareBefore = cropRawImageNearestFromGrid(inputImage, grid);
 	// 「処理前（補正済み）」比較: 同じグリッドとセルサンプリングで元画像をダウンサンプリングする。
-	let compareBeforeSanitized = downsample(img, grid, downsampleOptions);
+	let compareBeforeSanitized = downsample(inputImage, grid, downsampleOptions);
 
 	const needsLogicalMask = trimToContent || o.smallComponentMode !== "off";
 	const logicalMask = needsLogicalMask
@@ -562,7 +498,7 @@ const processImageCore = (
 			};
 
 			// 更新済みのトリミンググリッドを使って処理前比較を再計算する
-			compareBefore = cropRawImageNearestFromGrid(img, trimmedGrid);
+			compareBefore = cropRawImageNearestFromGrid(inputImage, trimmedGrid);
 			compareBeforeSanitized = cropRawImage(
 				compareBeforeSanitized,
 				b.x,
@@ -806,7 +742,7 @@ const processImageCore = (
 
 	const extracted = extractUsedColors(finalResult);
 	const analysis = createProcessingAnalysis(
-		img,
+		inputImage,
 		finalResult,
 		compareBeforeSanitized,
 		diagnosticGrid,
