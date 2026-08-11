@@ -581,6 +581,15 @@ describe("processImage", () => {
 			// [Intended] 余白が広い入力では原寸の事前除去だけが消えすぎ判定に当たってロールバック
 			// するが、トリミング後の出力解像度で行う事後除去は成立する。出力に背景の透過が
 			// 入っている状態で「透過を中止した」と伝えないことを固定する。
+			// 事後除去を止めると中止の警告が出ることで、事前除去がロールバックするという
+			// 前提が崩れていない（この検証が空回りしていない）ことも同時に固定する。
+			const preRemovalOnly = processImage(img, {
+				postRemoveBackground: false,
+			});
+			expect(preRemovalOnly.analysis.warnings).toContain(
+				"BACKGROUND_REMOVAL_SKIPPED",
+			);
+
 			const { result, analysis } = processImage(img, {});
 
 			let transparent = 0;

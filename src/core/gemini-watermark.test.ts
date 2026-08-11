@@ -325,6 +325,15 @@ describe("Gemini watermark removal", () => {
 			...options,
 			geminiWatermarkRemoval: "off",
 		});
+		// 事後除去を止めた場合は中止の警告が出る。原寸の事前除去がロールバックするという
+		// このテストの前提が崩れていないことを固定する。
+		const preRemovalOnly = processImage(image, {
+			...options,
+			postRemoveBackground: false,
+		});
+		expect(preRemovalOnly.analysis.warnings).toContain(
+			"BACKGROUND_REMOVAL_SKIPPED",
+		);
 		let removedBrightCells = 0;
 		let transparentCells = 0;
 		for (
