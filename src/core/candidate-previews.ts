@@ -36,22 +36,6 @@ const isSimilar = (
 	);
 };
 
-const isSameCandidate = (
-	left: GridCandidateReport,
-	right: GridCandidateReport,
-): boolean =>
-	left.outW === right.outW &&
-	left.outH === right.outH &&
-	left.cropX === right.cropX &&
-	left.cropY === right.cropY &&
-	left.cropW === right.cropW &&
-	left.cropH === right.cropH &&
-	left.grid.cellW === right.grid.cellW &&
-	left.grid.cellH === right.grid.cellH &&
-	left.grid.offsetX === right.grid.offsetX &&
-	left.grid.offsetY === right.grid.offsetY &&
-	(left.angle ?? 0) === (right.angle ?? 0);
-
 const selectionForGrid = (
 	candidate: GridCandidateReport,
 	kind: CandidateSelection["kind"],
@@ -75,51 +59,71 @@ export const selectCandidatePlans = (
 		analysis.autoResultCandidateIndex !== undefined
 			? analysis.gridCandidates[analysis.autoResultCandidateIndex]
 			: undefined;
+	// [Intended] Auto が原寸維持を採用した場合、その実結果は原寸維持カードそのものである。
+	// 専用の Auto結果カードを別に立てると同じ画像が二重に並び、さらに面積が最大の原寸維持が
+	// 相対ラベルの基準になるため細かめが一度も選ばれなくなる。
+	const autoResultIsPreserve = autoResultCandidate?.method === "preserve";
+	const gridAutoResult = autoResultIsPreserve ? undefined : autoResultCandidate;
 	const grids = analysis.gridCandidates.filter(
 		(candidate) => candidate.method !== "preserve",
 	);
 	const plans: CandidateSelection[] = [];
-	const recommended = autoResultCandidate ?? grids[0];
-	if (recommended) {
-		const isAutoResult = autoResultCandidate !== undefined;
-		plans.push(
-			selectionForGrid(
-				recommended,
-				isAutoResult ? "auto-result" : "recommended",
-				true,
-				isAutoResult ? "auto" : "refine",
-			),
-		);
+	// 細かめ・粗めの基準となる候補。Auto 実結果が検出候補ならそれ自身、原寸維持なら
+	// 検出上位の候補に据える（原寸維持を基準にすると面積が最大で細かめが選べない）。
+	const anchor = gridAutoResult ?? grids[0];
+	// [Intended] Auto 実結果が基準のときは面積もレポート値ではなく実出力から取る。
+	// レポート値は検出後のトリミングで実出力とずれることがあり、そのままだと
+	// 細かめ・粗めのラベルと実サイズの大小関係が逆転する。
+	const anchorArea =
+		gridAutoResult &&
+		analysis.autoResultOutW !== undefined &&
+		analysis.autoResultOutH !== undefined
+			? analysis.autoResultOutW * analysis.autoResultOutH
+			: anchor
+				? area(anchor)
+				: 0;
+	if (autoResultIsPreserve) {
+		plans.push({
+			id: "auto-result:preserve",
+			kind: "auto-result",
+			recommended: true,
+			processingMode: "auto",
+		});
+	} else if (gridAutoResult) {
+		plans.push(selectionForGrid(gridAutoResult, "auto-result", true, "auto"));
+	}
+	if (anchor) {
+		// Auto 実結果が検出候補そのものの場合は、同じ候補を推奨カードとして重ねない。
+		if (!gridAutoResult) {
+			plans.push(
+				selectionForGrid(anchor, "recommended", !autoResultIsPreserve),
+			);
+		}
 		const byArea = [...grids].sort((left, right) => area(left) - area(right));
-		const recommendedArea = area(recommended);
 		const isAlternative = (candidate: GridCandidateReport): boolean =>
-			!isSameCandidate(candidate, recommended) &&
 			!plans.some(
 				(plan) =>
 					plan.outW === candidate.outW &&
 					plan.outH === candidate.outH &&
 					(plan.angle ?? 0) === (candidate.angle ?? 0),
-			) &&
-			!isSimilar(candidate, recommended);
+			) && !isSimilar(candidate, anchor);
 		const coarser = [...byArea]
 			.reverse()
 			.find(
-				(candidate) =>
-					area(candidate) < recommendedArea && isAlternative(candidate),
+				(candidate) => area(candidate) < anchorArea && isAlternative(candidate),
 			);
 		const finer = byArea.find(
-			(candidate) =>
-				area(candidate) > recommendedArea && isAlternative(candidate),
+			(candidate) => area(candidate) > anchorArea && isAlternative(candidate),
 		);
 		if (finer) plans.push(selectionForGrid(finer, "finer"));
 		if (coarser) plans.push(selectionForGrid(coarser, "coarser"));
 	}
 
-	if (!plans.some((plan) => plan.kind === "preserve")) {
+	if (!autoResultIsPreserve) {
 		plans.push({
 			id: "preserve",
 			kind: "preserve",
-			recommended: recommended === undefined,
+			recommended: plans.length === 0,
 			processingMode: "preserve",
 		});
 	}

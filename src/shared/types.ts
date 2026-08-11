@@ -218,6 +218,13 @@ export type ProcessingAnalysis = {
 	 * 実際の Auto 結果を識別して再選択できるようにする。
 	 */
 	autoResultCandidateIndex?: number;
+	/**
+	 * Auto 処理の実出力サイズ。autoResultCandidateIndex がある場合のみ設定する。
+	 * [Policy] gridCandidates のレポート値は検出後のトリミングで実出力とずれることが
+	 * あるため、候補の相対ラベル（細かめ・粗め）の基準にはこの実測値を使う。
+	 */
+	autoResultOutW?: number;
+	autoResultOutH?: number;
 	foregroundRatioBefore?: number;
 	foregroundRatioAfter?: number;
 	contentLossRatio?: number;

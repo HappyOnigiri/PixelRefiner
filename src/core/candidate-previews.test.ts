@@ -236,7 +236,70 @@ describe("candidate previews", () => {
 		).toHaveLength(1);
 		expect(plans.some((plan) => plan.kind === "recommended")).toBe(false);
 		expect(plans.length).toBeLessThanOrEqual(4);
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"auto-result",
+			"coarser",
+			"preserve",
+		]);
+		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
 	});
+
+	it("Auto実結果の実出力サイズを細かめ・粗めの基準にする", () => {
+		const value = analysis("scaled-pixel");
+		// 8x8 の候補を採用したが、検出後のトリミングで実出力は 3x3 まで縮んだ状況。
+		value.autoResultCandidateIndex = 2;
+		value.autoResultOutW = 3;
+		value.autoResultOutH = 3;
+
+		const plans = selectCandidatePlans(value);
+
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"auto-result",
+			"finer",
+			"preserve",
+		]);
+		// 実面積 9 を基準にすると 8x8 自身が細かめの先頭に来るが、Auto実結果カードと
+		// 同じサイズなので採らず、次の候補へ進む。
+		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
+	});
+
+	it("Autoが原寸維持を採用したときは原寸維持カードをAuto実結果として一度だけ出す", () => {
+		const value = analysis("scaled-pixel");
+		value.gridCandidates = [
+			...value.gridCandidates,
+			{
+				grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 0 },
+				outW: 64,
+				outH: 64,
+				cropX: 0,
+				cropY: 0,
+				cropW: 64,
+				cropH: 64,
+				method: "preserve",
+				totalScore: 0.1,
+				confidence: 0.05,
+			},
+		];
+		value.autoResultCandidateIndex = 3;
+
+		const plans = selectCandidatePlans(value);
+
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"auto-result",
+			"recommended",
+			"finer",
+			"coarser",
+		]);
+		expect(plans[0]).toMatchObject({
+			recommended: true,
+			processingMode: "auto",
+		});
+		// 検出グリッド候補の3枠（推奨・細かめ・粗め）が維持される。
+		expect(plans[1]).toMatchObject({ outW: 16, outH: 16, recommended: false });
+		expect(plans[2]).toMatchObject({ outW: 32, outH: 32 });
+		expect(plans[3]).toMatchObject({ outW: 8, outH: 8 });
+	});
+
 
 	it("resize_with_trimmingのAuto結果を候補計画へ含める", async () => {
 		const image = await readPngAsRawImage(
