@@ -410,10 +410,10 @@
       "catastrophicFailure": false
     },
     {
-      "id": "restore-soft-edged-sprite-to-47x64",
+      "id": "restore-soft-edged-sprite-to-34x47",
       "status": "passed",
-      "outputWidth": 47,
-      "outputHeight": 64,
+      "outputWidth": 34,
+      "outputHeight": 47,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -421,10 +421,10 @@
       "catastrophicFailure": false
     },
     {
-      "id": "restore-blocky-sprite-to-26x24",
+      "id": "restore-blocky-sprite-to-20x18",
       "status": "passed",
-      "outputWidth": 26,
-      "outputHeight": 24,
+      "outputWidth": 20,
+      "outputHeight": 18,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -599,8 +599,8 @@
     {
       "id": "auto-quality-prf400-ambiguous-grid-scale",
       "status": "passed",
-      "outputWidth": 62,
-      "outputHeight": 58,
+      "outputWidth": 100,
+      "outputHeight": 91,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,
@@ -610,8 +610,8 @@
     {
       "id": "auto-quality-prf400-soft-edged-sprite",
       "status": "passed",
-      "outputWidth": 47,
-      "outputHeight": 64,
+      "outputWidth": 33,
+      "outputHeight": 47,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

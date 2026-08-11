@@ -1833,7 +1833,7 @@
     ]
   },
   {
-    "id": "restore-soft-edged-sprite-to-47x64",
+    "id": "restore-soft-edged-sprite-to-34x47",
     "featureIds": ["PRF-400", "force-size"],
     "optionNames": [
       "processingMode",
@@ -1847,8 +1847,8 @@
     "options": {
       "processingMode": "refine",
       "bgExtractionMethod": "auto",
-      "forcePixelsW": 47,
-      "forcePixelsH": 64
+      "forcePixelsW": 34,
+      "forcePixelsH": 47
     },
     "input": "test/fixtures/quality_prf400_soft_edged_sprite.png",
     "expected": "test/fixtures/quality_prf400_soft_edged_sprite-expect.png",
@@ -1864,7 +1864,7 @@
         "file": "test/fixtures/quality_prf400_soft_edged_sprite.png",
         "sourceType": "generated-ai",
         "provider": "OpenAI (ChatGPT)",
-        "prompt": "16×16 ドット相当のレトロなドット絵風キャラクター（正面向きの騎士）を、1024×1024 の大きな画像として描いてください。ピクセルの境界がぼやけ、輪郭にアンチエイリアスがかかった「ドット絵っぽいイラスト」にしてください。背景は単色の薄いグレー、文字は入れないでください。",
+        "prompt": "16×16 ドット相当のレトロなドット絵風キャラクター（正面向きの騎士）を、1024×1024 の大きな画像として描いてください。ピクセルの境界がぼやけ、輪郭にアンチエイリアスがかかった「ドット絵っぽいイラスト」にしてください。背景はキャラクターに使わない単色の緑、文字は入れないでください。",
         "author": "PixelRefiner contributors",
         "license": "MIT",
         "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
@@ -1890,7 +1890,7 @@
     ]
   },
   {
-    "id": "restore-blocky-sprite-to-26x24",
+    "id": "restore-blocky-sprite-to-20x18",
     "featureIds": ["PRF-400", "force-size"],
     "optionNames": [
       "processingMode",
@@ -1904,8 +1904,8 @@
     "options": {
       "processingMode": "refine",
       "bgExtractionMethod": "auto",
-      "forcePixelsW": 26,
-      "forcePixelsH": 24
+      "forcePixelsW": 20,
+      "forcePixelsH": 18
     },
     "input": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
     "expected": "test/fixtures/quality_prf400_ambiguous_grid_scale-expect.png",
@@ -1921,7 +1921,7 @@
         "file": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
         "sourceType": "generated-ai",
         "provider": "OpenAI (ChatGPT)",
-        "prompt": "ドット絵のキャラクター（丸い顔のスライム）を描いてください。すべてのドットがちょうど 2×2 の同じ色の塊で構成されているように塗ってください。1024×1024、背景は白一色、文字なし。",
+        "prompt": "ドット絵のキャラクター（丸い顔のスライム）を描いてください。すべてのドットがちょうど 2×2 の同じ色の塊で構成されているように塗ってください。1024×1024、背景はキャラクターに使わない緑一色、文字なし。",
         "author": "PixelRefiner contributors",
         "license": "MIT",
         "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",

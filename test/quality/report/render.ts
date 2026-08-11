@@ -56,31 +56,31 @@ const describeCase = (
 				"透明画素の隠れた色を混入させずに入力に存在するRGBを選択します。",
 		};
 	}
-	if (result.id === "restore-soft-edged-sprite-to-47x64") {
+	if (result.id === "restore-soft-edged-sprite-to-34x47") {
 		return {
 			en:
 				"Restore a 1254 x 1254 AI-generated pixel-art-style knight, whose cell boundaries carry " +
-				"antialiasing instead of hard edges, to the hand-given 47 x 64 logical grid, keeping the " +
-				"sword tip, the belt buckle, and the cross on the shield readable as single cells. " +
+				"antialiasing instead of hard edges, to the hand-given 34 x 47 logical grid, keeping the " +
+				"sword tip, the helmet slits, and the cross on the shield readable as single cells. " +
 				"This output is the target that the Auto case for the same fixture is measured against.",
 			ja:
 				"セル境界がアンチエイリアスで鈍った1254×1254の生成AI製ドット絵風の騎士を、" +
-				"人手で与えた47×64の論理グリッドへ復元し、剣先、ベルトのバックル、盾の十字を" +
+				"人手で与えた34×47の論理グリッドへ復元し、剣先、兜のスリット、盾の十字を" +
 				"1セルとして判読できる状態に保ちます。この出力は、同じfixtureのAutoケースが" +
 				"目標として比較される画像です。",
 		};
 	}
-	if (result.id === "restore-blocky-sprite-to-26x24") {
+	if (result.id === "restore-blocky-sprite-to-20x18") {
 		return {
 			en:
-				"Restore a 1254 x 1254 AI-generated slime drawn in 34.8 px blocks to the hand-given " +
-				"26 x 24 logical grid, keeping the single-cell eye highlight and the one-cell-thick mouth " +
-				"line intact. Reconstruction error alone also accepts a roughly 2.4x finer reading of the " +
+				"Restore a 1254 x 1254 AI-generated slime drawn in 39.7 px blocks to the hand-given " +
+				"20 x 18 logical grid, keeping the single-cell eye highlight and the one-cell-thick mouth " +
+				"line intact. Reconstruction error alone also accepts a roughly 5x finer reading of the " +
 				"same image, so this output records which of the two scales is the intended one.",
 			ja:
-				"34.8pxのブロックで描かれた1254×1254の生成AI製スライムを、人手で与えた26×24の" +
+				"39.7pxのブロックで描かれた1254×1254の生成AI製スライムを、人手で与えた20×18の" +
 				"論理グリッドへ復元し、1セルぶんの目のハイライトと1セル幅の口の線を保ちます。" +
-				"再構成誤差だけでは同じ画像を約2.4倍細かく読む解釈も成り立つため、" +
+				"再構成誤差だけでは同じ画像を約5倍細かく読む解釈も成り立つため、" +
 				"この出力はどちらの倍率が意図された方かを記録します。",
 		};
 	}

@@ -19,12 +19,12 @@
 			"note": "explicit 側はキャンバスを保持する 119x65 だが、auto は既定でトリムするため出力サイズが原理的に一致しない。auto の出力（24x33）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		},
 		"auto-quality-prf400-ambiguous-grid-scale": {
-			"source": "restore-blocky-sprite-to-26x24",
-			"note": "生成 AI のドット絵風イラストで、論理セルが 34.8px か、その約 1/2.4 の 14.5px かを画素だけでは決めきれない。目標は人手で粗い側の 26x24 を与えた出力で、Auto はここへ届かないまま LOW_GRID_CONFIDENCE と候補選択を出す。目標未達のまま置き、倍率選択が改善したときに縮む距離として使う。"
+			"source": "restore-blocky-sprite-to-20x18",
+			"note": "生成 AI のドット絵風イラストで、論理セルが 39.7px か、その約 1/5 の 7.9px かを画素だけでは決めきれない。目標は人手で粗い側の 20x18 を与えた出力で、Auto は 100x91 まで細かく読んだまま LOW_GRID_CONFIDENCE と候補選択を出す。目標未達のまま置き、倍率選択が改善したときに縮む距離として使う。"
 		},
 		"auto-quality-prf400-soft-edged-sprite": {
-			"source": "restore-soft-edged-sprite-to-47x64",
-			"note": "Auto は目標と同じ 47x64 へ着地するが、セル内の標本位置がわずかに違い exact 一致にはならない。出力をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。倍率は当たっていても境界の証拠が薄く候補選択が出るケースなので、警告が過剰かどうかを目標達成と警告の有無の組み合わせで追う。"
+			"source": "restore-soft-edged-sprite-to-34x47",
+			"note": "Auto はセル幅をほぼ当てるが 33x47 へ着地し、人手で与えた目標 34x47 に横 1 セル足りない。目標は explicit ケースの出力のまま置き、その 1 セルの差が埋まるかを追う。倍率がほぼ当たっていても境界の証拠が薄く候補選択が出るケースなので、警告が過剰かどうかを目標達成と警告の有無の組み合わせで見る。"
 		},
 		"auto-resize-and-remove-bg": {
 			"source": "remove-background-trim-auto-grid"

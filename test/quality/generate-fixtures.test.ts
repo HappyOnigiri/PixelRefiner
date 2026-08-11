@@ -484,8 +484,8 @@ describe.skipIf(!enabled)("quality fixture generator", () => {
 		// [Policy] 入力側は生成 AI の出力そのもので、コードでは作り直せない。ここで作るのは
 		// 「格子の倍率を人手で与えたときの正しい出力」だけで、Auto がそこへ届くかを別に測る。
 		for (const [name, outW, outH] of [
-			["quality_prf400_soft_edged_sprite", 47, 64],
-			["quality_prf400_ambiguous_grid_scale", 26, 24],
+			["quality_prf400_soft_edged_sprite", 34, 47],
+			["quality_prf400_ambiguous_grid_scale", 20, 18],
 		] as const) {
 			const { result: forcedGrid } = processImage(
 				readPng(fixturePath(`${name}.png`)),
