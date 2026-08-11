@@ -11,8 +11,7 @@ import {
 	type AxisSignalScores,
 	autocorrelationScore,
 	combineSignalProfiles,
-	createAxisSignalProfile,
-	createLinearLuminance,
+	createAxisSignalProfiles,
 	gridAlignmentScore,
 	scoreAxisSignals,
 } from "./grid-signals/profiles";
@@ -474,29 +473,12 @@ export const searchPhaseAwareGrid = (
 		...GRID_SIGNAL_DEFAULTS,
 		...signalOptions,
 	};
-	const orthogonalStride = Math.max(
-		1,
-		Math.ceil(
-			Math.max(image.width, image.height) /
-				GRID_SEARCH_LIMITS.maxAnalysisDimension,
-		),
-	);
 	const maxCell = Math.max(1, Math.min(image.width, image.height));
-	const luminance = createLinearLuminance(image);
-	const xProfile = createAxisSignalProfile(
-		image,
-		mask,
-		"x",
+	const {
+		x: xProfile,
+		y: yProfile,
 		orthogonalStride,
-		luminance,
-	);
-	const yProfile = createAxisSignalProfile(
-		image,
-		mask,
-		"y",
-		orthogonalStride,
-		luminance,
-	);
+	} = createAxisSignalProfiles(image, mask);
 	const xEdges = combineSignalProfiles(xProfile, options);
 	const yEdges = combineSignalProfiles(yProfile, options);
 	const xCandidates = findAxisCandidates(

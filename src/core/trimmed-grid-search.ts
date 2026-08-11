@@ -4,7 +4,7 @@ import {
 	TRIMMED_GRID_SEARCH_LIMITS,
 	TRIMMED_GRID_SEARCH_WEIGHTS,
 } from "../shared/config";
-import type { PixelGrid, RawImage } from "../shared/types";
+import type { GridSignalOptions, PixelGrid, RawImage } from "../shared/types";
 import {
 	type BoundaryContrastEvaluator,
 	createBoundaryContrastEvaluator,
@@ -37,6 +37,7 @@ interface GridSearchFromTrimmedStrategy {
 		mask: RawImage,
 		sampleWindow: number,
 		hint?: { outW: number; outH: number },
+		signalOptions?: Partial<GridSignalOptions>,
 	) => GridEstimateFromTrimmed | null;
 }
 
@@ -429,6 +430,7 @@ export class FastGridSearchFromTrimmed
 		mask: RawImage,
 		sampleWindow: number,
 		hint?: { outW: number; outH: number },
+		signalOptions?: Partial<GridSignalOptions>,
 	): GridEstimateFromTrimmed | null {
 		// 比率に基づいて outH を変化させ、outW を決定する（探索空間を制限する）
 		const outHMin = Math.max(
@@ -452,7 +454,11 @@ export class FastGridSearchFromTrimmed
 				Math.floor(cropped.height / TRIMMED_GRID_SEARCH_LIMITS.minCellPixels),
 			),
 		);
-		const boundaryContrast = createBoundaryContrastEvaluator(cropped, mask);
+		const boundaryContrast = createBoundaryContrastEvaluator(
+			cropped,
+			mask,
+			signalOptions,
+		);
 		const ratio = cropped.width / Math.max(1, cropped.height);
 
 		// 画像が大きい場合は粗い刻みで候補を減らす

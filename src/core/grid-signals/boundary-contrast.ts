@@ -1,10 +1,6 @@
-import { GRID_SEARCH_LIMITS, GRID_SIGNAL_DEFAULTS } from "../../shared/config";
-import type { RawImage } from "../../shared/types";
-import {
-	combineSignalProfiles,
-	createAxisSignalProfile,
-	createLinearLuminance,
-} from "./profiles";
+import { GRID_SIGNAL_DEFAULTS } from "../../shared/config";
+import type { GridSignalOptions, RawImage } from "../../shared/types";
+import { combineSignalProfiles, createAxisSignalProfiles } from "./profiles";
 
 /**
  * 予測したセル境界の位置に、実際のエッジがどれだけ集まっているか。
@@ -59,24 +55,19 @@ export type BoundaryContrastEvaluator = (
 export const createBoundaryContrastEvaluator = (
 	image: RawImage,
 	mask: RawImage,
+	signalOptions: Partial<GridSignalOptions> = {},
 ): BoundaryContrastEvaluator => {
 	if (image.width < 2 || image.height < 2) return () => 0;
-	const orthogonalStride = Math.max(
-		1,
-		Math.ceil(
-			Math.max(image.width, image.height) /
-				GRID_SEARCH_LIMITS.maxAnalysisDimension,
-		),
-	);
-	const luminance = createLinearLuminance(image);
-	const xEdges = combineSignalProfiles(
-		createAxisSignalProfile(image, mask, "x", orthogonalStride, luminance),
-		GRID_SIGNAL_DEFAULTS,
-	);
-	const yEdges = combineSignalProfiles(
-		createAxisSignalProfile(image, mask, "y", orthogonalStride, luminance),
-		GRID_SIGNAL_DEFAULTS,
-	);
+	// [Policy] エッジの合成はアンサンブル側と同じ設定に従う。ここだけ既定値で
+	// 固定すると、呼び出し元が色境界などを切っても新指標だけが有効に残り、
+	// 採用格子と警告に効いてしまう。
+	const options: GridSignalOptions = {
+		...GRID_SIGNAL_DEFAULTS,
+		...signalOptions,
+	};
+	const profiles = createAxisSignalProfiles(image, mask);
+	const xEdges = combineSignalProfiles(profiles.x, options);
+	const yEdges = combineSignalProfiles(profiles.y, options);
 	return (cellW, cellH) => {
 		// [Intended] 片方の軸だけ格子に乗っている状態を高く評価しないよう相乗平均を使う。
 		const x = Math.max(0, axisBoundaryContrast(xEdges, cellW));
