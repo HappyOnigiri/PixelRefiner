@@ -2,6 +2,7 @@ import type { PixelGrid, RawImage } from "../../src/shared/types";
 import { imagesEqual } from "./image";
 import type {
 	QualityExpectation,
+	QualityImageSize,
 	QualityMetrics,
 	QualityTargetMetrics,
 } from "./types";
@@ -336,7 +337,7 @@ export const targetQualityFailures = (
 export const diffImageSize = (
 	actual: RawImage,
 	expected: RawImage,
-): { width: number; height: number } => ({
+): QualityImageSize => ({
 	width: Math.max(actual.width, expected.width),
 	height: Math.max(actual.height, expected.height),
 });
