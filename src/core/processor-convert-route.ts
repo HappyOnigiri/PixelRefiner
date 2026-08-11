@@ -27,6 +27,7 @@ import {
 } from "./image-operations";
 import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
+import { applyPostRemovalOutcome } from "./processor-background";
 import { getBackgroundBehavior } from "./processor-options";
 import type { SimpleRouteContext } from "./processor-simple-routes";
 
@@ -211,7 +212,12 @@ export const processConvertRoute = (
 	}
 	finalResult = componentResult.image;
 
-	if (o.postRemoveBackground) {
+	const postRemoval = {
+		attempted: o.postRemoveBackground,
+		rolledBack: false,
+		removed: false,
+	};
+	if (postRemoval.attempted) {
 		finalResult = removeBackground(
 			finalResult,
 			o.backgroundTolerance,
@@ -221,9 +227,10 @@ export const processConvertRoute = (
 			o.bgExtractionMethod,
 			backgroundModel,
 			behavior,
-			backgroundDiagnostic,
+			postRemoval,
 		);
 	}
+	applyPostRemovalOutcome(backgroundDiagnostic, postRemoval);
 	if (o.convertReduceColors || o.fixedPalette) {
 		finalResult = applyColorReduction(
 			finalResult,

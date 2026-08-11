@@ -68,9 +68,6 @@ const resources = {
 		"candidate.description.preserve":
 			"縮小せず、安全に元の解像度を維持します。",
 		"candidate.description.convert": "通常画像としてドット絵風に変換します。",
-		"batch.route.refine": "復元",
-		"batch.route.convert": "変換",
-		"batch.route.preserve": "原寸維持",
 		"batch.status.pending": "未処理",
 		"batch.status.processing": "処理中",
 		"batch.status.done": "完了",
@@ -268,6 +265,10 @@ const resources = {
 			"指定ピクセル（縦）です。\n\nピクセル指定 + 自動検出: この値をヒントに精密探索を開始します。\n完全ピクセル指定: この値に強制変換します。\n\n設定範囲: 1〜1024 (デフォルト: 自動)",
 		"tooltip.help.fast_mode":
 			"ONにすると、効率的なアルゴリズムで探索を高速化します。\nOFFにすると、より広範囲を精密に探索します。\n\n自動検出の結果がズレる場合や、ノイズ・細かい模様が多い画像では、OFFにすると精度が向上します。",
+		"tooltip.help.shared_palette":
+			"すべての画像を同じパレットで減色します。\n\n処理後の全画像から共通のパレットを作り、色数の設定を上限としてまとめてから、各画像へ適用し直します。\nキャラクターの差分やアニメーションのコマなど、画像どうしで色味を揃えたい場合に使います。",
+		"tooltip.help.include_diagnostics":
+			"一括ダウンロード (ZIP) に diagnostics.json を追加します。\n\n画像ごとの入出力ファイル名、判定した入力の種類、処理方式、信頼度、警告コードを記録した JSON です。\n大量の画像を処理したあとで、確認が必要な画像を絞り込むときに使います。",
 		"tooltip.help.bg_method":
 			"背景色をどこから抽出するか選択します。\n\n自動: 外周全体から背景を推定します。\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
 		"tooltip.help.bg_rgb":
@@ -360,6 +361,8 @@ const resources = {
 		"warning.fallback_to_preserve": "安全のため元のサイズを維持しました。",
 		"warning.batch_partial_failure":
 			"{total}件中{failed}件を処理できませんでした。成功した画像はZIPに含まれています。",
+		"warning.pending_partial_failure":
+			"{total}件中{failed}件を変換できませんでした。画像リストで対象を確認できます。",
 		"warning.unknown": "不明な処理警告です（{code}）。",
 
 		"error.palette_limit":
@@ -438,9 +441,6 @@ const resources = {
 		"candidate.description.coarser": "将图像整理为更大像素块的方案。",
 		"candidate.description.preserve": "不缩小图像，安全保留原始分辨率。",
 		"candidate.description.convert": "按普通图像转换为像素画风格。",
-		"batch.route.refine": "还原",
-		"batch.route.convert": "转换",
-		"batch.route.preserve": "保持原尺寸",
 		"batch.status.pending": "待处理",
 		"batch.status.processing": "处理中",
 		"batch.status.done": "完成",
@@ -637,6 +637,10 @@ const resources = {
 			"指定像素高度。\n\n像素指定 + 自动检测：用该值作为提示并在附近精细搜索。\n完全像素指定：强制转换为该高度。\n\n范围：1 到 1024 (默认：自动)",
 		"tooltip.help.fast_mode":
 			"开启后使用更高效的算法加快搜索。\n关闭后会进行更大范围、更精细的搜索。\n\n如果自动检测结果错位，或图片包含大量噪点和细碎纹理，关闭后可能提高准确度。",
+		"tooltip.help.shared_palette":
+			"使用同一个调色板对所有图片减色。\n\n处理完成后会从全部图片生成共用调色板，以色数设置为上限归纳后，再重新应用到每张图片。\n适合角色差分或动画帧等需要统一色调的场景。",
+		"tooltip.help.include_diagnostics":
+			"在全部下载 (ZIP) 中追加 diagnostics.json。\n\n该 JSON 记录每张图片的输入输出文件名、判定的输入类型、处理方式、置信度和警告代码。\n便于在批量处理后筛选需要确认的图片。",
 		"tooltip.help.bg_method":
 			"选择从哪里提取背景色。\n\n自动：从整个图像边缘估算背景。\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
 		"tooltip.help.bg_rgb":
@@ -726,6 +730,8 @@ const resources = {
 		"warning.fallback_to_preserve": "为安全起见，已保留原始尺寸。",
 		"warning.batch_partial_failure":
 			"{total} 张图片中有 {failed} 张处理失败。成功的图片已包含在 ZIP 中。",
+		"warning.pending_partial_failure":
+			"{total} 张图片中有 {failed} 张转换失败。可在图片列表中查看对象。",
 		"warning.unknown": "未知处理警告（{code}）。",
 
 		"error.palette_limit": "警告：图片包含{count}种颜色。调色板将限制为256色。",
@@ -807,9 +813,6 @@ const resources = {
 			"Avoids downscaling and safely keeps the original resolution.",
 		"candidate.description.convert":
 			"Treats the input as a regular image and converts it to pixel art.",
-		"batch.route.refine": "Refine",
-		"batch.route.convert": "Convert",
-		"batch.route.preserve": "Preserve",
 		"batch.status.pending": "Pending",
 		"batch.status.processing": "Processing",
 		"batch.status.done": "Done",
@@ -1007,6 +1010,10 @@ const resources = {
 			"Specified pixel height.\n\nPixel + Auto: Uses this as a hint and starts fine search near it.\nPixel Only: Forces conversion to this size.\n\nRange: 1 to 1024 (Default: Auto)",
 		"tooltip.help.fast_mode":
 			"When ON, uses an efficient algorithm to speed up the search.\nWhen OFF, performs a more comprehensive and precise search.\n\nIf automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy.",
+		"tooltip.help.shared_palette":
+			"Reduces colors with a single palette shared by every image.\n\nA common palette is built from all processed images, limited to the color count setting, and reapplied to each image.\nUseful when colors must match across character variations or animation frames.",
+		"tooltip.help.include_diagnostics":
+			"Adds diagnostics.json to the ZIP download.\n\nIt records the input and output filenames, detected input type, processing route, confidence, and warning codes for each image.\nUseful for narrowing down images that need a second look after a large batch.",
 		"tooltip.help.bg_method":
 			"Select where to extract the background color from.\n\nAuto: Estimates the background from the full image border.\nNone: No background removal.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
 		"tooltip.help.bg_rgb":
@@ -1100,6 +1107,8 @@ const resources = {
 			"The original size was preserved for safety.",
 		"warning.batch_partial_failure":
 			"{failed} of {total} images could not be processed. Successful images are included in the ZIP.",
+		"warning.pending_partial_failure":
+			"{failed} of {total} images could not be converted. Check the image list to see which ones.",
 		"warning.unknown": "Unknown processing warning ({code}).",
 
 		"error.palette_limit":

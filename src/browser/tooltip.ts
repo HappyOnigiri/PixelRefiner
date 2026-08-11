@@ -91,6 +91,20 @@ export const initTooltip = () => {
 		}
 	});
 
+	// [Intended] マウスを使えない環境でも説明へ到達できるよう、
+	// フォーカスの出入りでも同じツールチップを開閉する。
+	document.addEventListener("focusin", (e) => {
+		const target = (e.target as HTMLElement).closest("[data-tooltip]");
+		if (!target) return;
+		const text = target.getAttribute("data-tooltip");
+		if (text) showTooltip(target as HTMLElement, text);
+	});
+
+	document.addEventListener("focusout", (e) => {
+		const target = (e.target as HTMLElement).closest("[data-tooltip]");
+		if (target && target === activeElement) hideTooltip();
+	});
+
 	// 必要に応じてスクロール時に位置を更新する（任意だが固定要素には有用）
 	window.addEventListener("scroll", updatePosition, true);
 	window.addEventListener("resize", updatePosition);
