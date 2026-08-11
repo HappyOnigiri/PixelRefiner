@@ -1,14 +1,13 @@
 import type { PixelGrid, ProcessResult, RawImage } from "../shared/types";
 import type { AutomaticBackgroundResult, BackgroundModel } from "./background";
 import { getBackgroundTargets, removeBackground } from "./background-removal";
-import { rotateRawImageExpanded } from "./deskew";
 import {
 	applyGeminiWatermarkRemoval,
 	clearGeminiWatermarkFromWorkingImage,
 	createGeminiWatermarkDetectionMask,
 	detectGeminiWatermark,
 } from "./gemini-watermark";
-import { cloneImage, downsample } from "./image-operations";
+import { downsample } from "./image-operations";
 import {
 	getDownsampleOptions,
 	type NormalizedProcessOptions,
@@ -23,7 +22,6 @@ type PrepareGeminiWatermarkGeometryInput = {
 	getBackgroundMaskedInput: () => RawImage;
 	backgroundTargets: Array<[number, number, number]>;
 	backgroundModel?: BackgroundModel;
-	appliedDeskewAngle: number;
 };
 
 export type PreparedGeminiWatermarkGeometry = {
@@ -38,7 +36,6 @@ const createGeminiWatermarkFinisher = (
 	removal: ReturnType<typeof detectGeminiWatermark>,
 	detection: ReturnType<typeof createGeminiWatermarkDetectionMask>,
 	options: NormalizedProcessOptions,
-	appliedDeskewAngle: number,
 ): ((processed: ProcessResult) => ProcessResult) =>
 	removal.removed
 		? (processed) =>
@@ -47,7 +44,6 @@ const createGeminiWatermarkFinisher = (
 					detection.image,
 					processed,
 					options,
-					appliedDeskewAngle,
 					detection.mode,
 				)
 		: (processed) => processed;
@@ -80,7 +76,6 @@ export const downsampleGeminiWatermarkGeometry = (
 type PrepareGeminiWatermarkAwareAutoMaskInput = {
 	needed: boolean;
 	preparedMask?: RawImage;
-	appliedDeskewAngle: number;
 	options: NormalizedProcessOptions;
 	working: RawImage;
 	geometryWorking: RawImage;
@@ -94,18 +89,6 @@ export const prepareGeminiWatermarkAwareAutoMask = (
 ): RawImage | null => {
 	if (!input.needed) return null;
 	if (input.preparedMask) return input.preparedMask;
-	if (
-		input.appliedDeskewAngle !== 0 &&
-		input.options.bgRemovalScope !== "off" &&
-		input.options.bgExtractionMethod !== "none"
-	) {
-		return input.options.preRemoveBackground
-			? cloneImage(input.geometryWorking)
-			: rotateRawImageExpanded(
-					input.getBackgroundMaskedInput(),
-					input.appliedDeskewAngle,
-				);
-	}
 	return removeBackground(
 		input.geometryWorking,
 		input.options.backgroundTolerance,
@@ -140,14 +123,12 @@ export const prepareGeminiWatermarkGeometry = (
 		detection.image,
 		input.image,
 		removal.pixels,
-		input.appliedDeskewAngle,
 		detection.mode,
 	);
 	const working = clearGeminiWatermarkFromWorkingImage(
 		detection.image,
 		input.working,
 		removal.pixels,
-		input.appliedDeskewAngle,
 		detection.mode,
 	);
 	const removed = working !== input.working;
@@ -155,7 +136,6 @@ export const prepareGeminiWatermarkGeometry = (
 		removal,
 		detection,
 		input.options,
-		input.appliedDeskewAngle,
 	);
 	if (!removed) return { image, working, removed, finish };
 

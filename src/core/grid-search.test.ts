@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { DESKEW_LIMITS, GRID_SEARCH_LIMITS } from "../shared/config";
+import { GRID_SEARCH_LIMITS } from "../shared/config";
 import type { RawImage } from "../shared/types";
-import { rotateRawImageExpanded } from "./deskew";
-import {
-	hasMeaningfulDeskewScoreGain,
-	normalizeGridPhase,
-	searchDeskewedGrid,
-	searchPhaseAwareGrid,
-} from "./grid-search";
+import { normalizeGridPhase, searchPhaseAwareGrid } from "./grid-search";
 import { processImage } from "./processor";
 
 const createScaledGrid = (
@@ -276,48 +270,6 @@ describe("phase-aware grid search", () => {
 		});
 	});
 
-	it.each([-3, -1, -0.25, 0.25, 1, 3])(
-		"detects a correction for a %s degree input rotation",
-		(angle) => {
-			const source = createScaledGrid(8, 7, 16, 16);
-			const rotated = rotateRawImageExpanded(source, angle);
-			const result = searchDeskewedGrid(rotated, rotated);
-			expect(result).not.toBeNull();
-			expect(Math.abs((result?.angle ?? 0) + angle)).toBeLessThanOrEqual(0.5);
-			expect(
-				result?.candidates.every(
-					(candidate) => candidate.image === candidate.mask,
-				),
-			).toBe(true);
-		},
-	);
-
-	it("rejects a noise-level score improvement without rejecting quarter-degree fixtures", () => {
-		expect(hasMeaningfulDeskewScoreGain(0.310317, 0.309961)).toBe(false);
-		expect(hasMeaningfulDeskewScoreGain(0.9069384, 0.9067131)).toBe(true);
-	});
-
-	it("keeps deskew candidates globally sorted after merging angles", () => {
-		const source = createScaledGrid(8, 7, 16, 16);
-		const rotated = rotateRawImageExpanded(source, -3);
-		const { analysis } = processImage(rotated, {
-			processingMode: "refine",
-			enableDeskew: true,
-			autoGridFromTrimmed: true,
-			fastAutoGridFromTrimmed: true,
-			bgRemovalScope: "off",
-			bgExtractionMethod: "none",
-			preRemoveBackground: false,
-			postRemoveBackground: false,
-			trimToContent: true,
-			sampleWindow: 1,
-		});
-		const scores = analysis.gridCandidates.map(
-			(candidate) => candidate.totalScore,
-		);
-		expect(scores).toEqual([...scores].sort((left, right) => right - left));
-	});
-
 	it("繰り返し回数の足りない周期には高い軸信頼度を与えない", () => {
 		// 24x24 の中に 16x16 の無地の板だけがある。軸方向の遷移は左右（上下）の
 		// 2 本しかないため、cellW=16 でも予測境界がすべて遷移に一致してしまう。
@@ -356,19 +308,5 @@ describe("phase-aware grid search", () => {
 			GRID_SEARCH_LIMITS.maxPhaseAwarePixels,
 		);
 		expect(searchPhaseAwareGrid(image, image)).toBeNull();
-	});
-
-	it("上限は傾き補正の入力上限より大きく、回転で拡張された領域も探索できる", () => {
-		// [Intended] 傾き補正は回転後の領域で位相考慮探索を呼ぶ。上限が近すぎると
-		// 入力が上限内でも回転後だけ超えて、角度候補が黙って捨てられる。
-		expect(GRID_SEARCH_LIMITS.maxPhaseAwarePixels).toBeGreaterThan(
-			DESKEW_LIMITS.maximumInputPixels,
-		);
-	});
-
-	it("keeps an unrotated grid at zero degrees", () => {
-		const source = createScaledGrid(8, 7, 4, 4);
-		const result = searchDeskewedGrid(source, source);
-		expect(result).toBeNull();
 	});
 });

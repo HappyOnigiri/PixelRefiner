@@ -22,7 +22,6 @@ const isSimilar = (
 	left: GridCandidateReport,
 	right: GridCandidateReport,
 ): boolean => {
-	if ((left.angle ?? 0) !== (right.angle ?? 0)) return false;
 	const leftArea = area(left);
 	const rightArea = area(right);
 	const areaThreshold = Math.max(
@@ -42,13 +41,12 @@ const selectionForGrid = (
 	recommended = false,
 	processingMode: ProcessingMode = "refine",
 ): CandidateSelection => ({
-	id: `${kind}:${candidate.outW}x${candidate.outH}:${candidate.angle ?? 0}`,
+	id: `${kind}:${candidate.outW}x${candidate.outH}`,
 	kind,
 	recommended,
 	processingMode,
 	outW: candidate.outW,
 	outH: candidate.outH,
-	angle: candidate.angle,
 });
 
 export const selectCandidatePlans = (
@@ -102,10 +100,7 @@ export const selectCandidatePlans = (
 		const byArea = [...grids].sort((left, right) => area(left) - area(right));
 		const isAlternative = (candidate: GridCandidateReport): boolean =>
 			!plans.some(
-				(plan) =>
-					plan.outW === candidate.outW &&
-					plan.outH === candidate.outH &&
-					(plan.angle ?? 0) === (candidate.angle ?? 0),
+				(plan) => plan.outW === candidate.outW && plan.outH === candidate.outH,
 			) && !isSimilar(candidate, anchor);
 		const coarser = [...byArea]
 			.reverse()
@@ -167,7 +162,6 @@ export const candidateProcessOptions = (
 	if (selection.processingMode === "refine") {
 		options.forcePixelsW = selection.outW;
 		options.forcePixelsH = selection.outH;
-		options.deskewAngle = selection.angle;
 	}
 	if (selection.processingMode === "convert") {
 		options.detailLevel = selection.detailLevel;

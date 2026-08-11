@@ -445,7 +445,6 @@ export const clearGeminiWatermarkFromWorkingImage = (
 	detectionMask: RawImage,
 	workingImage: RawImage,
 	sourcePixels: Uint32Array,
-	appliedDeskewAngle: number,
 	mode: MappedRemovalMode,
 ): RawImage => {
 	if (sourcePixels.length === 0) return workingImage;
@@ -467,7 +466,6 @@ export const clearGeminiWatermarkFromWorkingImage = (
 		detectionMask,
 		grid,
 		sourcePixels,
-		appliedDeskewAngle,
 		mode,
 	);
 };
@@ -478,7 +476,6 @@ export const applyGeminiWatermarkRemoval = (
 	detectionMask: RawImage,
 	processed: ProcessResult,
 	options: NormalizedProcessOptions,
-	appliedDeskewAngle: number,
 	mode: MappedRemovalMode,
 ): ProcessResult => {
 	if (options.geminiWatermarkRemoval === "off") {
@@ -492,7 +489,6 @@ export const applyGeminiWatermarkRemoval = (
 		detectionMask,
 		processed.grid,
 		removal.pixels,
-		appliedDeskewAngle,
 		mode,
 	);
 	const compareBeforeSanitized = clearMappedGeminiWatermark(
@@ -500,7 +496,6 @@ export const applyGeminiWatermarkRemoval = (
 		detectionMask,
 		processed.grid,
 		removal.pixels,
-		appliedDeskewAngle,
 		mode,
 	);
 	options.debugHook?.("99-watermark-removed", result, {

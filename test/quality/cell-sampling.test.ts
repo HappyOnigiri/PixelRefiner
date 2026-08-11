@@ -36,35 +36,3 @@ describe("PRF-130 quality comparison", () => {
 		expect(Array.from(restored.data)).toEqual(Array.from(expected.data));
 	});
 });
-
-describe("default alpha sampling", () => {
-	it("keeps rotated pixel-art edges hard unless alpha coverage is enabled", () => {
-		const input = readPng("test/fixtures/quality-prf500-rotated-neg-1.png");
-		const options: ProcessOptions = {
-			processingMode: "refine",
-			enableDeskew: true,
-			autoGridFromTrimmed: true,
-			fastAutoGridFromTrimmed: true,
-			sampleWindow: 1,
-			preRemoveBackground: false,
-			postRemoveBackground: false,
-			bgRemovalScope: "off",
-			trimToContent: true,
-		};
-		const defaultResult = processImage(input, options).result;
-		const alphaAwareResult = processImage(input, {
-			...options,
-			cellSamplingMode: "alpha-aware-medoid",
-		}).result;
-		const countPartialAlpha = (data: Uint8ClampedArray): number => {
-			let count = 0;
-			for (let index = 3; index < data.length; index += 4) {
-				if (data[index] > 0 && data[index] < 255) count += 1;
-			}
-			return count;
-		};
-
-		expect(countPartialAlpha(defaultResult.data)).toBe(0);
-		expect(countPartialAlpha(alphaAwareResult.data)).toBeGreaterThan(0);
-	});
-});

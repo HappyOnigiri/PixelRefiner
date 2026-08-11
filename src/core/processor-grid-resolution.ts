@@ -26,7 +26,6 @@ export type ResolveProcessingGridInput = {
 	maskedForDebugOrAuto: RawImage | null;
 	bgTargets: Array<[number, number, number]>;
 	trimAlphaThreshold: number;
-	appliedDeskewAngle: number;
 	watermarkRemovedFromGeometry: boolean;
 	log: (...args: unknown[]) => void;
 };
@@ -50,7 +49,6 @@ export const resolveProcessingGrid = ({
 	maskedForDebugOrAuto,
 	bgTargets,
 	trimAlphaThreshold,
-	appliedDeskewAngle,
 	watermarkRemovedFromGeometry,
 	log,
 }: ResolveProcessingGridInput): ResolvedProcessingGrid => {
@@ -98,7 +96,6 @@ export const resolveProcessingGrid = ({
 			);
 			if (est) {
 				const phaseAwareReliable =
-					appliedDeskewAngle === 0 &&
 					phaseAwareEstimate !== null &&
 					(phaseAwareEstimate.scoreX ?? 0) >=
 						GRID_SEARCH_LIMITS.axisConfidenceThreshold &&
@@ -161,13 +158,9 @@ export const resolveProcessingGrid = ({
 				}
 				gridMethod = phaseAwareReliable
 					? "phase-aware-grid-search"
-					: appliedDeskewAngle !== 0
-						? "deskewed-trimmed-reconstruction-fast"
-						: o.fastAutoGridFromTrimmed
-							? "trimmed-reconstruction-fast"
-							: "trimmed-reconstruction";
-				// [Intended] 回転後の拡張余白は元画像のグリッド位相ではないため、
-				// 傾き補正時はコンテンツ BBox のセル数推定を優先する。
+					: o.fastAutoGridFromTrimmed
+						? "trimmed-reconstruction-fast"
+						: "trimmed-reconstruction";
 				// 注記:
 				// - トリミングが OFF でも、つぶれを防ぐため「コンテンツ BBox から推定したグリッド」を使用する。
 				// - ただしトリミング OFF は背景（余白）を残すだけなので、画像全体にダウンサンプリングを適用する。
@@ -211,11 +204,9 @@ export const resolveProcessingGrid = ({
 										phaseAware,
 										alignToTrimmedBounds && !phaseAware,
 									),
-									angle: appliedDeskewAngle,
 								};
 							})
 						: undefined,
-					angle: appliedDeskewAngle,
 				};
 				o.debugHook?.("04-grid-crop", working, {
 					grid,
@@ -229,7 +220,6 @@ export const resolveProcessingGrid = ({
 	if (!grid) {
 		const detectStart = performance.now();
 		grid = detectGrid(geometryWorking, { ...o.detect, debug: o.debug });
-		grid.angle = appliedDeskewAngle;
 		log(
 			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
 			grid,

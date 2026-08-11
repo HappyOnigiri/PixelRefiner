@@ -1,4 +1,3 @@
-import { DESKEW_LIMITS } from "../shared/config";
 import type {
 	ProcessResult,
 	RawImage,
@@ -14,17 +13,12 @@ import {
 import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { removeSmallComponents } from "./components";
-import { rotateRawImageExpanded } from "./deskew";
 import {
 	downsampleGeminiWatermarkGeometry,
 	prepareGeminiWatermarkAwareAutoMask,
 	prepareGeminiWatermarkGeometry,
 } from "./gemini-watermark-preprocessing";
-import {
-	rankGridCandidates,
-	rerankGridCandidateReports,
-} from "./grid-candidates";
-import { type DeskewGridSearchResult, searchDeskewedGrid } from "./grid-search";
+import { rankGridCandidates } from "./grid-candidates";
 import {
 	cloneImage,
 	cropRawImage,
@@ -159,36 +153,7 @@ const processImageCore = (
 		}
 		return preRemovedInput;
 	};
-	let deskewSearch: DeskewGridSearchResult | null = null;
-	let appliedDeskewAngle = o.deskewAngle;
-	let img = inputImage;
-	if (appliedDeskewAngle !== 0) {
-		img = rotateRawImageExpanded(inputImage, appliedDeskewAngle);
-	} else if (
-		o.enableDeskew &&
-		o.enableGridDetection &&
-		o.autoGridFromTrimmed &&
-		o.fastAutoGridFromTrimmed &&
-		o.hintPixelsW === undefined &&
-		o.hintPixelsH === undefined &&
-		o.forcePixelsW === undefined &&
-		o.forcePixelsH === undefined &&
-		(o.processingMode === "auto" || o.processingMode === "refine") &&
-		Math.min(inputImage.width, inputImage.height) >=
-			DESKEW_LIMITS.minimumInputDimension &&
-		// [Policy] 上位角度のフル解像度評価が処理時間を占有しないよう、自動補正の画素数を制限する。
-		inputImage.width * inputImage.height <= DESKEW_LIMITS.maximumInputPixels
-	) {
-		const deskewMask =
-			o.bgRemovalScope === "off" || o.bgExtractionMethod === "none"
-				? inputImage
-				: getBackgroundMaskedInput();
-		deskewSearch = searchDeskewedGrid(inputImage, deskewMask, o.gridSignals);
-		if (deskewSearch) {
-			appliedDeskewAngle = deskewSearch.angle;
-			img = deskewSearch.image;
-		}
-	}
+	const img = inputImage;
 	const startTime = performance.now();
 	const log = (...args: unknown[]) => {
 		if (o.debug) {
@@ -216,11 +181,7 @@ const processImageCore = (
 		o.bgExtractionMethod !== "none" &&
 		!(o.bgExtractionMethod === "auto" && !backgroundModel)
 	) {
-		const maskedInput = getPreRemovedInput();
-		working =
-			appliedDeskewAngle === 0
-				? cloneImage(maskedInput)
-				: rotateRawImageExpanded(maskedInput, appliedDeskewAngle);
+		working = cloneImage(getPreRemovedInput());
 	} else if (o.bgExtractionMethod === "auto") {
 		// [Intended] auto の除去経路は prepareAutomaticBackground だけが持つ。
 		// 除去結果が無い場合は角シードのレガシー経路へ落とさず、元画像をそのまま保つ。
@@ -237,7 +198,6 @@ const processImageCore = (
 		getBackgroundMaskedInput,
 		backgroundTargets: bgTargets,
 		backgroundModel,
-		appliedDeskewAngle,
 	});
 	const geometryImage = watermarkGeometry.image;
 	const geometryWorking = watermarkGeometry.working;
@@ -307,7 +267,6 @@ const processImageCore = (
 			o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0,
 		),
 		preparedMask: preparedWatermarkMask,
-		appliedDeskewAngle,
 		options: o,
 		working,
 		geometryWorking,
@@ -370,35 +329,15 @@ const processImageCore = (
 			maskedForDebugOrAuto,
 			bgTargets,
 			trimAlphaThreshold,
-			appliedDeskewAngle,
 			watermarkRemovedFromGeometry,
 			log,
 		});
 
-	let rankedGridCandidates = rankGridCandidates(
+	const rankedGridCandidates = rankGridCandidates(
 		geometryWorking,
 		grid,
 		gridMethod,
 	);
-	if (deskewSearch) {
-		const additional = deskewSearch.candidates
-			.filter((candidate) => candidate.angle !== appliedDeskewAngle)
-			.flatMap((candidate) =>
-				rankGridCandidates(
-					candidate.image,
-					{
-						...candidate.estimate,
-						angle: candidate.angle,
-						candidates: undefined,
-					},
-					"deskewed-phase-aware-grid-search",
-				).filter((report) => report.method !== "preserve"),
-			);
-		rankedGridCandidates = rerankGridCandidateReports([
-			...rankedGridCandidates,
-			...additional,
-		]);
-	}
 	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
 	// 元画像 img を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
