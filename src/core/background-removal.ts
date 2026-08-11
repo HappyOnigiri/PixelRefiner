@@ -148,12 +148,13 @@ const fillWithRampFallback = (
 		? detectBackgroundRamp(img, tolerance)
 		: undefined;
 	if (ramp !== undefined) {
-		const opaqueBefore = countOpaquePixels(img);
 		const ramped = cloneImage(img);
 		fill(ramped, ramp);
+		// 巻き戻しが無効なら除去率を測る必要がないので、全画素走査へ入る前に返す。
+		if (!behavior.rollback) return ramped;
+		const opaqueBefore = countOpaquePixels(img);
 		const removed = opaqueBefore - countOpaquePixels(ramped);
 		if (
-			!behavior.rollback ||
 			opaqueBefore === 0 ||
 			removed <= opaqueBefore * BACKGROUND_RAMP_LIMITS.maxRemovalRatio
 		) {
