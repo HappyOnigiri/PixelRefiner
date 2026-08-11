@@ -168,7 +168,7 @@ export const setupSettingsControls = ({
 		const setNumberInput = (
 			input: HTMLInputElement,
 			slider: HTMLInputElement | null,
-			range: { min: number; max: number; default: number },
+			range: { min: number; max: number },
 			defaultValue: number,
 		) => {
 			input.min = String(range.min);
