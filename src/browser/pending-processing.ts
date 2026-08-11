@@ -78,7 +78,11 @@ export const createProcessPendingImages = ({
 			// ここで更新しないと 1 つ前の枚数が表示されたままになる。
 			showProgress();
 			// [Intended] 続けて次の画像を変換するため、1 枚ごとにオーバーレイを閉じさせない。
-			await runProcessing({ keepLoadingOverlay: true });
+			// 失敗の通知も一巡の完了時にまとめるため、その場では出させない。
+			await runProcessing({
+				keepLoadingOverlay: true,
+				suppressErrorNotification: true,
+			});
 		},
 		processInactiveImage,
 		onDrained: (attemptedIds) => {

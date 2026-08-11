@@ -61,6 +61,11 @@ export type RunProcessingOptions = {
 	 * 複数画像を続けて変換する呼び出し側が、1 枚ごとの閉じ直しによる点滅を避けるために使う。
 	 */
 	keepLoadingOverlay?: boolean;
+	/**
+	 * 失敗をその場で通知しない。
+	 * 複数画像を続けて変換する呼び出し側が、一巡の完了時にまとめて通知するために使う。
+	 */
+	suppressErrorNotification?: boolean;
 };
 
 const parseOptionalInt = (
@@ -395,7 +400,9 @@ export const createRunProcessing = ({
 			updateBgColorFromMethod();
 		} catch (err) {
 			const msg = `${i18n.t("error.process_failed")}: ${(err as Error).message}`;
-			showError(msg);
+			// [Intended] トーストは重ねて表示できないため、呼び出し側がまとめて通知する場合は出さない。
+			// 原因は画像一覧の状態として残るので、ここで失われるわけではない。
+			if (!options.suppressErrorNotification) showError(msg);
 			imageSession.setImageStatus(currentItem.id, "error", msg);
 		} finally {
 			// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
