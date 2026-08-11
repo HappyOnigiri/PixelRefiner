@@ -92,6 +92,11 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		explicitCases: cases.filter((result) => result.parameterMode === "explicit")
 			.length,
 		autoCases: cases.filter((result) => result.parameterMode === "auto").length,
+		targetMet: cases.filter((result) => result.targetStatus === "met").length,
+		targetUnmet: cases.filter((result) => result.targetStatus === "unmet")
+			.length,
+		targetMissing: cases.filter((result) => result.targetStatus === "missing")
+			.length,
 		top1SizeAccuracy: average((result) => Number(result.metrics.sizeCorrect)),
 		top3SizeAccuracy: average((result) =>
 			Number(result.metrics.top3SizeCorrect),

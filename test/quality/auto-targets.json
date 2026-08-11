@@ -1,0 +1,25 @@
+{
+	"comment": "自動判定ケースの目標画像の由来。source は同じ入力を処理する explicit ケースで、その承認済みベースラインを test/quality/targets/<case id>.png へ固定してある。",
+	"excluded": {},
+	"targets": {
+		"auto-auto-grid-detection": {
+			"source": "trim-auto-grid",
+			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。"
+		},
+		"auto-high-resolution": {
+			"source": "restore-high-resolution-pixel-grid"
+		},
+		"auto-inner-background-removal": {
+			"source": "remove-inner-background-auto-grid"
+		},
+		"auto-no-trimming": {
+			"source": "remove-background-preserve-canvas"
+		},
+		"auto-resize-and-remove-bg": {
+			"source": "remove-background-trim-auto-grid"
+		},
+		"auto-resize-with-trimming": {
+			"source": "remove-background-trim-resize-46x13"
+		}
+	}
+}

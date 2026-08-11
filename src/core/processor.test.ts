@@ -375,7 +375,7 @@ describe("processImage", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				bgRemovalScope: "all",
+				bgRemovalScope: "outer",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
 				cellSamplingMode: "legacy-median",
@@ -389,6 +389,11 @@ describe("processImage", () => {
 					"match_expected_image_size_pixels",
 				),
 			});
+
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(getExpectPath("auto_grid_detection"), result);
+				return;
+			}
 
 			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(88);

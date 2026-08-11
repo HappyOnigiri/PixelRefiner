@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { reportRoot } from "./benchmark";
 import { loadCases, selectCasesForProfile } from "./manifest";
 import { aggregateQualityReport } from "./report/aggregate";
+import { renderHtml } from "./report/render";
 
 const enabled = process.env.QUALITY_REPORT === "1";
 
@@ -31,6 +32,28 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-i18n="title"');
 		expect(html).toContain('<div class="report-layout">');
 		expect(html).toContain('<aside class="sidebar">');
+		const localHtml = renderHtml({
+			...results,
+			metadata: {
+				...results.metadata,
+				prNumber: "local",
+				headCommit: "local",
+				baseCommit: "local",
+				workflowRunUrl: "local",
+			},
+		});
+		const reportMetaStart = localHtml.indexOf('<section class="report-meta"');
+		const reportMetaEnd = localHtml.indexOf("</section>", reportMetaStart);
+		const reportMeta = localHtml.slice(reportMetaStart, reportMetaEnd);
+		expect(reportMeta).toContain('data-i18n="localReport"');
+		expect(reportMeta).toContain("Viewing locally");
+		expect(reportMeta).toContain('data-i18n="generatedAt"');
+		expect(reportMeta).not.toContain('data-i18n="reportDetails"');
+		expect(reportMeta).not.toContain('data-i18n="pullRequest"');
+		expect(reportMeta).not.toContain('data-i18n="headCommit"');
+		expect(reportMeta).not.toContain('data-i18n="baseCommit"');
+		expect(reportMeta).not.toContain('data-i18n="baselineCommit"');
+		expect(reportMeta).not.toContain('data-i18n="workflow"');
 		expect(html).not.toContain("<header");
 		expect(html).not.toContain("<select");
 		expect(html).toContain('<legend data-i18n="language">');
@@ -39,7 +62,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-locale="zh-CN"');
 		expect(html).toContain('"zh-CN":{"title":"PixelRefiner 质量报告"');
 		expect(html).toContain(
-			'class="filter-button active" type="button" data-change-filter="" aria-pressed="true"',
+			'class="filter-button active" type="button" data-quality-filter="" aria-pressed="true"',
 		);
 		expect(html).toContain('grid-template-areas: "main sidebar"');
 		expect(html).toContain("event.target === dialog");
@@ -52,33 +75,59 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-change-filter="changed"');
 		expect(html).toContain('data-change-filter="new"');
 		expect(html).toContain('data-change-filter="regressed"');
+		const qualityGroupIndex = html.indexOf(
+			'<legend data-i18n="qualityStatus">',
+		);
 		const changeGroupIndex = html.indexOf('<legend data-i18n="changeStatus">');
 		const parameterGroupIndex = html.indexOf(
 			'<legend data-i18n="parameterMode">',
 		);
-		const qualityGroupIndex = html.indexOf(
-			'<legend data-i18n="qualityStatus">',
-		);
 		const searchIndex = html.indexOf('class="search-row"');
-		expect(changeGroupIndex).toBeGreaterThan(-1);
+		const languageGroupIndex = html.indexOf('<legend data-i18n="language">');
+		expect(qualityGroupIndex).toBeGreaterThan(-1);
+		expect(changeGroupIndex).toBeGreaterThan(qualityGroupIndex);
 		expect(parameterGroupIndex).toBeGreaterThan(changeGroupIndex);
-		expect(qualityGroupIndex).toBeGreaterThan(parameterGroupIndex);
-		expect(searchIndex).toBeGreaterThan(qualityGroupIndex);
+		expect(searchIndex).toBeGreaterThan(parameterGroupIndex);
+		expect(languageGroupIndex).toBeGreaterThan(searchIndex);
+		expect(html).toContain("margin-bottom: 20px;");
 		expect(html).toContain('data-parameter-filter=""');
 		expect(html).toContain('data-parameter-filter="explicit"');
 		expect(html).toContain('data-parameter-filter="auto"');
 		expect(html).toContain('parameterMode":"パラメータ"');
 		expect(html).toContain('explicitParameters":"オプション指定あり"');
 		expect(html).toContain('autoParameters":"自動判定"');
-		expect(html).toContain("card.dataset.parameter === activeParameter");
+		expect(html).toContain("card.dataset[group.name] === group.active");
 		expect(html).toContain('id="active-parameter-label"');
+		expect(html).toContain('data-quality-filter=""');
+		expect(html).toContain('data-quality-filter="unmet"');
+		expect(html).toContain('data-quality-filter="met"');
+		expect(html).toContain('data-quality-filter="missing"');
+		expect(html).toContain('id="active-quality-label"');
+		expect(html).toContain('targetUnmet":"目標未達"');
+		// [Intended] 一覧のバッジと絞り込みの件数が同じ集計から出ていることを確かめる。
+		// 片方だけずれると、絞り込んだ結果と件数表示が食い違って読めなくなる。
+		for (const [state, count] of [
+			["met", results.summary.targetMet],
+			["unmet", results.summary.targetUnmet],
+			["missing", results.summary.targetMissing],
+		] as const) {
+			expect(
+				html.match(new RegExp(`data-quality="${state}"`, "g"))?.length ?? 0,
+			).toBe(count);
+		}
+		expect(
+			results.summary.targetMet +
+				results.summary.targetUnmet +
+				results.summary.targetMissing,
+		).toBe(selectedCases.length);
+		expect(results.summary.targetUnmet).toBeGreaterThan(0);
 		const explicitCount = html.match(/data-parameter="explicit"/g)?.length ?? 0;
 		const autoCount = html.match(/data-parameter="auto"/g)?.length ?? 0;
 		expect(explicitCount + autoCount).toBe(selectedCases.length);
 		expect(autoCount).toBe(results.summary.autoCases);
 		expect(explicitCount).toBe(results.summary.explicitCases);
 		expect(autoCount).toBeGreaterThan(0);
-		const autoCaseId = "auto-quality-nearest-4x";
+		const autoCaseId = "auto-resize-with-trimming";
 		const autoCaseIdIndex = html.indexOf(autoCaseId);
 		const autoCase = html.slice(
 			html.lastIndexOf("<article", autoCaseIdIndex),
@@ -97,8 +146,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain("unchanged from base branch");
 		expect(html).toContain("base branchと差分なし");
 		expect(html).toContain('new":"新規追加"');
-		expect(html).toContain("card.dataset.change === activeChange");
-		expect(html).not.toContain('activeChange === "changed"');
+		expect(html).not.toContain('group.active === "changed"');
 		expect(html).not.toContain("Preserve the image.");
 		expect(html).not.toContain("画像を保持します。");
 		expect(html.match(/class="case-description"/g)).toHaveLength(
@@ -157,9 +205,10 @@ describe.skipIf(!enabled)("quality report", () => {
 		const compactCaseStart = html.lastIndexOf("<article", compactCaseIdIndex);
 		const compactCaseEnd = html.indexOf("</article>", compactCaseIdIndex);
 		const compactCase = html.slice(compactCaseStart, compactCaseEnd);
-		expect(compactCase.match(/<figure>/g)).toHaveLength(2);
-		expect(compactCase).toContain('data-i18n="input"');
+		expect(compactCase.match(/<figure>/g)).toHaveLength(3);
+		expect(compactCase).toContain('data-i18n="groundTruth"');
 		expect(compactCase).toContain('data-i18n="result"');
+		expect(compactCase).toContain('data-i18n="groundTruthDifference"');
 		expect(compactCase).toContain(
 			`href="cases/${compactCaseId}/index.html" data-i18n="details"`,
 		);
@@ -170,16 +219,18 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(reviewCase).toContain(
 			'href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details"',
 		);
-		const exactCaseId = "restore-nearest-2x-to-8x8";
-		const exactCaseIdIndex = html.indexOf(exactCaseId);
-		const exactCaseStart = html.lastIndexOf("<article", exactCaseIdIndex);
-		const exactCaseEnd = html.indexOf("</article>", exactCaseIdIndex);
-		const exactCase = html.slice(exactCaseStart, exactCaseEnd);
-		expect(exactCase).toContain('data-i18n="exactMatchShort"');
-		expect(exactCase).toContain('data-i18n="yes"');
-		expect(exactCase).toMatch(
-			/<strong data-i18n="meanRgbaErrorShort">Error<\/strong> 0\/0/,
+		const targetUnmetId = "auto-resize-with-trimming";
+		const targetUnmetIdIndex = html.indexOf(targetUnmetId);
+		const targetUnmetStart = html.lastIndexOf("<article", targetUnmetIdIndex);
+		const targetUnmetEnd = html.indexOf("</article>", targetUnmetIdIndex);
+		const targetUnmetCase = html.slice(targetUnmetStart, targetUnmetEnd);
+		expect(targetUnmetCase).toContain('data-quality="unmet"');
+		expect(targetUnmetCase).toContain('data-i18n="targetUnmet"');
+		expect(targetUnmetCase).not.toContain('data-i18n="passed"');
+		expect(targetUnmetCase).toContain(
+			'data-i18n="assertions.exact-image-match"',
 		);
+		expect(targetUnmetCase).toContain('data-i18n="assertions.output-size"');
 		const compactDetail = readFileSync(
 			path.join(reportRoot, "cases", compactCaseId, "index.html"),
 			"utf8",
@@ -209,25 +260,54 @@ describe.skipIf(!enabled)("quality report", () => {
 		]) {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
+		expect(compactDetail).toContain('<h2 data-i18n="targetComparison">');
+		// [Intended] 自動判定ケースの目標は借り物なので、どのケースから借りたかを出す。
+		const autoDetail = readFileSync(
+			path.join(reportRoot, "cases", "auto-resize-with-trimming", "index.html"),
+			"utf8",
+		);
+		expect(autoDetail).toContain(
+			'<strong data-i18n="targetSource">Target source</strong>: ' +
+				"<code>remove-background-trim-resize-46x13</code>",
+		);
+		expect(autoDetail).toContain('data-i18n="sizeMatches"');
+		expect(results.summary.targetMissing).toBe(0);
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
 		expect(markdown).toContain("|Confidence (diagnostic)|");
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
-		expect(html).toContain(
-			`href="${results.metadata.repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}"`,
+		const remoteMetadata = {
+			...results.metadata,
+			prNumber: "92",
+			headCommit: "1234567890abcdef",
+			baseCommit: "abcdef1234567890",
+			generatedAt: "2026-08-11T04:25:51.000Z",
+			workflowRunUrl: `${results.metadata.repositoryUrl}/actions/runs/123`,
+		};
+		const remoteHtml = renderHtml({ ...results, metadata: remoteMetadata });
+		expect(remoteHtml).toContain('data-i18n="reportDetails"');
+		expect(remoteHtml).not.toContain('data-i18n="localReport"');
+		expect(remoteHtml).toContain(
+			`href="${results.metadata.repositoryUrl}/pull/92"`,
+		);
+		expect(remoteHtml).toContain(
+			'<time datetime="2026-08-11T04:25:51.000Z">2026-08-11 13:25:51 JST</time>',
 		);
 		for (const commit of [
-			results.metadata.headCommit,
-			results.metadata.baseCommit,
-			results.metadata.baselineCommit,
+			remoteMetadata.headCommit,
+			remoteMetadata.baseCommit,
+			remoteMetadata.baselineCommit,
 		]) {
-			expect(html).toContain(
+			expect(remoteHtml).toContain(
 				`href="${results.metadata.repositoryUrl}/commit/${encodeURIComponent(commit)}"`,
 			);
-			expect(html).toContain(`<code>${commit.slice(0, 7)}</code>`);
+			expect(remoteHtml).toContain(`<code>${commit.slice(0, 7)}</code>`);
 		}
-		expect(html).toContain(
-			`<time datetime="${results.metadata.generatedAt}">${results.metadata.generatedAt}</time>`,
+		expect(html).toMatch(
+			new RegExp(
+				`<time datetime="${results.metadata.generatedAt}">` +
+					"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} JST</time>",
+			),
 		);
 		for (const qualityCase of selectedCases) {
 			expect(

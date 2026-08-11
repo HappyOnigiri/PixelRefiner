@@ -20,6 +20,65 @@ describe("quality manifest", () => {
 		expect(validateManifest(cases)).toEqual([]);
 	});
 
+	it("excludes option-specific fixtures from auto cases", () => {
+		const ids = new Set(cases.map((qualityCase) => qualityCase.id));
+		for (const id of [
+			"auto-dithering-floyd-steinberg",
+			"auto-palette-conversion-gb",
+			"auto-quality-continuous-tone",
+			"auto-quality-convert-illustration",
+			"auto-quality-deterministic-quantization",
+			"auto-quality-prf200-gradient-background",
+			"auto-quality-prf210-isolated-noise",
+			"auto-quality-prf210-protected-details",
+			"auto-quality-prf420-shared-palette-companion",
+			"auto-quality-prf420-shared-palette-target",
+			"auto-tall-red",
+			"auto-wide-red",
+			"auto-quality-crop-shift-1px",
+			"auto-quality-crop-shift-2px",
+			"auto-quality-crop-shift-3px",
+			"auto-quality-nearest-1-5x",
+			"auto-quality-nearest-2-5x",
+			"auto-quality-nearest-3-2x",
+			"auto-quality-prf110-anisotropic-noninteger",
+			"auto-quality-prf500-rotated-neg-0-25",
+			"auto-quality-prf500-rotated-neg-1",
+			"auto-quality-prf500-rotated-neg-3",
+			"auto-quality-prf500-rotated-pos-0-25",
+			"auto-quality-prf500-rotated-pos-1",
+			"auto-quality-prf500-rotated-pos-3",
+			"auto-quality-alpha-blur",
+			"auto-quality-ambiguous-axis-grid",
+			"auto-quality-anisotropic",
+			"auto-quality-bicubic-equivalent",
+			"auto-quality-bilinear",
+			"auto-quality-gaussian-blur",
+			"auto-quality-nearest-16x",
+			"auto-quality-nearest-2x",
+			"auto-quality-nearest-32x",
+			"auto-quality-nearest-3x",
+			"auto-quality-nearest-4x",
+			"auto-quality-nearest-8x",
+			"auto-quality-padding-black",
+			"auto-quality-padding-gradient",
+			"auto-quality-padding-solid",
+			"auto-quality-padding-white",
+			"auto-quality-prf120-alpha-grid",
+			"auto-quality-prf120-diagonal-grid",
+			"auto-quality-prf120-harmonic-grid",
+			"auto-quality-prf130-cell-sampling",
+			"auto-quality-prf210-uncertain-background",
+			"auto-quality-prf400-ui-low-confidence",
+			"auto-quality-rgb-noise",
+			"auto-quality-transparent-rgb-padding",
+		]) {
+			expect(ids.has(id), id).toBe(false);
+		}
+		// [Intended] 出力サイズも含め、Auto が目標へ到達する品質対象として残す。
+		expect(ids.has("auto-resize-with-trimming")).toBe(true);
+	});
+
 	it.each([
 		{
 			name: "duplicate IDs",

@@ -1,7 +1,7 @@
 import type { ProcessOptions } from "../../src/core/processor";
 import type { DitherMode } from "../../src/shared/types";
 
-export const QUALITY_REPORT_VERSION = "2";
+export const QUALITY_REPORT_VERSION = "3";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
@@ -11,6 +11,9 @@ export type QualityChangeStatus =
 	| "changed"
 	| "unchanged"
 	| "new";
+
+/** 固定した目標と、その目標に紐づく合格条件に対する品質判定。 */
+export type QualityTargetStatus = "met" | "unmet" | "missing";
 
 export type FixtureAssetProvenance = {
 	file: string;
@@ -97,6 +100,23 @@ export type QualityMetrics = {
 	approxPeakBytes: number;
 };
 
+/**
+ * 固定した目標画像との比較。ベースライン比較が「前回から何が変わったか」を見るのに対し、
+ * こちらは「あるべき姿にどれだけ足りていないか」を見る。
+ * [Policy] ゲート判定には使わない。目標に届かないことが分かっているケースを含むため、
+ * 失敗にすると全件が赤のままになり回帰検知が機能しなくなる。
+ */
+export type QualityTargetMetrics = {
+	targetWidth: number;
+	targetHeight: number;
+	sizeMatches: boolean;
+	exactMatch: boolean;
+	meanRgbaError: number;
+	edgeF1: number;
+	backgroundMaskIou: number;
+	smallComponentRetention: number;
+};
+
 export type QualityBaselineCase = {
 	id: string;
 	status: "passed" | "failed";
@@ -132,6 +152,12 @@ export type QualityCaseResult = {
 	inputKind: string;
 	degradationPatterns: string[];
 	status: "passed" | "failed";
+	/** 一覧で主判定として表示する、固定目標に対する品質状態。 */
+	targetStatus: QualityTargetStatus;
+	/** 固定目標の合格条件を満たさなかった項目。 */
+	targetFailedAssertions: string[];
+	/** auto ケースでは目標元の explicit ケースから引き継いだ合格条件。 */
+	targetExpectation: QualityExpectation | null;
 	changeStatus: QualityChangeStatus;
 	failedAssertions: string[];
 	regressedMetrics: string[];
@@ -162,13 +188,21 @@ export type QualityCaseResult = {
 	};
 	metrics: QualityMetrics;
 	baselineMetrics: QualityBaselineCase | null;
+	/** 目標画像を登録していないケースは null。 */
+	targetMetrics: QualityTargetMetrics | null;
+	/**
+	 * 目標画像の由来。auto ケースは目標を借りた explicit ケースの ID を持つ。
+	 * explicit ケースはケース定義の正解画像そのものが目標なので null。
+	 */
+	targetSource: string | null;
 	files: {
-		/** auto ケースでベースライン未登録のときは基準画像が存在しない。 */
+		/** 目標画像。登録のない auto ケースでは存在しない。 */
 		groundTruth: string | null;
 		input: string;
 		baseline: string | null;
 		result: string;
-		diff: string;
+		/** 目標との差分。目標がないケースでは存在しない。 */
+		diff: string | null;
 		baselineDiff: string | null;
 		backgroundMask: string;
 	};
@@ -190,6 +224,12 @@ export type QualityResults = {
 		explicitCases: number;
 		/** 自動判定（UI 既定のみ）のケース数 */
 		autoCases: number;
+		/** 固定目標の合格条件を満たしたケース数 */
+		targetMet: number;
+		/** 固定目標の合格条件を満たしていないケース数 */
+		targetUnmet: number;
+		/** 目標画像または合格条件を登録していないケース数 */
+		targetMissing: number;
 		top1SizeAccuracy: number;
 		top3SizeAccuracy: number;
 		confidenceCorrectnessCorrelation: number | null;

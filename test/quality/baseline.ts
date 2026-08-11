@@ -65,6 +65,15 @@ export const baselineImagePath = (caseId: string): string =>
 	resolveBaselineImagePath(baselineRoot(), caseId);
 
 /**
+ * PR ベース側への差し替えを無視して、リポジトリにチェックイン済みのベースラインを指す。
+ * 目標画像の初期化やマニフェスト検証のように、head の資産そのものを見たいときに使う。
+ */
+export const checkedInBaselineRoot = (): string => DEFAULT_BASELINE_ROOT;
+
+export const checkedInBaselineImagePath = (caseId: string): string =>
+	resolveBaselineImagePath(DEFAULT_BASELINE_ROOT, caseId);
+
+/**
  * [Intended] head 側でこのケースのベースライン画像が更新済み（＝劣化が宣言済み）かを判定する。
  * QUALITY_BASELINE_ROOT が指す PR ベース時点の旧ベースラインと、リポジトリにチェックイン
  * された（＝ head の）ベースライン画像のバイト列を比較する。auto ケースの regression を

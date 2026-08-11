@@ -126,7 +126,7 @@ describe("processImage modes", () => {
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				bgRemovalScope: "all",
+				bgRemovalScope: "outer",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
 				cellSamplingMode: "legacy-median",
