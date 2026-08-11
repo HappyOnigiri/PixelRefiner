@@ -345,8 +345,12 @@ export const initApp = (): void => {
 		if (allImages.length === 0) return;
 		const lastImage = allImages[allImages.length - 1];
 		imageSession.setActiveImage(lastImage.id);
-		// 追加した画像を一覧順にすべて変換する
-		void processPendingImages();
+		// [Intended] 自動処理が OFF のときは読み込みを契機に変換しない。OFF は処理ボタンで
+		// 表示中の画像だけを変換するモードなので、ここで一覧全体を変換してはいけない。
+		if (els.autoProcessToggle.checked) {
+			// 追加した画像を一覧順にすべて変換する
+			void processPendingImages();
+		}
 	};
 
 	els.clearAllButton.addEventListener("click", () => {
