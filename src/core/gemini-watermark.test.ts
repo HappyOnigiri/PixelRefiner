@@ -325,6 +325,15 @@ describe("Gemini watermark removal", () => {
 			...options,
 			geminiWatermarkRemoval: "off",
 		});
+		// 事後除去を止めた場合は中止の警告が出る。原寸の事前除去がロールバックするという
+		// このテストの前提が崩れていないことを固定する。
+		const preRemovalOnly = processImage(image, {
+			...options,
+			postRemoveBackground: false,
+		});
+		expect(preRemovalOnly.analysis.warnings).toContain(
+			"BACKGROUND_REMOVAL_SKIPPED",
+		);
 		let removedBrightCells = 0;
 		let transparentCells = 0;
 		for (
@@ -348,7 +357,11 @@ describe("Gemini watermark removal", () => {
 			}
 		}
 
-		expect(automatic.analysis.warnings).toContain("BACKGROUND_REMOVAL_SKIPPED");
+		// 原寸の事前除去はロールバックするが、出力解像度の事後除去が透過を作るため、
+		// 「透過を中止した」警告は出さない。
+		expect(automatic.analysis.warnings).not.toContain(
+			"BACKGROUND_REMOVAL_SKIPPED",
+		);
 		expect(transparentCells).toBeGreaterThan(0);
 		expect(removedBrightCells).toBeGreaterThan(0);
 	});

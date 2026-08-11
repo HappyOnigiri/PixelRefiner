@@ -27,6 +27,7 @@ import {
 } from "./image-operations";
 import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
+import { applyPostRemovalOutcome } from "./processor-background";
 import {
 	getDownsampleOptions,
 	type NormalizedProcessOptions,
@@ -299,7 +300,12 @@ export const processForcedRoute = (
 
 	// 3. 後処理の透明化（背景除去）
 	const postBgStart = performance.now();
-	const result2 = o.postRemoveBackground
+	const postRemoval = {
+		attempted: o.postRemoveBackground,
+		rolledBack: false,
+		removed: false,
+	};
+	const result2 = postRemoval.attempted
 		? removeBackground(
 				componentResult.image,
 				o.backgroundTolerance,
@@ -308,9 +314,10 @@ export const processForcedRoute = (
 				bgTargets,
 				o.bgExtractionMethod,
 				backgroundModel,
-				backgroundDiagnostic,
+				postRemoval,
 			)
 		: componentResult.image;
+	applyPostRemovalOutcome(backgroundDiagnostic, postRemoval);
 	log(
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
@@ -495,19 +502,25 @@ export const processGridDisabledRoute = (
 		smallComponentRemoval = componentResult.diagnostic;
 	}
 
-	const base =
-		context.applyFinalAdjustments && o.postRemoveBackground
-			? removeBackground(
-					componentResult.image,
-					bgTol,
-					o.bgRemovalScope,
-					o.bgConnectivity,
-					bgTargets,
-					o.bgExtractionMethod,
-					backgroundModel,
-					backgroundDiagnostic,
-				)
-			: componentResult.image;
+	const postRemoval = {
+		attempted:
+			(context.applyFinalAdjustments ?? false) && o.postRemoveBackground,
+		rolledBack: false,
+		removed: false,
+	};
+	const base = postRemoval.attempted
+		? removeBackground(
+				componentResult.image,
+				bgTol,
+				o.bgRemovalScope,
+				o.bgConnectivity,
+				bgTargets,
+				o.bgExtractionMethod,
+				backgroundModel,
+				postRemoval,
+			)
+		: componentResult.image;
+	applyPostRemovalOutcome(backgroundDiagnostic, postRemoval);
 
 	let finalResult = base;
 	let compareBefore = img;
