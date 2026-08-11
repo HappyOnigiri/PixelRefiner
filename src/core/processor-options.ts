@@ -165,10 +165,11 @@ export type ProcessOptions = DetectOptions & {
 };
 
 /**
- * 処理設定の既定値から、UI が処理器へ渡す詳細設定を構築する。
+ * 共有設定から ProcessOptions の既定値一式を組み立てる。
  *
- * [Intended] UI に表示していない設定もここへ含め、browser と品質テストが
- * 同じ初期オプションを使う。新しい既定値を追加するときはこの関数にも反映する。
+ * [Intended] PROCESS_DEFAULTS のうち ProcessOptions に対応する項目はすべて
+ * ここへ含める。新しい既定値を追加するときはこの関数にも反映する
+ * （網羅性は processor-options.test.ts が検証する）。
  */
 export const createDefaultProcessOptions = () =>
 	({

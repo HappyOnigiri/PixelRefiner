@@ -146,7 +146,8 @@ export const applyQuickSettingsToOptions = (
 /**
  * UI の初期状態（詳細設定の既定値と Auto プリセット）を処理オプションへ変換する。
  *
- * [Intended] Auto 品質ケースもこの関数を使い、DOM の初期化経路と同じ設定を測る。
+ * [Intended] UI に表示していない詳細設定も既定値から取り込むため、DOM の
+ * 初期化経路と同じ設定になる。Auto 品質ケースもこの関数を使って同じ状態を測る。
  */
 export const createUiInitialProcessOptions = (): ProcessOptions =>
 	applyQuickSettingsToOptions(
