@@ -1,4 +1,5 @@
 import { wrap } from "comlink";
+import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
 import type { ProcessOptions } from "../core/processor";
 import type { ProcessorWorker } from "../core/worker";
 import { clampInt, PROCESS_RANGES } from "../shared/config";
@@ -323,12 +324,17 @@ export const createRunProcessing = ({
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
-			let candidateModalShown = false;
-			if (
-				showCandidates &&
-				!effectiveSelection &&
-				analysis.warnings.includes("LOW_GRID_CONFIDENCE")
-			) {
+			let candidateModalDisplayed = false;
+			const candidateModalInput = {
+				isAuto: processOptions.processingMode === "auto",
+				isInitial: !effectiveSelection,
+				showCandidates,
+				hasCandidateSelection: effectiveSelection !== undefined,
+				warningCodes: analysis.warnings,
+			};
+			const candidateModalPrecheck =
+				evaluateCandidateModalDecision(candidateModalInput);
+			if (candidateModalPrecheck.candidateModalEligible) {
 				try {
 					const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
 					const previews = await processor.previewCandidates(
@@ -341,9 +347,15 @@ export const createRunProcessing = ({
 					const stillCurrent =
 						generation === latestGeneration &&
 						imageSession.getActiveImage()?.id === currentItem.id;
-					if (stillCurrent && previews.length > 0) {
+					const candidateModalAfterPreview = evaluateCandidateModalDecision({
+						...candidateModalInput,
+						candidatePreviewCount: stillCurrent ? previews.length : 0,
+					});
+					if (
+						candidateModalAfterPreview.warningPresentation === "candidate-modal"
+					) {
 						candidateChooser.show(previews, analysis.warnings, currentItem.id);
-						candidateModalShown = true;
+						candidateModalDisplayed = true;
 					}
 				} catch (error) {
 					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
@@ -351,7 +363,10 @@ export const createRunProcessing = ({
 				}
 			}
 			if (
-				shouldNotifyProcessingWarnings(analysis.warnings, candidateModalShown)
+				shouldNotifyProcessingWarnings(
+					analysis.warnings,
+					candidateModalDisplayed,
+				)
 			) {
 				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
 			}

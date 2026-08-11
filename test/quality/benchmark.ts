@@ -2,6 +2,8 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 import { processBatchImages } from "../../src/core/batch";
+import { evaluateCandidateModalDecision } from "../../src/core/candidate-modal-decision";
+import { selectCandidatePlans } from "../../src/core/candidate-previews";
 import { processImage } from "../../src/core/processor";
 import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
@@ -240,6 +242,18 @@ export const runQualityCase = (
 			(left, right) => right.totalScore - left.totalScore,
 		);
 	}
+	// [Intended] 品質レポートはブラウザの候補プレビュー生成を実行しないため、
+	// UI 初回 Auto 処理と同じ候補プラン数を表示見込みの根拠にする。ここでの判定は
+	// 実際にモーダルを開いた事実ではなく、候補生成失敗を含まない決定論的な診断である。
+	const candidatePlanCount = selectCandidatePlans(currentRun.analysis).length;
+	const candidateModal = evaluateCandidateModalDecision({
+		isAuto: effectiveOptions.processingMode === "auto",
+		isInitial: true,
+		showCandidates: true,
+		hasCandidateSelection: false,
+		warningCodes: currentRun.analysis.warnings,
+		candidatePreviewCount: candidatePlanCount,
+	});
 	if (writeArtifacts) {
 		const outputDirectory = path.join(REPORT_ROOT, caseDirectory);
 		mkdirSync(outputDirectory, { recursive: true });
@@ -290,8 +304,15 @@ export const runQualityCase = (
 		diffBoundingBox: imageComparison.diffBoundingBox,
 		classification: currentRun.analysis.classification ?? qualityCase.inputKind,
 		route: currentRun.analysis.route,
+		classificationConfidence:
+			currentRun.analysis.classificationConfidence ?? null,
 		confidence: currentRun.analysis.confidence,
+		gridConfidence: currentRun.analysis.confidence,
 		warnings: currentRun.analysis.warnings,
+		candidateModalDecision: candidateModal.candidateModalDecision,
+		candidateModalReason: candidateModal.candidateModalReason,
+		warningPresentation: candidateModal.warningPresentation,
+		candidatePlanCount,
 		expectedWidth: expected.width,
 		expectedHeight: expected.height,
 		gridCandidates: topCandidates.map((candidate) => ({

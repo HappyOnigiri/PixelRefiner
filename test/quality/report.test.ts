@@ -162,11 +162,12 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html.match(/data-i18n="processingTime"/g)).toHaveLength(
 			selectedCases.length,
 		);
-		expect(html.match(/data-i18n="confidence"/g)).toHaveLength(
-			selectedCases.length,
-		);
+		expect(
+			html.match(/data-i18n="gridConfidence"/g)?.length ?? 0,
+		).toBeGreaterThanOrEqual(selectedCases.length);
 		expect(html).toContain('processingTime":"時間"');
-		expect(html).toContain('confidence":"信頼度（診断値）"');
+		expect(html).toContain('gridConfidence":"グリッド信頼度"');
+		expect(html).toContain('classificationConfidence":"自動分類信頼度"');
 		const paletteCaseId = "convert-game-boy-pocket-palette";
 		const paletteCaseIdIndex = html.indexOf(paletteCaseId);
 		const paletteCaseStart = html.lastIndexOf("<article", paletteCaseIdIndex);
@@ -243,13 +244,17 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
 		expect(compactDetail).toContain(
-			'<dt data-i18n="confidence">Confidence (diagnostic)</dt>',
+			'<dt data-i18n="gridConfidence">Grid confidence</dt>',
 		);
 		expect(compactDetail).toContain(
 			`<dd>${results.cases
 				.find((result) => result.id === compactCaseId)
-				?.confidence?.toFixed(4)}</dd>`,
+				?.gridConfidence?.toFixed(4)}</dd>`,
 		);
+		expect(compactDetail).toContain(
+			'<dt data-i18n="classificationConfidence">Classification confidence</dt>',
+		);
+		expect(compactDetail).toContain('data-i18n="candidateDiagnostics"');
 		expect(compactDetail).toContain('class="case-description"');
 		expect(compactDetail).toContain('class="image-stage dialog-stage"');
 		for (const imageKey of [
@@ -273,12 +278,33 @@ describe.skipIf(!enabled)("quality report", () => {
 			'<strong data-i18n="targetSource">Target source</strong>: ' +
 				"<code>remove-background-trim-resize-46x13</code>",
 		);
+		expect(autoDetail).toContain(
+			'<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>',
+		);
+		expect(autoDetail).toContain('data-i18n="candidateModalWouldShow"');
+		expect(autoDetail).toContain(
+			'data-i18n="warningPresentationCandidateModal"',
+		);
+		expect(autoDetail).toContain(
+			'data-i18n="processingWarnings.LOW_GRID_CONFIDENCE"',
+		);
 		expect(autoDetail).toContain('data-i18n="sizeMatches"');
 		expect(results.summary.targetMissing).toBe(0);
 		expect(html).toContain("品質レポート");
 		const markdown = readFileSync(path.join(reportRoot, "summary.md"), "utf8");
-		expect(markdown).toContain("|Confidence (diagnostic)|");
+		expect(markdown).toContain("|Classification confidence|Grid confidence|");
+		expect(markdown).toContain(
+			"|Candidate modal (expected)|WARNING presentation|",
+		);
+		expect(markdown).toContain("|Decision reason|WARNING codes|");
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
+		const uiCandidateCase = results.cases.find(
+			(result) => result.id === "show-ui-default-candidates",
+		);
+		expect(uiCandidateCase?.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(uiCandidateCase?.candidatePlanCount).toBeGreaterThan(0);
+		expect(uiCandidateCase?.candidateModalDecision).toBe("would-show");
+		expect(uiCandidateCase?.warningPresentation).toBe("candidate-modal");
 		const remoteMetadata = {
 			...results.metadata,
 			prNumber: "92",

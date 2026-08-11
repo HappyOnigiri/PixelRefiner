@@ -1,7 +1,12 @@
+import type {
+	CandidateModalDecision,
+	CandidateModalReason,
+	WarningPresentation,
+} from "../../src/core/candidate-modal-decision";
 import type { ProcessOptions } from "../../src/core/processor";
 import type { DitherMode } from "../../src/shared/types";
 
-export const QUALITY_REPORT_VERSION = "3";
+export const QUALITY_REPORT_VERSION = "4";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
@@ -172,8 +177,16 @@ export type QualityCaseResult = {
 	} | null;
 	classification: string;
 	route: string;
+	classificationConfidence: number | null;
 	confidence: number | null;
+	/** confidence の意味を明示するためのグリッド信頼度。confidence と同値で保持する。 */
+	gridConfidence: number | null;
 	warnings: string[];
+	candidateModalDecision: CandidateModalDecision;
+	candidateModalReason: CandidateModalReason;
+	warningPresentation: WarningPresentation;
+	/** 品質レポートでは実際のプレビューではなく、候補プラン数を表示見込みの根拠に使う。 */
+	candidatePlanCount: number;
 	expectedWidth: number;
 	expectedHeight: number;
 	gridCandidates: Array<{
