@@ -1,3 +1,4 @@
+import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
@@ -120,13 +121,7 @@ export const setupQuickSettingsControls = ({
 				defaults.fastAutoGridFromTrimmed;
 			els.makeSquareCheck.checked = defaults.makeSquare;
 			els.keepAspectRatioCheck.checked = defaults.keepAspectRatio;
-			els.outlineColorInput.value = `#${[
-				defaults.outlineColor.r,
-				defaults.outlineColor.g,
-				defaults.outlineColor.b,
-			]
-				.map((value) => value.toString(16).padStart(2, "0"))
-				.join("")}`;
+			els.outlineColorInput.value = rgbToHex(defaults.outlineColor);
 			processingState.currentFixedPalette = undefined;
 		}
 		els.quickProcessingModeSelect.value = settings.processingMode;

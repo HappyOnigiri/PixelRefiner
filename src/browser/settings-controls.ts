@@ -1,3 +1,4 @@
+import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import type { Elements } from "./app-elements";
@@ -231,6 +232,7 @@ export const setupSettingsControls = ({
 			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
 		els.reduceColorModeSelect.value = defaults.reduceColorMode;
 		els.ditherModeSelect.value = defaults.ditherMode;
+		els.outlineColorInput.value = rgbToHex(defaults.outlineColor);
 
 		els.bgExtractionMethod.value = defaults.bgExtractionMethod;
 		els.quickProcessingModeSelect.value =
