@@ -212,7 +212,7 @@ export const processConvertRoute = (
 		rolledBack: false,
 		removed: false,
 	};
-	if (o.postRemoveBackground) {
+	if (postRemoval.attempted) {
 		finalResult = removeBackground(
 			finalResult,
 			o.backgroundTolerance,

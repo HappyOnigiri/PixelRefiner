@@ -305,7 +305,7 @@ export const processForcedRoute = (
 		rolledBack: false,
 		removed: false,
 	};
-	const result2 = o.postRemoveBackground
+	const result2 = postRemoval.attempted
 		? removeBackground(
 				componentResult.image,
 				o.backgroundTolerance,

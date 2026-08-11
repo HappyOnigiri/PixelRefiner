@@ -578,7 +578,7 @@ const processImageCore = (
 		rolledBack: false,
 		removed: false,
 	};
-	const result = o.postRemoveBackground
+	const result = postRemoval.attempted
 		? removeBackground(
 				trimmed,
 				o.backgroundTolerance,
