@@ -2426,7 +2426,7 @@
     "options": {
       "processingMode": "refine",
       "enableDeskew": true,
-      "cellSamplingMode": "alpha-aware-medoid",
+      "cellSamplingMode": "hard-alpha-medoid",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
@@ -2479,7 +2479,7 @@
     "options": {
       "processingMode": "refine",
       "enableDeskew": true,
-      "cellSamplingMode": "alpha-aware-medoid",
+      "cellSamplingMode": "hard-alpha-medoid",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
@@ -2532,7 +2532,7 @@
     "options": {
       "processingMode": "refine",
       "enableDeskew": true,
-      "cellSamplingMode": "alpha-aware-medoid",
+      "cellSamplingMode": "hard-alpha-medoid",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
@@ -2585,7 +2585,7 @@
     "options": {
       "processingMode": "refine",
       "enableDeskew": true,
-      "cellSamplingMode": "alpha-aware-medoid",
+      "cellSamplingMode": "hard-alpha-medoid",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
@@ -2638,7 +2638,7 @@
     "options": {
       "processingMode": "refine",
       "enableDeskew": true,
-      "cellSamplingMode": "alpha-aware-medoid",
+      "cellSamplingMode": "hard-alpha-medoid",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
@@ -2691,7 +2691,7 @@
     "options": {
       "processingMode": "refine",
       "enableDeskew": true,
-      "cellSamplingMode": "alpha-aware-medoid",
+      "cellSamplingMode": "hard-alpha-medoid",
       "autoGridFromTrimmed": true,
       "fastAutoGridFromTrimmed": true,
       "sampleWindow": 1,
