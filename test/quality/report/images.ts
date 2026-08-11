@@ -14,14 +14,11 @@ type ReportImage = {
 
 /**
  * 今回生成が目標と違う寸法か。目標を持たないケースは比べられないので false。
- * 一覧と詳細で同じ判定を使い、片方だけ警告色になることを防ぐ。
+ * [Intended] 寸法一致は指標側の sizeMatches が唯一の定義。ここで比べ直すと、
+ * 同じ詳細ページの Size matches 行と警告色が別々の判定から描かれる。
  */
-const resultSizeMismatched = (result: QualityCaseResult): boolean => {
-	const target = result.imageSizes.groundTruth;
-	const current = result.imageSizes.result;
-	if (target === null || current === null) return false;
-	return target.width !== current.width || target.height !== current.height;
-};
+const resultSizeMismatched = (result: QualityCaseResult): boolean =>
+	result.targetMetrics?.sizeMatches === false;
 
 /**
  * 実寸の class 名。CSS 側の規則と対応していることをテストで確かめるため、

@@ -211,6 +211,16 @@ describe("quality report case detail", () => {
 
 	it("highlights the current-run size when it differs from the target", () => {
 		const result = makeCaseResult({
+			targetMetrics: {
+				targetWidth: 8,
+				targetHeight: 8,
+				sizeMatches: false,
+				exactMatch: false,
+				meanRgbaError: 1.5,
+				edgeF1: 0,
+				backgroundMaskIou: 0,
+				smallComponentRetention: 0,
+			},
 			imageSizes: {
 				groundTruth: { width: 8, height: 8 },
 				input: { width: 64, height: 64 },
@@ -235,6 +245,7 @@ describe("quality report case detail", () => {
 	// [Intended] 目標を持たないケースは寸法を比べられないので、警告色にはしない。
 	it("does not highlight the current-run size without a target image", () => {
 		const result = makeCaseResult({
+			targetMetrics: null,
 			files: {
 				groundTruth: null,
 				input: `cases/${CASE_ID}/input.png`,
