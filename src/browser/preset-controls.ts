@@ -73,7 +73,7 @@ export const setupPresetControls = ({
 			els.toleranceSlider,
 			els.preRemoveCheck,
 			els.postRemoveCheck,
-			els.bgRemovalScopeSelect,
+			els.quickBgRemovalScopeSelect,
 			els.bgConnectivitySelect,
 			els.trimToContentCheck,
 			els.fastAutoGridFromTrimmedCheck,
@@ -158,9 +158,17 @@ export const setupPresetControls = ({
 				: "outer";
 		}
 
+		// 後方互換性: 詳細設定にあった bg-removal-scope をかんたん設定の項目へ移行
+		if (
+			state["quick-bg-removal-scope"] === undefined &&
+			state["bg-removal-scope"] !== undefined
+		) {
+			state["quick-bg-removal-scope"] = state["bg-removal-scope"];
+		}
+
 		// 非推奨の背景除去スコープ "off" は "outer" に対応付ける
-		if (state["bg-removal-scope"] === "off") {
-			state["bg-removal-scope"] = "outer";
+		if (state["quick-bg-removal-scope"] === "off") {
+			state["quick-bg-removal-scope"] = "outer";
 		}
 
 		for (const [id, value] of Object.entries(state)) {

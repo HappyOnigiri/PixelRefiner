@@ -319,3 +319,115 @@ describe("automatic background model", () => {
 		expect(alphaAt(result.image, 10, 10)).toBe(255);
 	});
 });
+
+describe("enclosed background removal (scope: auto)", () => {
+	/** リング状の被写体で囲まれた中空を持つ画像。中空の色は引数で変える。 */
+	const createDonut = (
+		holeColor: readonly [number, number, number],
+		background: readonly [number, number, number] = [240, 240, 240],
+	): RawImage =>
+		createImage(32, 32, (x, y) => {
+			const distance = Math.hypot(x - 15.5, y - 15.5);
+			if (distance <= 5) return [...holeColor, 255] as const;
+			if (distance <= 12) return [40, 90, 160, 255];
+			return [...background, 255] as const;
+		});
+
+	it("removes an enclosed hole that matches the background color", () => {
+		const image = createDonut([240, 240, 240]);
+		const result = removeAutomaticBackground(image, 64, "auto", "4");
+
+		expect(result.rolledBack).toBe(false);
+		// 穴の中心は透過され、リング本体は残る。
+		expect(alphaAt(result.image, 15, 15)).toBe(0);
+		expect(alphaAt(result.image, 15, 7)).toBe(255);
+		expect(alphaAt(result.image, 0, 0)).toBe(0);
+	});
+
+	it("keeps the enclosed hole when the scope is outer", () => {
+		const image = createDonut([240, 240, 240]);
+		const result = removeAutomaticBackground(image, 64, "outer", "4");
+
+		expect(alphaAt(result.image, 15, 15)).toBe(255);
+		expect(alphaAt(result.image, 0, 0)).toBe(0);
+	});
+
+	it("keeps an enclosed area that is merely close to the background color", () => {
+		// 通常の候補許容には入るが、内側向けの厳密な許容からは外れる明るいグレー。
+		const image = createDonut([224, 226, 222]);
+		const result = removeAutomaticBackground(image, 64, "auto", "4");
+		const everything = removeAutomaticBackground(image, 64, "all", "4");
+
+		expect(alphaAt(result.image, 15, 15)).toBe(255);
+		expect(alphaAt(result.image, 0, 0)).toBe(0);
+		// "all" では落ちる＝通常の候補には入っており、厳密判定が効いていることの裏付け。
+		expect(alphaAt(everything.image, 15, 15)).toBe(0);
+	});
+
+	it("keeps an enclosed area that surrounds another element", () => {
+		// 中空の中央に別の要素がある＝線画の塗り面とみなして残す。
+		const image = createImage(32, 32, (x, y) => {
+			const distance = Math.hypot(x - 15.5, y - 15.5);
+			if (x >= 14 && x <= 17 && y >= 14 && y <= 17) return [20, 20, 20, 255];
+			if (distance <= 8) return [240, 240, 240, 255];
+			if (distance <= 12) return [40, 90, 160, 255];
+			return [240, 240, 240, 255];
+		});
+		const result = removeAutomaticBackground(image, 64, "auto", "4");
+
+		expect(alphaAt(result.image, 15, 10)).toBe(255);
+		expect(alphaAt(result.image, 0, 0)).toBe(0);
+	});
+
+	it("removes an enclosed hole that already contains transparent pixels", () => {
+		// 部分透過画像の中空。元からある透過部分は残すべき別要素ではないので穴として扱う。
+		const image = createDonut([240, 240, 240]);
+		image.data[(15 * 32 + 15) * 4 + 3] = 0;
+		const result = removeAutomaticBackground(image, 64, "auto", "4");
+
+		expect(alphaAt(result.image, 14, 15)).toBe(0);
+		expect(alphaAt(result.image, 15, 7)).toBe(255);
+	});
+
+	it("follows the connectivity setting when grouping an enclosed area", () => {
+		// 内側の閉領域が斜めの一点だけでくびれてつながる形。左側には別要素の島がある。
+		const image = createImage(21, 21, (x, y) => {
+			if (x < 3 || x > 17 || y < 3 || y > 17) return [240, 240, 240, 255];
+			if (x === 3 || x === 17 || y === 3 || y === 17) return [40, 90, 160, 255];
+			if (x === 10 && y <= 10) return [40, 90, 160, 255];
+			if (x === 11 && y >= 11) return [40, 90, 160, 255];
+			if (x === 6 && y === 6) return [20, 20, 20, 255];
+			return [240, 240, 240, 255];
+		});
+		const fourWay = removeAutomaticBackground(image, 64, "auto", "4");
+		const eightWay = removeAutomaticBackground(image, 64, "auto", "8");
+
+		// 4 方向では左右が別の成分なので、島を持たない右側だけが穴になる。
+		expect(alphaAt(fourWay.image, 6, 12)).toBe(255);
+		expect(alphaAt(fourWay.image, 14, 12)).toBe(0);
+		// 8 方向では斜めの接点でつながって 1 つの成分になり、島を含むので両側が残る。
+		expect(alphaAt(eightWay.image, 6, 12)).toBe(255);
+		expect(alphaAt(eightWay.image, 14, 12)).toBe(255);
+		expect(alphaAt(eightWay.image, 0, 0)).toBe(0);
+	});
+
+	it("removes an enclosed hole for the RGB extraction method too", () => {
+		const image = createDonut([255, 255, 255], [255, 255, 255]);
+		const targets = getBackgroundTargets(image, "rgb", "#ffffff");
+		const auto = removeBackground(image, 32, "auto", "4", targets, "rgb");
+		const outer = removeBackground(image, 32, "outer", "4", targets, "rgb");
+
+		expect(alphaAt(auto, 15, 15)).toBe(0);
+		expect(alphaAt(auto, 15, 7)).toBe(255);
+		expect(alphaAt(outer, 15, 15)).toBe(255);
+	});
+
+	it("keeps an enclosed area that only resembles the picked color", () => {
+		const image = createDonut([236, 236, 236], [255, 255, 255]);
+		const targets = getBackgroundTargets(image, "rgb", "#ffffff");
+		const result = removeBackground(image, 32, "auto", "4", targets, "rgb");
+
+		expect(alphaAt(result, 15, 15)).toBe(255);
+		expect(alphaAt(result, 0, 0)).toBe(0);
+	});
+});

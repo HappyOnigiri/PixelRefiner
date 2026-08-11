@@ -67,7 +67,12 @@ export interface RGB {
 export type OutlineStyle = "none" | "rounded" | "sharp";
 
 /** 背景除去の範囲 */
-export type BackgroundRemovalScope = "off" | "selected" | "outer" | "all";
+export type BackgroundRemovalScope =
+	| "off"
+	| "selected"
+	| "outer"
+	| "auto"
+	| "all";
 
 /** 連結判定に対角方向（8 近傍）を含めるか */
 export type Connectivity = "4" | "8";

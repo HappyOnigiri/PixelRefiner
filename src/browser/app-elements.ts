@@ -20,7 +20,6 @@ export type Elements = {
 	toleranceSlider: HTMLInputElement;
 	preRemoveCheck: HTMLInputElement;
 	postRemoveCheck: HTMLInputElement;
-	bgRemovalScopeSelect: HTMLSelectElement;
 	bgConnectivitySelect: HTMLSelectElement;
 	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
@@ -60,6 +59,7 @@ export type Elements = {
 	quickDetailLevelSelect: HTMLSelectElement;
 	quickColorsSelect: HTMLSelectElement;
 	quickBackgroundSelect: HTMLSelectElement;
+	quickBgRemovalScopeSelect: HTMLSelectElement;
 	quickBackgroundPicker: HTMLElement;
 	quickBackgroundColorInput: HTMLInputElement;
 	quickEyedropperButton: HTMLButtonElement;
@@ -143,7 +143,6 @@ export const getElements = (): Elements => {
 		toleranceSlider: get<HTMLInputElement>("tolerance-slider"),
 		preRemoveCheck: get<HTMLInputElement>("pre-remove"),
 		postRemoveCheck: get<HTMLInputElement>("post-remove"),
-		bgRemovalScopeSelect: get<HTMLSelectElement>("bg-removal-scope"),
 		bgConnectivitySelect: get<HTMLSelectElement>("bg-connectivity"),
 		trimToContentCheck: get<HTMLInputElement>("trim-to-content"),
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
@@ -186,6 +185,7 @@ export const getElements = (): Elements => {
 		quickDetailLevelSelect: get<HTMLSelectElement>("quick-detail-level"),
 		quickColorsSelect: get<HTMLSelectElement>("quick-colors"),
 		quickBackgroundSelect: get<HTMLSelectElement>("quick-background"),
+		quickBgRemovalScopeSelect: get<HTMLSelectElement>("quick-bg-removal-scope"),
 		quickBackgroundPicker: get<HTMLElement>("quick-background-picker"),
 		quickBackgroundColorInput: get<HTMLInputElement>("quick-background-color"),
 		quickEyedropperButton: get<HTMLButtonElement>("quick-eyedropper-button"),

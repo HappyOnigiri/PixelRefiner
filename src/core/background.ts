@@ -6,6 +6,10 @@ import type {
 	RawImage,
 	RGB,
 } from "../shared/types";
+import {
+	addEnclosedBackground,
+	type EnclosedComponentTest,
+} from "./enclosed-background";
 import { cloneImage } from "./image-operations";
 
 export type BackgroundCluster = {
@@ -635,6 +639,59 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
 	}
 };
 
+/**
+ * 内側の閉領域が背景クラスタの色そのものかを、成分の平均色で判定するテストを作る。
+ * 通常の候補許容よりも厳しい距離を使い、背景に近いだけの塗り面を落とす。
+ */
+const createEnclosedClusterTest = (
+	img: RawImage,
+	model: BackgroundModel,
+	tolerance: number,
+): EnclosedComponentTest => {
+	const strictTolerance =
+		(BACKGROUND_MODEL_LIMITS.baseOklabTolerance +
+			(tolerance / 255) *
+				(BACKGROUND_MODEL_LIMITS.maxOklabTolerance -
+					BACKGROUND_MODEL_LIMITS.baseOklabTolerance)) *
+		BACKGROUND_MODEL_LIMITS.enclosedToleranceRatio;
+	const labL = new Float64Array(1);
+	const labA = new Float64Array(1);
+	const labB = new Float64Array(1);
+	return (pixels, size) => {
+		let sumL = 0;
+		let sumA = 0;
+		let sumB = 0;
+		for (let index = 0; index < size; index += 1) {
+			const offset = pixels[index] * 4;
+			writeOklab(
+				img.data[offset],
+				img.data[offset + 1],
+				img.data[offset + 2],
+				labL,
+				labA,
+				labB,
+				0,
+			);
+			sumL += labL[0];
+			sumA += labA[0];
+			sumB += labB[0];
+		}
+		const meanL = sumL / size;
+		const meanA = sumA / size;
+		const meanB = sumB / size;
+		for (let cluster = 0; cluster < model.clusters.length; cluster += 1) {
+			const color = model.clusters[cluster].color;
+			if (
+				distanceSquared(meanL, meanA, meanB, color.L, color.a, color.b) <=
+				strictTolerance * strictTolerance
+			) {
+				return true;
+			}
+		}
+		return false;
+	};
+};
+
 export const removeAutomaticBackground = (
 	img: RawImage,
 	tolerance: number,
@@ -662,6 +719,15 @@ export const removeAutomaticBackground = (
 		scope === "all"
 			? candidates
 			: markConnectedBackground(img, candidates, connectivity);
+	if (scope === "auto") {
+		addEnclosedBackground(
+			img,
+			candidates,
+			selected,
+			connectivity,
+			createEnclosedClusterTest(img, model, tolerance),
+		);
+	}
 	let opaqueBefore = 0;
 	let removed = 0;
 	for (let pixel = 0; pixel < img.width * img.height; pixel += 1) {

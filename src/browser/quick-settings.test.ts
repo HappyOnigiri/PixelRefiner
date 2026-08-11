@@ -14,6 +14,7 @@ describe("quick settings", () => {
 			detailLevel: PROCESS_DEFAULTS.detailLevel,
 			outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 			trimToContent: PROCESS_DEFAULTS.trimToContent,
+			bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
 		});
 	});
 
@@ -26,7 +27,7 @@ describe("quick settings", () => {
 			preRemoveBackground: true,
 			postRemoveBackground: true,
 			bgExtractionMethod: "auto",
-			bgRemovalScope: "outer",
+			bgRemovalScope: "auto",
 			trimToContent: PROCESS_DEFAULTS.trimToContent,
 			ditherMode: "none",
 			ditherStrength: 0,
@@ -88,6 +89,47 @@ describe("quick settings", () => {
 		});
 	});
 
+	it("takes the background removal scope from the quick settings for a custom method", () => {
+		const result = applyQuickSettingsToOptions(
+			{ bgExtractionMethod: "top-left", bgRemovalScope: "all" },
+			{
+				...QUICK_SETTINGS_DEFAULTS,
+				background: "custom",
+				bgRemovalScope: "auto",
+			},
+		);
+
+		expect(result).toMatchObject({
+			bgExtractionMethod: "top-left",
+			bgRemovalScope: "auto",
+		});
+	});
+
+	it("narrows the selected-corner scope only where it has no effect", () => {
+		const scoped = {
+			...QUICK_SETTINGS_DEFAULTS,
+			bgRemovalScope: "selected",
+		} as const;
+		const auto = applyQuickSettingsToOptions(
+			{},
+			{ ...scoped, background: "auto" },
+		);
+		const picked = applyQuickSettingsToOptions(
+			{ bgRgb: "#123456" },
+			{ ...scoped, background: "pick" },
+		);
+		const corner = applyQuickSettingsToOptions(
+			{ bgExtractionMethod: "bottom-right" },
+			{ ...scoped, background: "custom" },
+		);
+
+		// Auto には角の選択が無く "outer" と同じ結果になるため寄せる。
+		expect(auto.bgRemovalScope).toBe("outer");
+		// 色を指定する抽出は一致画素すべてをシードにするため、内側まで落ちる "selected" を保つ。
+		expect(picked.bgRemovalScope).toBe("selected");
+		expect(corner.bgRemovalScope).toBe("selected");
+	});
+
 	it("maps the public background and dithering levels", () => {
 		const picked = applyQuickSettingsToOptions(
 			{ bgRgb: "#123456" },
@@ -103,7 +145,7 @@ describe("quick settings", () => {
 			bgRgb: "#123456",
 			preRemoveBackground: true,
 			postRemoveBackground: true,
-			bgRemovalScope: "outer",
+			bgRemovalScope: "auto",
 			ditherMode: "floyd-steinberg",
 			ditherStrength: 60,
 		});

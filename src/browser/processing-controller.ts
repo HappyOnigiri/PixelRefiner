@@ -5,6 +5,7 @@ import { createDefaultProcessOptions } from "../core/processor-options";
 import type { ProcessorWorker } from "../core/worker";
 import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
+	BackgroundRemovalScope,
 	CandidateSelection,
 	DetailLevel,
 	DitherMode,
@@ -127,7 +128,8 @@ export const createProcessOptions = (
 		preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
 		postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
 		bgRemovalScope: bgEnabled
-			? (els.bgRemovalScopeSelect.value as ProcessOptions["bgRemovalScope"])
+			? (els.quickBgRemovalScopeSelect
+					.value as ProcessOptions["bgRemovalScope"])
 			: "off",
 		bgConnectivity: bgEnabled
 			? (els.bgConnectivitySelect.value as ProcessOptions["bgConnectivity"])
@@ -165,6 +167,8 @@ export const createProcessOptions = (
 		detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
 		colors: els.quickColorsSelect.value as QuickColors,
 		background: els.quickBackgroundSelect.value as QuickBackground,
+		bgRemovalScope: els.quickBgRemovalScopeSelect
+			.value as BackgroundRemovalScope,
 		dithering: els.quickDitheringSelect.value as QuickDithering,
 		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
 		trimToContent: els.quickAutoTrimCheck.checked,
