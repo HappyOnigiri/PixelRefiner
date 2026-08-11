@@ -6,7 +6,10 @@ import {
 	removeAutomaticBackground,
 } from "./background";
 import { getBackgroundTargets, removeBackground } from "./background-removal";
+import { removeSmallComponents } from "./components";
+import { resolveProcessingGrid } from "./processor-grid-resolution";
 import { normalizeProcessOptions } from "./processor-options";
+import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
 const createImage = (
 	width: number,
@@ -91,6 +94,83 @@ describe("auto behavior settings", () => {
 				watermarkSamplingCompat: "off",
 			}).watermarkSamplingCompat,
 		).toBe(false);
+	});
+});
+
+/**
+ * セル境界だけが強いエッジで、セル内部には弱い濃淡がある市松画像。
+ *
+ * [Intended] 再構成誤差だけでは正解セルの整数分の 1 を選ぶため、境界コントラストの
+ * 乗り換えが効いているかどうかが出力サイズの違いとして表れる。
+ */
+const createNestedBlockImage = (
+	size: number,
+	cell: number,
+	sub: number,
+	subAmplitude: number,
+): RawImage => {
+	const data = new Uint8ClampedArray(size * size * 4);
+	for (let y = 0; y < size; y += 1) {
+		for (let x = 0; x < size; x += 1) {
+			const base =
+				(Math.floor(x / cell) + Math.floor(y / cell)) % 2 === 0 ? 40 : 216;
+			const subX = Math.floor((x % cell) / sub);
+			const subY = Math.floor((y % cell) / sub);
+			const wobble = (((subX * 3 + subY * 5) % 3) - 1) * subAmplitude;
+			const value = base + (base < 128 ? wobble : -wobble);
+			const offset = (y * size + x) * 4;
+			data[offset] = value;
+			data[offset + 1] = value;
+			data[offset + 2] = value;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width: size, height: size, data };
+};
+
+/** 論理セルごとに明暗が入れ替わる、位相の揃った市松画像。 */
+const createPhaseAlignedGrid = (
+	logicalSize: number,
+	cell: number,
+): RawImage => {
+	const size = logicalSize * cell;
+	return createImage(size, size, (x, y) => {
+		const value =
+			(Math.floor(x / cell) + Math.floor(y / cell)) % 2 === 0 ? 48 : 208;
+		return [value, value, value, 255];
+	});
+};
+
+describe("grid search behavior flags", () => {
+	it("stops using the phase-aware estimate when the search is disabled", () => {
+		const image = createPhaseAlignedGrid(8, 4);
+		const resolve = (phaseAwareGridSearch: boolean) =>
+			resolveProcessingGrid({
+				o: normalizeProcessOptions({ phaseAwareGridSearch }),
+				working: image,
+				geometryImage: image,
+				geometryWorking: image,
+				maskedForDebugOrAuto: image,
+				bgTargets: [],
+				trimAlphaThreshold: 16,
+				watermarkRemovedFromGeometry: false,
+				log: () => {},
+			});
+
+		expect(resolve(true).gridMethod).toBe("phase-aware-grid-search");
+		expect(resolve(false).gridMethod).toBe("trimmed-reconstruction-fast");
+	});
+
+	it("stops switching to the coarser harmonic when the override is disabled", () => {
+		// [Intended] 位置引数で渡しているうえ既定値が true なので、配線が外れても
+		// 型エラーにも既存テストの失敗にもならない。効果の差でだけ検出できる。
+		const image = createNestedBlockImage(192, 24, 8, 30);
+		const strategy = getGridSearchFromTrimmedStrategy(true);
+
+		expect(strategy.search(image, image, 3)?.outH).toBe(8);
+		expect(
+			strategy.search(image, image, 3, undefined, undefined, false)?.outH,
+		).toBe(24);
 	});
 });
 
@@ -216,6 +296,43 @@ describe("background behavior flags", () => {
 		expect(model.confidence).toBeLessThan(0.55);
 		expect(gated.image.data).toEqual(image.data);
 		expect(ungated.image.data).not.toEqual(image.data);
+	});
+
+	it("removes a speck with a low-confidence background once the small-component gate is off", () => {
+		// 主要な塊と、離れた 1 画素の弱い小片。背景モデルの信頼度は下限未満。
+		const main = (x: number, y: number) => x >= 1 && x <= 4 && y >= 2 && y <= 7;
+		const speck = (x: number, y: number) => x === 10 && y === 8;
+		const mask = createImage(12, 10, (x, y) =>
+			main(x, y)
+				? [40, 60, 80, 255]
+				: speck(x, y)
+					? [120, 120, 120, 255]
+					: [0, 0, 0, 0],
+		);
+		const evidence = createImage(12, 10, (x, y) =>
+			main(x, y)
+				? [40, 60, 80, 255]
+				: speck(x, y)
+					? [20, 20, 20, 32]
+					: [0, 0, 0, 0],
+		);
+		const options = {
+			mode: "auto" as const,
+			alphaThreshold: 16,
+			backgroundEnabled: true,
+			automaticBackground: true,
+			backgroundConfidence: 0,
+		};
+		const gated = removeSmallComponents(mask, mask, evidence, options);
+		const ungated = removeSmallComponents(mask, mask, evidence, {
+			...options,
+			backgroundConfidenceGate: false,
+		});
+
+		expect(gated.diagnostic.skippedReason).toBe("low-background-confidence");
+		expect(alphaAt(gated.image, 10, 8)).toBe(255);
+		expect(ungated.diagnostic.applied).toBe(true);
+		expect(alphaAt(ungated.image, 10, 8)).toBe(0);
 	});
 
 	it("estimates colour clusters on a transparent border once the guard is off", () => {
