@@ -310,6 +310,10 @@ export const processConvertRoute = (
 		context.additionalWarnings,
 		selectedCandidateIndex,
 		smallComponentRemoval,
+		// [Policy] ここへ渡す候補配列は convert 候補の reports で、Auto 実結果の位置が
+		// 指す rankedGridCandidates とは index 空間が異なる。値を渡すと範囲チェックだけを
+		// 通って無関係な候補を指すため、convert 経路では常に渡さない。
+		undefined,
 	);
 	log(`Total processing time: ${(performance.now() - startTime).toFixed(2)}ms`);
 	return {

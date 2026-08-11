@@ -7,7 +7,7 @@ import type { ProcessOptions } from "../../src/core/processor";
 import type {
 	CandidateKind,
 	DitherMode,
-	ProcessingRoute,
+	ProcessingMode,
 } from "../../src/shared/types";
 
 export const QUALITY_REPORT_VERSION = "5";
@@ -85,7 +85,9 @@ export type QualityCandidateOption = {
 	id: string;
 	kind: CandidateKind;
 	recommended: boolean;
-	processingMode: ProcessingRoute;
+	// [Intended] Auto 実結果の選択肢は Auto 経路の再実行で作るため auto を取る。
+	// ProcessingRoute では表せないので処理モードとして持つ。
+	processingMode: ProcessingMode;
 	/** 生成に失敗した候補は null。 */
 	outputWidth: number | null;
 	outputHeight: number | null;
