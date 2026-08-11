@@ -1,4 +1,5 @@
 import type { ProcessOptions } from "../core/processor";
+import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
 	DetailLevel,
@@ -141,3 +142,14 @@ export const applyQuickSettingsToOptions = (
 
 	return options;
 };
+
+/**
+ * UI の初期状態（詳細設定の既定値と Auto プリセット）を処理オプションへ変換する。
+ *
+ * [Intended] Auto 品質ケースもこの関数を使い、DOM の初期化経路と同じ設定を測る。
+ */
+export const createUiInitialProcessOptions = (): ProcessOptions =>
+	applyQuickSettingsToOptions(
+		createDefaultProcessOptions(),
+		QUICK_SETTINGS_DEFAULTS,
+	);

@@ -24,6 +24,7 @@ import {
 } from "./processing-warnings";
 import {
 	applyQuickSettingsToOptions,
+	createUiInitialProcessOptions,
 	type QuickBackground,
 	type QuickColors,
 	type QuickDithering,
@@ -113,6 +114,7 @@ export const createProcessOptions = (
 	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
 
 	const advancedOptions: ProcessOptions = {
+		...createUiInitialProcessOptions(),
 		debug: BROWSER_RUNTIME_CONFIG.debug,
 		detectionQuantStep,
 		forcePixelsW: gridMode === "force" && usePixels ? pixelsW : undefined,

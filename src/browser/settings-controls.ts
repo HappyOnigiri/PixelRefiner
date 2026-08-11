@@ -1,3 +1,4 @@
+import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -6,7 +7,10 @@ import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError } from "./notifications";
 import type { RunProcessingOptions } from "./processing-controller";
-import type { QuickSettingsState } from "./quick-settings";
+import {
+	QUICK_SETTINGS_DEFAULTS,
+	type QuickSettingsState,
+} from "./quick-settings";
 import { setupQuickSettingsControls } from "./quick-settings-controls";
 import type { ImageSession } from "./session";
 
@@ -159,18 +163,20 @@ export const setupSettingsControls = ({
 
 	// 設定ファイルの既定値・範囲を UI に適用
 	const applyConfigToUi = () => {
+		const defaults = createDefaultProcessOptions();
 		const setNumberInput = (
 			input: HTMLInputElement,
 			slider: HTMLInputElement | null,
 			range: { min: number; max: number; default: number },
+			defaultValue: number,
 		) => {
 			input.min = String(range.min);
 			input.max = String(range.max);
-			input.value = String(range.default);
+			input.value = String(defaultValue);
 			if (slider) {
 				slider.min = String(range.min);
 				slider.max = String(range.max);
-				slider.value = String(range.default);
+				slider.value = String(defaultValue);
 			}
 		};
 
@@ -178,26 +184,31 @@ export const setupSettingsControls = ({
 			els.quantStepInput,
 			els.quantStepSlider,
 			PROCESS_RANGES.detectionQuantStep,
+			defaults.detectionQuantStep,
 		);
 		setNumberInput(
 			els.sampleWindowInput,
 			els.sampleWindowSlider,
 			PROCESS_RANGES.sampleWindow,
+			defaults.sampleWindow,
 		);
 		setNumberInput(
 			els.toleranceInput,
 			els.toleranceSlider,
 			PROCESS_RANGES.backgroundTolerance,
+			defaults.backgroundTolerance,
 		);
 		setNumberInput(
 			els.colorCountInput,
 			els.colorCountSlider,
 			PROCESS_RANGES.colorCount,
+			defaults.colorCount,
 		);
 		setNumberInput(
 			els.ditherStrengthInput,
 			els.ditherStrengthSlider,
 			PROCESS_RANGES.ditherStrength,
+			defaults.ditherStrength,
 		);
 
 		els.forcePixelsWInput.min = String(PROCESS_RANGES.forcePixelsW.min);
@@ -205,31 +216,31 @@ export const setupSettingsControls = ({
 		els.forcePixelsHInput.min = String(PROCESS_RANGES.forcePixelsH.min);
 		els.forcePixelsHInput.max = String(PROCESS_RANGES.forcePixelsH.max);
 
-		els.preRemoveCheck.checked = PROCESS_DEFAULTS.preRemoveBackground;
-		els.postRemoveCheck.checked = PROCESS_DEFAULTS.postRemoveBackground;
-		els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
-		els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
-		els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
+		els.preRemoveCheck.checked = defaults.preRemoveBackground;
+		els.postRemoveCheck.checked = defaults.postRemoveBackground;
+		els.bgRemovalScopeSelect.value = defaults.bgRemovalScope;
+		els.bgConnectivitySelect.value = defaults.bgConnectivity;
+		els.smallComponentModeSelect.value = defaults.smallComponentMode;
 		els.alphaAwareMedoidCheck.checked =
-			(PROCESS_DEFAULTS.cellSamplingMode as string) === "alpha-aware-medoid";
-		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
-		els.fastAutoGridFromTrimmedCheck.checked =
-			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
-		els.makeSquareCheck.checked = PROCESS_DEFAULTS.makeSquare;
-		els.keepAspectRatioCheck.checked = PROCESS_DEFAULTS.keepAspectRatio;
+			(defaults.cellSamplingMode as string) === "alpha-aware-medoid";
+		els.trimToContentCheck.checked = defaults.trimToContent;
+		els.fastAutoGridFromTrimmedCheck.checked = defaults.fastAutoGridFromTrimmed;
+		els.makeSquareCheck.checked = defaults.makeSquare;
+		els.keepAspectRatioCheck.checked = defaults.keepAspectRatio;
 		els.gridDetectionModeSelect.value =
 			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
-		els.reduceColorModeSelect.value = PROCESS_DEFAULTS.reduceColorMode;
-		els.ditherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
+		els.reduceColorModeSelect.value = defaults.reduceColorMode;
+		els.ditherModeSelect.value = defaults.ditherMode;
 
-		els.bgExtractionMethod.value = PROCESS_DEFAULTS.bgExtractionMethod;
-		els.quickProcessingModeSelect.value = PROCESS_DEFAULTS.processingMode;
-		els.quickDetailLevelSelect.value = PROCESS_DEFAULTS.detailLevel;
-		els.quickColorsSelect.value = "auto";
-		els.quickBackgroundSelect.value = "auto";
-		els.quickDitheringSelect.value = "off";
-		els.quickOutlineStyleSelect.value = PROCESS_DEFAULTS.outlineStyle;
-		els.quickAutoTrimCheck.checked = PROCESS_DEFAULTS.trimToContent;
+		els.bgExtractionMethod.value = defaults.bgExtractionMethod;
+		els.quickProcessingModeSelect.value =
+			QUICK_SETTINGS_DEFAULTS.processingMode;
+		els.quickDetailLevelSelect.value = QUICK_SETTINGS_DEFAULTS.detailLevel;
+		els.quickColorsSelect.value = QUICK_SETTINGS_DEFAULTS.colors;
+		els.quickBackgroundSelect.value = QUICK_SETTINGS_DEFAULTS.background;
+		els.quickDitheringSelect.value = QUICK_SETTINGS_DEFAULTS.dithering;
+		els.quickOutlineStyleSelect.value = QUICK_SETTINGS_DEFAULTS.outlineStyle;
+		els.quickAutoTrimCheck.checked = QUICK_SETTINGS_DEFAULTS.trimToContent;
 		els.builtInPresetSelect.value = "auto";
 		syncQuickSettingsToAdvanced();
 
