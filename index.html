@@ -949,6 +949,21 @@
 
                       <label class="setting-item">
                         <span class="label-text">
+                          <span data-i18n="setting.preserve_partial_alpha"
+                            >Preserve Semi-transparent Edges</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.preserve_partial_alpha"
+                            data-tooltip="When ON, preserves area-coverage alpha with alpha-aware medoid sampling. This is useful for intentionally soft or semi-transparent edges.&#10;When OFF, favors hard alpha edges and avoids retaining partial transparency introduced by interpolation."
+                            >?</span
+                          >
+                        </span>
+                        <input id="alpha-aware-medoid" type="checkbox" />
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
                           <span data-i18n="setting.force_width"
                             >Force Width (px)</span
                           >

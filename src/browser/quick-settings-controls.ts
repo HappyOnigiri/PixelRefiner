@@ -115,6 +115,8 @@ export const setupQuickSettingsControls = ({
 			els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
 			els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
 			els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
+			els.alphaAwareMedoidCheck.checked =
+				(PROCESS_DEFAULTS.cellSamplingMode as string) === "alpha-aware-medoid";
 			els.fastAutoGridFromTrimmedCheck.checked =
 				PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
 			els.makeSquareCheck.checked = PROCESS_DEFAULTS.makeSquare;
@@ -208,6 +210,7 @@ export const setupQuickSettingsControls = ({
 		els.forcePixelsHInput,
 		els.sampleWindowInput,
 		els.sampleWindowSlider,
+		els.alphaAwareMedoidCheck,
 		els.toleranceInput,
 		els.toleranceSlider,
 		els.preRemoveCheck,

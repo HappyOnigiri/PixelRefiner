@@ -8,6 +8,7 @@ export type RGBA = [number, number, number, number];
 
 export type CellSamplingMode =
 	| "legacy-median"
+	| "hard-alpha-medoid"
 	| "alpha-aware-medoid"
 	| "area-weighted"
 	| "edge-aware";
@@ -598,7 +599,12 @@ export const createCellSampler = (options: CellSamplerOptions): CellSampler => {
 		output[offset] = workspace.r[medoid];
 		output[offset + 1] = workspace.g[medoid];
 		output[offset + 2] = workspace.b[medoid];
-		output[offset + 3] = coverage;
+		output[offset + 3] =
+			options.mode === "hard-alpha-medoid"
+				? coverage >= SOFT_ALPHA_CELL_LIMITS.hardEdgeCoverageThreshold
+					? 255
+					: 0
+				: coverage;
 	};
 	return {
 		sample(image, bounds, context) {

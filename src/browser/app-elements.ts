@@ -15,6 +15,7 @@ export type Elements = {
 	forcePixelsHInput: HTMLInputElement;
 	sampleWindowInput: HTMLInputElement;
 	sampleWindowSlider: HTMLInputElement;
+	alphaAwareMedoidCheck: HTMLInputElement;
 	toleranceInput: HTMLInputElement;
 	toleranceSlider: HTMLInputElement;
 	preRemoveCheck: HTMLInputElement;
@@ -136,6 +137,7 @@ export const getElements = (): Elements => {
 		forcePixelsHInput: get<HTMLInputElement>("force-pixels-h"),
 		sampleWindowInput: get<HTMLInputElement>("sample-window"),
 		sampleWindowSlider: get<HTMLInputElement>("sample-window-slider"),
+		alphaAwareMedoidCheck: get<HTMLInputElement>("alpha-aware-medoid"),
 		toleranceInput: get<HTMLInputElement>("tolerance"),
 		toleranceSlider: get<HTMLInputElement>("tolerance-slider"),
 		preRemoveCheck: get<HTMLInputElement>("pre-remove"),

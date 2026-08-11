@@ -210,6 +210,8 @@ export const setupSettingsControls = ({
 		els.bgRemovalScopeSelect.value = PROCESS_DEFAULTS.bgRemovalScope;
 		els.bgConnectivitySelect.value = PROCESS_DEFAULTS.bgConnectivity;
 		els.smallComponentModeSelect.value = PROCESS_DEFAULTS.smallComponentMode;
+		els.alphaAwareMedoidCheck.checked =
+			(PROCESS_DEFAULTS.cellSamplingMode as string) === "alpha-aware-medoid";
 		els.trimToContentCheck.checked = PROCESS_DEFAULTS.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked =
 			PROCESS_DEFAULTS.fastAutoGridFromTrimmed;
@@ -529,6 +531,7 @@ export const setupSettingsControls = ({
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
+		els.alphaAwareMedoidCheck,
 		els.preRemoveCheck,
 		els.postRemoveCheck,
 		els.bgRemovalScopeSelect,

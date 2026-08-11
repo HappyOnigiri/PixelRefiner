@@ -43,6 +43,7 @@ const controlNames = [
 	"forcePixelsHInput",
 	"sampleWindowInput",
 	"sampleWindowSlider",
+	"alphaAwareMedoidCheck",
 	"fastAutoGridFromTrimmedCheck",
 	"makeSquareCheck",
 	"keepAspectRatioCheck",
@@ -138,5 +139,6 @@ describe("quick settings controls", () => {
 
 		expect(clearCandidateSelections).toHaveBeenCalledOnce();
 		expect(els.smallComponentModeSelect.value).toBe("auto");
+		expect(els.alphaAwareMedoidCheck.checked).toBe(false);
 	});
 });
