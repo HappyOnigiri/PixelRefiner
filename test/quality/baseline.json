@@ -410,6 +410,28 @@
       "catastrophicFailure": false
     },
     {
+      "id": "restore-soft-edged-sprite-to-47x64",
+      "status": "passed",
+      "outputWidth": 47,
+      "outputHeight": 64,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "restore-blocky-sprite-to-26x24",
+      "status": "passed",
+      "outputWidth": 26,
+      "outputHeight": 24,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "restore-alpha-only-grid-to-8x8",
       "status": "passed",
       "outputWidth": 8,
@@ -546,9 +568,9 @@
       "status": "passed",
       "outputWidth": 140,
       "outputHeight": 212,
-      "meanRgbaError": 1.718388,
-      "edgeF1": 0.938033,
-      "backgroundMaskIou": 0.976181,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
       "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
@@ -557,9 +579,9 @@
       "status": "passed",
       "outputWidth": 22,
       "outputHeight": 21,
-      "meanRgbaError": 4.655303,
-      "edgeF1": 0.862385,
-      "backgroundMaskIou": 0.857143,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
       "smallComponentRetention": 1,
       "catastrophicFailure": false
     },
@@ -568,6 +590,28 @@
       "status": "passed",
       "outputWidth": 24,
       "outputHeight": 33,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "auto-quality-prf400-ambiguous-grid-scale",
+      "status": "passed",
+      "outputWidth": 62,
+      "outputHeight": 58,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "auto-quality-prf400-soft-edged-sprite",
+      "status": "passed",
+      "outputWidth": 47,
+      "outputHeight": 64,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

@@ -371,6 +371,26 @@ describe.skipIf(!enabled)("quality report", () => {
 				`src="${path.posix.basename(option.file)}"`,
 			);
 		}
+		// [Policy] UI 既定のまま処理する auto 側にも、警告と候補選択の標本を必ず 1 件残す。
+		// 明示オプションのケースだけを標本にすると、既定経路で候補が出るかを誰も見ていない
+		// 状態になる。この入力は論理セルを 2 通りに読めるため、目標へも届いていない。
+		const autoModalCaseId = "auto-quality-prf400-ambiguous-grid-scale";
+		const autoModalResult = results.cases.find(
+			(result) => result.id === autoModalCaseId,
+		);
+		expect(autoModalResult?.warnings).toContain("LOW_GRID_CONFIDENCE");
+		expect(autoModalResult?.candidateModalDecision).toBe("would-show");
+		expect(autoModalResult?.targetStatus).toBe("unmet");
+		const autoModalDetail = readFileSync(
+			path.join(reportRoot, "cases", autoModalCaseId, "index.html"),
+			"utf8",
+		);
+		expect(autoModalDetail).toContain('class="badge parameter-auto"');
+		expect(autoModalDetail).toContain('data-i18n="candidateModalWouldShow"');
+		expect(autoModalDetail).toContain(
+			'data-i18n="warningPresentationCandidateModal"',
+		);
+		expect(autoModalDetail).toContain('class="images candidate-options"');
 		// [Intended] 候補生成はモーダルが出る見込みのケースだけに限る。品質ゲートと
 		// 表示されないケースに候補 1 件あたり 1 回の追加処理を持ち込まないため。
 		for (const result of results.cases) {
