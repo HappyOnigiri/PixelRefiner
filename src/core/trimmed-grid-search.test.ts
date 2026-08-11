@@ -1,6 +1,32 @@
 import { describe, expect, it } from "vitest";
+import { BOUNDARY_CONTRAST_LIMITS } from "../shared/config";
 import type { RawImage } from "../shared/types";
 import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
+
+/** cell px の市松格子を shift px だけ右下へずらした画像。 */
+const createShiftedGridImage = (
+	size: number,
+	cell: number,
+	shift: number,
+): RawImage => {
+	const data = new Uint8ClampedArray(size * size * 4);
+	for (let y = 0; y < size; y += 1) {
+		for (let x = 0; x < size; x += 1) {
+			const value =
+				(Math.floor((x - shift) / cell) + Math.floor((y - shift) / cell)) %
+					2 ===
+				0
+					? 40
+					: 216;
+			const offset = (y * size + x) * 4;
+			data[offset] = value;
+			data[offset + 1] = value;
+			data[offset + 2] = value;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width: size, height: size, data };
+};
 
 /**
  * セル境界だけが強いエッジで、セル内部には弱い濃淡がある市松画像。
@@ -91,6 +117,69 @@ describe("fast grid search from trimmed", () => {
 		expect(estimate).not.toBeNull();
 		expect(estimate?.outW).toBe(11);
 		expect(estimate?.outH).toBe(11);
+	});
+
+	it("格子が BBox の縁で合っている入力では、位相 0 を実測済みとして返す", () => {
+		// [Intended] 位相 0 は「ずれていない」という実測結果なので、投影は BBox 起点へ
+		// 寄せたままにする。位相未測定と同じ扱いにするとキャンバス起点へ戻ってしまう。
+		const estimate = strategy.search(image, image, 3);
+		expect(estimate?.phaseMeasured).toBe(true);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
+	it("境界の証拠が薄い軸があれば位相を測らない", () => {
+		// [Intended] エッジ信号を落とすと境界コントラストが 0 になり、minPhaseEvidence を
+		// 下回る。位相は決めず、投影は従来どおりキャンバス起点に任せる。
+		const shifted = createShiftedGridImage(80, 10, 3);
+		const estimate = strategy.search(
+			shifted,
+			shifted,
+			3,
+			undefined,
+			NO_EDGE_SIGNALS,
+		);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.phaseMeasured).toBe(false);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
+	it("片方の軸しか格子に乗っていない入力では位相を測らない", () => {
+		// 縦縞だけの画像。x 軸には境界があるが、y 軸は一様でコントラストが立たない。
+		const size = 80;
+		const data = new Uint8ClampedArray(size * size * 4);
+		for (let y = 0; y < size; y += 1) {
+			for (let x = 0; x < size; x += 1) {
+				const value = Math.floor((x - 3) / 10) % 2 === 0 ? 40 : 216;
+				const offset = (y * size + x) * 4;
+				data[offset] = value;
+				data[offset + 1] = value;
+				data[offset + 2] = value;
+				data[offset + 3] = 255;
+			}
+		}
+		const stripes: RawImage = { width: size, height: size, data };
+		const estimate = strategy.search(stripes, stripes, 3);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.phaseMeasured).toBe(false);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
+	it("セルが minPhaseCellPixels 未満なら位相を測らない", () => {
+		// セル 4px の格子。セル内部の 1px の線と境界を区別できない領域なので測らない。
+		const fine = createShiftedGridImage(64, 4, 1);
+		const estimate = strategy.search(fine, fine, 3);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.cellW).toBeLessThan(
+			BOUNDARY_CONTRAST_LIMITS.minPhaseCellPixels,
+		);
+		expect(estimate?.phaseMeasured).toBe(false);
+		expect(estimate?.offsetX).toBe(0);
 	});
 
 	it("セル内の反復線が境界より強い入力では、位相をずらさない", () => {

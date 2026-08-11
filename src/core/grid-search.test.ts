@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { GRID_SEARCH_LIMITS } from "../shared/config";
 import type { RawImage } from "../shared/types";
-import { normalizeGridPhase, searchPhaseAwareGrid } from "./grid-search";
+import {
+	normalizeGridPhase,
+	resolveGridEstimate,
+	searchPhaseAwareGrid,
+} from "./grid-search";
 import { processImage } from "./processor";
 
 const createScaledGrid = (
@@ -308,5 +312,71 @@ describe("phase-aware grid search", () => {
 			GRID_SEARCH_LIMITS.maxPhaseAwarePixels,
 		);
 		expect(searchPhaseAwareGrid(image, image)).toBeNull();
+	});
+});
+
+describe("resolveGridEstimate の位相の扱い", () => {
+	const source = { width: 100, height: 100 };
+	const estimate = {
+		cellW: 10,
+		cellH: 10,
+		offsetX: 0,
+		offsetY: 0,
+		outW: 9,
+		outH: 9,
+	};
+
+	it("位相を測っていない推定はキャンバス左上を起点にする", () => {
+		const grid = resolveGridEstimate(estimate, source, { x: 7, y: 3 }, false);
+		expect(grid.offsetX).toBe(0);
+		expect(grid.offsetY).toBe(0);
+		expect(grid.cropX).toBe(0);
+		expect(grid.outW).toBe(10);
+		expect(grid.outH).toBe(10);
+	});
+
+	it("位相を実測した推定は BBox 起点の端数を投影へ持ち込む", () => {
+		// [Intended] 位相 0 の実測でも BBox 起点の端数だけ格子はずれるので、
+		// phaseMeasured が立っていれば投影はその端数へ寄せる。
+		const grid = resolveGridEstimate(
+			{ ...estimate, phaseMeasured: true },
+			source,
+			{ x: 7, y: 3 },
+			false,
+		);
+		expect(grid.offsetX).toBe(7);
+		expect(grid.offsetY).toBe(3);
+		expect(grid.cropX).toBe(-3);
+		expect(grid.cropY).toBe(-7);
+		// 左端の手前から始まるので、被覆は切り上げで 1 セル増える。
+		expect(grid.outW).toBe(11);
+		expect(grid.outH).toBe(11);
+	});
+
+	it("実測した位相は BBox 起点へ足したうえでセル幅で折り返す", () => {
+		const grid = resolveGridEstimate(
+			{ ...estimate, offsetX: 5, offsetY: 8, phaseMeasured: true },
+			source,
+			{ x: 7, y: 3 },
+			false,
+		);
+		// 7 + 5 = 12 → セル 10 で折り返して 2。
+		expect(grid.offsetX).toBe(2);
+		// 3 + 8 = 11 → 1。
+		expect(grid.offsetY).toBe(1);
+	});
+
+	it("BBox 整列の指定では位相を投影せず BBox をそのまま切り出す", () => {
+		const grid = resolveGridEstimate(
+			{ ...estimate, phaseMeasured: true },
+			source,
+			{ x: 7, y: 3 },
+			false,
+			true,
+		);
+		expect(grid.offsetX).toBe(0);
+		expect(grid.cropX).toBe(7);
+		expect(grid.cropY).toBe(3);
+		expect(grid.outW).toBe(9);
 	});
 });
