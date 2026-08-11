@@ -217,4 +217,143 @@ describe("candidate previews", () => {
 		);
 		expect(visualResults.size).toBe(refined.length);
 	});
+
+	it("低信頼時も先頭でないAuto実結果を推奨候補として一度だけ含める", () => {
+		const value = analysis("scaled-pixel");
+		value.autoResultCandidateIndex = 1;
+
+		const plans = selectCandidatePlans(value);
+
+		expect(plans[0]).toMatchObject({
+			kind: "auto-result",
+			recommended: true,
+			processingMode: "auto",
+			outW: 32,
+			outH: 32,
+		});
+		expect(
+			plans.filter((plan) => plan.outW === 32 && plan.outH === 32),
+		).toHaveLength(1);
+		expect(plans.some((plan) => plan.kind === "recommended")).toBe(false);
+		expect(plans.length).toBeLessThanOrEqual(4);
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"auto-result",
+			"coarser",
+			"preserve",
+		]);
+		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
+	});
+
+	it("Auto実結果の再処理では元のヒント設定を引き継ぐ", () => {
+		const value = analysis("scaled-pixel");
+		value.autoResultCandidateIndex = 0;
+		const selection = selectCandidatePlans(value)[0];
+		expect(selection.processingMode).toBe("auto");
+		expect(
+			candidateProcessOptions({ hintPixelsW: 10, hintPixelsH: 12 }, selection),
+		).toMatchObject({
+			processingMode: "auto",
+			hintPixelsW: 10,
+			hintPixelsH: 12,
+			forcePixelsW: undefined,
+			forcePixelsH: undefined,
+		});
+	});
+
+	it("Auto実結果の実出力サイズを細かめ・粗めの基準にする", () => {
+		const value = analysis("scaled-pixel");
+		// 8x8 の候補を採用したが、検出後のトリミングで実出力は 3x3 まで縮んだ状況。
+		value.autoResultCandidateIndex = 2;
+		value.autoResultOutW = 3;
+		value.autoResultOutH = 3;
+
+		const plans = selectCandidatePlans(value);
+
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"auto-result",
+			"finer",
+			"preserve",
+		]);
+		// 実面積 9 を基準にすると 8x8 自身が細かめの先頭に来るが、Auto実結果カードと
+		// 同じサイズなので採らず、次の候補へ進む。
+		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
+	});
+
+	it("Autoが原寸維持を採用したときは原寸維持カードをAuto実結果として一度だけ出す", () => {
+		const value = analysis("scaled-pixel");
+		value.gridCandidates = [
+			...value.gridCandidates,
+			{
+				grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 0 },
+				outW: 64,
+				outH: 64,
+				cropX: 0,
+				cropY: 0,
+				cropW: 64,
+				cropH: 64,
+				method: "preserve",
+				totalScore: 0.1,
+				confidence: 0.05,
+			},
+		];
+		value.autoResultCandidateIndex = 3;
+
+		const plans = selectCandidatePlans(value);
+
+		expect(plans.map((plan) => plan.kind)).toEqual([
+			"auto-result",
+			"recommended",
+			"finer",
+			"coarser",
+		]);
+		expect(plans[0]).toMatchObject({
+			recommended: true,
+			processingMode: "auto",
+		});
+		// 検出グリッド候補の3枠（推奨・細かめ・粗め）が維持される。
+		expect(plans[1]).toMatchObject({ outW: 16, outH: 16, recommended: false });
+		expect(plans[2]).toMatchObject({ outW: 32, outH: 32 });
+		expect(plans[3]).toMatchObject({ outW: 8, outH: 8 });
+	});
+
+
+	it("resize_with_trimmingのAuto結果を候補計画へ含める", async () => {
+		const image = await readPngAsRawImage(
+			"test/fixtures/resize_with_trimming.png",
+		);
+		const expected = await readPngAsRawImage(
+			"test/fixtures/resize_with_trimming-expect.png",
+		);
+		const processed = processImage(image, { debug: false });
+		expect(processed.result.width).toBe(46);
+		expect(processed.result.height).toBe(13);
+		expect(processed.result.data).toEqual(expected.data);
+		expect(processed.analysis.selectedCandidateIndex).toBeUndefined();
+		const autoResultIndex = processed.analysis.autoResultCandidateIndex;
+		expect(autoResultIndex).toBeDefined();
+		const autoResultCandidate =
+			processed.analysis.gridCandidates[autoResultIndex ?? -1];
+		expect(autoResultCandidate).toMatchObject({ outW: 46, outH: 13 });
+
+		const plans = selectCandidatePlans(processed.analysis);
+		expect(plans[0]).toMatchObject({
+			kind: "auto-result",
+			recommended: true,
+			processingMode: "auto",
+			outW: 46,
+			outH: 13,
+		});
+		expect(
+			plans.filter((plan) => plan.outW === 46 && plan.outH === 13),
+		).toHaveLength(1);
+		expect(plans.length).toBeLessThanOrEqual(4);
+
+		const reselected = processImage(
+			image,
+			candidateProcessOptions({ debug: false }, plans[0]),
+		);
+		expect(reselected.result.width).toBe(46);
+		expect(reselected.result.height).toBe(13);
+		expect(reselected.result.data).toEqual(processed.result.data);
+	});
 });

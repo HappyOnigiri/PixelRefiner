@@ -5,6 +5,7 @@ import type {
 	GridCandidateReport,
 	InputClassification,
 	ProcessingAnalysis,
+	ProcessingMode,
 	RawImage,
 } from "../shared/types";
 import { resizeRawImageNearest } from "./image-operations";
@@ -39,11 +40,12 @@ const selectionForGrid = (
 	candidate: GridCandidateReport,
 	kind: CandidateSelection["kind"],
 	recommended = false,
+	processingMode: ProcessingMode = "refine",
 ): CandidateSelection => ({
 	id: `${kind}:${candidate.outW}x${candidate.outH}:${candidate.angle ?? 0}`,
 	kind,
 	recommended,
-	processingMode: "refine",
+	processingMode,
 	outW: candidate.outW,
 	outH: candidate.outH,
 	angle: candidate.angle,
@@ -53,36 +55,78 @@ export const selectCandidatePlans = (
 	analysis: ProcessingAnalysis,
 	classification: InputClassification | undefined = analysis.classification,
 ): CandidateSelection[] => {
+	const autoResultCandidate =
+		analysis.autoResultCandidateIndex !== undefined
+			? analysis.gridCandidates[analysis.autoResultCandidateIndex]
+			: undefined;
+	// [Intended] Auto が原寸維持を採用した場合、その実結果は原寸維持カードそのものである。
+	// 専用の Auto結果カードを別に立てると同じ画像が二重に並び、さらに面積が最大の原寸維持が
+	// 相対ラベルの基準になるため細かめが一度も選ばれなくなる。
+	const autoResultIsPreserve = autoResultCandidate?.method === "preserve";
+	const gridAutoResult = autoResultIsPreserve ? undefined : autoResultCandidate;
 	const grids = analysis.gridCandidates.filter(
 		(candidate) => candidate.method !== "preserve",
 	);
 	const plans: CandidateSelection[] = [];
-	if (grids.length > 0) {
-		const recommended = grids[0];
-		plans.push(selectionForGrid(recommended, "recommended", true));
+	// 細かめ・粗めの基準となる候補。Auto 実結果が検出候補ならそれ自身、原寸維持なら
+	// 検出上位の候補に据える（原寸維持を基準にすると面積が最大で細かめが選べない）。
+	const anchor = gridAutoResult ?? grids[0];
+	// [Intended] Auto 実結果が基準のときは面積もレポート値ではなく実出力から取る。
+	// レポート値は検出後のトリミングで実出力とずれることがあり、そのままだと
+	// 細かめ・粗めのラベルと実サイズの大小関係が逆転する。
+	const anchorArea =
+		gridAutoResult &&
+		analysis.autoResultOutW !== undefined &&
+		analysis.autoResultOutH !== undefined
+			? analysis.autoResultOutW * analysis.autoResultOutH
+			: anchor
+				? area(anchor)
+				: 0;
+	if (autoResultIsPreserve) {
+		plans.push({
+			id: "auto-result:preserve",
+			kind: "auto-result",
+			recommended: true,
+			processingMode: "auto",
+		});
+	} else if (gridAutoResult) {
+		plans.push(selectionForGrid(gridAutoResult, "auto-result", true, "auto"));
+	}
+	if (anchor) {
+		// Auto 実結果が検出候補そのものの場合は、同じ候補を推奨カードとして重ねない。
+		if (!gridAutoResult) {
+			plans.push(
+				selectionForGrid(anchor, "recommended", !autoResultIsPreserve),
+			);
+		}
 		const byArea = [...grids].sort((left, right) => area(left) - area(right));
-		const recommendedArea = area(recommended);
+		const isAlternative = (candidate: GridCandidateReport): boolean =>
+			!plans.some(
+				(plan) =>
+					plan.outW === candidate.outW &&
+					plan.outH === candidate.outH &&
+					(plan.angle ?? 0) === (candidate.angle ?? 0),
+			) && !isSimilar(candidate, anchor);
 		const coarser = [...byArea]
 			.reverse()
 			.find(
-				(candidate) =>
-					area(candidate) < recommendedArea &&
-					!isSimilar(candidate, recommended),
+				(candidate) => area(candidate) < anchorArea && isAlternative(candidate),
 			);
 		const finer = byArea.find(
-			(candidate) =>
-				area(candidate) > recommendedArea && !isSimilar(candidate, recommended),
+			(candidate) => area(candidate) > anchorArea && isAlternative(candidate),
 		);
 		if (finer) plans.push(selectionForGrid(finer, "finer"));
 		if (coarser) plans.push(selectionForGrid(coarser, "coarser"));
 	}
 
-	plans.push({
-		id: "preserve",
-		kind: "preserve",
-		recommended: grids.length === 0,
-		processingMode: "preserve",
-	});
+	if (!autoResultIsPreserve) {
+		plans.push({
+			id: "preserve",
+			kind: "preserve",
+			recommended: plans.length === 0,
+			processingMode: "preserve",
+		});
+	}
 
 	if (
 		plans.length < CANDIDATE_PREVIEW_LIMITS.maxCandidates &&
@@ -112,6 +156,14 @@ export const candidateProcessOptions = (
 		hintPixelsW: undefined,
 		hintPixelsH: undefined,
 	};
+	// [Intended] Auto 実結果の再現は初回と同じ入力で Auto を再実行することが前提なので、
+	// グリッド検出の検索開始点となるヒントは消さない。消すと検出結果が変わり、
+	// 候補として提示した実結果を再現できない。
+	if (selection.processingMode === "auto") {
+		options.hintPixelsW = base.hintPixelsW;
+		options.hintPixelsH = base.hintPixelsH;
+		return options;
+	}
 	if (selection.processingMode === "refine") {
 		options.forcePixelsW = selection.outW;
 		options.forcePixelsH = selection.outH;

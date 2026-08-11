@@ -186,6 +186,11 @@ export const createProcessingAnalysis = (
 	 */
 	knownSelectedCandidateIndex?: number,
 	smallComponentRemoval?: SmallComponentRemovalDiagnostic,
+	/**
+	 * Auto 経路が実際に採用した候補の位置。
+	 * [Intended] 信頼度の確定状態とは分離し、低信頼時にも UI へ渡す。
+	 */
+	knownAutoResultCandidateIndex?: number,
 ): ProcessingAnalysis => {
 	const fallbackSelected = toCandidateReport(grid, source, route, method);
 	const gridCandidates = rankedCandidates ?? [fallbackSelected];
@@ -196,6 +201,12 @@ export const createProcessingAnalysis = (
 		selectedCandidateIndex >= 0
 			? gridCandidates[selectedCandidateIndex]
 			: fallbackSelected;
+	const autoResultCandidateIndex =
+		knownAutoResultCandidateIndex !== undefined &&
+		knownAutoResultCandidateIndex >= 0 &&
+		knownAutoResultCandidateIndex < gridCandidates.length
+			? knownAutoResultCandidateIndex
+			: undefined;
 	const selectionConfirmed =
 		route !== "refine" ||
 		(selectedCandidateIndex >= 0 &&
@@ -255,6 +266,12 @@ export const createProcessingAnalysis = (
 		confidence: selected.confidence,
 		warnings,
 		gridCandidates,
+		autoResultCandidateIndex,
+		// この分析を作る経路の result が Auto の実出力そのものなので、実測値をここで確定する。
+		autoResultOutW:
+			autoResultCandidateIndex !== undefined ? result.width : undefined,
+		autoResultOutH:
+			autoResultCandidateIndex !== undefined ? result.height : undefined,
 		// [Intended] PRF-100 は信頼度が低い場合に自動確定を行わない。
 		// PRF-300 が経路選択を担うまで、旧来の出力は利用可能なままとする。
 		selectedCandidateIndex: selectionConfirmed
