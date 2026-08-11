@@ -644,25 +644,30 @@ const applyDehalo = (img: RawImage, model: BackgroundModel): void => {
  * 通常の候補許容よりも厳しい距離を使い、背景に近いだけの塗り面を落とす。
  */
 /**
- * 外周連結として除去する画素の平均色。内側の閉領域を比べる基準に使う。
- * 画素数が足りないときは基準にできないので null を返す。
+ * 外周連結として除去する画素の平均色を、背景クラスタごとに測る。
+ * 画素数が足りないクラスタは基準にできないので、そのクラスタの中心色で埋める。
  *
  * [Intended] 背景クラスタの中心は背景全体の加重平均なので、背景に明るさの勾配が
  * あると場所ごとの実際の色から離れる（実測: 緑背景のドーナツ画像で、穴の中の緑は
  * クラスタ中心から 0.0227 離れ、内側判定の許容 0.0212 を素の色で超えていた）。
  * 同じ画像で外周として除去した画素の実測色と比べれば、勾配の影響を受けない。
+ * [Intended] 平均はクラスタ単位で取る。背景が 2 色以上に分かれる画像で全画素の
+ * 平均を 1 つだけ基準にすると、どのクラスタ色からも離れた中間色になり、片方の
+ * 背景色で埋まった穴が厳しい許容に入らなくなる。
  */
-const measureSelectedMeanOklab = (
+const measureSelectedClusterMeansOklab = (
 	img: RawImage,
 	selected: Uint8Array,
-): Oklab | null => {
+	model: BackgroundModel,
+): Oklab[] => {
+	const clusterCount = model.clusters.length;
+	const sumL = new Float64Array(clusterCount);
+	const sumA = new Float64Array(clusterCount);
+	const sumB = new Float64Array(clusterCount);
+	const counts = new Float64Array(clusterCount);
 	const labL = new Float64Array(1);
 	const labA = new Float64Array(1);
 	const labB = new Float64Array(1);
-	let sumL = 0;
-	let sumA = 0;
-	let sumB = 0;
-	let count = 0;
 	for (let pixel = 0; pixel < selected.length; pixel += 1) {
 		if (!selected[pixel]) continue;
 		const offset = pixel * 4;
@@ -676,27 +681,55 @@ const measureSelectedMeanOklab = (
 			labB,
 			0,
 		);
-		sumL += labL[0];
-		sumA += labA[0];
-		sumB += labB[0];
-		count += 1;
+		let nearest = 0;
+		let nearestDistance = Number.POSITIVE_INFINITY;
+		for (let cluster = 0; cluster < clusterCount; cluster += 1) {
+			const color = model.clusters[cluster].color;
+			const distance = distanceSquared(
+				labL[0],
+				labA[0],
+				labB[0],
+				color.L,
+				color.a,
+				color.b,
+			);
+			if (distance < nearestDistance) {
+				nearestDistance = distance;
+				nearest = cluster;
+			}
+		}
+		sumL[nearest] += labL[0];
+		sumA[nearest] += labA[0];
+		sumB[nearest] += labB[0];
+		counts[nearest] += 1;
 	}
-	if (count < BACKGROUND_MODEL_LIMITS.minEnclosedReferencePixels) return null;
-	return { L: sumL / count, a: sumA / count, b: sumB / count };
+	const references: Oklab[] = [];
+	for (let cluster = 0; cluster < clusterCount; cluster += 1) {
+		const count = counts[cluster];
+		references.push(
+			count >= BACKGROUND_MODEL_LIMITS.minEnclosedReferencePixels
+				? {
+						L: sumL[cluster] / count,
+						a: sumA[cluster] / count,
+						b: sumB[cluster] / count,
+					}
+				: model.clusters[cluster].color,
+		);
+	}
+	return references;
 };
 
 /**
  * 内側の閉領域が背景の穴かを、平均色で判定するテストを作る。
  *
- * [Intended] 基準色は「同じ画像で外周として除去した画素の実測色」を優先し、
- * 外周が足りないときだけ背景クラスタの中心へ落とす。許容は通常より厳しい
+ * [Intended] 基準色は「同じ画像で外周として除去した画素の実測色」をクラスタごとに
+ * 使い、画素数が足りないクラスタだけ中心色へ落とす。許容は通常より厳しい
  * enclosedToleranceRatio 倍のままで、比較先だけを局所の実測色へ寄せる。
  */
 const createEnclosedClusterTest = (
 	img: RawImage,
-	model: BackgroundModel,
+	references: Oklab[],
 	tolerance: number,
-	outerReference: Oklab | null,
 ): EnclosedComponentTest => {
 	const strictTolerance =
 		(BACKGROUND_MODEL_LIMITS.baseOklabTolerance +
@@ -704,10 +737,6 @@ const createEnclosedClusterTest = (
 				(BACKGROUND_MODEL_LIMITS.maxOklabTolerance -
 					BACKGROUND_MODEL_LIMITS.baseOklabTolerance)) *
 		BACKGROUND_MODEL_LIMITS.enclosedToleranceRatio;
-	const references: Oklab[] =
-		outerReference !== null
-			? [outerReference]
-			: model.clusters.map((cluster) => cluster.color);
 	const labL = new Float64Array(1);
 	const labA = new Float64Array(1);
 	const labB = new Float64Array(1);
@@ -776,13 +805,13 @@ export const removeAutomaticBackground = (
 	if (scope === "auto") {
 		// [Intended] 基準色は addEnclosedBackground が selected を書き足す前に測る。
 		// 後から測ると、透過を決めた内側の閉領域まで基準へ混ざる。
-		const outerReference = measureSelectedMeanOklab(img, selected);
+		const references = measureSelectedClusterMeansOklab(img, selected, model);
 		addEnclosedBackground(
 			img,
 			candidates,
 			selected,
 			connectivity,
-			createEnclosedClusterTest(img, model, tolerance, outerReference),
+			createEnclosedClusterTest(img, references, tolerance),
 		);
 	}
 	let opaqueBefore = 0;
