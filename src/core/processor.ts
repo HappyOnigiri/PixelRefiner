@@ -267,9 +267,7 @@ const processImageCore = (
 		),
 		preparedMask: preparedWatermarkMask,
 		options: o,
-		working,
 		geometryWorking,
-		getBackgroundMaskedInput,
 		backgroundTargets: bgTargets,
 		backgroundModel,
 	});

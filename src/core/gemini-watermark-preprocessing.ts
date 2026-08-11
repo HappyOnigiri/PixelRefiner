@@ -77,9 +77,7 @@ type PrepareGeminiWatermarkAwareAutoMaskInput = {
 	needed: boolean;
 	preparedMask?: RawImage;
 	options: NormalizedProcessOptions;
-	working: RawImage;
 	geometryWorking: RawImage;
-	getBackgroundMaskedInput: () => RawImage;
 	backgroundTargets: Array<[number, number, number]>;
 	backgroundModel?: BackgroundModel;
 };
