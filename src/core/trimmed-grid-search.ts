@@ -8,6 +8,7 @@ import type { GridSignalOptions, PixelGrid, RawImage } from "../shared/types";
 import {
 	type AxisBoundaryContrastEvaluator,
 	type BoundaryContrastEvaluator,
+	combineAxisContrast,
 	createAxisBoundaryContrastEvaluator,
 } from "./grid-signals/boundary-contrast";
 import { downsample } from "./image-operations";
@@ -584,8 +585,7 @@ export class FastGridSearchFromTrimmed
 			mask,
 			signalOptions,
 		);
-		const boundaryContrast: BoundaryContrastEvaluator = (cellW, cellH) =>
-			Math.sqrt(axisContrast.x(cellW) * axisContrast.y(cellH));
+		const boundaryContrast = combineAxisContrast(axisContrast);
 		const ratio = cropped.width / Math.max(1, cropped.height);
 
 		// 画像が大きい場合は粗い刻みで候補を減らす

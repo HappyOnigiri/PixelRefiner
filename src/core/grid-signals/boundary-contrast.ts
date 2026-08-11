@@ -90,13 +90,14 @@ export const createAxisBoundaryContrastEvaluator = (
 	};
 };
 
-export const createBoundaryContrastEvaluator = (
-	image: RawImage,
-	mask: RawImage,
-	signalOptions: Partial<GridSignalOptions> = {},
-): BoundaryContrastEvaluator => {
-	const axes = createAxisBoundaryContrastEvaluator(image, mask, signalOptions);
-	return (cellW, cellH) =>
-		// [Intended] 片方の軸だけ格子に乗っている状態を高く評価しないよう相乗平均を使う。
+/**
+ * 軸ごとの評価器を、セル寸法だけで測る 1 つの評価器へ合成する。
+ *
+ * [Intended] 片方の軸だけ格子に乗っている状態を高く評価しないよう相乗平均を使う。
+ * [Policy] 合成はここだけに置く。呼び出し側で相乗平均を書くと、この意図が
+ * 本番で使う式から離れ、テストが本番の通らない経路を検証することになる。
+ */
+export const combineAxisContrast =
+	(axes: AxisBoundaryContrastEvaluator): BoundaryContrastEvaluator =>
+	(cellW, cellH) =>
 		Math.sqrt(axes.x(cellW) * axes.y(cellH));
-};

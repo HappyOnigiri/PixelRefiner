@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../../shared/types";
 import {
+	combineAxisContrast,
 	createAxisBoundaryContrastEvaluator,
-	createBoundaryContrastEvaluator,
 } from "./boundary-contrast";
 
 /** cell px ごとに色が変わる市松状の格子画像。shift だけ格子全体を右下へずらす。 */
@@ -42,7 +42,9 @@ const opaqueMask = (image: RawImage): RawImage => image;
 describe("boundary contrast", () => {
 	it("実セル幅で最も高く、過分割では下がる", () => {
 		const image = createGridImage(128, 16);
-		const evaluate = createBoundaryContrastEvaluator(image, opaqueMask(image));
+		const evaluate = combineAxisContrast(
+			createAxisBoundaryContrastEvaluator(image, opaqueMask(image)),
+		);
 		const actual = evaluate(16, 16);
 		const third = evaluate(16 / 3, 16 / 3);
 		const half = evaluate(8, 8);
@@ -54,14 +56,18 @@ describe("boundary contrast", () => {
 
 	it("倍のセル幅は境界がすべて実エッジに乗るため下がらない", () => {
 		const image = createGridImage(128, 16);
-		const evaluate = createBoundaryContrastEvaluator(image, opaqueMask(image));
+		const evaluate = combineAxisContrast(
+			createAxisBoundaryContrastEvaluator(image, opaqueMask(image)),
+		);
 		// 再構成誤差と失敗方向が相補的であること。粗すぎる側はこの指標では罰されない。
 		expect(evaluate(32, 32)).toBeGreaterThan(evaluate(16 / 3, 16 / 3));
 	});
 
 	it("エッジの無い画像では証拠なしを返す", () => {
 		const image = createFlatImage(64);
-		const evaluate = createBoundaryContrastEvaluator(image, opaqueMask(image));
+		const evaluate = combineAxisContrast(
+			createAxisBoundaryContrastEvaluator(image, opaqueMask(image)),
+		);
 		expect(evaluate(8, 8)).toBe(0);
 	});
 
@@ -71,7 +77,9 @@ describe("boundary contrast", () => {
 			height: 1,
 			data: new Uint8ClampedArray([0, 0, 0, 255]),
 		};
-		const evaluate = createBoundaryContrastEvaluator(image, image);
+		const evaluate = combineAxisContrast(
+			createAxisBoundaryContrastEvaluator(image, image),
+		);
 		expect(evaluate(1, 1)).toBe(0);
 	});
 });
