@@ -286,6 +286,28 @@ describe("Gemini watermark removal", () => {
 		expect(alphaAt(result.result, 90, 90)).toBe(0);
 	});
 
+	it("uses the processed palette color when automatic removal rolls back", () => {
+		const image = withOpaqueBackground(createSyntheticImage(false));
+		const result = processImage(image, {
+			processingMode: "preserve",
+			enableGridDetection: false,
+			bgExtractionMethod: "auto",
+			bgRemovalScope: "outer",
+			backgroundTolerance: 0,
+			trimToContent: false,
+			smallComponentMode: "off",
+			fixedPalette: [
+				{ r: 0, g: 0, b: 0 },
+				{ r: 255, g: 0, b: 0 },
+			],
+		});
+
+		expect(result.analysis.warnings).toContain("BACKGROUND_REMOVAL_SKIPPED");
+		const processedBackground = rgbAt(result.result, 75, 90);
+		expect(processedBackground).toEqual([255, 0, 0]);
+		expect(rgbAt(result.result, 90, 90)).toEqual(processedBackground);
+	});
+
 	it("maps removal through an explicit deskew rotation", () => {
 		const image = withOpaqueBackground(createSyntheticImage(false));
 		const options = {
