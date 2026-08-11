@@ -123,49 +123,24 @@ export const runQualityReportClient = (): void => {
 			label: document.querySelector<HTMLElement>(`#active-${name}-label`),
 			active: "",
 		}));
-		const filterStorageKey = "pixel-refiner-quality-report-filters";
-		type SavedFilterState = {
+		type FilterState = {
 			search: string;
 			groups: Record<string, string>;
 		};
-		const isRecord = (value: unknown): value is Record<string, unknown> =>
-			typeof value === "object" && value !== null && !Array.isArray(value);
-		// [Workaround] file:// やプライベートブラウジングで保存領域が使えない場合も、
-		// レポートの絞り込み自体は継続できるように保存処理だけを無効化する。
-		const storage: Storage | null = (() => {
-			try {
-				return window.localStorage;
-			} catch {
-				return null;
+		const readFilterState = (): FilterState => {
+			const params = new URLSearchParams(window.location.search);
+			const savedGroups: Record<string, string> = {};
+			for (const group of groups) {
+				const active = params.get(group.name);
+				if (active !== null) savedGroups[group.name] = active;
 			}
-		})();
-		const emptyFilterState = (): SavedFilterState => ({
-			search: "",
-			groups: {},
-		});
-		const readFilterState = (): SavedFilterState => {
-			if (!storage) return emptyFilterState();
-			try {
-				const saved: unknown = JSON.parse(
-					storage.getItem(filterStorageKey) ?? "null",
-				);
-				if (!isRecord(saved)) return emptyFilterState();
-				const groups: Record<string, string> = {};
-				if (isRecord(saved.groups)) {
-					for (const [name, value] of Object.entries(saved.groups)) {
-						if (typeof value === "string") groups[name] = value;
-					}
-				}
-				return {
-					search: typeof saved.search === "string" ? saved.search : "",
-					groups,
-				};
-			} catch {
-				return emptyFilterState();
-			}
+			return {
+				search: params.get("search") ?? "",
+				groups: savedGroups,
+			};
 		};
-		const savedFilterState = readFilterState();
-		search.value = savedFilterState.search;
+		const initialFilterState = readFilterState();
+		search.value = initialFilterState.search;
 		const setGroupActive = (
 			group: (typeof groups)[number],
 			button: HTMLButtonElement,
@@ -178,7 +153,7 @@ export const runQualityReportClient = (): void => {
 			}
 		};
 		for (const group of groups) {
-			const savedActive = savedFilterState.groups[group.name];
+			const savedActive = initialFilterState.groups[group.name];
 			const button =
 				group.buttons.find(
 					(candidate) =>
@@ -190,16 +165,22 @@ export const runQualityReportClient = (): void => {
 			if (button) setGroupActive(group, button);
 		}
 		const saveFilterState = (): void => {
-			if (!storage) return;
 			try {
-				const savedGroups: Record<string, string> = {};
-				for (const group of groups) savedGroups[group.name] = group.active;
-				storage.setItem(
-					filterStorageKey,
-					JSON.stringify({ search: search.value, groups: savedGroups }),
+				const url = new URL(window.location.href);
+				url.searchParams.delete("search");
+				for (const group of groups) url.searchParams.delete(group.name);
+				if (search.value) url.searchParams.set("search", search.value);
+				for (const group of groups) {
+					if (group.active) url.searchParams.set(group.name, group.active);
+				}
+				// [Intended] URLに状態を残し、更新や共有リンクから同じ条件を復元する。
+				window.history.replaceState(
+					null,
+					"",
+					`${url.pathname}${url.search}${url.hash}`,
 				);
 			} catch {
-				// [Intended] 保存できない環境でも、画面上の絞り込みは妨げない。
+				// [Workaround] URLを更新できない環境でも、画面上の絞り込みは妨げない。
 			}
 		};
 

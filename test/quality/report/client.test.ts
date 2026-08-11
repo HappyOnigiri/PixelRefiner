@@ -1,8 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runQualityReportClient } from "./client";
 
-const FILTER_STORAGE_KEY = "pixel-refiner-quality-report-filters";
-
 type Listener = () => void;
 
 type MockElement = {
@@ -52,7 +50,7 @@ const makeElement = (
 const makeButton = (name: string, value: string, label: string): MockElement =>
 	makeElement({ [`${name}Filter`]: value }, label);
 
-const createReportPage = (store: Map<string, string>) => {
+const createReportPage = (query = "") => {
 	const search = makeElement();
 	const visibleCount = makeElement();
 	const activeLabels = {
@@ -121,15 +119,31 @@ const createReportPage = (store: Map<string, string>) => {
 			return selectorElements[selector] ?? null;
 		},
 	} as unknown as Document;
+	const location = new URL(`https://example.test/report/index.html${query}`);
+	const replaceState = vi.fn(
+		(_state: unknown, _title: string, nextUrl: string) => {
+			const nextLocation = new URL(nextUrl, location.href);
+			location.href = nextLocation.href;
+			location.search = nextLocation.search;
+			location.hash = nextLocation.hash;
+		},
+	);
 	const windowMock = {
 		__QUALITY_REPORT_TRANSLATIONS__: { en: {}, ja: {}, "zh-CN": {} },
-		localStorage: {
-			getItem: (key: string) => store.get(key) ?? null,
-			setItem: (key: string, value: string) => store.set(key, value),
+		location,
+		history: {
+			replaceState,
 		},
 		addEventListener: vi.fn(),
 	} as unknown as Window;
-	return { cards, qualityButtons, search, documentMock, windowMock };
+	return {
+		cards,
+		qualityButtons,
+		search,
+		documentMock,
+		windowMock,
+		replaceState,
+	};
 };
 
 const runPage = (page: ReturnType<typeof createReportPage>): void => {
@@ -143,22 +157,25 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-describe("quality report filter persistence", () => {
-	it("restores the selected filters and search text after reload", () => {
-		const store = new Map<string, string>();
-		const firstPage = createReportPage(store);
+describe("quality report filter query state", () => {
+	it("starts with all cases and restores query filters after reload", () => {
+		const firstPage = createReportPage();
 		runPage(firstPage);
+		expect(firstPage.search.value).toBe("");
+		expect(firstPage.cards.every((card) => !card.hidden)).toBe(true);
 
 		firstPage.qualityButtons[1].trigger("click");
 		firstPage.search.value = "auto";
 		firstPage.search.trigger("input");
 
-		expect(JSON.parse(store.get(FILTER_STORAGE_KEY) ?? "null")).toEqual({
-			search: "auto",
-			groups: { quality: "unmet", change: "", parameter: "" },
-		});
+		const params = new URL(firstPage.windowMock.location.href).searchParams;
+		expect(params.get("search")).toBe("auto");
+		expect(params.get("quality")).toBe("unmet");
+		expect(params.has("change")).toBe(false);
+		expect(params.has("parameter")).toBe(false);
+		expect(firstPage.replaceState).toHaveBeenCalledTimes(2);
 
-		const secondPage = createReportPage(store);
+		const secondPage = createReportPage(`?${params.toString()}`);
 		runPage(secondPage);
 
 		expect(secondPage.search.value).toBe("auto");

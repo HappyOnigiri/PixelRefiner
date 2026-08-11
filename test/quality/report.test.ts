@@ -103,9 +103,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('data-quality-filter="met"');
 		expect(html).toContain('data-quality-filter="missing"');
 		expect(html).toContain('id="active-quality-label"');
-		expect(html).toContain("pixel-refiner-quality-report-filters");
-		expect(html).toContain("storage.getItem(filterStorageKey)");
-		expect(html).toContain("storage.setItem(");
+		expect(html).toContain("new URLSearchParams(window.location.search)");
+		expect(html).toContain("window.history.replaceState(");
+		expect(html).toContain("url.searchParams.set");
 		expect(html).toContain('targetUnmet":"目標未達"');
 		// [Intended] 一覧のバッジと絞り込みの件数が同じ集計から出ていることを確かめる。
 		// 片方だけずれると、絞り込んだ結果と件数表示が食い違って読めなくなる。
