@@ -278,6 +278,7 @@ describe.skipIf(!enabled)("quality report", () => {
 			prNumber: "92",
 			headCommit: "1234567890abcdef",
 			baseCommit: "abcdef1234567890",
+			generatedAt: "2026-08-11T04:25:51.000Z",
 			workflowRunUrl: `${results.metadata.repositoryUrl}/actions/runs/123`,
 		};
 		const remoteHtml = renderHtml({ ...results, metadata: remoteMetadata });
@@ -285,6 +286,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(remoteHtml).not.toContain('data-i18n="localReport"');
 		expect(remoteHtml).toContain(
 			`href="${results.metadata.repositoryUrl}/pull/92"`,
+		);
+		expect(remoteHtml).toContain(
+			'<time datetime="2026-08-11T04:25:51.000Z">2026-08-11 13:25:51 JST</time>',
 		);
 		for (const commit of [
 			remoteMetadata.headCommit,
@@ -296,8 +300,11 @@ describe.skipIf(!enabled)("quality report", () => {
 			);
 			expect(remoteHtml).toContain(`<code>${commit.slice(0, 7)}</code>`);
 		}
-		expect(html).toContain(
-			`<time datetime="${results.metadata.generatedAt}">${results.metadata.generatedAt}</time>`,
+		expect(html).toMatch(
+			new RegExp(
+				`<time datetime="${results.metadata.generatedAt}">` +
+					"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} JST</time>",
+			),
 		);
 		for (const qualityCase of selectedCases) {
 			expect(

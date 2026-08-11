@@ -12,6 +12,19 @@ const renderClientScript = (): string =>
 const formatConfidence = (value: number | null): string =>
 	value === null ? "-" : value.toFixed(4);
 
+const formatGeneratedAt = (value: string): string => {
+	const generatedAt = new Date(value);
+	if (Number.isNaN(generatedAt.getTime())) return value;
+	// [Intended] レポートを開く環境のタイムゾーンに左右されず、常に JST で表示する。
+	const jst = new Date(generatedAt.getTime() + 9 * 60 * 60 * 1000);
+	const pad = (part: number): string => String(part).padStart(2, "0");
+	return (
+		`${String(jst.getUTCFullYear())}-${pad(jst.getUTCMonth() + 1)}-` +
+		`${pad(jst.getUTCDate())} ${pad(jst.getUTCHours())}:` +
+		`${pad(jst.getUTCMinutes())}:${pad(jst.getUTCSeconds())} JST`
+	);
+};
+
 // [Policy] ケースの説明だけで内容を理解できるように、入力の特性、検証する処理、
 // 変化してはならない点を記載する。画像テストの追加時は「画像を保持する」のような
 // 曖昧な表現を避ける。
@@ -195,7 +208,7 @@ const renderReportSidebar = (results: QualityResults): string => {
 	const shortCommit = (commit: string): string =>
 		escapeHtml(commit.slice(0, 7));
 	const generatedAt = `<dt data-i18n="generatedAt">Generated</dt>
-			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(results.metadata.generatedAt)}</time></dd>`;
+			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(formatGeneratedAt(results.metadata.generatedAt))}</time></dd>`;
 	const reportMetadata =
 		results.metadata.prNumber === "local"
 			? `<section class="report-meta" aria-labelledby="report-meta-title">
