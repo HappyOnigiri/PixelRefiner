@@ -1,11 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import {
-	applyQuickSettingsToOptions,
-	QUICK_SETTINGS_DEFAULTS,
-} from "../../src/browser/quick-settings";
+import { createUiInitialProcessOptions } from "../../src/browser/quick-settings";
 import type { ProcessOptions } from "../../src/core/processor-options";
-import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../../src/shared/config";
 import type { FixtureAssetProvenance, QualityImageCase } from "./types";
 
 const FIXTURE_DIRECTORY = "test/fixtures";
@@ -25,45 +21,12 @@ export const loadAutoCaseExclusions = (): Record<string, string> =>
 		) as AutoCaseExclusionRegistry
 	).excluded;
 
-// [Intended] index.html の詳細設定は初期表示で PROCESS_DEFAULTS / PROCESS_RANGES の
-// 既定値を持ち、内蔵プリセットを選ぶと quick-settings-controls がこの既定値へ戻す。
-// DOM を起動せずに UI 初期状態の詳細設定を再現するための写しなので、
-// UI 側の初期値を変えたときはここも合わせる。
-const ADVANCED_DEFAULTS: ProcessOptions = {
-	detectionQuantStep: PROCESS_RANGES.detectionQuantStep.default,
-	backgroundTolerance: PROCESS_RANGES.backgroundTolerance.default,
-	sampleWindow: PROCESS_RANGES.sampleWindow.default,
-	trimAlphaThreshold: PROCESS_RANGES.trimAlphaThreshold.default,
-	preRemoveBackground: PROCESS_DEFAULTS.preRemoveBackground,
-	postRemoveBackground: PROCESS_DEFAULTS.postRemoveBackground,
-	bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
-	bgConnectivity: PROCESS_DEFAULTS.bgConnectivity,
-	bgExtractionMethod: PROCESS_DEFAULTS.bgExtractionMethod,
-	trimToContent: PROCESS_DEFAULTS.trimToContent,
-	autoGridFromTrimmed: PROCESS_DEFAULTS.autoGridFromTrimmed,
-	fastAutoGridFromTrimmed: PROCESS_DEFAULTS.fastAutoGridFromTrimmed,
-	enableGridDetection: PROCESS_DEFAULTS.enableGridDetection,
-	makeSquare: PROCESS_DEFAULTS.makeSquare,
-	keepAspectRatio: PROCESS_DEFAULTS.keepAspectRatio,
-	cellSamplingMode: PROCESS_DEFAULTS.cellSamplingMode,
-	smallComponentMode: PROCESS_DEFAULTS.smallComponentMode,
-	reduceColors: PROCESS_DEFAULTS.reduceColors,
-	reduceColorMode: PROCESS_DEFAULTS.reduceColorMode,
-	colorCount: PROCESS_DEFAULTS.colorCount,
-	ditherMode: PROCESS_DEFAULTS.ditherMode,
-	ditherStrength: PROCESS_DEFAULTS.ditherStrength,
-	outlineStyle: PROCESS_DEFAULTS.outlineStyle,
-	outlineColor: PROCESS_DEFAULTS.outlineColor,
-} as ProcessOptions;
-
 /**
  * UI を初期状態のまま（かんたん設定は Auto プリセット、詳細設定は既定値）で
  * 処理したときに processImage へ渡るオプション。
  */
-export const AUTO_CASE_OPTIONS: ProcessOptions = applyQuickSettingsToOptions(
-	ADVANCED_DEFAULTS,
-	QUICK_SETTINGS_DEFAULTS,
-);
+export const AUTO_CASE_OPTIONS: ProcessOptions =
+	createUiInitialProcessOptions();
 
 const caseIdForFixture = (fileName: string): string =>
 	`auto-${fileName
