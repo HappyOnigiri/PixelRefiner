@@ -46,8 +46,6 @@ type GridSizeCandidate = {
 	outW: number;
 	outH: number;
 	score: number;
-	/** 予測セル境界に実エッジが集まる度合い。1.0 で偏りなし。 */
-	evidence: number;
 };
 
 /** 再構成スコアが最小の候補。 */
@@ -306,7 +304,6 @@ export class FastGridSearchFromTrimmed
 		outHMax: number,
 		outHStep: number,
 		pixelStride: number,
-		boundaryContrast: BoundaryContrastEvaluator,
 		ratioOverride?: number,
 	): { bestOutH: number; est: GridEstimateFromTrimmed } | null {
 		const ratio = ratioOverride ?? cropped.width / Math.max(1, cropped.height);
@@ -378,12 +375,7 @@ export class FastGridSearchFromTrimmed
 					TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty *
 					Math.sqrt(outW * outH);
 				const score = reconErr + complexityPenalty;
-				allResults.push({
-					outH,
-					outW,
-					score,
-					evidence: boundaryContrast(cellW, cellH),
-				});
+				allResults.push({ outH, outW, score });
 			}
 		}
 
@@ -394,12 +386,9 @@ export class FastGridSearchFromTrimmed
 			GRID_SIZE_CANDIDATE_COUNT,
 			best,
 		);
-		let evidenceMax = 0;
-		for (let index = 0; index < allResults.length; index += 1) {
-			if (allResults[index].evidence > evidenceMax) {
-				evidenceMax = allResults[index].evidence;
-			}
-		}
+		// [Policy] 境界コントラストはここでは付けない。候補ごとの値は採用格子の決定にも
+		// 警告にも使われず、走査コストだけが残る。曖昧さの判定に使う値は search() が
+		// scanBoundaryEvidence から 1 刻みで求める。
 		return {
 			bestOutH: best.outH,
 			est: {
@@ -410,8 +399,6 @@ export class FastGridSearchFromTrimmed
 				offsetX: 0,
 				offsetY: 0,
 				score: best.score,
-				gridEvidence: best.evidence,
-				gridEvidenceMax: evidenceMax,
 				candidates: picked.map((c) => ({
 					outW: c.outW,
 					outH: c.outH,
@@ -420,7 +407,6 @@ export class FastGridSearchFromTrimmed
 					offsetX: 0,
 					offsetY: 0,
 					score: c.score,
-					gridEvidence: c.evidence,
 				})),
 			},
 		};
@@ -476,6 +462,10 @@ export class FastGridSearchFromTrimmed
 			const r0 = Math.max(outHMin, hintOutH - radius);
 			const r1 = Math.min(outHMax, hintOutH + radius);
 			const ratioHint = hint.outW / Math.max(1, hint.outH);
+			// [Intended] ヒント経路では境界コントラストを付けない。窓の中の最大値は
+			// 「入力に格子があるか」を表す全域の最大値とは意味が違い、曖昧さの
+			// しきい値もそちらの分布で決めてある。利用者が出力サイズを指定している
+			// 経路で、意味の違う値を根拠に警告を出さない。
 			const refinedFromHint = this.scan(
 				cropped,
 				mask,
@@ -484,7 +474,6 @@ export class FastGridSearchFromTrimmed
 				r1,
 				1,
 				Math.max(1, Math.floor(pixelStride / 2)),
-				boundaryContrast,
 				ratioHint,
 			);
 			return refinedFromHint?.est ?? null;
@@ -498,7 +487,6 @@ export class FastGridSearchFromTrimmed
 			outHMax,
 			outHStep,
 			pixelStride,
-			boundaryContrast,
 		);
 		if (!coarse) return null;
 
@@ -537,7 +525,6 @@ export class FastGridSearchFromTrimmed
 			r1,
 			1,
 			Math.max(1, Math.floor(pixelStride / 2)),
-			boundaryContrast,
 		);
 		// 注記:
 		// 候補リスト（UI でのサイズ調整用）には「粗い検索」の分散候補を使用する。
@@ -650,9 +637,7 @@ const legacySearchGridFromTrimmed = (
 			const complexityPenalty =
 				TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
 			const score = reconErr + complexityPenalty;
-			// [Policy] 旧検出器は境界コントラストを測らない。採用格子の決め方を
-			// 変えないよう、証拠なし (0) として扱う。
-			allResults.push({ outH, outW, score, evidence: 0 });
+			allResults.push({ outH, outW, score });
 		}
 	}
 
