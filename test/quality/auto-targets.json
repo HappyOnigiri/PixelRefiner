@@ -1,10 +1,10 @@
 {
-	"comment": "自動判定ケースの目標画像の由来。source は同じ入力を処理する explicit ケースで、その承認済みベースラインを test/quality/targets/<case id>.png へ固定してある。",
+	"comment": "自動判定ケースの目標画像の由来。source は同じ入力を処理する explicit ケースで、既定ではその承認済みベースラインを test/quality/targets/<case id>.png へ固定してある。auto の出力自体をレビューで目標として承認した場合は差し替え済みの旨を note に残し、source は許容値の継承元として保持する。",
 	"excluded": {},
 	"targets": {
 		"auto-auto-grid-detection": {
 			"source": "trim-auto-grid",
-			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。"
+			"note": "同じ入力を remove-background-auto-grid-keep-aspect も使うが、UI 既定に近いトリムのみの方を目標とする。auto の出力（88x61）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		},
 		"auto-high-resolution": {
 			"source": "restore-high-resolution-pixel-grid"
@@ -13,7 +13,8 @@
 			"source": "remove-inner-background-auto-grid"
 		},
 		"auto-no-trimming": {
-			"source": "remove-background-preserve-canvas"
+			"source": "remove-background-preserve-canvas",
+			"note": "explicit 側はキャンバスを保持する 119x65 だが、auto は既定でトリムするため出力サイズが原理的に一致しない。auto の出力（24x33）をレビューで十分な品質と判断したため、目標をその出力へ差し替えた。source は許容値の継承元として残す。"
 		},
 		"auto-resize-and-remove-bg": {
 			"source": "remove-background-trim-auto-grid"
