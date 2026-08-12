@@ -83,6 +83,15 @@ Auto 是默认处理流水线。它会对每张图像进行分类，并选择网
 运行 `make report` 可针对同一组 fixture 比较当前输出与基线输出。
 Pull Request 也会在 GitHub Actions 中发布质量门禁结果与对比报告摘要。
 
+### 质量报告
+
+每次合并到 `main` 都会重新生成报告并发布到：
+
+<https://happyonigiri.github.io/PixelRefiner/quality/latest/>
+
+报告会将每个用例与固定的目标图像比较，同时与上一个次版本最后一个标签所对应的
+上一版本输出比较。附加 `?locale=zh-CN&theme=dark` 即可按指定语言与配色打开。
+
 ## 说明
 
 本工具主要用于自动图片转换和优化。因此，当前不计划实现类似绘图软件的逐像素手动编辑功能。
