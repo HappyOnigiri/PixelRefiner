@@ -37,7 +37,10 @@ export const initQualityReportLink = (): void => {
 		link.href = qualityReportUrl(i18n.currentLang, currentTheme());
 	};
 	applyUrl();
-	// [Intended] 言語も配色も開くまでに切り替えられるので、クリックのたびに組み立て直す。
-	// 変更を購読するより、リンクを開く瞬間の表示状態と必ず一致する。
-	link.addEventListener("click", applyUrl);
+	// [Intended] 言語も配色も開くまでに切り替えられるので、開く操作のたびに組み立て直す。
+	// 変更を購読するより、リンクを開く瞬間の表示状態と必ず一致する。中クリックは
+	// auxclick、右クリックの「新しいタブで開く」は contextmenu しか発火しないので、
+	// click だけを見ると初期化時の言語・配色のまま開いてしまう。
+	for (const type of ["click", "auxclick", "contextmenu"])
+		link.addEventListener(type, applyUrl);
 };

@@ -7,11 +7,11 @@ import {
 } from "./quality-report-link";
 
 const createPage = (theme: string | undefined, hasLink = true) => {
-	let clickListener = (): void => {};
+	const listeners = new Map<string, () => void>();
 	const link = {
 		href: "",
-		addEventListener: (_type: string, listener: () => void): void => {
-			clickListener = listener;
+		addEventListener: (type: string, listener: () => void): void => {
+			listeners.set(type, listener);
 		},
 	};
 	const documentElement = { dataset: { theme } as { theme?: string } };
@@ -20,7 +20,15 @@ const createPage = (theme: string | undefined, hasLink = true) => {
 		querySelector: (selector: string) =>
 			hasLink && selector === "[data-quality-report-link]" ? link : null,
 	});
-	return { link, documentElement, click: () => clickListener() };
+	return {
+		link,
+		documentElement,
+		dispatch: (type: string): void => {
+			const listener = listeners.get(type);
+			expect(listener).toBeTypeOf("function");
+			listener?.();
+		},
+	};
 };
 
 afterEach(() => {
@@ -44,16 +52,20 @@ describe("quality report link", () => {
 	});
 
 	// [Intended] 言語も配色もリンクを開くまでに切り替えられる。初期化時の値のまま
-	// 開くと、UI と違う見た目のレポートが出る。
-	it("rebuilds the URL from the state at click time", () => {
-		const page = createPage("light");
-		i18n.currentLang = "en";
-		initQualityReportLink();
-		i18n.currentLang = "ja";
-		page.documentElement.dataset.theme = "dark";
-		page.click();
-		expect(page.link.href).toBe(`${QUALITY_REPORT_URL}?locale=ja&theme=dark`);
-	});
+	// 開くと、UI と違う見た目のレポートが出る。中クリックは auxclick、右クリックの
+	// 「新しいタブで開く」は contextmenu しか発火しないので、click だけでは足りない。
+	it.each(["click", "auxclick", "contextmenu"])(
+		"rebuilds the URL from the state at %s time",
+		(type) => {
+			const page = createPage("light");
+			i18n.currentLang = "en";
+			initQualityReportLink();
+			i18n.currentLang = "ja";
+			page.documentElement.dataset.theme = "dark";
+			page.dispatch(type);
+			expect(page.link.href).toBe(`${QUALITY_REPORT_URL}?locale=ja&theme=dark`);
+		},
+	);
 
 	it("falls back to the light theme when the document has no theme yet", () => {
 		const page = createPage(undefined);
