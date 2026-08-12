@@ -163,7 +163,8 @@ jobs:
           cp -R ../report/. "$report_path/"
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          # [Policy] Keep gh-pages as one snapshot commit so report images do not accumulate in history.
+          # [Policy] gh-pages はスナップショット 1 コミットに保つ。履歴を積むと
+          # レポートの画像が溜まり続ける。
           git checkout --orphan fresh-gh-pages
           git add -A
           git commit -m "docs: publish the quality report for ${GITHUB_SHA}"
