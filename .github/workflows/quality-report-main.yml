@@ -3,6 +3,10 @@ name: Quality Report (main)
 on:
   push:
     branches: [main]
+    # [Intended] リリースタグは main へのマージとは別の workflow が後から作る。
+    # main への push だけを起点にすると、タグが付く前にタグ一覧を読んで一世代
+    # 古いリリースを比較基準にしたレポートが公開されたまま残る。
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   workflow_dispatch: {}
 
 permissions:
