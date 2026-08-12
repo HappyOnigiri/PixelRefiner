@@ -133,9 +133,12 @@ ${renderImageDialog()}
 </html>`;
 };
 
+// [Intended] 前回生成の有無は既定値を持たせず必ず渡させる。一覧と Markdown は
+// results から自分で判定するので、詳細ページだけ渡し忘れると一覧では省いた前回比較の
+// 欄が詳細ページにだけ空で残る。
 export const renderCaseDetailHtml = (
 	result: QualityCaseResult,
-	previousRunAvailable = true,
+	previousRunAvailable: boolean,
 ): string => {
 	const description = describeCase(result);
 	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];

@@ -176,7 +176,7 @@ describe("quality report case detail", () => {
 			sidebar.indexOf('data-i18n="language"'),
 		);
 		const detailBody = between(
-			renderCaseDetailHtml(result),
+			renderCaseDetailHtml(result, true),
 			"<body>",
 			"<script>",
 		);
@@ -186,7 +186,7 @@ describe("quality report case detail", () => {
 	it("runs the theme bootstrap before report styles are parsed", () => {
 		for (const html of [
 			renderHtml(makeResults([makeCaseResult()])),
-			renderCaseDetailHtml(makeCaseResult()),
+			renderCaseDetailHtml(makeCaseResult(), true),
 		]) {
 			expect(html.indexOf("pixel-refiner-theme")).toBeGreaterThan(-1);
 			expect(html.indexOf("pixel-refiner-theme")).toBeLessThan(
@@ -205,7 +205,7 @@ describe("quality report case detail", () => {
 			"</h2>",
 		);
 		const detailHeading = between(
-			renderCaseDetailHtml(result),
+			renderCaseDetailHtml(result, true),
 			"<h1>",
 			"</h1>",
 		);
@@ -219,7 +219,7 @@ describe("quality report case detail", () => {
 
 	it("marks an auto case with the auto parameter badge", () => {
 		const detailHeading = between(
-			renderCaseDetailHtml(makeCaseResult({ parameterMode: "auto" })),
+			renderCaseDetailHtml(makeCaseResult({ parameterMode: "auto" }), true),
 			"<h1>",
 			"</h1>",
 		);
@@ -232,7 +232,7 @@ describe("quality report case detail", () => {
 	// [Intended] 実行時間はベースラインを持たないので、比較列のある指標テーブルには
 	// 出さない。表へ紛れ込むと毎回「判定不能」の行が増える。
 	it("shows the processing time outside the metric table", () => {
-		const detail = renderCaseDetailHtml(makeCaseResult());
+		const detail = renderCaseDetailHtml(makeCaseResult(), true);
 		expect(detail).toContain(
 			'<strong data-i18n="processingTime">Time</strong>: 12.35ms',
 		);
@@ -248,7 +248,7 @@ describe("quality report case detail", () => {
 		expect(renderHtml(makeResults([result]))).toContain(
 			'<span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small>',
 		);
-		expect(renderCaseDetailHtml(result)).toContain(
+		expect(renderCaseDetailHtml(result, true)).toContain(
 			'<span data-i18n="input">Input</span> <small class="image-size">(64x64px)</small>',
 		);
 	});
@@ -260,7 +260,7 @@ describe("quality report case detail", () => {
 		expect(renderHtml(makeResults([result]))).not.toContain(
 			"<figcaption data-i18n=",
 		);
-		expect(renderCaseDetailHtml(result)).not.toContain(
+		expect(renderCaseDetailHtml(result, true)).not.toContain(
 			"<figcaption data-i18n=",
 		);
 	});
@@ -289,7 +289,7 @@ describe("quality report case detail", () => {
 		});
 		for (const html of [
 			renderHtml(makeResults([result])),
-			renderCaseDetailHtml(result),
+			renderCaseDetailHtml(result, true),
 		]) {
 			expect(html).toContain(
 				'<span data-i18n="result">Result</span> <small class="image-size size-mismatch">(16x16px)</small>',
@@ -321,7 +321,7 @@ describe("quality report case detail", () => {
 				backgroundMask: { width: 16, height: 16 },
 			},
 		});
-		expect(renderCaseDetailHtml(result)).not.toContain(
+		expect(renderCaseDetailHtml(result, true)).not.toContain(
 			'<small class="image-size size-mismatch">',
 		);
 	});
@@ -331,7 +331,7 @@ describe("quality report case detail", () => {
 	it("labels unmet target assertions with the target verdict key", () => {
 		const result = makeCaseResult();
 		const targetSection = between(
-			renderCaseDetailHtml(result),
+			renderCaseDetailHtml(result, true),
 			'<h2 data-i18n="targetComparison">',
 			"</section>",
 		);
