@@ -264,6 +264,18 @@ export const BACKGROUND_MODEL_LIMITS = {
 	// 通常許容にこの係数を掛けた厳しい一致を要求する。1/3 は合成ケースと実 fixture の
 	// 比較で、背景に近いだけの塗り面を落としつつ本当の穴を取れる水準として選んだ。
 	enclosedToleranceRatio: 1 / 3,
+	// [Intended] 内側判定の基準色を外周の実測色に切り替える最小画素数。数画素の平均は
+	// 縁のにじみ 1 つで動くので、クラスタ中心より当てにならない。
+	minEnclosedReferencePixels: 24,
+	/**
+	 * 内側判定の基準色を測るときに走査する画素数の上限。
+	 *
+	 * [Policy] 平均は許容値と比べるだけの統計量なので、全画素を舐める必要はない。
+	 * 1 画素あたり pow 3 回＋cbrt 3 回の Oklab 変換が入り、既定スコープでは原寸画像に
+	 * 対して必ず通る経路になる（実測: 4.3Mpx で約 250ms）。maxBorderSamples と同じ
+	 * 考え方で等間隔に間引く。
+	 */
+	maxEnclosedReferenceSamples: 262_144,
 	varianceScale: 2.5,
 	varianceConfidenceScale: 0.012,
 	maxBorderSamples: 262_144,
@@ -467,6 +479,19 @@ export const BOUNDARY_CONTRAST_LIMITS = {
 	 * ずれで 1〜2 行ぶれる。その範囲だけ再構成誤差に決めさせる。
 	 */
 	refineRadius: 3,
+	/**
+	 * 採用したセル寸法のまま位相を詰めるときの、境界コントラストの最小値。
+	 * [Policy] これを下回る軸は格子の位相が読めていないので、位相は決めずに
+	 * 従来どおりキャンバス左上を起点として投影する。
+	 */
+	minPhaseEvidence: 1.1,
+	/**
+	 * 位相を測ることを許す最小のセル辺長（px）。
+	 * [Intended] これより小さいセルでは、セル内部の 1px の線が境界と区別できない
+	 * （実測: 4px セルの合成 fixture で、各セルの localY=1 にある特徴線を境界と読み、
+	 * 位相が 1〜2px ずれた）。小さいセルの位相は測らず従来の投影に任せる。
+	 */
+	minPhaseCellPixels: 8,
 } as const;
 
 export const TRIMMED_GRID_SEARCH_LIMITS = {

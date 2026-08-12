@@ -13,12 +13,18 @@ import { combineSignalProfiles, createAxisSignalProfiles } from "./profiles";
  * 戻り値は「境界位置の平均エッジ強度 ÷ 全位置の平均エッジ強度」で、
  * 1.0 が「境界に何の偏りも無い（格子の証拠なし）」を表す。
  */
-const axisBoundaryContrast = (edges: Float64Array, cell: number): number => {
+const axisBoundaryContrast = (
+	edges: Float64Array,
+	cell: number,
+	phase = 0,
+): number => {
 	if (!(cell > 0) || edges.length < 3) return 0;
 	let boundarySum = 0;
 	let boundaryCount = 0;
 	// [Intended] 非整数のセル幅を扱うため、境界は丸めずに前後 1px の三角窓で拾う。
-	for (let boundary = cell; boundary < edges.length - 1; boundary += cell) {
+	// 位相は「最初の境界の位置」。0 のときは従来どおり cell から始める。
+	const first = phase > 0 ? phase : cell;
+	for (let boundary = first; boundary < edges.length - 1; boundary += cell) {
 		const center = Math.round(boundary);
 		let peak = 0;
 		for (let delta = -1; delta <= 1; delta += 1) {
@@ -47,17 +53,25 @@ export type BoundaryContrastEvaluator = (
 	cellH: number,
 ) => number;
 
+/** 軸ごとに、セル幅と位相を指定して境界コントラストを測る。 */
+export type AxisBoundaryContrastEvaluator = {
+	x: (cell: number, phase?: number) => number;
+	y: (cell: number, phase?: number) => number;
+};
+
 /**
- * 軸ごとのエッジプロファイルを 1 度だけ作り、セル寸法ごとの境界コントラストを返す。
+ * 軸ごとのエッジプロファイルを 1 度だけ作り、セル寸法・位相ごとの境界コントラストを返す。
  * [Policy] プロファイル生成は画像 1 枚あたり 1 回で済ませる。候補ごとの計算は
  * 辺の長さに比例するだけなので、候補ごとのダウンサンプリングよりずっと軽い。
  */
-export const createBoundaryContrastEvaluator = (
+export const createAxisBoundaryContrastEvaluator = (
 	image: RawImage,
 	mask: RawImage,
 	signalOptions: Partial<GridSignalOptions> = {},
-): BoundaryContrastEvaluator => {
-	if (image.width < 2 || image.height < 2) return () => 0;
+): AxisBoundaryContrastEvaluator => {
+	if (image.width < 2 || image.height < 2) {
+		return { x: () => 0, y: () => 0 };
+	}
 	// [Policy] エッジの合成はアンサンブル側と同じ設定に従う。ここだけ既定値で
 	// 固定すると、呼び出し元が色境界などを切っても新指標だけが有効に残り、
 	// 採用格子と警告に効いてしまう。
@@ -68,10 +82,22 @@ export const createBoundaryContrastEvaluator = (
 	const profiles = createAxisSignalProfiles(image, mask);
 	const xEdges = combineSignalProfiles(profiles.x, options);
 	const yEdges = combineSignalProfiles(profiles.y, options);
-	return (cellW, cellH) => {
-		// [Intended] 片方の軸だけ格子に乗っている状態を高く評価しないよう相乗平均を使う。
-		const x = Math.max(0, axisBoundaryContrast(xEdges, cellW));
-		const y = Math.max(0, axisBoundaryContrast(yEdges, cellH));
-		return Math.sqrt(x * y);
+	return {
+		x: (cell, phase = 0) =>
+			Math.max(0, axisBoundaryContrast(xEdges, cell, phase)),
+		y: (cell, phase = 0) =>
+			Math.max(0, axisBoundaryContrast(yEdges, cell, phase)),
 	};
 };
+
+/**
+ * 軸ごとの評価器を、セル寸法だけで測る 1 つの評価器へ合成する。
+ *
+ * [Intended] 片方の軸だけ格子に乗っている状態を高く評価しないよう相乗平均を使う。
+ * [Policy] 合成はここだけに置く。呼び出し側で相乗平均を書くと、この意図が
+ * 本番で使う式から離れ、テストが本番の通らない経路を検証することになる。
+ */
+export const combineAxisContrast =
+	(axes: AxisBoundaryContrastEvaluator): BoundaryContrastEvaluator =>
+	(cellW, cellH) =>
+		Math.sqrt(axes.x(cellW) * axes.y(cellH));

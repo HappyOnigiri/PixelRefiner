@@ -344,6 +344,26 @@ describe("enclosed background removal (scope: auto)", () => {
 		expect(alphaAt(result.image, 0, 0)).toBe(0);
 	});
 
+	it("removes an enclosed hole when the background splits into two colors", () => {
+		// 左半分と右半分で背景色が違い、穴は左側の背景色そのもので埋まっている。
+		// 基準色を全背景画素の平均 1 つで持つと、どちらの背景色からも離れた中間色に
+		// なるため、この穴が厳密な許容から外れる。
+		const image = createImage(48, 40, (x, y) => {
+			const distance = Math.hypot(x - 16, y - 20);
+			if (distance <= 6) return [60, 180, 75, 255];
+			if (distance <= 14) return [40, 40, 40, 255];
+			return x < 32 ? [60, 180, 75, 255] : [60, 75, 180, 255];
+		});
+		const result = removeAutomaticBackground(image, 64, "auto", "4");
+
+		expect(result.rolledBack).toBe(false);
+		expect(result.model.clusters.length).toBeGreaterThan(1);
+		expect(alphaAt(result.image, 16, 20)).toBe(0);
+		expect(alphaAt(result.image, 16, 9)).toBe(255);
+		expect(alphaAt(result.image, 0, 0)).toBe(0);
+		expect(alphaAt(result.image, 47, 39)).toBe(0);
+	});
+
 	it("keeps the enclosed hole when the scope is outer", () => {
 		const image = createDonut([240, 240, 240]);
 		const result = removeAutomaticBackground(image, 64, "outer", "4");

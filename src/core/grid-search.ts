@@ -40,6 +40,8 @@ export type GridEstimateLike = {
 	gridEvidence?: number;
 	gridEvidenceMax?: number;
 	gridEvidenceContested?: boolean;
+	/** offsetX/offsetY が実測した位相かどうか。 */
+	phaseMeasured?: boolean;
 };
 
 type AxisCandidate = {
@@ -92,23 +94,31 @@ export const resolveGridEstimate = (
 			gridEvidenceContested: estimate.gridEvidenceContested,
 		};
 	}
-	const offsetX = phaseAware
+	// [Intended] 位相を実測した推定（境界コントラストで位相を詰めた再構成ベースの探索）は、
+	// セル数を変えずにサンプリング窓だけをずらす。セル寸法をコンテンツ BBox から割り出して
+	// いるのに投影がキャンバス左上を起点にしていると、BBox 開始位置の端数だけ格子がずれて
+	// 各セルが隣のドットを食い、代表色が混色へ寄る（実測: 20x18 が正解の 1254x1254 生成
+	// 画像で x が 1/6 セルずれ、輪郭とハイライトがにじんだ）。
+	// [Policy] 位相をずらした格子はキャンバス左端の手前から始まるので、被覆は切り上げで
+	// 数える。位相を測っていない推定は従来どおり切り捨てのまま扱う。
+	const hasPhase = phaseAware || estimate.phaseMeasured === true;
+	const offsetX = hasPhase
 		? normalizeGridPhase(bboxOrigin.x + estimate.offsetX, estimate.cellW)
 		: 0;
-	const offsetY = phaseAware
+	const offsetY = hasPhase
 		? normalizeGridPhase(bboxOrigin.y + estimate.offsetY, estimate.cellH)
 		: 0;
 	const cropX = offsetX > PHASE_EPSILON ? offsetX - estimate.cellW : 0;
 	const cropY = offsetY > PHASE_EPSILON ? offsetY - estimate.cellH : 0;
 	const outW = Math.max(
 		1,
-		phaseAware
+		hasPhase
 			? Math.ceil((source.width - cropX) / estimate.cellW)
 			: Math.floor(source.width / estimate.cellW),
 	);
 	const outH = Math.max(
 		1,
-		phaseAware
+		hasPhase
 			? Math.ceil((source.height - cropY) / estimate.cellH)
 			: Math.floor(source.height / estimate.cellH),
 	);

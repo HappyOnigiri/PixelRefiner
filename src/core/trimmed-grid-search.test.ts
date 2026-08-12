@@ -1,6 +1,32 @@
 import { describe, expect, it } from "vitest";
+import { BOUNDARY_CONTRAST_LIMITS } from "../shared/config";
 import type { RawImage } from "../shared/types";
 import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
+
+/** cell px の市松格子を shift px だけ右下へずらした画像。 */
+const createShiftedGridImage = (
+	size: number,
+	cell: number,
+	shift: number,
+): RawImage => {
+	const data = new Uint8ClampedArray(size * size * 4);
+	for (let y = 0; y < size; y += 1) {
+		for (let x = 0; x < size; x += 1) {
+			const value =
+				(Math.floor((x - shift) / cell) + Math.floor((y - shift) / cell)) %
+					2 ===
+				0
+					? 40
+					: 216;
+			const offset = (y * size + x) * 4;
+			data[offset] = value;
+			data[offset + 1] = value;
+			data[offset + 2] = value;
+			data[offset + 3] = 255;
+		}
+	}
+	return { width: size, height: size, data };
+};
 
 /**
  * セル境界だけが強いエッジで、セル内部には弱い濃淡がある市松画像。
@@ -93,6 +119,98 @@ describe("fast grid search from trimmed", () => {
 		expect(estimate?.outH).toBe(11);
 	});
 
+	it("格子が BBox の縁で合っている入力では、位相 0 を実測済みとして返す", () => {
+		// [Intended] 位相 0 は「ずれていない」という実測結果なので、投影は BBox 起点へ
+		// 寄せたままにする。位相未測定と同じ扱いにするとキャンバス起点へ戻ってしまう。
+		const estimate = strategy.search(image, image, 3);
+		expect(estimate?.phaseMeasured).toBe(true);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
+	it("境界の証拠が薄い軸があれば位相を測らない", () => {
+		// [Intended] エッジ信号を落とすと境界コントラストが 0 になり、minPhaseEvidence を
+		// 下回る。位相は決めず、投影は従来どおりキャンバス起点に任せる。
+		const shifted = createShiftedGridImage(80, 10, 3);
+		const estimate = strategy.search(
+			shifted,
+			shifted,
+			3,
+			undefined,
+			NO_EDGE_SIGNALS,
+		);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.phaseMeasured).toBe(false);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
+	it("片方の軸しか格子に乗っていない入力では位相を測らない", () => {
+		// 縦縞だけの画像。x 軸には境界があるが、y 軸は一様でコントラストが立たない。
+		const size = 80;
+		const data = new Uint8ClampedArray(size * size * 4);
+		for (let y = 0; y < size; y += 1) {
+			for (let x = 0; x < size; x += 1) {
+				const value = Math.floor((x - 3) / 10) % 2 === 0 ? 40 : 216;
+				const offset = (y * size + x) * 4;
+				data[offset] = value;
+				data[offset + 1] = value;
+				data[offset + 2] = value;
+				data[offset + 3] = 255;
+			}
+		}
+		const stripes: RawImage = { width: size, height: size, data };
+		const estimate = strategy.search(stripes, stripes, 3);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.phaseMeasured).toBe(false);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
+	it("セルが minPhaseCellPixels 未満なら位相を測らない", () => {
+		// セル 4px の格子。セル内部の 1px の線と境界を区別できない領域なので測らない。
+		const fine = createShiftedGridImage(64, 4, 1);
+		const estimate = strategy.search(fine, fine, 3);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.cellW).toBeLessThan(
+			BOUNDARY_CONTRAST_LIMITS.minPhaseCellPixels,
+		);
+		expect(estimate?.phaseMeasured).toBe(false);
+		expect(estimate?.offsetX).toBe(0);
+	});
+
+	it("セル内の反復線が境界より強い入力では、位相をずらさない", () => {
+		// [Intended] セル 10px の各セル内 localX/localY=3 に明るい線を敷いた 80x80。
+		// 境界コントラストの最大は内部の線に立つため、そのまま採ると位相が 3 ずれる。
+		// 再構成誤差での裏取りが効けば、位相をずらさない格子が返る。
+		const size = 80;
+		const cell = 10;
+		const data = new Uint8ClampedArray(size * size * 4);
+		for (let y = 0; y < size; y += 1) {
+			for (let x = 0; x < size; x += 1) {
+				const base =
+					(Math.floor(x / cell) + Math.floor(y / cell)) % 2 === 0 ? 40 : 200;
+				const value = x % cell === 3 || y % cell === 3 ? 255 : base;
+				const offset = (y * size + x) * 4;
+				data[offset] = value;
+				data[offset + 1] = value;
+				data[offset + 2] = value;
+				data[offset + 3] = 255;
+			}
+		}
+		const innerLine: RawImage = { width: size, height: size, data };
+		const estimate = strategy.search(innerLine, innerLine, 3);
+
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outW).toBe(8);
+		expect(estimate?.outH).toBe(8);
+		expect(estimate?.offsetX).toBe(0);
+		expect(estimate?.offsetY).toBe(0);
+	});
+
 	it("候補一覧には採用格子の倍音が含まれる", () => {
 		const estimate = strategy.search(image, image, 3);
 		const outHeights = (estimate?.candidates ?? []).map(
@@ -103,5 +221,17 @@ describe("fast grid search from trimmed", () => {
 		// 候補選択で救えるようこの兄弟を必ず含める。
 		expect(outHeights).toContain(16);
 		expect(outHeights).toContain(24);
+	});
+
+	it("候補にも採用格子と同じ手順で位相が載る", () => {
+		// [Intended] 採用格子だけに位相を載せると、同じセル寸法の候補が位相 0 の別サイズ
+		// として残り、投影後のサイズが採用格子と食い違う（実測: auto_grid_detection で
+		// 採用 203x116 の隣に 202x114 が並んでいた）。
+		const estimate = strategy.search(image, image, 3);
+		const candidates = estimate?.candidates ?? [];
+		expect(candidates.length).toBeGreaterThan(1);
+		for (const candidate of candidates) {
+			expect(candidate.phaseMeasured).toBeTypeOf("boolean");
+		}
 	});
 });
