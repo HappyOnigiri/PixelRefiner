@@ -1,0 +1,183 @@
+name: Quality Report (main)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-report-main
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    # [Policy] main のレポートは公開用の成果物なので、品質ゲートは動かさない。
+    # 回帰の判定は PR の Quality Report workflow が担う。
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # タグから前回のリリースを選ぶため、履歴とタグを揃えて取得する。
+          fetch-depth: 0
+
+      - name: Select the previous release tag
+        id: previous
+        run: |
+          tag="$(git tag --list | python3 scripts/select_previous_release_tag.py)"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [ -n "$tag" ]; then
+            echo "Comparing against the previous release ${tag}."
+          else
+            echo "No previous release tag was found; the report omits the previous run."
+          fi
+
+      - name: Check out the previous release quality baseline
+        if: steps.previous.outputs.tag != ''
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.previous.outputs.tag }}
+          path: quality-previous
+          persist-credentials: false
+          sparse-checkout: |
+            test/quality/baseline
+            test/quality/baseline.json
+          sparse-checkout-cone-mode: false
+
+      - name: Use the previous release as the previous run
+        env:
+          PREVIOUS_TAG: ${{ steps.previous.outputs.tag }}
+        run: |
+          baseline_root="$GITHUB_WORKSPACE/quality-previous/test/quality/baseline"
+          baseline_file="$GITHUB_WORKSPACE/quality-previous/test/quality/baseline.json"
+          if [ -d "$baseline_root" ] && [ -f "$baseline_file" ]; then
+            # [Intended] ベースラインの形式が変わったリリースを跨ぐと読み込みが失敗する。
+            # レポートの公開ごと止めるより、その回だけ前回比較を省いて公開を続ける。
+            previous_format="$(jq -r '.version' "$baseline_file")"
+            current_format="$(jq -r '.version' test/quality/baseline.json)"
+            if [ "$previous_format" = "$current_format" ]; then
+              echo "QUALITY_BASELINE_ROOT=$baseline_root" >> "$GITHUB_ENV"
+              echo "QUALITY_BASELINE_FILE=$baseline_file" >> "$GITHUB_ENV"
+              # [Intended] レポートに載せる前回バージョンは、実際に前回生成として
+              # 読めたときだけ渡す。取得できなかったタグ名を残すと、比較を省いた
+              # レポートに参照先だけが載って読み手を惑わせる。
+              echo "QUALITY_PREVIOUS_VERSION=$PREVIOUS_TAG" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "::warning::The previous release stores baseline format ${previous_format} but this commit expects ${current_format}; the report omits the previous run."
+          fi
+          # [Intended] 前回のリリースを取得できないときは、チェックイン済みベースラインへ
+          # 落とさず空の参照を渡す。head のベースラインは main の現在地そのもので、
+          # 「前回生成」として並べると常に差分なしのレポートになる。空にしておけば
+          # レポート側が前回との比較を丸ごと省く。
+          empty_root="$RUNNER_TEMP/quality-baseline-empty"
+          mkdir -p "$empty_root"
+          echo "QUALITY_BASELINE_ROOT=$empty_root" >> "$GITHUB_ENV"
+          echo "QUALITY_BASELINE_FILE=$empty_root/baseline.json" >> "$GITHUB_ENV"
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate the comparison report
+        env:
+          QUALITY_REPORT_KIND: release
+          QUALITY_HEAD_SHA: ${{ github.sha }}
+        run: pnpm run test:quality:report
+
+      - name: Publish quality summary
+        if: always()
+        run: |
+          summary_file="tmp/quality-report/latest/summary.md"
+          if [ -f "$summary_file" ]; then
+            cat "$summary_file" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Comparison report generation did not produce a summary." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload comparison report
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-report-main
+          path: tmp/quality-report/latest
+          if-no-files-found: error
+
+  publish:
+    needs: quality
+    runs-on: ubuntu-latest
+    # [Policy] gh-pages は PR 用レポートの公開と共有するので、書き込みを直列化する。
+    concurrency:
+      group: quality-pages
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: quality-reports
+      url: ${{ steps.deploy-pages.outputs.page_url }}
+    steps:
+      - name: Download comparison report
+        uses: actions/download-artifact@v8
+        with:
+          name: quality-report-main
+          path: report
+
+      - name: Preserve reports and publish the latest release report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init site-repo
+          cd site-repo
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git checkout -b gh-pages FETCH_HEAD
+          else
+            git checkout --orphan gh-pages
+          fi
+          touch .nojekyll
+          # [Policy] README と UI のフッターから参照する固定の公開先。パスを変える場合は
+          # 参照側（README と src/browser/quality-report-link.ts）も同時に直す。
+          report_path="quality/latest"
+          rm -rf "$report_path"
+          mkdir -p "$report_path"
+          cp -R ../report/. "$report_path/"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          # [Policy] Keep gh-pages as one snapshot commit so report images do not accumulate in history.
+          git checkout --orphan fresh-gh-pages
+          git add -A
+          git commit -m "docs: publish the quality report for ${GITHUB_SHA}"
+          git push --force origin HEAD:gh-pages
+
+      - name: Build the complete Pages directory
+        run: |
+          mkdir site
+          rsync -a --exclude=.git site-repo/ site/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+        with:
+          token: ${{ secrets.GH_TOKEN || github.token }}
+          enablement: true
+
+      - name: Package the complete Pages site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy GitHub Pages
+        id: deploy-pages
+        uses: actions/deploy-pages@v5
