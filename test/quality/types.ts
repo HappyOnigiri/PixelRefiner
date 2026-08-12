@@ -10,7 +10,7 @@ import type {
 	ProcessingMode,
 } from "../../src/shared/types";
 
-export const QUALITY_REPORT_VERSION = "6";
+export const QUALITY_REPORT_VERSION = "7";
 export const QUALITY_BENCHMARK_VERSION = "2";
 export const QUALITY_BASELINE_VERSION = 3;
 
@@ -96,11 +96,21 @@ export type QualityCandidateOption = {
 	file: string | null;
 };
 
+/**
+ * レポートを生成した経路。掲載できるメタ情報が経路ごとに違う。
+ * pull-request は PR とその base、release は main へ入った成果と 1 つ前のリリース、
+ * local は手元実行で、参照できるのは生成時刻だけ。
+ */
+export type QualityReportKind = "pull-request" | "release" | "local";
+
 export type QualityMetadata = {
 	repositoryUrl: string;
+	kind: QualityReportKind;
 	prNumber: string;
 	headCommit: string;
 	baseCommit: string;
+	/** release レポートが前回生成の取得元にしたリリースタグ。取得できなければ null。 */
+	previousVersion: string | null;
 	generatedAt: string;
 	workflowRunUrl: string;
 	benchmarkVersion: string;

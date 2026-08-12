@@ -39,6 +39,7 @@ describe.skipIf(!enabled)("quality report", () => {
 			...results,
 			metadata: {
 				...results.metadata,
+				kind: "local",
 				prNumber: "local",
 				headCommit: "local",
 				baseCommit: "local",
@@ -428,6 +429,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(markdown).not.toContain("- Improved:");
 		const remoteMetadata = {
 			...results.metadata,
+			kind: "pull-request" as const,
 			prNumber: "92",
 			headCommit: "1234567890abcdef",
 			baseCommit: "abcdef1234567890",

@@ -6,21 +6,35 @@ import type {
 	QualityCaseResult,
 	QualityImageCase,
 	QualityMetadata,
+	QualityReportKind,
 	QualityResults,
 } from "../types";
 import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "../types";
 import { readQualityReportPartials } from "./partial";
+import { hasPreviousRun } from "./previous-run";
 import { renderCaseDetailHtml, renderHtml, renderMarkdown } from "./render";
+
+// [Intended] 生成経路は QUALITY_REPORT_KIND で明示する。未指定なら PR 番号の有無から
+// 推定するので、既存の PR ワークフローとローカル実行は環境変数を足さずに動く。
+const reportKindFromEnvironment = (): QualityReportKind => {
+	const kind = process.env.QUALITY_REPORT_KIND;
+	if (kind === "pull-request" || kind === "release" || kind === "local")
+		return kind;
+	return process.env.QUALITY_PR_NUMBER === undefined ? "local" : "pull-request";
+};
 
 const metadataFromEnvironment = (): QualityMetadata => {
 	const repository =
 		process.env.GITHUB_REPOSITORY ?? "HappyOnigiri/PixelRefiner";
 	const server = process.env.GITHUB_SERVER_URL ?? "https://github.com";
 	const runId = process.env.GITHUB_RUN_ID ?? "";
+	const previousVersion = process.env.QUALITY_PREVIOUS_VERSION ?? "";
 	const baseline = loadBaseline();
 	return {
 		repositoryUrl: `${server}/${repository}`,
+		kind: reportKindFromEnvironment(),
 		prNumber: process.env.QUALITY_PR_NUMBER ?? "local",
+		previousVersion: previousVersion === "" ? null : previousVersion,
 		headCommit:
 			process.env.QUALITY_HEAD_SHA ?? process.env.GITHUB_SHA ?? "local",
 		baseCommit: process.env.QUALITY_BASE_SHA ?? "local",
@@ -143,12 +157,15 @@ export const aggregateQualityReport = (
 	);
 	writeFileSync(path.join(reportRoot, "summary.md"), renderMarkdown(results));
 	writeFileSync(path.join(reportRoot, "index.html"), renderHtml(results));
+	// [Intended] 前回生成の有無はレポート全体で 1 つに決める。ケースごとに判定すると、
+	// 初登場のケースだけ前回比較の欄が消えて、他のケースと形の違う詳細ページになる。
+	const previousRunAvailable = hasPreviousRun(results);
 	for (const result of results.cases) {
 		const caseDirectory = path.join(reportRoot, "cases", result.id);
 		mkdirSync(caseDirectory, { recursive: true });
 		writeFileSync(
 			path.join(caseDirectory, "index.html"),
-			renderCaseDetailHtml(result),
+			renderCaseDetailHtml(result, previousRunAvailable),
 		);
 	}
 	return results;

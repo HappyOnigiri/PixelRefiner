@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { QualityCaseResult, QualityResults } from "../types";
-import { renderCaseDetailHtml, renderHtml } from "./render";
+import { renderCaseDetailHtml, renderHtml, renderMarkdown } from "./render";
 
 const CASE_ID = "restore-bilinear-to-8x8";
 
@@ -56,7 +56,17 @@ const makeCaseResult = (
 		runtimeMs: 12.345,
 		approxPeakBytes: 1024,
 	},
-	baselineMetrics: null,
+	baselineMetrics: {
+		id: CASE_ID,
+		status: "passed",
+		outputWidth: 8,
+		outputHeight: 8,
+		meanRgbaError: 1.6,
+		edgeF1: 0.88,
+		backgroundMaskIou: 0.8,
+		smallComponentRetention: 1,
+		catastrophicFailure: false,
+	},
 	targetMetrics: {
 		targetWidth: 8,
 		targetHeight: 8,
@@ -71,30 +81,47 @@ const makeCaseResult = (
 	files: {
 		groundTruth: `cases/${CASE_ID}/ground-truth.png`,
 		input: `cases/${CASE_ID}/input.png`,
-		baseline: null,
+		baseline: `cases/${CASE_ID}/baseline.png`,
 		result: `cases/${CASE_ID}/result.png`,
 		diff: `cases/${CASE_ID}/diff.png`,
-		baselineDiff: null,
+		baselineDiff: `cases/${CASE_ID}/baseline-diff.png`,
 		backgroundMask: `cases/${CASE_ID}/background-mask.png`,
 	},
 	imageSizes: {
 		groundTruth: { width: 8, height: 8 },
 		input: { width: 64, height: 64 },
-		baseline: null,
+		baseline: { width: 8, height: 8 },
 		result: { width: 8, height: 8 },
 		diff: { width: 8, height: 8 },
-		baselineDiff: null,
+		baselineDiff: { width: 8, height: 8 },
 		backgroundMask: { width: 8, height: 8 },
 	},
 	...overrides,
 });
 
+/** 前回生成を取得できなかったレポートのケース結果。 */
+const makeCaseResultWithoutPreviousRun = (): QualityCaseResult => {
+	const result = makeCaseResult({
+		changeStatus: "new",
+		changedPixelCount: null,
+		changedPixelRate: null,
+		baselineMetrics: null,
+	});
+	return {
+		...result,
+		files: { ...result.files, baseline: null, baselineDiff: null },
+		imageSizes: { ...result.imageSizes, baseline: null, baselineDiff: null },
+	};
+};
+
 const makeResults = (cases: QualityCaseResult[]): QualityResults => ({
 	metadata: {
 		repositoryUrl: "https://example.test/repo",
+		kind: "local",
 		prNumber: "local",
 		headCommit: "local",
 		baseCommit: "local",
+		previousVersion: null,
 		generatedAt: "2026-08-11T04:25:51.000Z",
 		workflowRunUrl: "local",
 		benchmarkVersion: "2",
@@ -314,5 +341,96 @@ describe("quality report case detail", () => {
 		expect(renderHtml(makeResults([result]))).toContain(
 			'<p class="target-failures"><strong data-i18n="targetUnmet">',
 		);
+	});
+});
+
+// [Intended] 前回生成を取得できないレポートでは、全ケースが "new" になり前回基準の
+// 指標も無い。欄だけ残すと、比較できなかったのか差が無かったのかを読み分けられない。
+describe("quality report without a previous run", () => {
+	const withoutPreviousRun = (): QualityResults =>
+		makeResults([makeCaseResultWithoutPreviousRun()]);
+
+	it("drops the change filter and its badge from the index", () => {
+		const index = renderHtml(withoutPreviousRun());
+		// CSS には絞り込みボタンの規則が残るので、サイドバーの本文だけを見る。
+		const sidebar = between(index, '<aside class="sidebar">', "</aside>");
+		expect(sidebar).not.toContain("data-change-filter");
+		expect(sidebar).not.toContain('data-i18n="changeStatus"');
+		expect(sidebar).not.toContain('id="active-change-label"');
+		expect(index).not.toContain("data-change=");
+		expect(badges(between(index, "<h2>", "</h2>"))).toEqual([
+			{ className: "target-unmet", translationKey: "targetUnmet" },
+			{ className: "parameter-explicit", translationKey: "explicitParameters" },
+		]);
+	});
+
+	it("explains in the sidebar why the comparison is missing", () => {
+		const index = renderHtml(withoutPreviousRun());
+		expect(index).toContain('data-i18n="previousRunUnavailable"');
+		expect(renderHtml(makeResults([makeCaseResult()]))).not.toContain(
+			'data-i18n="previousRunUnavailable"',
+		);
+	});
+
+	it("drops the previous-run columns from the metric table", () => {
+		const detail = renderCaseDetailHtml(
+			makeCaseResultWithoutPreviousRun(),
+			false,
+		);
+		expect(detail).not.toContain('data-i18n="baseline"');
+		expect(detail).not.toContain('data-i18n="delta"');
+		expect(detail).not.toContain('data-i18n="changedPixels"');
+		expect(detail).not.toContain('data-i18n="regressedMetrics"');
+		// 出力サイズの判定は前回比較ではないので、判定列そのものは残す。
+		expect(detail).toContain('data-i18n="verdict"');
+		const headerCells = between(detail, "<thead>", "</thead>").match(/<th /g);
+		const firstRow = between(detail, "<tbody>", "</tr>");
+		expect(headerCells).toHaveLength(4);
+		expect(firstRow.match(/<t[hd][ >]/g)).toHaveLength(4);
+	});
+
+	it("keeps the markdown columns aligned with its header", () => {
+		const markdown = renderMarkdown(withoutPreviousRun());
+		expect(markdown).not.toContain("Change from previous run");
+		expect(markdown).not.toContain("- New:");
+		const [header, alignment, row] = markdown
+			.split("\n")
+			.filter((line) => line.startsWith("|"));
+		const cells = (line: string): number => line.split("|").length;
+		expect(cells(header)).toBe(cells(alignment));
+		expect(cells(row)).toBe(cells(alignment));
+	});
+});
+
+describe("quality report for a release", () => {
+	const releaseResults = (previousVersion: string | null): QualityResults => {
+		const results = makeResults([makeCaseResult()]);
+		return {
+			...results,
+			metadata: {
+				...results.metadata,
+				kind: "release",
+				headCommit: "1234567890abcdef",
+				previousVersion,
+				workflowRunUrl: "https://example.test/repo/actions/runs/123",
+			},
+		};
+	};
+
+	it("links the release tag the previous run came from", () => {
+		const index = renderHtml(releaseResults("v1.1.2"));
+		expect(index).toContain('data-i18n="releaseReport"');
+		expect(index).toContain('data-i18n="previousVersion"');
+		expect(index).toContain(
+			'href="https://example.test/repo/releases/tag/v1.1.2"',
+		);
+		expect(index).not.toContain('data-i18n="pullRequest"');
+		expect(index).not.toContain('data-i18n="baseCommit"');
+	});
+
+	it("omits the previous version when no release tag was found", () => {
+		const index = renderHtml(releaseResults(null));
+		expect(index).toContain('data-i18n="releaseReport"');
+		expect(index).not.toContain('data-i18n="previousVersion"');
 	});
 });

@@ -5,10 +5,10 @@ import {
 	renderCandidateDiagnostics,
 	renderWarningDetails,
 } from "./auto-diagnostics";
+import { describeCase } from "./case-description";
 import {
 	renderClientScript,
 	renderThemeBootstrapScript,
-	renderThemeToggle,
 } from "./client-script";
 import {
 	escapeHtml,
@@ -21,335 +21,13 @@ import {
 	renderImageDialog,
 	renderPrimaryImages,
 } from "./images";
+import { hasPreviousRun } from "./previous-run";
+import { renderReportSidebar } from "./sidebar";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
 import { renderTargetComparison, TARGET_STATE_KEYS } from "./target-section";
 
-const formatGeneratedAt = (value: string): string => {
-	const generatedAt = new Date(value);
-	if (Number.isNaN(generatedAt.getTime())) return value;
-	// [Intended] レポートを開く環境のタイムゾーンに左右されず、常に JST で表示する。
-	const jst = new Date(generatedAt.getTime() + 9 * 60 * 60 * 1000);
-	const pad = (part: number): string => String(part).padStart(2, "0");
-	return (
-		`${String(jst.getUTCFullYear())}-${pad(jst.getUTCMonth() + 1)}-` +
-		`${pad(jst.getUTCDate())} ${pad(jst.getUTCHours())}:` +
-		`${pad(jst.getUTCMinutes())}:${pad(jst.getUTCSeconds())} JST`
-	);
-};
-
-// [Policy] ケースの説明だけで内容を理解できるように、入力の特性、検証する処理、
-// 変化してはならない点を記載する。画像テストの追加時は「画像を保持する」のような
-// 曖昧な表現を避ける。
-const describeCase = (
-	result: QualityCaseResult,
-): { en: string; ja: string } => {
-	const options = result.options;
-	if (result.parameterMode === "auto") {
-		return {
-			en:
-				"Process the fixture with Auto and the default settings only, with no case-specific options, " +
-				"and keep the automatic classification, route, and output grid identical to the approved baseline. " +
-				"The target comparison additionally measures how far the output still is from the fixed target image.",
-			ja:
-				"ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、" +
-				"自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。" +
-				"あわせて、固定した目標画像までの残りの差を目標との比較で測ります。",
-		};
-	}
-	if (result.id === "restore-thin-features-and-alpha-coverage") {
-		return {
-			en:
-				"Restore area-coverage alpha from enlarged artwork containing thin lines and highlights, " +
-				"while selecting an input RGB without mixing in hidden colors from transparent pixels.",
-			ja:
-				"細線とハイライトを含む拡大画像から面積被覆アルファを復元し、" +
-				"透明画素の隠れた色を混入させずに入力に存在するRGBを選択します。",
-		};
-	}
-	if (result.id === "restore-soft-edged-sprite-to-34x47") {
-		return {
-			en:
-				"Restore a 1254 x 1254 AI-generated pixel-art-style knight, whose cell boundaries carry " +
-				"antialiasing instead of hard edges, to the hand-given 34 x 47 logical grid, keeping the " +
-				"sword tip, the helmet slits, and the cross on the shield readable as single cells. " +
-				"This output is the target that the Auto case for the same fixture is measured against.",
-			ja:
-				"セル境界がアンチエイリアスで鈍った1254×1254の生成AI製ドット絵風の騎士を、" +
-				"人手で与えた34×47の論理グリッドへ復元し、剣先、兜のスリット、盾の十字を" +
-				"1セルとして判読できる状態に保ちます。この出力は、同じfixtureのAutoケースが" +
-				"目標として比較される画像です。",
-		};
-	}
-	if (result.id === "restore-blocky-sprite-to-20x18") {
-		return {
-			en:
-				"Restore a 1254 x 1254 AI-generated slime drawn in 39.7 px blocks to the hand-given " +
-				"20 x 18 logical grid, keeping the single-cell eye highlight and the one-cell-thick mouth " +
-				"line intact. Reconstruction error alone also accepts a roughly 5x finer reading of the " +
-				"same image, so this output records which of the two scales is the intended one.",
-			ja:
-				"39.7pxのブロックで描かれた1254×1254の生成AI製スライムを、人手で与えた20×18の" +
-				"論理グリッドへ復元し、1セルぶんの目のハイライトと1セル幅の口の線を保ちます。" +
-				"再構成誤差だけでは同じ画像を約5倍細かく読む解釈も成り立つため、" +
-				"この出力はどちらの倍率が意図された方かを記録します。",
-		};
-	}
-	if (result.id === "convert-deterministic-auto-palette") {
-		return {
-			en:
-				"Keep the image at its original 32 x 32 pixel dimensions and preserve " +
-				"fully transparent pixels while reducing its 947 opaque input colors " +
-				"to an automatically selected eight-color palette with full-strength Ordered dithering.",
-			ja:
-				"画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、" +
-				"947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、" +
-				"強度100%のOrderedディザリングを適用します。",
-		};
-	}
-	if (result.id === "convert-continuous-tone-balanced") {
-		return {
-			en:
-				"Route a 48 x 32 continuous-tone image through Auto to the Convert pipeline, " +
-				"derive three candidate resolutions from its aspect ratio and information density, " +
-				"and emit the balanced candidate at 24 x 16 with edge-aware resampling instead of restoring an original grid.",
-			ja:
-				"48×32の連続階調画像をAuto判定からConvertパイプラインへ流し、" +
-				"縦横比と情報量から3つの候補解像度を導出したうえで、" +
-				"元グリッドの復元ではなく標準候補の24×16へエッジ考慮のリサンプルで変換します。",
-		};
-	}
-	if (result.id === "convert-illustration-detailed") {
-		return {
-			en:
-				"Convert a 72 x 48 illustration with transparent margins and thin high-contrast lines " +
-				"to the detailed candidate at 54 x 36, keeping fully transparent pixels transparent and " +
-				"never picking the RGB of a nearly transparent pixel as a cell's representative color.",
-			ja:
-				"透明余白と高コントラストの細線を含む72×48のイラストを細かめ候補の54×36へ変換し、" +
-				"完全透明な画素を透明に保ったまま、ほぼ透明な画素のRGBをセルの代表色に選ばないことを確認します。",
-		};
-	}
-	if (result.id === "retain-protected-small-details") {
-		return {
-			en:
-				"Remove isolated background noise while retaining paired eyes, dakuten, " +
-				"and disconnected star and spark details in native-resolution pixel art.",
-			ja:
-				"等倍のドット絵から孤立した背景ノイズを除去しつつ、対になった目、濁点、" +
-				"分離した星と光の細部を保持します。",
-		};
-	}
-	if (result.id === "remove-isolated-small-noise") {
-		return {
-			en:
-				"Remove a weak isolated one-pixel noise component from a uniform background " +
-				"without changing the main native-resolution subject.",
-			ja:
-				"一様な背景にある弱い1ピクセルの孤立ノイズを除去し、" +
-				"等倍の主被写体を変化させずに保持します。",
-		};
-	}
-	if (result.id === "skip-small-removal-on-uncertain-background") {
-		return {
-			en:
-				"Keep every pixel unchanged when automatic background confidence is too low " +
-				"to safely classify disconnected details as removable noise.",
-			ja:
-				"自動背景の信頼度が低く、分離した細部を除去可能なノイズと安全に判定できない場合は、" +
-				"すべての画素を変更せずに保持します。",
-		};
-	}
-	if (options.reduceColorMode === "gb_pocket") {
-		return {
-			en: "Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.",
-			ja: "連続階調画像をディザリングなしでゲームボーイポケットの4色パレットへ変換します。",
-		};
-	}
-	if (options.ditherMode === "floyd-steinberg") {
-		return {
-			en: "Convert the image to monochrome using full-strength Floyd-Steinberg dithering.",
-			ja: "Floyd-Steinbergディザリングを強度100%で適用し、画像をモノクロへ変換します。",
-		};
-	}
-	if (options.makeSquare) {
-		return {
-			en: "Pad the image to a square canvas without trimming or background removal.",
-			ja: "画像をトリミングや背景除去なしで正方形キャンバスへ拡張します。",
-		};
-	}
-	if (result.degradationPatterns.includes("continuous-tone")) {
-		return {
-			en: "Preserve a continuous-tone image without grid detection or downsampling.",
-			ja: "連続階調画像をグリッド検出や縮小処理なしで保持します。",
-		};
-	}
-	if (result.degradationPatterns.includes("pixel-art-1x")) {
-		return {
-			en: "Preserve native-resolution pixel art, including small disconnected components and its limited palette.",
-			ja: "小さな分離パーツや少色パレットを含む等倍のドット絵をそのまま保持します。",
-		};
-	}
-	const target =
-		options.forcePixelsW !== undefined && options.forcePixelsH !== undefined
-			? `${options.forcePixelsW} x ${options.forcePixelsH}`
-			: null;
-	if (result.degradationPatterns.length > 0) {
-		const patterns = result.degradationPatterns.join(", ");
-		return {
-			en: `Correct ${patterns}${target ? ` and restore the image to ${target} pixels` : ""}.`,
-			ja: `${patterns}の劣化を補正し${target ? `、${target}ピクセルへ復元` : ""}します。`,
-		};
-	}
-	const stepsEn: string[] = [];
-	const stepsJa: string[] = [];
-	if (options.preRemoveBackground || options.postRemoveBackground) {
-		stepsEn.push("remove the background");
-		stepsJa.push("背景除去");
-	}
-	if (options.trimToContent) {
-		stepsEn.push("trim transparent margins");
-		stepsJa.push("透明余白のトリミング");
-	}
-	if (options.autoGridFromTrimmed || options.enableGridDetection !== false) {
-		stepsEn.push("restore the detected pixel grid");
-		stepsJa.push("検出したピクセルグリッドの復元");
-	}
-	if (stepsEn.length === 0) {
-		return target
-			? {
-					en: `Resize the input image to ${target} pixels without background removal, transparent-margin trimming, or pixel-grid restoration.`,
-					ja:
-						"背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、" +
-						`入力画像を${target}ピクセルへ変換します。`,
-				}
-			: {
-					en: "Output the input image at its current dimensions without background removal, transparent-margin trimming, or pixel-grid restoration.",
-					ja:
-						"背景除去、透明余白のトリミング、ピクセルグリッド復元を行わず、" +
-						"入力画像を現在の寸法のまま出力します。",
-				};
-	}
-	return {
-		en: `${stepsEn.join(", ")}${target ? `, then resize it to ${target} pixels` : ""}.`,
-		ja: `${stepsJa.join("、")}${target ? `後、${target}ピクセルへ変換` : ""}します。`,
-	};
-};
-
-const renderReportSidebar = (results: QualityResults): string => {
-	const repositoryUrl = escapeHtml(results.metadata.repositoryUrl);
-	const commitUrl = (commit: string): string =>
-		`${repositoryUrl}/commit/${encodeURIComponent(commit)}`;
-	const shortCommit = (commit: string): string =>
-		escapeHtml(commit.slice(0, 7));
-	const generatedAt = `<dt data-i18n="generatedAt">Generated</dt>
-			<dd><time datetime="${escapeHtml(results.metadata.generatedAt)}">${escapeHtml(formatGeneratedAt(results.metadata.generatedAt))}</time></dd>`;
-	const reportMetadata =
-		results.metadata.prNumber === "local"
-			? `<section class="report-meta" aria-labelledby="report-meta-title">
-		<h2 id="report-meta-title" data-i18n="localReport">Viewing locally</h2>
-		<dl>${generatedAt}</dl>
-	</section>`
-			: `<section class="report-meta" aria-labelledby="report-meta-title">
-		<h2 id="report-meta-title" data-i18n="reportDetails">Report details</h2>
-		<dl>
-			<dt data-i18n="pullRequest">Pull request</dt>
-			<dd><a href="${repositoryUrl}/pull/${encodeURIComponent(results.metadata.prNumber)}">#${escapeHtml(results.metadata.prNumber)}</a></dd>
-			<dt data-i18n="headCommit">Head</dt>
-			<dd><a href="${commitUrl(results.metadata.headCommit)}"
-				title="${escapeHtml(results.metadata.headCommit)}"><code>${shortCommit(results.metadata.headCommit)}</code></a></dd>
-			<dt data-i18n="baseCommit">PR base</dt>
-			<dd><a href="${commitUrl(results.metadata.baseCommit)}"
-				title="${escapeHtml(results.metadata.baseCommit)}"><code>${shortCommit(results.metadata.baseCommit)}</code></a></dd>
-			<dt data-i18n="baselineCommit">Baseline snapshot</dt>
-			<dd><a href="${commitUrl(results.metadata.baselineCommit)}"
-				title="${escapeHtml(results.metadata.baselineCommit)}"><code>${shortCommit(results.metadata.baselineCommit)}</code></a></dd>
-			${generatedAt}
-			<dt data-i18n="workflow">Workflow</dt>
-			<dd><a href="${escapeHtml(results.metadata.workflowRunUrl)}" data-i18n="workflow">workflow</a></dd>
-		</dl>
-	</section>`;
-	return `<aside class="sidebar">
-	<h1 data-i18n="title">PixelRefiner quality report</h1>
-	<div class="report-overview">
-		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>${results.summary.targetUnmet}</strong></p>
-		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>${results.summary.targetMissing}</strong></p>
-	</div>
-	${reportMetadata}
-	<div class="filter-panel">
-		<fieldset class="filter-group">
-			<legend data-i18n="qualityStatus">Target quality</legend>
-			<div class="filter-row">
-				<button class="filter-button active" type="button" data-quality-filter="" aria-pressed="true">
-					<span data-i18n="allStatuses">All</span>: ${results.summary.caseCount}
-				</button>
-				<button class="filter-button" type="button" data-quality-filter="unmet" aria-pressed="false">
-					<span data-i18n="targetUnmet">Target unmet</span>: ${results.summary.targetUnmet}
-				</button>
-				<button class="filter-button" type="button" data-quality-filter="met" aria-pressed="false">
-					<span data-i18n="targetMet">Target met</span>: ${results.summary.targetMet}
-				</button>
-				<button class="filter-button" type="button" data-quality-filter="missing" aria-pressed="false">
-					<span data-i18n="targetMissing">Cannot assess</span>: ${results.summary.targetMissing}
-				</button>
-			</div>
-		</fieldset>
-		<fieldset class="filter-group">
-			<legend data-i18n="changeStatus">Change from previous run</legend>
-			<div class="filter-row">
-				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true">
-					<span data-i18n="allChanges">All</span>: ${results.summary.caseCount}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
-					<span data-i18n="changed">changed</span>: ${results.summary.changed}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false">
-					<span data-i18n="unchanged">unchanged</span>: ${results.summary.unchanged}
-				</button>
-				<button class="filter-button" type="button" data-change-filter="new" aria-pressed="false">
-					<span data-i18n="new">new</span>: ${results.summary.newCases}
-				</button>
-			</div>
-		</fieldset>
-		<fieldset class="filter-group">
-			<legend data-i18n="parameterMode">Parameters</legend>
-			<div class="filter-row">
-				<button class="filter-button active" type="button" data-parameter-filter="" aria-pressed="true">
-					<span data-i18n="allParameters">All</span>
-				</button>
-				<button class="filter-button" type="button" data-parameter-filter="explicit" aria-pressed="false">
-					<span data-i18n="explicitParameters">explicit options</span>: ${results.summary.explicitCases}
-				</button>
-				<button class="filter-button" type="button" data-parameter-filter="auto" aria-pressed="false">
-					<span data-i18n="autoParameters">auto detection</span>: ${results.summary.autoCases}
-				</button>
-			</div>
-		</fieldset>
-		<label class="search-row" for="search">
-			<span data-i18n="filterCases">Filter cases</span>
-			<input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases">
-		</label>
-		<p class="filter-summary" aria-live="polite">
-			<span data-i18n="displayConditions">Showing</span>:
-			<strong id="active-quality-label"></strong> &times;
-			<strong id="active-change-label"></strong> &times;
-			<strong id="active-parameter-label"></strong> &mdash;
-			<strong id="visible-count">0</strong> / ${results.summary.caseCount}
-			<span data-i18n="casesShown">cases</span>
-		</p>
-		<fieldset class="filter-group">
-			<legend data-i18n="language">Language</legend>
-			<div class="locale-row">
-				<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
-				<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
-				<button class="locale-button" type="button" data-locale="zh-CN" aria-pressed="false">简体中文</button>
-			</div>
-		</fieldset>
-	</div>
-	${renderThemeToggle()}
-</aside>`;
-};
-
 export const renderHtml = (results: QualityResults): string => {
+	const previousRunAvailable = hasPreviousRun(results);
 	const targetOrder = { unmet: 0, missing: 1, met: 2 };
 	const changeOrder = {
 		changed: 0,
@@ -392,12 +70,18 @@ export const renderHtml = (results: QualityResults): string => {
 							)
 							.join(", ") +
 						"</p>";
+			// [Intended] 前回生成が無いレポートでは全ケースが "new" になるので、
+			// 変化のバッジも検索語も出さない。判定できていない状態を新規ケースの
+			// 表示で埋めると、前回から変わっていないケースと見分けが付かなくなる。
+			const changeBadge = previousRunAvailable
+				? `<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>`
+				: "";
 			const searchable = [
 				result.id,
 				...result.featureIds,
 				result.parameterMode,
 				result.targetStatus,
-				result.changeStatus,
+				...(previousRunAvailable ? [result.changeStatus] : []),
 				result.inputKind,
 				result.route,
 				description.en,
@@ -407,13 +91,13 @@ export const renderHtml = (results: QualityResults): string => {
 			].join(" ");
 			const primaryImages = renderPrimaryImages(result);
 			return `<article class="case target-${targetState}"
-			data-quality="${targetState}" data-change="${result.changeStatus}"
+			data-quality="${targetState}"${previousRunAvailable ? ` data-change="${result.changeStatus}"` : ""}
 			data-parameter="${result.parameterMode}"
 			data-search="${escapeHtml(searchable)}">
 			<h2>
 				${escapeHtml(result.id)}
 				<span class="badge target-${targetState}" data-i18n="${TARGET_STATE_KEYS[targetState]}">${targetState}</span>
-				<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
+				${changeBadge}
 				<span class="badge parameter-${result.parameterMode}"
 					data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
 				${renderAutoDiagnosticBadges(result)}
@@ -439,7 +123,7 @@ ${INDEX_REPORT_STYLES}	</style>
 </head>
 <body>
 	<div class="report-layout">
-${renderReportSidebar(results)}
+${renderReportSidebar(results, previousRunAvailable)}
 		<main class="report-main">${cards}</main>
 	</div>
 ${renderImageDialog()}
@@ -448,7 +132,10 @@ ${renderImageDialog()}
 </html>`;
 };
 
-export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
+export const renderCaseDetailHtml = (
+	result: QualityCaseResult,
+	previousRunAvailable = true,
+): string => {
 	const description = describeCase(result);
 	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];
 	const allImages = renderAllImages(result);
@@ -485,6 +172,11 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 			label: "metric unchanged",
 		};
 	};
+	// [Intended] 前回生成が無いレポートでは、前回基準の列と判定を出さない。空欄のまま
+	// 残すと、比較できなかったのか差が無かったのかを読み分けられない。Verdict 列は
+	// 出力サイズ行が期待どおりかを示すので、前回比較の判定だけを空にして列は残す。
+	const comparisonCell = (value: string): string =>
+		previousRunAvailable ? `<td>${value}</td>` : "";
 	const metricRow = (
 		key: string,
 		current: number,
@@ -497,13 +189,17 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 				? "-"
 				: `${delta > 0 ? "+" : ""}${formatMetric(delta)}`;
 		const state = metricState(key, baseline !== undefined);
-		return `<tr class="${state.className}">
+		return `<tr${previousRunAvailable ? ` class="${state.className}"` : ""}>
 			<th data-i18n="${key}">${key}</th>
 			<td>${escapeHtml(target)}</td>
-			<td>${formatMetric(baseline)}</td>
+			${comparisonCell(formatMetric(baseline))}
 			<td>${formatMetric(current)}</td>
-			<td>${deltaText}</td>
-			<td data-i18n="${state.translationKey}">${state.label}</td>
+			${comparisonCell(deltaText)}
+			${
+				previousRunAvailable
+					? `<td data-i18n="${state.translationKey}">${state.label}</td>`
+					: "<td></td>"
+			}
 		</tr>`;
 	};
 	const baselineMetrics = result.baselineMetrics;
@@ -519,19 +215,19 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 	const sizeRow = `<tr class="${sizeState}">
 		<th data-i18n="outputSize">Output size</th>
 		<td>${expectedSize}</td>
-		<td>${
+		${comparisonCell(
 			baselineMetrics
 				? formatImageSize({
 						width: baselineMetrics.outputWidth,
 						height: baselineMetrics.outputHeight,
 					})
-				: "-"
-		}</td>
+				: "-",
+		)}
 		<td>${formatImageSize({
 			width: result.metrics.outputWidth,
 			height: result.metrics.outputHeight,
 		})}</td>
-		<td>-</td>
+		${comparisonCell("-")}
 		<td data-i18n="${sizeState}">${sizeState}</td>
 	</tr>`;
 	const metricRows = [
@@ -585,6 +281,18 @@ export const renderCaseDetailHtml = (result: QualityCaseResult): string => {
 		result.changedPixelCount === null
 			? "-"
 			: `${result.changedPixelCount} (${((result.changedPixelRate ?? 0) * 100).toFixed(2)}%)`;
+	// 変化画素数と回帰した指標はどちらも前回生成との比較結果なので、前回生成が無ければ出さない。
+	const previousRunSummary = previousRunAvailable
+		? `<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>`
+		: "";
+	const regressionSummary = previousRunAvailable
+		? `<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>`
+		: "";
+	const changeBadge = previousRunAvailable
+		? `<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>`
+		: "";
+	const comparisonHeader = (key: string, label: string): string =>
+		previousRunAvailable ? `<th data-i18n="${key}">${label}</th>` : "";
 	const tags = result.degradationPatterns
 		.map((pattern) => `<span class="tag">${escapeHtml(pattern)}</span>`)
 		.join(" ");
@@ -610,14 +318,14 @@ ${DETAIL_REPORT_STYLES}	</style>
 		<h1>
 			${escapeHtml(result.id)}
 			<span class="badge target-${result.targetStatus}" data-i18n="${targetStateKey}">${result.targetStatus}</span>
-			<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>
+			${changeBadge}
 			<span class="badge parameter-${result.parameterMode}"
 				data-i18n="${result.parameterMode === "auto" ? "autoParameters" : "explicitParameters"}">${result.parameterMode}</span>
 		</h1>
 		<p class="case-description" data-description-en="${escapeHtml(description.en)}"
 			data-description-ja="${escapeHtml(description.ja)}">${escapeHtml(description.en)}</p>
 		<p>${tags}</p>
-		<p><strong data-i18n="changedPixels">Changed pixels</strong>: ${changedPixels}</p>
+		${previousRunSummary}
 		${processingTime}
 		<section>
 			<h2 data-i18n="diagnostics">All images and settings</h2>
@@ -631,16 +339,16 @@ ${DETAIL_REPORT_STYLES}	</style>
 						<tr>
 							<th data-i18n="metric">Metric</th>
 							<th data-i18n="target">Target</th>
-							<th data-i18n="baseline">Baseline</th>
+							${comparisonHeader("baseline", "Baseline")}
 							<th data-i18n="current">Current</th>
-							<th data-i18n="delta">Delta</th>
+							${comparisonHeader("delta", "Delta")}
 							<th data-i18n="verdict">Verdict</th>
 						</tr>
 					</thead>
 					<tbody>${metricRows}</tbody>
 				</table>
 			</div>
-			<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>
+			${regressionSummary}
 		</section>
 		${renderTargetComparison(result)}
 		${renderWarningDetails(result)}
@@ -665,19 +373,30 @@ ${renderImageDialog()}
 
 export const renderMarkdown = (results: QualityResults): string => {
 	const summary = results.summary;
+	// [Intended] 前回生成が無いレポートでは全ケースが "new" になるので、変化の列と
+	// その集計を出さない。HTML と同じ判断で、比較できなかった事実を欠測として扱う。
+	const previousRunAvailable = hasPreviousRun(results);
 	const markdownHeader = [
-		"|Case|Target quality|Change from previous run|Output|",
+		"|Case|Target quality|",
+		previousRunAvailable ? "Change from previous run|" : "",
+		"Output|",
 		"Classification confidence|Grid confidence|",
 		"Candidate modal (expected)|WARNING presentation|",
 		"Decision reason|WARNING codes|Target mean RGBA error|",
 		"Target Edge F1|Runtime (ms)|",
 	].join("");
+	const alignmentRow = `|---|---|${previousRunAvailable ? "---|" : ""}---:|---:|---|---|---|---|---|---:|---:|---:|`;
+	const changeSummary = previousRunAvailable
+		? `- Changed: ${summary.changed}\n` +
+			`- Unchanged: ${summary.unchanged}\n` +
+			`- New: ${summary.newCases}\n`
+		: "";
 	const rows = results.cases
 		.map((result) =>
 			[
 				`|${result.id}`,
 				`|${result.targetStatus}`,
-				`|${result.changeStatus}`,
+				previousRunAvailable ? `|${result.changeStatus}` : "",
 				`|${result.metrics.outputWidth}x${result.metrics.outputHeight}`,
 				`|${formatConfidence(result.classificationConfidence)}`,
 				`|${formatConfidence(result.gridConfidence)}`,
@@ -697,10 +416,7 @@ export const renderMarkdown = (results: QualityResults): string => {
 - Target met: ${summary.targetMet}
 - Target unmet: ${summary.targetUnmet}
 - Cannot assess: ${summary.targetMissing}
-- Changed: ${summary.changed}
-- Unchanged: ${summary.unchanged}
-- New: ${summary.newCases}
-- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%
+${changeSummary}- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%
 - Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%
 - Confidence/correctness correlation: ${
 		summary.confidenceCorrectnessCorrelation === null
@@ -712,7 +428,7 @@ export const renderMarkdown = (results: QualityResults): string => {
 	)}%
 
 ${markdownHeader}
-|---|---|---|---:|---:|---|---|---|---|---|---:|---:|---:|
+${alignmentRow}
 ${rows}
 `;
 };
