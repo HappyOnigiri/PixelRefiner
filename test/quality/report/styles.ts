@@ -305,6 +305,7 @@ th, td { padding: 8px; text-align: right; border-bottom: 1px solid var(--report-
 th:first-child { text-align: left; }
 tr.metric-regressed { color: var(--report-danger-text); }
 tr.metric-improved { color: var(--report-success-text); }
+.metric-reference-note { margin: 6px 0 0; font-size: .85em; color: var(--report-text-dim); }
 section { margin-top: 28px; }
 .warning-details, .candidate-diagnostics { padding: 12px; border: 1px solid var(--report-border); border-radius: 8px; }
 .warning-details h2, .candidate-diagnostics h2 { margin-top: 0; }

@@ -290,12 +290,17 @@ export type QualityResults = {
 		targetUnmet: number;
 		/** 目標画像または合格条件を登録していないケース数 */
 		targetMissing: number;
-		top1SizeAccuracy: number;
-		top3SizeAccuracy: number;
+		/**
+		 * 自身の出力とは別の基準画像と比べられたケース数。
+		 * 以下の基準依存の集計は、このケースだけを母数にする（0 件なら null）。
+		 */
+		comparableCases: number;
+		top1SizeAccuracy: number | null;
+		top3SizeAccuracy: number | null;
 		confidenceCorrectnessCorrelation: number | null;
 		byteIdentityRate: number;
-		catastrophicFailureRate: number;
-		meanRgbaError: number;
+		catastrophicFailureRate: number | null;
+		meanRgbaError: number | null;
 		meanRuntimeMs: number;
 		approxPeakBytes: number;
 	};

@@ -21,6 +21,7 @@ import {
 	renderImageDialog,
 	renderPrimaryImages,
 } from "./images";
+import { hasMetricReference } from "./metric-reference";
 import { hasPreviousRun } from "./previous-run";
 import { renderReportSidebar } from "./sidebar";
 import { DETAIL_REPORT_STYLES, INDEX_REPORT_STYLES } from "./styles";
@@ -139,6 +140,9 @@ export const renderCaseDetailHtml = (
 	const description = describeCase(result);
 	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];
 	const allImages = renderAllImages(result);
+	// [Intended] 基準画像を取得できなかったケースは、指標が自身の出力との比較になり
+	// 誤差 0・一致率 1 が並ぶ。値をそのまま出すと完全一致と読めてしまうので伏せる。
+	const metricReferenceAvailable = hasMetricReference(result);
 	const metricState = (
 		key: string,
 		hasBaseline: boolean,
@@ -193,7 +197,7 @@ export const renderCaseDetailHtml = (
 			<th data-i18n="${key}">${key}</th>
 			<td>${escapeHtml(target)}</td>
 			${comparisonCell(formatMetric(baseline))}
-			<td>${formatMetric(current)}</td>
+			<td>${metricReferenceAvailable ? formatMetric(current) : "-"}</td>
 			${comparisonCell(deltaText)}
 			${
 				previousRunAvailable
@@ -211,8 +215,13 @@ export const renderCaseDetailHtml = (
 					height: result.expectation.expectedHeight,
 				})
 			: "correct";
+	// 出力サイズの判定も基準画像との一致なので、基準が無ければ判定を出さない。
 	const sizeState = result.metrics.sizeCorrect ? "passed" : "failed";
-	const sizeRow = `<tr class="${sizeState}">
+	const sizeVerdictKey = metricReferenceAvailable ? sizeState : "notAvailable";
+	const sizeVerdictLabel = metricReferenceAvailable
+		? sizeState
+		: "not available";
+	const sizeRow = `<tr class="${metricReferenceAvailable ? sizeState : "metric-unchanged"}">
 		<th data-i18n="outputSize">Output size</th>
 		<td>${expectedSize}</td>
 		${comparisonCell(
@@ -228,7 +237,7 @@ export const renderCaseDetailHtml = (
 			height: result.metrics.outputHeight,
 		})}</td>
 		${comparisonCell("-")}
-		<td data-i18n="${sizeState}">${sizeState}</td>
+		<td data-i18n="${sizeVerdictKey}">${sizeVerdictLabel}</td>
 	</tr>`;
 	const metricRows = [
 		sizeRow,
@@ -288,6 +297,12 @@ export const renderCaseDetailHtml = (
 	const regressionSummary = previousRunAvailable
 		? `<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: ${regressedMetricsSummary}</p>`
 		: "";
+	// 指標を伏せたケースでは、値が消えた理由を表の下に出す。空欄のままにすると
+	// 測れなかったのか 0 だったのかを読み分けられない。
+	const metricReferenceNote = metricReferenceAvailable
+		? ""
+		: '<p class="metric-reference-note" data-i18n="metricReferenceUnavailable">' +
+			"No reference output is available for this case, so its metrics cannot be measured.</p>";
 	const changeBadge = previousRunAvailable
 		? `<span class="badge ${result.changeStatus}" data-i18n="${result.changeStatus}">${result.changeStatus}</span>`
 		: "";
@@ -349,6 +364,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 				</table>
 			</div>
 			${regressionSummary}
+			${metricReferenceNote}
 		</section>
 		${renderTargetComparison(result)}
 		${renderWarningDetails(result)}
@@ -391,6 +407,14 @@ export const renderMarkdown = (results: QualityResults): string => {
 			`- Unchanged: ${summary.unchanged}\n` +
 			`- New: ${summary.newCases}\n`
 		: "";
+	// [Intended] 基準画像と比べられたケースだけを母数にした集計は、母数が全ケースと
+	// 違うときだけ範囲を添える。常に添えると通常のレポートに冗長な注記が並ぶ。
+	const formatRate = (rate: number | null): string =>
+		rate === null ? "n/a" : `${(rate * 100).toFixed(1)}%`;
+	const comparedScope =
+		summary.comparableCases === summary.caseCount
+			? ""
+			: ` (${summary.comparableCases} of ${summary.caseCount} cases with a reference output)`;
 	const rows = results.cases
 		.map((result) =>
 			[
@@ -416,16 +440,14 @@ export const renderMarkdown = (results: QualityResults): string => {
 - Target met: ${summary.targetMet}
 - Target unmet: ${summary.targetUnmet}
 - Cannot assess: ${summary.targetMissing}
-${changeSummary}- Top-1 size accuracy: ${(summary.top1SizeAccuracy * 100).toFixed(1)}%
-- Top-3 size accuracy: ${(summary.top3SizeAccuracy * 100).toFixed(1)}%
+${changeSummary}- Top-1 size accuracy: ${formatRate(summary.top1SizeAccuracy)}${comparedScope}
+- Top-3 size accuracy: ${formatRate(summary.top3SizeAccuracy)}${comparedScope}
 - Confidence/correctness correlation: ${
 		summary.confidenceCorrectnessCorrelation === null
 			? "n/a"
 			: summary.confidenceCorrectnessCorrelation.toFixed(3)
-	}
-- Catastrophic failure rate: ${(summary.catastrophicFailureRate * 100).toFixed(
-		1,
-	)}%
+	}${comparedScope}
+- Catastrophic failure rate: ${formatRate(summary.catastrophicFailureRate)}${comparedScope}
 
 ${markdownHeader}
 ${alignmentRow}

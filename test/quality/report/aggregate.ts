@@ -10,6 +10,7 @@ import type {
 	QualityResults,
 } from "../types";
 import { QUALITY_BENCHMARK_VERSION, QUALITY_REPORT_VERSION } from "../types";
+import { hasMetricReference } from "./metric-reference";
 import { readQualityReportPartials } from "./partial";
 import { hasPreviousRun } from "./previous-run";
 import { renderCaseDetailHtml, renderHtml, renderMarkdown } from "./render";
@@ -54,7 +55,20 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 		for (const result of cases) total += select(result);
 		return count === 0 ? 0 : total / count;
 	};
-	const confidenceSamples = cases.flatMap((result) =>
+	// [Intended] 基準画像を取得できなかったケースは、指標が自身の出力との比較になり
+	// 常に満点で並ぶ。母数へ入れると集計まで満点へ寄るので、基準と比べられたケースだけ
+	// を母数にし、1 件も無ければ測定不能として null にする。
+	const comparableCases = cases.filter(hasMetricReference);
+	const comparableCount = comparableCases.length;
+	const comparableAverage = (
+		select: (result: QualityCaseResult) => number,
+	): number | null => {
+		if (comparableCount === 0) return null;
+		let total = 0;
+		for (const result of comparableCases) total += select(result);
+		return total / comparableCount;
+	};
+	const confidenceSamples = comparableCases.flatMap((result) =>
 		result.gridCandidates.map((candidate) => ({
 			confidence: candidate.confidence,
 			correct: Number(
@@ -102,17 +116,21 @@ const summarize = (cases: QualityCaseResult[]): QualityResults["summary"] => {
 			.length,
 		targetMissing: cases.filter((result) => result.targetStatus === "missing")
 			.length,
-		top1SizeAccuracy: average((result) => Number(result.metrics.sizeCorrect)),
-		top3SizeAccuracy: average((result) =>
+		comparableCases: comparableCount,
+		top1SizeAccuracy: comparableAverage((result) =>
+			Number(result.metrics.sizeCorrect),
+		),
+		top3SizeAccuracy: comparableAverage((result) =>
 			Number(result.metrics.top3SizeCorrect),
 		),
 		confidenceCorrectnessCorrelation:
 			correlationDenominator === 0 ? null : covariance / correlationDenominator,
+		// 出力の再現性は基準画像に依らないので、全ケースを母数にする。
 		byteIdentityRate: average((result) => Number(result.metrics.byteIdentical)),
-		catastrophicFailureRate: average((result) =>
+		catastrophicFailureRate: comparableAverage((result) =>
 			Number(result.metrics.catastrophicFailure),
 		),
-		meanRgbaError: average((result) => result.metrics.meanRgbaError),
+		meanRgbaError: comparableAverage((result) => result.metrics.meanRgbaError),
 		meanRuntimeMs: average((result) => result.metrics.runtimeMs),
 		approxPeakBytes: Math.max(
 			0,

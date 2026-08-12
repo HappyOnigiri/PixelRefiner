@@ -140,6 +140,7 @@ const makeResults = (cases: QualityCaseResult[]): QualityResults => ({
 		targetMet: 0,
 		targetUnmet: cases.length,
 		targetMissing: 0,
+		comparableCases: cases.length,
 		top1SizeAccuracy: 1,
 		top3SizeAccuracy: 1,
 		confidenceCorrectnessCorrelation: null,
@@ -399,6 +400,66 @@ describe("quality report without a previous run", () => {
 		const cells = (line: string): number => line.split("|").length;
 		expect(cells(header)).toBe(cells(alignment));
 		expect(cells(row)).toBe(cells(alignment));
+	});
+});
+
+// [Intended] auto ケースの基準はベースライン画像なので、取得できないと指標が自身の
+// 出力との比較になり、誤差 0・一致率 1 が並ぶ。値をそのまま出すと完全一致と読める。
+describe("quality report without a metric reference", () => {
+	const autoCaseWithoutBaseline = (): QualityCaseResult => ({
+		...makeCaseResultWithoutPreviousRun(),
+		parameterMode: "auto",
+	});
+
+	it("hides the metric values measured against the case's own output", () => {
+		const detail = renderCaseDetailHtml(autoCaseWithoutBaseline(), false);
+		const table = between(detail, "<tbody>", "</table>");
+		expect(table).not.toContain(">1.5<");
+		expect(table).not.toContain(">0.9<");
+		expect(table).toContain('data-i18n="notAvailable"');
+		expect(detail).toContain('data-i18n="metricReferenceUnavailable"');
+	});
+
+	it("keeps the values of a case that has its own expected image", () => {
+		const detail = renderCaseDetailHtml(
+			makeCaseResultWithoutPreviousRun(),
+			false,
+		);
+		const table = between(detail, "<tbody>", "</table>");
+		expect(table).toContain(">1.5<");
+		expect(table).toContain('data-i18n="passed"');
+		expect(detail).not.toContain('data-i18n="metricReferenceUnavailable"');
+	});
+
+	it("narrows the markdown summary to the cases with a reference output", () => {
+		const results = makeResults([autoCaseWithoutBaseline(), makeCaseResult()]);
+		const markdown = renderMarkdown({
+			...results,
+			summary: { ...results.summary, comparableCases: 1 },
+		});
+		expect(markdown).toContain(
+			"- Top-1 size accuracy: 100.0% (1 of 2 cases with a reference output)",
+		);
+		expect(renderMarkdown(results)).toContain("- Top-1 size accuracy: 100.0%\n");
+	});
+
+	it("reports the reference-dependent summary as n/a when nothing is comparable", () => {
+		const results = makeResults([autoCaseWithoutBaseline()]);
+		const markdown = renderMarkdown({
+			...results,
+			summary: {
+				...results.summary,
+				comparableCases: 0,
+				top1SizeAccuracy: null,
+				top3SizeAccuracy: null,
+				catastrophicFailureRate: null,
+				meanRgbaError: null,
+			},
+		});
+		expect(markdown).toContain(
+			"- Top-1 size accuracy: n/a (0 of 1 cases with a reference output)",
+		);
+		expect(markdown).toContain("- Catastrophic failure rate: n/a");
 	});
 });
 

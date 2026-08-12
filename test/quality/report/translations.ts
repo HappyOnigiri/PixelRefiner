@@ -18,6 +18,8 @@ export const REPORT_TRANSLATIONS = {
 		classificationConfidence: "Classification confidence",
 		gridConfidence: "Grid confidence",
 		notAvailable: "not available",
+		metricReferenceUnavailable:
+			"No reference output is available for this case, so its metrics cannot be measured.",
 		hasWarnings: "WARNING present",
 		hasCandidateSelection: "candidate selection shown",
 		warningDetails: "WARNING details",
@@ -196,6 +198,8 @@ export const REPORT_TRANSLATIONS = {
 		classificationConfidence: "自動分類信頼度",
 		gridConfidence: "グリッド信頼度",
 		notAvailable: "取得不可",
+		metricReferenceUnavailable:
+			"このケースは比較の基準になる出力が無いため、指標を測定できません。",
 		hasWarnings: "WARNINGあり",
 		hasCandidateSelection: "候補選択あり",
 		warningDetails: "WARNINGの詳細",
@@ -365,6 +369,7 @@ export const REPORT_TRANSLATIONS = {
 		classificationConfidence: "自动分类置信度",
 		gridConfidence: "网格置信度",
 		notAvailable: "不可用",
+		metricReferenceUnavailable: "该用例没有可作为比较基准的输出，因此无法测量指标。",
 		hasWarnings: "存在 WARNING",
 		hasCandidateSelection: "有候选选择",
 		warningDetails: "WARNING 详情",
