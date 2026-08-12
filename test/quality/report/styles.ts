@@ -156,6 +156,7 @@ body { margin: 0 auto; max-width: 1800px; padding: 20px; }
 .report-meta dt { color: var(--report-text-dim); }
 .report-meta dd { margin: 0; overflow-wrap: anywhere; }
 .report-meta code { font-size: inherit; }
+.previous-run-note { margin: 6px 0 0; font-size: .75rem; color: var(--report-text-dim); }
 .filter-panel { display: grid; gap: 10px; }
 .filter-group { margin: 0; padding: 8px; border: 1px solid var(--report-border); border-radius: 8px; background: var(--report-panel-muted); }
 .filter-group legend { padding: 0 4px; font-size: .82rem; font-weight: 700; }
@@ -304,6 +305,7 @@ th, td { padding: 8px; text-align: right; border-bottom: 1px solid var(--report-
 th:first-child { text-align: left; }
 tr.metric-regressed { color: var(--report-danger-text); }
 tr.metric-improved { color: var(--report-success-text); }
+.metric-reference-note { margin: 6px 0 0; font-size: .85em; color: var(--report-text-dim); }
 section { margin-top: 28px; }
 .warning-details, .candidate-diagnostics { padding: 12px; border: 1px solid var(--report-border); border-radius: 8px; }
 .warning-details h2, .candidate-diagnostics h2 { margin-top: 0; }

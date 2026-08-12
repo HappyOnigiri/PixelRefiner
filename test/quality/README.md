@@ -64,6 +64,25 @@ unchanged, or is a new case. Use both filters together to list, for example,
 all target-unmet cases whose output changed. Cases without a target are
 reported as unassessable rather than passed.
 
+## Publishing
+
+Two workflows publish the HTML report to GitHub Pages. Pull requests publish to
+`quality/pr-<number>/` while they are open, and every push to `main` publishes to
+the fixed `quality/latest/` path that the README and the app footer link to.
+
+The `main` report takes its previous run from the release tag chosen by
+[`select_previous_release_tag.py`](../../scripts/select_previous_release_tag.py):
+the last patch of the minor version before the newest tag, so `v1.2.0` compares
+against `v1.1.2`. The newest tag itself is skipped because `main` normally points
+at that release already, which would leave nothing to compare.
+
+When that baseline cannot be fetched — a repository with a single release series,
+or a local run without `test/quality/baseline` — the report omits every
+previous-run comparison instead of falling back to the checked-in baseline: the
+change filter, the change badges, the baseline and delta columns, and the changed
+pixel counts all disappear, and the sidebar records why. The target comparison is
+unaffected because it never depends on a previous run.
+
 ## Adding a fixture
 
 1. Add or deterministically generate the PNG under `test/fixtures/`. Prefer code generation in [`generate-fixtures.test.ts`](./generate-fixtures.test.ts).

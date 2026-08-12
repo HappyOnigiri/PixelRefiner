@@ -85,6 +85,17 @@ Run `make report` to compare the current output with the base
 baseline. Pull requests publish the quality-gate result and the comparison
 summary in GitHub Actions.
 
+### Quality report
+
+Every merge into `main` regenerates the report and publishes it here:
+
+<https://happyonigiri.github.io/PixelRefiner/quality/latest/>
+
+The report measures each case against its fixed target image and against the
+output of the previous release, which is taken from the last tag of the previous
+minor version. Add `?locale=ja&theme=dark` to open it in a specific language and
+color theme.
+
 ## Note
 
 Please note that this tool is designed primarily for automatic image conversion and optimization. Therefore, we do not plan to implement manual pixel-by-pixel editing features similar to paint software.

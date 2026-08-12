@@ -1608,6 +1608,18 @@ select:focus {
   filter: var(--footer-icon-filter);
 }
 
+.quality-report-link {
+  margin-left: 8px;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.quality-report-link:hover {
+  color: var(--text-muted);
+}
+
 .separator {
   color: var(--border-color);
   opacity: 0.3;
