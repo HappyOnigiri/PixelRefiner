@@ -44,7 +44,32 @@ const controlNames = [
 	"forcePixelsHInput",
 	"sampleWindowInput",
 	"sampleWindowSlider",
-	"alphaAwareMedoidCheck",
+	"cellSamplingModeSelect",
+	"smallAspectGridAlignmentSelect",
+	"watermarkSamplingCompatSelect",
+	"preserveThinFeaturesCheck",
+	"autoGridFromTrimmedCheck",
+	"phaseAwareGridSearchCheck",
+	"boundaryContrastOverrideCheck",
+	"detectionBackgroundMaskCheck",
+	"gridSignalColorBoundaryCheck",
+	"gridSignalLuminanceAlphaCheck",
+	"gridSignalAutocorrelationCheck",
+	"gridSignalReconstructionCheck",
+	"gridSignalLocalPhaseCheck",
+	"backgroundDehaloCheck",
+	"backgroundEdgeCleanupCheck",
+	"backgroundRampFollowCheck",
+	"backgroundRemovalRollbackCheck",
+	"alphaBorderBackgroundGuardCheck",
+	"backgroundConfidenceGateCheck",
+	"smallComponentBackgroundGateCheck",
+	"maxSamplesPerCellInput",
+	"cellAlphaThresholdInput",
+	"autoMaxCellsWInput",
+	"autoMaxCellsHInput",
+	"backgroundMaskToleranceInput",
+	"trimAlphaThresholdInput",
 	"fastAutoGridFromTrimmedCheck",
 	"makeSquareCheck",
 	"keepAspectRatioCheck",
@@ -142,7 +167,7 @@ describe("quick settings controls", () => {
 
 		expect(clearCandidateSelections).toHaveBeenCalledOnce();
 		expect(els.smallComponentModeSelect.value).toBe("auto");
-		expect(els.alphaAwareMedoidCheck.checked).toBe(false);
+		expect(els.cellSamplingModeSelect.value).toBe("hard-alpha-medoid");
 	});
 
 	it("reads the background removal scope from the quick settings", () => {

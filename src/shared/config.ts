@@ -30,6 +30,8 @@ export const PROCESS_RANGES = {
 	colorCount: { min: 2, max: 256, default: 32 } as const,
 	// ディザリング
 	ditherStrength: { min: 0, max: 100, default: 0 } as const,
+	// 検出器: 自動検出する最大セル数（各軸）
+	autoMaxCells: { min: 2, max: 1024, default: 512 } as const,
 	// アウトライン
 	outlineColor: { r: 255, g: 255, b: 255 }, // デフォルトの白
 } as const satisfies Record<string, IntRange | RGB>;
@@ -764,12 +766,41 @@ export const PROCESS_DEFAULTS = {
 	keepAspectRatio: false,
 	// グリッド検出モード（UI 用）
 	gridDetectionMode: "auto",
-	// [Intended] 既定では補間由来の中間 alpha を面積被覆として残さず、
-	// 必要な場合だけ詳細設定から alpha-aware-medoid を有効にする。
+	// [Intended] 既定では補間由来の中間 alpha を面積被覆として残さない。
+	// 必要な場合だけ詳細設定のセル色サンプリングから別の方式を選ぶ。
 	cellSamplingMode: "hard-alpha-medoid",
 	preserveThinFeatures: true,
 	smallComponentMode: "auto",
 	geminiWatermarkRemoval: "auto",
+
+	// [Intended] ここから下は「これまで固定で動いていた自動判定」を明示的に切れるようにした指定。
+	// 既定はいずれも従来の挙動そのままなので、公開しても出力は変わらない。
+	// 縁のにじみ（ハロー）を背景色から遠ざける補正
+	backgroundDehalo: true,
+	// 縮小後の縁に残った背景色の汚染を、原寸の本来の色へ差し替える
+	backgroundEdgeCleanup: true,
+	// なめらかなグラデーション背景を段差の連続としてたどる
+	backgroundRampFollow: true,
+	// 消えすぎを検出したときに背景除去を丸ごと巻き戻す
+	backgroundRemovalRollback: true,
+	// 境界帯の大半が透明なら、色による背景クラスタ推定を行わない
+	alphaBorderBackgroundGuard: true,
+	// 背景モデルの信頼度が下限未満なら背景除去を見送る
+	backgroundConfidenceGate: true,
+	// 背景モデルの信頼度が下限未満なら小成分除去を見送る
+	smallComponentBackgroundGate: true,
+	// 位相を考慮した格子探索を行い、軸信頼度が十分なら再構成ベースより優先する
+	phaseAwareGridSearch: true,
+	// 境界コントラストが明確に優る粗い倍音へ採用格子を乗り換える
+	boundaryContrastOverride: true,
+	// 小さな論理解像度の格子で、角シードマスクの境界を基準領域に使う
+	smallAspectGridAlignment: "auto",
+	// 透かし除去が成立したとき、末尾行の欠落を防ぐ互換サンプラーへ切り替える
+	watermarkSamplingCompat: "auto",
+	// 検出前に背景色を推測してマスクする（検出器フォールバック用）
+	backgroundMask: true,
+	// 格子候補の各信号を個別に有効／無効にする
+	gridSignals: GRID_SIGNAL_DEFAULTS,
 
 	// [Intended] 公開済みの旧オプション用。新しい既定処理には使用しない。
 	floatingMaxPixels: PROCESS_RANGES.floatingMaxPixels.default,

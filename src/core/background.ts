@@ -1,4 +1,4 @@
-import { BACKGROUND_MODEL_LIMITS } from "../shared/config";
+import { BACKGROUND_MODEL_LIMITS, PROCESS_DEFAULTS } from "../shared/config";
 import type {
 	BackgroundRemovalScope,
 	Connectivity,
@@ -31,6 +31,33 @@ export type AutomaticBackgroundResult = {
 	model: BackgroundModel;
 	removedRatio: number;
 	rolledBack: boolean;
+};
+
+/**
+ * 背景処理の自動判定のうち、呼び出し側から個別に切れるようにしたもの。
+ *
+ * [Intended] 既定はすべて有効で、従来の挙動と一致する。設定から切れるようにするのが
+ * 目的なので、ここで新しい判定を足したり既定を反転させたりはしない。
+ */
+export type BackgroundBehavior = {
+	/** 縁のにじみを背景色から遠ざける補正。 */
+	dehalo: boolean;
+	/** 消えすぎ検出による除去の巻き戻し。 */
+	rollback: boolean;
+	/** 信頼度が下限未満のときに除去を見送る判定。 */
+	confidenceGate: boolean;
+	/** 境界帯が透明優位のときに色クラスタ推定を行わない判定。 */
+	alphaBorderGuard: boolean;
+	/** なめらかなグラデーション背景をたどるランプ許容。 */
+	rampFollow: boolean;
+};
+
+export const DEFAULT_BACKGROUND_BEHAVIOR: BackgroundBehavior = {
+	dehalo: PROCESS_DEFAULTS.backgroundDehalo,
+	rollback: PROCESS_DEFAULTS.backgroundRemovalRollback,
+	confidenceGate: PROCESS_DEFAULTS.backgroundConfidenceGate,
+	alphaBorderGuard: PROCESS_DEFAULTS.alphaBorderBackgroundGuard,
+	rampFollow: PROCESS_DEFAULTS.backgroundRampFollow,
 };
 
 const clampUnit = (value: number): number => Math.max(0, Math.min(1, value));
@@ -115,7 +142,10 @@ const isInBorderBand = (
 	band: number,
 ): boolean => x < band || y < band || x >= width - band || y >= height - band;
 
-export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
+export const estimateBackgroundModel = (
+	img: RawImage,
+	behavior: BackgroundBehavior = DEFAULT_BACKGROUND_BEHAVIOR,
+): BackgroundModel => {
 	const width = img.width;
 	const height = img.height;
 	const band = getBandSize(width, height);
@@ -151,8 +181,9 @@ export const estimateBackgroundModel = (img: RawImage): BackgroundModel => {
 	// 削ってしまう。アルファが背景を確定させている状況なので confidence は最大とし、
 	// 後段の小領域除去は許可する。
 	if (
+		behavior.alphaBorderGuard &&
 		guardTransparentCount / totalBorderCount >=
-		BACKGROUND_MODEL_LIMITS.alphaBackgroundBorderRatio
+			BACKGROUND_MODEL_LIMITS.alphaBackgroundBorderRatio
 	) {
 		return {
 			clusters: [],
@@ -785,12 +816,14 @@ export const removeAutomaticBackground = (
 	scope: BackgroundRemovalScope,
 	connectivity: Connectivity,
 	providedModel?: BackgroundModel,
+	behavior: BackgroundBehavior = DEFAULT_BACKGROUND_BEHAVIOR,
 ): AutomaticBackgroundResult => {
-	const model = providedModel ?? estimateBackgroundModel(img);
+	const model = providedModel ?? estimateBackgroundModel(img, behavior);
 	if (
 		scope === "off" ||
 		model.clusters.length === 0 ||
-		model.confidence < BACKGROUND_MODEL_LIMITS.minConfidence
+		(behavior.confidenceGate &&
+			model.confidence < BACKGROUND_MODEL_LIMITS.minConfidence)
 	) {
 		return {
 			image: cloneImage(img),
@@ -827,7 +860,10 @@ export const removeAutomaticBackground = (
 		if (selected[pixel]) removed += 1;
 	}
 	const removedRatio = opaqueBefore === 0 ? 0 : removed / opaqueBefore;
-	if (removedRatio > BACKGROUND_MODEL_LIMITS.maxContentLossRatio) {
+	if (
+		behavior.rollback &&
+		removedRatio > BACKGROUND_MODEL_LIMITS.maxContentLossRatio
+	) {
 		return {
 			image: cloneImage(img),
 			model,
@@ -841,6 +877,6 @@ export const removeAutomaticBackground = (
 			output.data[pixel * 4 + 3] = 0;
 		}
 	}
-	applyDehalo(output, model);
+	if (behavior.dehalo) applyDehalo(output, model);
 	return { image: output, model, removedRatio, rolledBack: false };
 };
