@@ -26,7 +26,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		) as { cases: unknown[] };
 		expect(serialized.cases).toHaveLength(selectedCases.length);
 		const html = readFileSync(path.join(reportRoot, "index.html"), "utf8");
-		const clientScript = html.match(/<script>([\s\S]+)<\/script>/)?.[1];
+		// [Intended] head 内のテーマ初期化を除外し、body 末尾のクライアントだけを検証する。
+		const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+		const clientScript = scripts[scripts.length - 1]?.[1];
 		if (clientScript === undefined) throw new Error("Client script not found");
 		expect(() => new Script(clientScript)).not.toThrow();
 		expect(html).toContain("navigator.languages");
@@ -276,7 +278,9 @@ describe.skipIf(!enabled)("quality report", () => {
 			"utf8",
 		);
 		expect(compactDetail).toContain('href="../../index.html"');
-		expect(compactDetail).toContain(".back-link:hover { border-color: #c2b4ff");
+		expect(compactDetail).toContain(
+			".back-link:hover { border-color: var(--report-focus)",
+		);
 		expect(compactDetail).toContain('<h2 data-i18n="comparison">');
 		expect(compactDetail).toContain('<h2 data-i18n="options">');
 		expect(compactDetail).toContain(
