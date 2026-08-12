@@ -19,6 +19,9 @@ concurrency:
 jobs:
   quality:
     name: quality
+    # [Policy] 公開先は固定パスなので、main とリリースタグ以外の内容を載せない。
+    # 手動実行はブランチを選べるため、main を指しているときだけ通す。
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # [Policy] main のレポートは公開用の成果物なので、品質ゲートは動かさない。
     # 回帰の判定は PR の Quality Report workflow が担う。
