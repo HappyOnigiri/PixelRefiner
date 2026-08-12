@@ -391,6 +391,7 @@ const resources = {
 
 		// フッター
 		"footer.privacy": "画像はブラウザ内で安全に処理されます",
+		"footer.qualityReport": "品質レポート",
 	},
 	"zh-CN": {
 		// UI 見出しとラベル
@@ -759,6 +760,7 @@ const resources = {
 
 		// フッター
 		"footer.privacy": "图片会在浏览器内安全处理",
+		"footer.qualityReport": "质量报告",
 	},
 	en: {
 		// UI 見出しとラベル
@@ -1139,6 +1141,7 @@ const resources = {
 
 		// フッター
 		"footer.privacy": "Images are processed safely within your browser",
+		"footer.qualityReport": "Quality report",
 	},
 };
 

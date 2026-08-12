@@ -1,5 +1,6 @@
 import { inject } from "@vercel/analytics";
 import { initApp } from "./app";
+import { initQualityReportLink } from "./quality-report-link";
 import { initTheme } from "./theme";
 import { initTooltip } from "./tooltip";
 import "./style.css";
@@ -16,5 +17,6 @@ window.addEventListener("DOMContentLoaded", () => {
 		versionEl.textContent = `v${import.meta.env.APP_VERSION}`;
 	}
 
+	initQualityReportLink();
 	initTooltip();
 });
