@@ -11,6 +11,10 @@ import type {
 } from "../shared/types";
 import type { BackgroundModel } from "./background";
 import {
+	canCleanBackgroundContaminatedEdges,
+	cleanBackgroundContaminatedEdgesInPlace,
+} from "./background-edge-cleanup";
+import {
 	removeBackground,
 	removeSmallFloatingComponentsInPlace,
 } from "./background-removal";
@@ -58,6 +62,10 @@ export type SimpleRouteContext = {
 	 * 論理ピクセル基準の除去は各出力経路で一度だけ行う。
 	 */
 	preparedMask?: RawImage;
+	/**
+	 * 原寸の working がすでに背景除去済みか。縁の汚染除去を許すかの判定に使う。
+	 */
+	preBackgroundRemoved?: boolean;
 	/**
 	 * 背景除去（後段）・アウトライン・アスペクト比維持を最終結果へ適用するか。
 	 * [Policy] 既存の enableGridDetection=false 経路の出力を変えないため、
@@ -328,20 +336,6 @@ export const processForcedRoute = (
 		`Post-background removal done in ${(performance.now() - postBgStart).toFixed(2)}ms`,
 	);
 
-	// 色削減
-	let finalResult = result2;
-	if (o.reduceColors || o.fixedPalette) {
-		finalResult = applyColorReduction(
-			result2,
-			o.reduceColorMode,
-			o.ditherMode,
-			o.colorCount,
-			o.ditherStrength,
-			log,
-			o.fixedPalette,
-		);
-	}
-
 	// compareBefore は、元画像 'img' を境界 'b' と強制グリッドを使って
 	// リサイズする必要がある。
 	const forcedTrimmedGridForOriginal: PixelGrid = {
@@ -356,59 +350,130 @@ export const processForcedRoute = (
 		forcedTrimmedGridForOriginal,
 	);
 
+	// [Policy] 縁の汚染除去は refine 経路と同じ条件で行う。ここだけ省くと、
+	// 候補選択から固定サイズで再実行したときに Auto の見た目を再現できない。
+	if (
+		o.backgroundEdgeCleanup &&
+		canCleanBackgroundContaminatedEdges(
+			backgroundModel,
+			backgroundDiagnostic?.confidence,
+			// [Intended] 「補正する画像の透過を作った除去」の巻き戻りだけを見る。
+			// 事後除去を行う経路ではその結果を、行わない経路では事前除去の結果を渡す。
+			o.postRemoveBackground
+				? postRemoval.rolledBack
+				: (backgroundDiagnostic?.preRemoval.rolledBack ?? false),
+			o.postRemoveBackground || (context.preBackgroundRemoved ?? false),
+		)
+	) {
+		cleanBackgroundContaminatedEdgesInPlace(
+			result2,
+			working,
+			forcedTrimmedGridForOriginal,
+			backgroundModel,
+			o.cellAlphaThreshold,
+		);
+	}
+
+	// 色削減
+	let finalResult = result2;
+	if (o.reduceColors || o.fixedPalette) {
+		finalResult = applyColorReduction(
+			result2,
+			o.reduceColorMode,
+			o.ditherMode,
+			o.colorCount,
+			o.ditherStrength,
+			log,
+			o.fixedPalette,
+		);
+	}
+
 	// 補正済み比較: パイプラインと同じセルサンプリングを使用する。
 	// [Intended] 元画像座標へ対応付ける後処理が切り抜き原点を失わないよう、返却グリッドにも保持する。
 	let finalGridForForce = forcedTrimmedGridForOriginal;
-	if (o.makeSquare) {
-		const w = finalResult.width;
-		const h = finalResult.height;
-		if (w !== h) {
-			const size = Math.max(w, h);
-			const dw = size - w;
-			const dh = size - h;
-			const padLeft = Math.floor(dw / 2);
-			const padTop = Math.floor(dh / 2);
-			const padRight = dw - padLeft;
-			const padBottom = dh - padTop;
 
-			const padLeftPx = Math.round(padLeft * finalGridForForce.cellW);
-			const padTopPx = Math.round(padTop * finalGridForForce.cellH);
-			const padRightPx = Math.round(padRight * finalGridForForce.cellW);
-			const padBottomPx = Math.round(padBottom * finalGridForForce.cellH);
+	// [Intended] 比較用の 2 枚は解像度が違う。compareBefore は原寸なのでセル寸法で
+	// 引き伸ばし、compareBeforeSanitized は出力と同じ論理解像度でそのまま足す。
+	const padCompanions = (
+		padLeft: number,
+		padTop: number,
+		padRight: number,
+		padBottom: number,
+	): void => {
+		const padLeftPx = Math.round(padLeft * finalGridForForce.cellW);
+		const padTopPx = Math.round(padTop * finalGridForForce.cellH);
+		const padRightPx = Math.round(padRight * finalGridForForce.cellW);
+		const padBottomPx = Math.round(padBottom * finalGridForForce.cellH);
+		compareBefore = padRawImage(
+			compareBefore,
+			padLeftPx,
+			padTopPx,
+			padRightPx,
+			padBottomPx,
+		);
+		compareBeforeSanitized = padRawImage(
+			compareBeforeSanitized,
+			padLeft,
+			padTop,
+			padRight,
+			padBottom,
+		);
+		const baseCropX = finalGridForForce.cropX ?? finalGridForForce.offsetX;
+		const baseCropY = finalGridForForce.cropY ?? finalGridForForce.offsetY;
+		finalGridForForce = {
+			...finalGridForForce,
+			outW: finalResult.width,
+			outH: finalResult.height,
+			cropX: baseCropX - padLeftPx,
+			cropY: baseCropY - padTopPx,
+			cropW: finalResult.width * finalGridForForce.cellW,
+			cropH: finalResult.height * finalGridForForce.cellH,
+		};
+	};
 
-			finalResult = padRawImage(
-				finalResult,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-			compareBefore = padRawImage(
-				compareBefore,
-				padLeftPx,
-				padTopPx,
-				padRightPx,
-				padBottomPx,
-			);
-			compareBeforeSanitized = padRawImage(
-				compareBeforeSanitized,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-			const baseCropX = finalGridForForce.cropX ?? finalGridForForce.offsetX;
-			const baseCropY = finalGridForForce.cropY ?? finalGridForForce.offsetY;
-			finalGridForForce = {
-				...finalGridForForce,
-				outW: size,
-				outH: size,
-				cropX: baseCropX - padLeftPx,
-				cropY: baseCropY - padTopPx,
-				cropW: size * finalGridForForce.cellW,
-				cropH: size * finalGridForForce.cellH,
-			};
+	if (o.outlineStyle !== "none") {
+		const previousWidth = finalResult.width;
+		const previousHeight = finalResult.height;
+		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
+		const widthDifference = finalResult.width - previousWidth;
+		const heightDifference = finalResult.height - previousHeight;
+		if (widthDifference !== 0 || heightDifference !== 0) {
+			const left = Math.floor(widthDifference / 2);
+			const top = Math.floor(heightDifference / 2);
+			padCompanions(left, top, widthDifference - left, heightDifference - top);
 		}
+	}
+
+	if (o.keepAspectRatio && !o.makeSquare) {
+		const { image: padded, padding } = padImageToAspectRatio(
+			finalResult,
+			getAspectRatio(img),
+		);
+		if (padded !== finalResult) {
+			finalResult = padded;
+			padCompanions(padding.left, padding.top, padding.right, padding.bottom);
+		}
+	}
+
+	if (o.makeSquare && finalResult.width !== finalResult.height) {
+		const size = Math.max(finalResult.width, finalResult.height);
+		const widthDifference = size - finalResult.width;
+		const heightDifference = size - finalResult.height;
+		const padLeft = Math.floor(widthDifference / 2);
+		const padTop = Math.floor(heightDifference / 2);
+		finalResult = padRawImage(
+			finalResult,
+			padLeft,
+			padTop,
+			widthDifference - padLeft,
+			heightDifference - padTop,
+		);
+		padCompanions(
+			padLeft,
+			padTop,
+			widthDifference - padLeft,
+			heightDifference - padTop,
+		);
 	}
 
 	o.debugHook?.("99-result", finalResult, {

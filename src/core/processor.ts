@@ -243,6 +243,7 @@ const processImageCore = (
 		backgroundModel,
 		smallComponentRemoval,
 		preparedMask: preparedWatermarkMask,
+		preBackgroundRemoved,
 	};
 	const finishProcessing = watermarkGeometry.finish;
 	const forcedResult = processForcedRoute(simpleRouteContext);
