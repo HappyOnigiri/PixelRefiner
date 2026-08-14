@@ -170,6 +170,7 @@ describe("I18nManager", () => {
 			i18n.setLanguage(lang);
 			expect(i18n.t("preset.photo_to_pixel")).not.toBe("preset.photo_to_pixel");
 			for (const key of [
+				"setting.size",
 				"tooltip.help.quick_preset",
 				"tooltip.help.quick_processing_mode",
 				"tooltip.help.quick_detail",
@@ -179,6 +180,11 @@ describe("I18nManager", () => {
 				"tooltip.help.quick_auto_trim",
 				"option.auto_trim_auto",
 				"option.auto_trim_none",
+				"option.size_smallest",
+				"option.size_small",
+				"option.size_medium",
+				"option.size_large",
+				"option.size_largest",
 			] as const) {
 				expect(i18n.t(key)).not.toBe(key);
 			}

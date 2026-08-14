@@ -638,29 +638,35 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.detail">Detail</span>
+                        <span data-i18n="setting.size">Size</span>
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
-                          data-tooltip="Controls output size on the Convert route without changing color count or other settings. In Auto, it applies only when Convert is selected."
+                          data-tooltip="Selects the approximate output size relative to the automatically calculated reference size (100%) on the Convert route. It does not change color count or other settings. In Auto, it applies only when Convert is selected."
                           >?</span
                         >
                       </span>
                       <select id="quick-detail-level">
-                        <option value="coarse" data-i18n="option.detail_coarse">
-                          Coarse
-                        </option>
                         <option
-                          value="balanced"
-                          data-i18n="option.detail_balanced"
+                          value="smallest"
+                          data-i18n="option.size_smallest"
                         >
-                          Balanced
+                          25%
+                        </option>
+                        <option value="small" data-i18n="option.size_small">
+                          50%
+                        </option>
+                        <option value="coarse" data-i18n="option.size_medium">
+                          65%
+                        </option>
+                        <option value="balanced" data-i18n="option.size_large">
+                          100%
                         </option>
                         <option
                           value="detailed"
-                          data-i18n="option.detail_detailed"
+                          data-i18n="option.size_largest"
                         >
-                          Detailed
+                          150%
                         </option>
                       </select>
                     </label>

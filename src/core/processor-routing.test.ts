@@ -75,25 +75,33 @@ describe("processing router", () => {
 		expect(processed.analysis.route).toBe("convert");
 		expect(processed.result.width).toBeLessThan(image.width);
 		expect(processed.result.height).toBeLessThan(image.height);
-		expect(processed.analysis.gridCandidates).toHaveLength(3);
+		expect(processed.analysis.gridCandidates).toHaveLength(5);
 		expect(processed.extractedPalette.length).toBeLessThanOrEqual(24);
 	});
 
-	it("selects visibly different convert sizes from the detail level", () => {
+	it("selects visibly different convert sizes from all five size levels", () => {
 		const image = createContinuousImage();
-		const coarse = processImage(image, {
-			...safeOptions,
-			processingMode: "convert",
-			detailLevel: "coarse",
-		});
-		const detailed = processImage(image, {
-			...safeOptions,
-			processingMode: "convert",
-			detailLevel: "detailed",
-		});
+		const detailLevels = [
+			"smallest",
+			"small",
+			"coarse",
+			"balanced",
+			"detailed",
+		] as const;
+		const results = detailLevels.map((detailLevel) =>
+			processImage(image, {
+				...safeOptions,
+				processingMode: "convert",
+				detailLevel,
+			}),
+		);
 
-		expect(coarse.result.width).toBeLessThan(detailed.result.width);
-		expect(coarse.result.height).toBeLessThan(detailed.result.height);
+		for (let i = 1; i < results.length; i += 1) {
+			expect(results[i - 1].result.width).toBeLessThan(results[i].result.width);
+			expect(results[i - 1].result.height).toBeLessThan(
+				results[i].result.height,
+			);
+		}
 	});
 
 	it.each([
@@ -182,7 +190,7 @@ describe("processing router", () => {
 			detailLevel: "detailed",
 		});
 
-		expect(processed.analysis.selectedCandidateIndex).toBe(2);
+		expect(processed.analysis.selectedCandidateIndex).toBe(4);
 		expect(
 			processed.analysis.gridCandidates[
 				processed.analysis.selectedCandidateIndex ?? -1

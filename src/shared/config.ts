@@ -231,6 +231,8 @@ export const CONVERT_LIMITS = {
 } as const;
 
 export const CONVERT_DETAIL_SCALES = {
+	smallest: 0.25,
+	small: 0.5,
 	coarse: 0.65,
 	balanced: 1,
 	detailed: 1.5,
@@ -241,7 +243,7 @@ export const CONVERT_DEFAULTS = {
 	reduceColors: true,
 	reduceColorMode: "auto",
 	ditherMode: "ordered",
-	// [Intended] 細かさは出力サイズだけを変える。色数とディザ強度は独立した既定値にする。
+	// [Intended] サイズは出力寸法だけを変える。色数とディザ強度は独立した既定値にする。
 	colorCount: 24,
 	ditherStrength: 20,
 } as const;

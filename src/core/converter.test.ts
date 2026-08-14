@@ -18,16 +18,20 @@ const createIllustration = (width = 96, height = 64): RawImage => {
 };
 
 describe("continuous image converter", () => {
-	it("creates three aspect-aware and visually distinct detail candidates", () => {
+	it("creates five aspect-aware size candidates in ascending order", () => {
 		const candidates = createConvertCandidates(createIllustration());
 
 		expect(candidates.map((candidate) => candidate.label)).toEqual([
+			"smallest",
+			"small",
 			"coarse",
 			"balanced",
 			"detailed",
 		]);
-		expect(candidates[0].outW).toBeLessThan(candidates[1].outW);
-		expect(candidates[1].outW).toBeLessThan(candidates[2].outW);
+		for (let i = 1; i < candidates.length; i += 1) {
+			expect(candidates[i - 1].outW).toBeLessThan(candidates[i].outW);
+			expect(candidates[i - 1].outH).toBeLessThan(candidates[i].outH);
+		}
 		for (const candidate of candidates) {
 			expect(candidate.outW).toBeGreaterThan(1);
 			expect(candidate.outH).toBeGreaterThan(1);
@@ -139,7 +143,7 @@ describe("continuous image converter", () => {
 			data: new Uint8ClampedArray([123, 45, 67, 0]),
 		};
 
-		expect(createConvertCandidates(transparent)).toHaveLength(3);
+		expect(createConvertCandidates(transparent)).toHaveLength(5);
 		expect(edgeAwareAreaResample(transparent, 1, 1).data).toEqual(
 			new Uint8ClampedArray(4),
 		);
