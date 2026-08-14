@@ -1651,7 +1651,7 @@ select:focus {
   color: var(--text-dim);
   background: var(--surface-hover);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -1690,7 +1690,7 @@ select:focus {
 .color-swatch {
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--swatch-border);
   cursor: pointer;
   transition: border-color 0.15s, outline-color 0.15s;
@@ -1943,7 +1943,7 @@ select:focus {
   cursor: pointer;
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 .text-button:hover {
   background-color: var(--surface-hover);
@@ -1973,7 +1973,7 @@ select:focus {
 }
 .image-list-container::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 
 .image-item {
@@ -1981,7 +1981,7 @@ select:focus {
   flex: 0 0 80px;
   width: 80px;
   height: 84px;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   border: 2px solid transparent;
   background-color: var(--thumbnail-bg);
   cursor: pointer;
