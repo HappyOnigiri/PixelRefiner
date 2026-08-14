@@ -20,6 +20,7 @@ export class ResultViewer {
 	private gridCanvas: HTMLCanvasElement;
 	private sizeLabel: HTMLElement;
 	private analysisLabel: HTMLElement;
+	private warningIndicator: HTMLElement;
 	private bgSelector: HTMLElement;
 	private zoomCheck: HTMLInputElement;
 	private gridCheck: HTMLInputElement;
@@ -41,6 +42,7 @@ export class ResultViewer {
 		this.gridCanvas = this.get<HTMLCanvasElement>(".js-grid-canvas");
 		this.sizeLabel = this.get<HTMLElement>(".js-output-size");
 		this.analysisLabel = this.get<HTMLElement>(".js-processing-analysis");
+		this.warningIndicator = this.get<HTMLElement>(".js-processing-warning");
 		this.bgSelector = this.get<HTMLElement>(".js-bg-selector");
 		this.zoomCheck = this.get<HTMLInputElement>(".js-zoom-output");
 		this.gridCheck = this.get<HTMLInputElement>(".js-grid-output");
@@ -271,6 +273,18 @@ export class ResultViewer {
 		this.analysisLabel.textContent = text;
 	}
 
+	public updateWarnings(messages: readonly string[]) {
+		const message = messages.join("\n");
+		this.warningIndicator.hidden = message.length === 0;
+		if (message.length === 0) {
+			this.warningIndicator.removeAttribute("data-tooltip");
+			this.warningIndicator.removeAttribute("aria-label");
+			return;
+		}
+		this.warningIndicator.dataset.tooltip = message;
+		this.warningIndicator.setAttribute("aria-label", message);
+	}
+
 	public setLoading(isLoading: boolean) {
 		this.loadingOverlay.style.display = isLoading ? "flex" : "none";
 	}
@@ -447,6 +461,8 @@ export class ResultViewer {
 		this.sizeLabel.style.cursor = "default";
 		this.sizeLabel.style.textDecoration = "none";
 		this.sizeLabel.onclick = null;
+		this.updateAnalysis("");
+		this.updateWarnings([]);
 		this.downloadBtn.style.display = "none";
 		this.downloadDropdownBtn.style.display = "none";
 	}
