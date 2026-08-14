@@ -96,8 +96,22 @@ export const setupQuickSettingsControls = ({
 		els.quickBackgroundColorInput.value = hex;
 	};
 
+	const handleQuickSettingChange = (preservePendingAutoRoute: boolean) => {
+		clearCandidateSelections();
+		updateQuickSettingsDisabledStates(els, undefined, {
+			preservePendingAutoRoute,
+		});
+		triggerAutoProcess();
+	};
+
+	// [Intended] 処理方法自体の変更では直前の表示状態を維持しない。
+	// 維持したいのは Auto のまま他項目を変えたときのちらつきだけで、
+	// 別モードから Auto へ切り替えた時点の表示状態は引き継ぐ対象ではない。
+	els.quickProcessingModeSelect.addEventListener("change", () => {
+		handleQuickSettingChange(false);
+	});
+
 	[
-		els.quickProcessingModeSelect,
 		els.quickDetailLevelSelect,
 		els.quickReductionModeSelect,
 		els.quickBackgroundSelect,
@@ -105,11 +119,7 @@ export const setupQuickSettingsControls = ({
 		els.quickAutoTrimSelect,
 	].forEach((control) => {
 		control.addEventListener("change", () => {
-			clearCandidateSelections();
-			updateQuickSettingsDisabledStates(els, undefined, {
-				preservePendingAutoRoute: true,
-			});
-			triggerAutoProcess();
+			handleQuickSettingChange(true);
 		});
 	});
 

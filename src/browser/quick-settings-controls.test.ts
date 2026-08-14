@@ -109,6 +109,26 @@ describe("quick settings controls", () => {
 		expect(els.quickDetailLevelSelect.disabled).toBe(false);
 	});
 
+	it("re-enables detail when switching back to Auto", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		els.quickProcessingModeSelect.value = "refine";
+		els.quickProcessingModeSelect.dispatchEvent(new Event("change"));
+		expect(els.quickDetailLevelSelect.disabled).toBe(true);
+
+		els.quickProcessingModeSelect.value = "auto";
+		els.quickProcessingModeSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDetailLevelSelect.disabled).toBe(false);
+		expect(
+			els.quickDetailLevelSelect.settingItem.classList.contains("disabled"),
+		).toBe(false);
+	});
+
 	it("disables dependent controls only", () => {
 		const els = createElements();
 		els.quickBackgroundSelect.value = "keep";
