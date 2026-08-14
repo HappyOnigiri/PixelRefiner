@@ -13,7 +13,7 @@
     "build": "pnpm exec vite build",
     "preview": "pnpm exec vite preview",
     "test": "pnpm exec vitest run",
-    "test:unit": "pnpm exec vitest run --exclude 'test/quality/shards/**'",
+    "test:unit": "pnpm exec vitest run --exclude 'test/quality/shards/**' --exclude 'tmp/**'",
     "test:watch": "pnpm exec vitest",
     "test:quality": "QUALITY_PROFILE=smoke pnpm exec vitest run test/quality/cases.test.ts test/quality/shards",
     "test:quality:full": "QUALITY_PROFILE=full pnpm exec vitest run test/quality/cases.test.ts test/quality/shards",
