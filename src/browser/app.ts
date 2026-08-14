@@ -425,6 +425,9 @@ export const initApp = (): void => {
 				if (palette.length > 0) {
 					if (palette.length > 0) {
 						processingState.currentFixedPalette = palette;
+						// [Intended] 固定パレットは詳細設定タブでのみ処理オプションへ渡るため、
+						// 読み込みに成功したら詳細設定へ切り替える。再処理は直後の runProcessing に任せる。
+						setSettingsMode("advanced", false);
 						els.reduceColorModeSelect.value = "fixed";
 						updateReduceColorsDisabledStates();
 						runProcessing();
@@ -514,6 +517,9 @@ export const initApp = (): void => {
 				const palette = parseGPL(text);
 				if (palette.length > 0) {
 					processingState.currentFixedPalette = palette;
+					// [Intended] 固定パレットは詳細設定タブでのみ処理オプションへ渡るため、
+					// 読み込みに成功したら詳細設定へ切り替える。再処理は直後の runProcessing に任せる。
+					setSettingsMode("advanced", false);
 					els.reduceColorModeSelect.value = "fixed";
 					updateReduceColorsDisabledStates();
 					runProcessing();
@@ -543,6 +549,9 @@ export const initApp = (): void => {
 
 					if (colors.length > 0) {
 						processingState.currentFixedPalette = colors;
+						// [Intended] 固定パレットは詳細設定タブでのみ処理オプションへ渡るため、
+						// 読み込みに成功したら詳細設定へ切り替える。再処理は直後の runProcessing に任せる。
+						setSettingsMode("advanced", false);
 						els.reduceColorModeSelect.value = "fixed";
 						updateReduceColorsDisabledStates();
 						runProcessing();
