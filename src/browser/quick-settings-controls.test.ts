@@ -79,13 +79,13 @@ describe("quick settings controls", () => {
 		els.quickBackgroundSelect.value = "keep";
 		els.quickReductionModeSelect.value = "none";
 		updateQuickSettingsDisabledStates(els as unknown as Elements);
-		expect(els.quickAutoTrimSelect.disabled).toBe(true);
+		expect(els.quickAutoTrimSelect.disabled).toBe(false);
 		expect(
 			els.quickAutoTrimSelect.settingItem.classList.contains("disabled"),
-		).toBe(true);
+		).toBe(false);
 		expect(els.quickDitheringSelect.disabled).toBe(true);
 		expect(readQuickSettings(els as unknown as Elements).trimToContent).toBe(
-			false,
+			true,
 		);
 
 		els.quickBackgroundSelect.value = "pick";

@@ -755,8 +755,10 @@ export const PROCESS_DEFAULTS = {
 	bgRemovalScope: "auto",
 	// 連結探索に対角方向（8 近傍）を含めるか（4=いいえ、8=はい）
 	bgConnectivity: "4",
-	// 処理後にコンテンツの境界ボックスまでトリミングする（デフォルトは ON）
+	// 処理倍率を維持したまま、処理後にコンテンツの境界ボックスまでトリミングする
 	trimToContent: true,
+	// [Policy] 既存のコア API の出力互換性を維持し、ブラウザ UI から明示的に有効化する
+	preserveProcessingScale: false,
 	autoGridFromTrimmed: true,
 	// autoGridFromTrimmed のグリッド推定を高速化する（結果に影響する場合がある）
 	fastAutoGridFromTrimmed: true,

@@ -125,6 +125,8 @@ export const createAdvancedProcessOptions = (
 		backgroundConfidenceGate: els.backgroundConfidenceGateCheck.checked,
 		smallComponentBackgroundGate: els.smallComponentBackgroundGateCheck.checked,
 		trimToContent: els.trimToContentCheck.checked,
+		// [Policy] ブラウザUIでは背景透過・トリム設定にかかわらず処理倍率を維持する。
+		preserveProcessingScale: true,
 		fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 		makeSquare: els.makeSquareCheck.checked,
 		keepAspectRatio: els.keepAspectRatioCheck.checked,

@@ -4,7 +4,7 @@ import {
 	TRIMMED_GRID_SEARCH_LIMITS,
 } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
-import { removeBackground } from "./background-removal";
+import { getBackgroundTargets, removeBackground } from "./background-removal";
 import { detectGrid } from "./detector";
 import { getGeminiWatermarkDownsampleOptions } from "./gemini-watermark-preprocessing";
 import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
@@ -37,6 +37,31 @@ export type ResolvedProcessingGrid = {
 	gridMethod: string;
 	downsampleOptions: DownsampleOptions;
 	allowSmallTrimmedGrid: boolean;
+	gridAlignedToContent: boolean;
+};
+
+/** 被写体基準の格子位相とセル倍率を保ったまま、元キャンバス全体へ広げる。 */
+export const expandContentGridToCanvas = (
+	grid: PixelGrid,
+	source: Pick<RawImage, "width" | "height">,
+): PixelGrid => {
+	const baseCropX = grid.cropX ?? grid.offsetX;
+	const baseCropY = grid.cropY ?? grid.offsetY;
+	const leftCells = Math.max(0, Math.ceil(baseCropX / grid.cellW));
+	const topCells = Math.max(0, Math.ceil(baseCropY / grid.cellH));
+	const cropX = baseCropX - leftCells * grid.cellW;
+	const cropY = baseCropY - topCells * grid.cellH;
+	const outW = Math.max(1, Math.ceil((source.width - cropX) / grid.cellW));
+	const outH = Math.max(1, Math.ceil((source.height - cropY) / grid.cellH));
+	return {
+		...grid,
+		cropX,
+		cropY,
+		cropW: outW * grid.cellW,
+		cropH: outH * grid.cellH,
+		outW,
+		outH,
+	};
 };
 
 /**
@@ -62,6 +87,7 @@ export const resolveProcessingGrid = ({
 		watermarkRemovedFromGeometry,
 	);
 	let allowSmallTrimmedGrid = false;
+	let gridAlignedToContent = false;
 
 	if (o.autoGridFromTrimmed && maskedForDebugOrAuto) {
 		log("Auto grid from trimmed mode");
@@ -116,9 +142,10 @@ export const resolveProcessingGrid = ({
 				const isSmallAspectAdjustedGrid =
 					!phaseAwareReliable &&
 					o.smallAspectGridAlignmentEnabled &&
-					o.bgExtractionMethod === "auto" &&
-					o.bgRemovalScope !== "off" &&
-					trimToContent &&
+					(o.preserveProcessingScale ||
+						(o.bgExtractionMethod === "auto" &&
+							o.bgRemovalScope !== "off" &&
+							trimToContent)) &&
 					(selectedEstimate.outW ?? 0) <=
 						TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputWidth &&
 					(selectedEstimate.outH ?? 0) <=
@@ -134,9 +161,10 @@ export const resolveProcessingGrid = ({
 				// 「常に無効」にすると小さな格子が許可されず、refine から preserve へ
 				// フォールバックする場合がある（ツールチップにも同じ注意を書いている）。
 				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
-				// [Intended] トリミング領域で推定した格子は、元画像の左上へ投影せず
-				// コンテンツ BBox をそのままサンプリング領域として使う。
+				// [Intended] 寸法決定時は常に被写体境界へ揃える。キャンバス全体が必要な場合は
+				// 経路判定後に同じ格子位相のまま外側へ拡張し、倍率とディテールを変えない。
 				const alignToTrimmedBounds = isSmallAspectAdjustedGrid;
+				gridAlignedToContent = alignToTrimmedBounds;
 				let gridBounds = b;
 				let gridEstimate = selectedEstimate;
 				if (isSmallAspectAdjustedGrid) {
@@ -145,9 +173,13 @@ export const resolveProcessingGrid = ({
 					const cornerMask = removeBackground(
 						geometryImage,
 						o.backgroundTolerance,
-						o.bgRemovalScope,
+						o.preserveProcessingScale
+							? PROCESS_DEFAULTS.bgRemovalScope
+							: o.bgRemovalScope,
 						o.bgConnectivity,
-						bgTargets,
+						o.preserveProcessingScale
+							? getBackgroundTargets(geometryImage, "top-left", undefined, 16)
+							: bgTargets,
 						"top-left",
 						undefined,
 						getBackgroundBehavior(o),
@@ -211,7 +243,7 @@ export const resolveProcessingGrid = ({
 								const c = "candidate" in entry ? entry.candidate : entry;
 								const phaseAware = "phaseAware" in entry;
 								const candidateEstimate =
-									alignToTrimmedBounds && !phaseAware
+									isSmallAspectAdjustedGrid && !phaseAware
 										? {
 												...c,
 												cellW: gridBounds.w / Math.max(1, c.outW ?? 1),
@@ -251,5 +283,11 @@ export const resolveProcessingGrid = ({
 		});
 	}
 
-	return { grid, gridMethod, downsampleOptions, allowSmallTrimmedGrid };
+	return {
+		grid,
+		gridMethod,
+		downsampleOptions,
+		allowSmallTrimmedGrid,
+		gridAlignedToContent,
+	};
 };

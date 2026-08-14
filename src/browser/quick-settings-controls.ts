@@ -50,9 +50,6 @@ export const updateQuickSettingsDisabledStates = (
 	const background = els.quickBackgroundSelect.value as QuickBackground;
 	els.quickBackgroundPicker.style.display =
 		background === "pick" ? "flex" : "none";
-	// [Intended] かんたん設定では背景透過と余白除去を一組として扱い、
-	// 背景透過を行わない場合は自動トリムも処理へ渡さない。
-	setQuickControlDisabled(els.quickAutoTrimSelect, background === "keep");
 
 	const reductionMode = els.quickReductionModeSelect
 		.value as QuickReductionMode;
@@ -72,9 +69,7 @@ export const readQuickSettings = (els: Elements): QuickSettingsState => ({
 	background: els.quickBackgroundSelect.value as QuickBackground,
 	backgroundColor: els.quickBackgroundColorInput.value,
 	dithering: els.quickDitheringSelect.value as QuickDithering,
-	trimToContent:
-		els.quickBackgroundSelect.value !== "keep" &&
-		els.quickAutoTrimSelect.value === "auto",
+	trimToContent: els.quickAutoTrimSelect.value === "auto",
 });
 
 export const setupQuickSettingsControls = ({

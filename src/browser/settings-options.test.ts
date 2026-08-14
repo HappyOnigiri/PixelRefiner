@@ -46,7 +46,8 @@ describe("settings mode options", () => {
 			detailLevel: "detailed",
 			reduceColorMode: "pico8",
 			bgExtractionMethod: "none",
-			trimToContent: false,
+			trimToContent: true,
+			preserveProcessingScale: true,
 			ditherMode: "floyd-steinberg",
 		});
 		expect(options.fixedPalette).toBeUndefined();

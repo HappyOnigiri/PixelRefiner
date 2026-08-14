@@ -67,6 +67,7 @@ export const createQuickProcessOptions = (
 		detailLevel: quick.detailLevel,
 		outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 		trimToContent: quick.trimToContent,
+		preserveProcessingScale: true,
 		reduceColors: quick.reductionMode !== "none",
 		reduceColorMode:
 			fixedColorCount === undefined ? quick.reductionMode : "auto",

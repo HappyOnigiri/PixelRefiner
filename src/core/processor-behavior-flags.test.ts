@@ -7,7 +7,10 @@ import {
 } from "./background";
 import { getBackgroundTargets, removeBackground } from "./background-removal";
 import { removeSmallComponents } from "./components";
-import { resolveProcessingGrid } from "./processor-grid-resolution";
+import {
+	expandContentGridToCanvas,
+	resolveProcessingGrid,
+} from "./processor-grid-resolution";
 import { normalizeProcessOptions } from "./processor-options";
 import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
 
@@ -142,6 +145,36 @@ const createPhaseAlignedGrid = (
 };
 
 describe("grid search behavior flags", () => {
+	it("expands a content-aligned grid without changing its scale or phase", () => {
+		const grid = {
+			cellW: 4,
+			cellH: 4,
+			offsetX: 0,
+			offsetY: 0,
+			cropX: 10,
+			cropY: 6,
+			cropW: 32,
+			cropH: 48,
+			outW: 8,
+			outH: 12,
+			score: 1,
+		};
+		const expanded = expandContentGridToCanvas(grid, {
+			width: 64,
+			height: 64,
+		});
+
+		expect(expanded.cellW).toBe(grid.cellW);
+		expect(expanded.cellH).toBe(grid.cellH);
+		expect(expanded.cropX).toBe(-2);
+		expect(expanded.cropY).toBe(-2);
+		expect(expanded.outW).toBe(17);
+		expect(expanded.outH).toBe(17);
+		// 元の被写体先頭は、拡張後も同じ格子境界に一致する。
+		expect((expanded.cropX ?? 0) + 3 * expanded.cellW).toBe(grid.cropX);
+		expect((expanded.cropY ?? 0) + 2 * expanded.cellH).toBe(grid.cropY);
+	});
+
 	it("stops using the phase-aware estimate when the search is disabled", () => {
 		const image = createPhaseAlignedGrid(8, 4);
 		const resolve = (phaseAwareGridSearch: boolean) =>
@@ -150,8 +183,8 @@ describe("grid search behavior flags", () => {
 				working: image,
 				geometryImage: image,
 				geometryWorking: image,
-				maskedForDebugOrAuto: image,
 				bgTargets: [],
+				maskedForDebugOrAuto: image,
 				trimAlphaThreshold: 16,
 				watermarkRemovedFromGeometry: false,
 				log: () => {},

@@ -98,6 +98,8 @@ export type ProcessOptions = DetectOptions & {
 	/** セルを横断する少数色を線や輪郭として保護する。 */
 	preserveThinFeatures?: boolean;
 	trimToContent?: boolean;
+	/** 背景透過とトリムから独立した寸法決定用マスクで、処理倍率を固定する。 */
+	preserveProcessingScale?: boolean;
 	trimAlphaThreshold?: number;
 	/** 論理ピクセル単位で小成分を安全に除去する強度。 */
 	smallComponentMode?: SmallComponentRemovalMode;
@@ -110,7 +112,9 @@ export type ProcessOptions = DetectOptions & {
 	 */
 	floatingMaxPixels?: number;
 	/**
-	 * trimToContent=true の場合、背景除去後に BBox で切り抜いた領域から出力グリッド（outW/outH）を推定する。
+	 * 背景除去後の境界から、出力グリッド（outW/outH）を推定する。
+	 * preserveProcessingScale が有効な場合は寸法決定専用マスクを使い、
+	 * trimToContent は推定後のキャンバス範囲だけを変更する。
 	 */
 	autoGridFromTrimmed?: boolean;
 	/**
@@ -212,6 +216,7 @@ export const createDefaultProcessOptions = () =>
 		bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
 		bgConnectivity: PROCESS_DEFAULTS.bgConnectivity,
 		trimToContent: PROCESS_DEFAULTS.trimToContent,
+		preserveProcessingScale: PROCESS_DEFAULTS.preserveProcessingScale,
 		autoGridFromTrimmed: PROCESS_DEFAULTS.autoGridFromTrimmed,
 		fastAutoGridFromTrimmed: PROCESS_DEFAULTS.fastAutoGridFromTrimmed,
 		enableGridDetection: PROCESS_DEFAULTS.enableGridDetection,
@@ -280,6 +285,7 @@ export const normalizeProcessOptions = (
 	cellAlphaThreshold: number;
 	preserveThinFeatures: boolean;
 	trimToContent: boolean;
+	preserveProcessingScale: boolean;
 	trimAlphaThreshold: number;
 	smallComponentMode: SmallComponentRemovalMode;
 	geminiWatermarkRemoval: GeminiWatermarkRemovalMode;
@@ -385,6 +391,8 @@ export const normalizeProcessOptions = (
 	const preserveThinFeatures =
 		raw.preserveThinFeatures ?? PROCESS_DEFAULTS.preserveThinFeatures;
 	const trimToContent = raw.trimToContent ?? PROCESS_DEFAULTS.trimToContent;
+	const preserveProcessingScale =
+		raw.preserveProcessingScale ?? PROCESS_DEFAULTS.preserveProcessingScale;
 	const trimAlphaThreshold = clampInt(
 		raw.trimAlphaThreshold ?? PROCESS_RANGES.trimAlphaThreshold.default,
 		PROCESS_RANGES.trimAlphaThreshold,
@@ -483,6 +491,7 @@ export const normalizeProcessOptions = (
 		cellAlphaThreshold,
 		preserveThinFeatures,
 		trimToContent,
+		preserveProcessingScale,
 		trimAlphaThreshold,
 		smallComponentMode,
 		geminiWatermarkRemoval,
