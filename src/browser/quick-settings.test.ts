@@ -19,16 +19,17 @@ describe("quick settings", () => {
 		});
 	});
 
-	it("uses no color reduction for the default Auto preset", () => {
+	it("leaves color reduction to the processing route for the default Auto preset", () => {
 		const options = createUiInitialProcessOptions();
 
 		expect(options).toMatchObject({
 			processingMode: "auto",
-			reduceColors: false,
-			reduceColorMode: "none",
 			ditherMode: "none",
 			ditherStrength: 0,
 		});
+		expect(options).not.toHaveProperty("reduceColors");
+		expect(options).not.toHaveProperty("reduceColorMode");
+		expect(options).not.toHaveProperty("colorCount");
 	});
 
 	it.each([

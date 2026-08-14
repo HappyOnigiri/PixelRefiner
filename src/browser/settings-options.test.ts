@@ -32,7 +32,8 @@ describe("settings mode options", () => {
 		const second = createProcessOptions(els, state);
 
 		expect(second).toEqual(first);
-		expect(second.reduceColorMode).toBe("none");
+		// Auto プリセットは減色を処理経路へ委ねるため、かんたん設定の減色モードは混入しない。
+		expect(second).not.toHaveProperty("reduceColorMode");
 	});
 
 	it("builds Quick mode only from Quick controls", () => {

@@ -119,11 +119,25 @@ const presetOptions = (
 	...overrides,
 });
 
+/**
+ * 減色の指定を取り除き、処理経路の既定に委ねる。
+ *
+ * [Intended] かんたん設定の減色モード「なし」は減色しないという明示的な指定なので、
+ * そのまま渡すと経路任せの Auto と結果が変わる。経路へ委ねるには指定自体を落とす必要がある。
+ */
+const withRouteManagedReduction = (options: ProcessOptions): ProcessOptions => {
+	const next = { ...options };
+	delete next.reduceColors;
+	delete next.reduceColorMode;
+	delete next.colorCount;
+	return next;
+};
+
 export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	{
 		id: "auto",
 		labelKey: "preset.auto",
-		options: presetOptions({}),
+		options: withRouteManagedReduction(presetOptions({})),
 	},
 	{
 		id: "crisp-sprite",
