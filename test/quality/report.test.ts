@@ -157,8 +157,17 @@ describe.skipIf(!enabled)("quality report", () => {
 				? "unchanged from base branch"
 				: "unchanged from previous run / base branch",
 		);
-		expect(html).toContain('changed":"差分あり"');
-		expect(html).toContain('unchanged":"差分なし"');
+		const isPullRequestReport = results.metadata.kind === "pull-request";
+		expect(html).toContain(
+			isPullRequestReport
+				? 'changed":"ベースブランチと差分あり"'
+				: 'changed":"差分あり"',
+		);
+		expect(html).toContain(
+			isPullRequestReport
+				? 'unchanged":"ベースブランチと差分なし"'
+				: 'unchanged":"差分なし"',
+		);
 		expect(html).toContain('new":"新規追加"');
 		expect(html).not.toContain('data-change="regressed"');
 		expect(html).not.toContain('data-change="improved"');

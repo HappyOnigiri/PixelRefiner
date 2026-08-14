@@ -537,8 +537,8 @@ const PULL_REQUEST_REFERENCE_TRANSLATIONS = {
 	ja: {
 		baseline: "ベースブランチ",
 		baselineDifference: "ベースブランチ差分",
-		changed: "差分あり",
-		unchanged: "差分なし",
+		changed: "ベースブランチと差分あり",
+		unchanged: "ベースブランチと差分なし",
 		changeStatus: "ベースブランチとの比較",
 		previousRunUnavailable:
 			"ベースブランチの生成結果を取得できないため、比較を表示していません。",
