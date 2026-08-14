@@ -2,7 +2,6 @@ import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import {
-	advancedModeControls,
 	advancedSettingControls,
 	applyAdvancedSettingDefaults,
 	backgroundDependentAdvancedControls,
@@ -339,11 +338,20 @@ export const setupSettingsControls = ({
 		}, 300);
 	};
 
-	// 設定を直接変えた場合は、候補プレビューでの選択より新しい指定として扱う。
+	// 出力サイズを決める設定を直接変えた場合は、候補プレビューでの選択より新しい指定として扱う。
+	// [Intended] 対象は出力サイズに効く設定に限る。色やアウトラインまで含めると、
+	// サイズと無関係な微調整のたびに候補モーダルで選んだサイズが失われる。
 	const clearCandidateSelections = () => {
 		imageSession.clearCandidateSelections();
 	};
-	advancedModeControls(els).forEach((el) => {
+	[
+		els.gridDetectionModeSelect,
+		els.forcePixelsWInput,
+		els.forcePixelsHInput,
+		els.advancedProcessingModeSelect,
+		els.advancedDetailLevelSelect,
+		...gridDetectionAdvancedControls(els),
+	].forEach((el) => {
 		el.addEventListener("change", clearCandidateSelections);
 		el.addEventListener("input", clearCandidateSelections);
 	});
