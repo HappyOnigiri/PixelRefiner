@@ -241,11 +241,6 @@ h1 {
   background: var(--surface-hover);
 }
 
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
 .theme-toggle [hidden] {
   display: none;
 }
@@ -1364,8 +1359,6 @@ select:focus {
 
 .processing-warning:focus-visible {
   border-radius: 2px;
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .controls-right {
