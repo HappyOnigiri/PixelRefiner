@@ -82,6 +82,18 @@ export const setupSettingsControls = ({
 		els.bgColorInput.value = hex;
 	};
 
+	/**
+	 * 詳細設定で背景色を直接指定する操作を、抽出方法「色で指定」の選択として扱う。
+	 *
+	 * [Intended] 抽出方法が rgb 以外のままだと、指定した色は入力欄に見えていても
+	 * 処理オプションに渡らず無視される。呼び出し側で updateBgDisabledStates を続けて呼ぶ。
+	 */
+	const selectRgbBackgroundMethod = () => {
+		if (processingState.settingsMode !== "advanced") return;
+		if (els.bgExtractionMethod.value === "rgb") return;
+		els.bgExtractionMethod.value = "rgb";
+	};
+
 	els.closeEyedropperModal.addEventListener("click", closeEyedropperModal);
 	els.quickBackgroundColorInput.addEventListener("input", () => {
 		imageSession.clearCandidateSelections();
@@ -96,11 +108,15 @@ export const setupSettingsControls = ({
 		if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
 			if (!val.startsWith("#")) val = `#${val}`;
 			els.bgColorInput.value = val;
+			selectRgbBackgroundMethod();
+			updateBgDisabledStates();
 		}
 	});
 
 	els.bgColorInput.addEventListener("input", () => {
 		els.bgRgbInput.value = els.bgColorInput.value;
+		selectRgbBackgroundMethod();
+		updateBgDisabledStates();
 	});
 
 	els.eyedropperButton.addEventListener("click", (e) => {
@@ -139,6 +155,7 @@ export const setupSettingsControls = ({
 			const b = currentImage.data[idx + 2];
 			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 			updateRgbInputs(hex);
+			selectRgbBackgroundMethod();
 			updateBgDisabledStates();
 			closeEyedropperModal();
 			triggerAutoProcess();
