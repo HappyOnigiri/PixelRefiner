@@ -152,7 +152,11 @@ describe.skipIf(!enabled)("quality report", () => {
 		).toBe(true);
 		expect(html).toContain('id="active-change-label"');
 		expect(html).toContain('id="visible-count"');
-		expect(html).toContain("unchanged from previous run / base branch");
+		expect(html).toContain(
+			results.metadata.kind === "pull-request"
+				? "unchanged from base branch"
+				: "unchanged from previous run / base branch",
+		);
 		expect(html).toContain('changed":"差分あり"');
 		expect(html).toContain('unchanged":"差分なし"');
 		expect(html).toContain('new":"新規追加"');
