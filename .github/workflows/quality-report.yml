@@ -38,7 +38,16 @@ jobs:
           if [ -d "$baseline_root" ] && [ -f "$baseline_file" ]; then
             echo "QUALITY_BASELINE_ROOT=$baseline_root" >> "$GITHUB_ENV"
             echo "QUALITY_BASELINE_FILE=$baseline_file" >> "$GITHUB_ENV"
+            exit 0
           fi
+          # [Intended] base 側を取得できないときは、チェックイン済みベースラインへ落とさず
+          # 空の参照を渡す。head のベースラインは PR の現在地そのもので、「ベースブランチ」
+          # として並べると常に差分なしのレポートになり、base と比較したように読めてしまう。
+          # 空にしておけばレポート側がベースブランチとの比較を丸ごと省く。
+          empty_root="$RUNNER_TEMP/quality-baseline-empty"
+          mkdir -p "$empty_root"
+          echo "QUALITY_BASELINE_ROOT=$empty_root" >> "$GITHUB_ENV"
+          echo "QUALITY_BASELINE_FILE=$empty_root/baseline.json" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v6
         with:
