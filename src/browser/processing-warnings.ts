@@ -26,8 +26,3 @@ export const translateProcessingWarning = (code: string): string => {
 export const translateProcessingWarnings = (
 	codes: readonly string[],
 ): string[] => codes.map(translateProcessingWarning);
-
-export const shouldNotifyProcessingWarnings = (
-	codes: readonly string[],
-	candidateModalDisplayed: boolean,
-): boolean => codes.length > 0 && !candidateModalDisplayed;

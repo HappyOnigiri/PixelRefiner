@@ -19,12 +19,9 @@ import type { CandidateChooser } from "./candidate-chooser";
 import type { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
-import { showError, showWarning } from "./notifications";
+import { showError } from "./notifications";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
-import {
-	shouldNotifyProcessingWarnings,
-	translateProcessingWarnings,
-} from "./processing-warnings";
+import { translateProcessingWarnings } from "./processing-warnings";
 import {
 	applyQuickSettingsToOptions,
 	type QuickBackground,
@@ -265,6 +262,10 @@ export const createRunProcessing = ({
 		const generation = ++latestGeneration;
 		if (!selection) candidateChooser.dismiss();
 
+		// [Intended] 設定変更前の警告を処理中の設定へ引き継がない。
+		// 新しい結果にも警告があれば、処理完了後に改めて表示する。
+		mainResultViewer.updateWarnings([]);
+		modalResultViewer.updateWarnings([]);
 		mainResultViewer.setLoading(true);
 
 		// UI を無効化
@@ -339,6 +340,9 @@ export const createRunProcessing = ({
 			);
 			mainResultViewer.updateAnalysis(analysisText);
 			modalResultViewer.updateAnalysis(analysisText);
+			const warningMessages = translateProcessingWarnings(analysis.warnings);
+			mainResultViewer.updateWarnings(warningMessages);
+			modalResultViewer.updateWarnings(warningMessages);
 
 			// オーバーレイが過密にならないよう、大きな結果ではグリッドをオフにする。
 			if (resultImage.width > 256 || resultImage.height > 256) {
@@ -398,7 +402,6 @@ export const createRunProcessing = ({
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
-			let candidateModalDisplayed = false;
 			const candidateModalInput = {
 				isAuto: processOptions.processingMode === "auto",
 				isInitial: !effectiveSelection,
@@ -429,20 +432,11 @@ export const createRunProcessing = ({
 						candidateModalAfterPreview.warningPresentation === "candidate-modal"
 					) {
 						candidateChooser.show(previews, analysis.warnings, currentItem.id);
-						candidateModalDisplayed = true;
 					}
 				} catch (error) {
 					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
 					console.error("Failed to create candidate previews:", error);
 				}
-			}
-			if (
-				shouldNotifyProcessingWarnings(
-					analysis.warnings,
-					candidateModalDisplayed,
-				)
-			) {
-				showWarning(translateProcessingWarnings(analysis.warnings).join("\n"));
 			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
 

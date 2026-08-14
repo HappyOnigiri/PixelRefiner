@@ -2048,9 +2048,18 @@
                 <div class="status-text">
                   <span data-i18n="ui.size">Size</span>:
                   <span id="output-size" class="js-output-size">-</span>
-                  <span
-                    class="processing-analysis js-processing-analysis"
-                  ></span>
+                  <span class="processing-analysis-row">
+                    <span
+                      class="processing-analysis js-processing-analysis"
+                    ></span>
+                    <span
+                      class="processing-warning js-processing-warning"
+                      role="img"
+                      tabindex="0"
+                      hidden
+                      >⚠️</span
+                    >
+                  </span>
                 </div>
                 <div class="controls-right">
                   <!-- 注:
@@ -2406,7 +2415,16 @@
             <div class="status-text">
               <span data-i18n="ui.size">Size</span>:
               <span class="js-output-size">-</span>
-              <span class="processing-analysis js-processing-analysis"></span>
+              <span class="processing-analysis-row">
+                <span class="processing-analysis js-processing-analysis"></span>
+                <span
+                  class="processing-warning js-processing-warning"
+                  role="img"
+                  tabindex="0"
+                  hidden
+                  >⚠️</span
+                >
+              </span>
             </div>
             <div class="controls-right">
               <div class="bg-selector js-bg-selector">

@@ -23,7 +23,7 @@ describe("candidate modal decision", () => {
 		});
 	});
 
-	it("WARNING がなければモーダルも通知も表示しない", () => {
+	it("WARNING がなければモーダルもアイコンも表示しない", () => {
 		expect(evaluate({ warningCodes: [] })).toMatchObject({
 			candidateModalDecision: "would-not-show",
 			candidateModalReason: "NO_WARNING",
@@ -31,11 +31,11 @@ describe("candidate modal decision", () => {
 		});
 	});
 
-	it("低グリッド信頼度以外の WARNING は通常通知へ送る", () => {
+	it("低グリッド信頼度以外の WARNING はアイコンへ送る", () => {
 		expect(evaluate({ warningCodes: ["CONTENT_LOSS_RISK"] })).toMatchObject({
 			candidateModalDecision: "would-not-show",
 			candidateModalReason: "NO_LOW_GRID_CONFIDENCE",
-			warningPresentation: "toast",
+			warningPresentation: "indicator",
 		});
 	});
 
@@ -46,11 +46,11 @@ describe("candidate modal decision", () => {
 		});
 	});
 
-	it("候補プレビューが生成できなければ通常通知へフォールバックする", () => {
+	it("候補プレビューが生成できなければアイコンへフォールバックする", () => {
 		expect(evaluate({ candidatePreviewCount: 0 })).toMatchObject({
 			candidateModalDecision: "would-not-show",
 			candidateModalReason: "NO_CANDIDATE_PREVIEW",
-			warningPresentation: "toast",
+			warningPresentation: "indicator",
 		});
 	});
 
@@ -58,7 +58,7 @@ describe("candidate modal decision", () => {
 		expect(evaluate({ showCandidates: false })).toMatchObject({
 			candidateModalDecision: "would-not-show",
 			candidateModalReason: "SHOW_CANDIDATES_DISABLED",
-			warningPresentation: "toast",
+			warningPresentation: "indicator",
 		});
 	});
 
@@ -66,18 +66,18 @@ describe("candidate modal decision", () => {
 		expect(evaluate({ hasCandidateSelection: true })).toMatchObject({
 			candidateModalDecision: "would-not-show",
 			candidateModalReason: "CANDIDATE_SELECTION_EXISTS",
-			warningPresentation: "toast",
+			warningPresentation: "indicator",
 		});
 	});
 
 	// [Intended] 候補選択モーダルは Auto 専用。利用者が処理経路を選んでいる場合に
-	// 別の経路を提案せず、WARNING を通常通知へ送ることを固定する。
-	it("Auto 以外はモーダルを表示せず WARNING を通常通知へ送る", () => {
+	// 別の経路を提案せず、WARNING を出力欄に表示することを固定する。
+	it("Auto 以外はモーダルを表示せず WARNING をアイコンへ送る", () => {
 		expect(evaluate({ isAuto: false })).toMatchObject({
 			candidateModalEligible: false,
 			candidateModalDecision: "not-applicable",
 			candidateModalReason: "NOT_AUTO",
-			warningPresentation: "toast",
+			warningPresentation: "indicator",
 		});
 	});
 
@@ -97,7 +97,7 @@ describe("candidate modal decision", () => {
 			evaluate({ isAuto: false, hasCandidateSelection: true }),
 		).toMatchObject({
 			candidateModalReason: "CANDIDATE_SELECTION_EXISTS",
-			warningPresentation: "toast",
+			warningPresentation: "indicator",
 		});
 	});
 

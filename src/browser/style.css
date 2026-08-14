@@ -1313,8 +1313,10 @@ select:focus {
   margin-bottom: 12px;
 }
 
-.processing-analysis {
-  display: block;
+.processing-analysis-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: var(--text-muted);
   font-family: inherit;
   margin-top: 4px;
@@ -1322,6 +1324,20 @@ select:focus {
 
 .processing-analysis:empty {
   display: none;
+}
+
+.processing-warning {
+  color: #b45309 !important;
+  cursor: help;
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.processing-warning:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .controls-right {
