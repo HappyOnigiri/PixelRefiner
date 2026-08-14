@@ -73,7 +73,9 @@ export const setupSettingsControls = ({
 		if (processingState.settingsMode === "quick") {
 			setBackgroundColor(hex);
 			els.quickBackgroundSelect.value = "pick";
-			updateQuickSettingsDisabledStates(els);
+			updateQuickSettingsDisabledStates(els, undefined, {
+				preservePendingAutoRoute: true,
+			});
 			imageSession.clearCandidateSelections();
 			return;
 		}

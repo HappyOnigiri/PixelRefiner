@@ -22,6 +22,10 @@ export type QuickSettingsControls = {
 	setBackgroundColor: (hex: string) => void;
 };
 
+type QuickSettingsDisabledStateOptions = {
+	preservePendingAutoRoute?: boolean;
+};
+
 const setQuickControlDisabled = (
 	control: HTMLInputElement | HTMLSelectElement,
 	disabled: boolean,
@@ -36,16 +40,25 @@ const setQuickControlDisabled = (
 export const updateQuickSettingsDisabledStates = (
 	els: Elements,
 	activeRoute?: ProcessingRoute,
+	options: QuickSettingsDisabledStateOptions = {},
 ): void => {
 	const processingMode = els.quickProcessingModeSelect.value as ProcessingMode;
 	const effectiveRoute =
 		processingMode === "auto" ? activeRoute : processingMode;
-	// [Intended] Auto は画像ごとに経路が変わるため、処理結果が無い間は選択を許可する。
-	// 結果が出た後は、その画像で実際に採用された経路に合わせて無効状態を示す。
-	setQuickControlDisabled(
-		els.quickDetailLevelSelect,
-		effectiveRoute !== undefined && effectiveRoute !== "convert",
-	);
+	// [Intended] Auto の再処理中は直前に確定した経路の表示状態を維持し、
+	// 新しい処理結果が確定してからサイズ項目を切り替える。
+	if (
+		!(
+			processingMode === "auto" &&
+			options.preservePendingAutoRoute &&
+			activeRoute === undefined
+		)
+	) {
+		setQuickControlDisabled(
+			els.quickDetailLevelSelect,
+			effectiveRoute !== undefined && effectiveRoute !== "convert",
+		);
+	}
 
 	const background = els.quickBackgroundSelect.value as QuickBackground;
 	els.quickBackgroundPicker.style.display =
@@ -93,7 +106,9 @@ export const setupQuickSettingsControls = ({
 	].forEach((control) => {
 		control.addEventListener("change", () => {
 			clearCandidateSelections();
-			updateQuickSettingsDisabledStates(els);
+			updateQuickSettingsDisabledStates(els, undefined, {
+				preservePendingAutoRoute: true,
+			});
 			triggerAutoProcess();
 		});
 	});
