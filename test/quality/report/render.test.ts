@@ -176,7 +176,7 @@ describe("quality report case detail", () => {
 			sidebar.indexOf('data-i18n="language"'),
 		);
 		const detailBody = between(
-			renderCaseDetailHtml(result, true),
+			renderCaseDetailHtml(result, true, "local"),
 			"<body>",
 			"<script>",
 		);
@@ -186,7 +186,7 @@ describe("quality report case detail", () => {
 	it("runs the theme bootstrap before report styles are parsed", () => {
 		for (const html of [
 			renderHtml(makeResults([makeCaseResult()])),
-			renderCaseDetailHtml(makeCaseResult(), true),
+			renderCaseDetailHtml(makeCaseResult(), true, "local"),
 		]) {
 			expect(html.indexOf("pixel-refiner-theme")).toBeGreaterThan(-1);
 			expect(html.indexOf("pixel-refiner-theme")).toBeLessThan(
@@ -205,7 +205,7 @@ describe("quality report case detail", () => {
 			"</h2>",
 		);
 		const detailHeading = between(
-			renderCaseDetailHtml(result, true),
+			renderCaseDetailHtml(result, true, "local"),
 			"<h1>",
 			"</h1>",
 		);
@@ -219,7 +219,11 @@ describe("quality report case detail", () => {
 
 	it("marks an auto case with the auto parameter badge", () => {
 		const detailHeading = between(
-			renderCaseDetailHtml(makeCaseResult({ parameterMode: "auto" }), true),
+			renderCaseDetailHtml(
+				makeCaseResult({ parameterMode: "auto" }),
+				true,
+				"local",
+			),
 			"<h1>",
 			"</h1>",
 		);
@@ -232,7 +236,7 @@ describe("quality report case detail", () => {
 	// [Intended] 実行時間はベースラインを持たないので、比較列のある指標テーブルには
 	// 出さない。表へ紛れ込むと毎回「判定不能」の行が増える。
 	it("shows the processing time outside the metric table", () => {
-		const detail = renderCaseDetailHtml(makeCaseResult(), true);
+		const detail = renderCaseDetailHtml(makeCaseResult(), true, "local");
 		expect(detail).toContain(
 			'<strong data-i18n="processingTime">Time</strong>: 12.35ms',
 		);
@@ -248,7 +252,7 @@ describe("quality report case detail", () => {
 		expect(renderHtml(makeResults([result]))).toContain(
 			'<span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small>',
 		);
-		expect(renderCaseDetailHtml(result, true)).toContain(
+		expect(renderCaseDetailHtml(result, true, "local")).toContain(
 			'<span data-i18n="input">Input</span> <small class="image-size">(64x64px)</small>',
 		);
 	});
@@ -260,7 +264,7 @@ describe("quality report case detail", () => {
 		expect(renderHtml(makeResults([result]))).not.toContain(
 			"<figcaption data-i18n=",
 		);
-		expect(renderCaseDetailHtml(result, true)).not.toContain(
+		expect(renderCaseDetailHtml(result, true, "local")).not.toContain(
 			"<figcaption data-i18n=",
 		);
 	});
@@ -289,7 +293,7 @@ describe("quality report case detail", () => {
 		});
 		for (const html of [
 			renderHtml(makeResults([result])),
-			renderCaseDetailHtml(result, true),
+			renderCaseDetailHtml(result, true, "local"),
 		]) {
 			expect(html).toContain(
 				'<span data-i18n="result">Result</span> <small class="image-size size-mismatch">(16x16px)</small>',
@@ -321,7 +325,7 @@ describe("quality report case detail", () => {
 				backgroundMask: { width: 16, height: 16 },
 			},
 		});
-		expect(renderCaseDetailHtml(result, true)).not.toContain(
+		expect(renderCaseDetailHtml(result, true, "local")).not.toContain(
 			'<small class="image-size size-mismatch">',
 		);
 	});
@@ -331,7 +335,7 @@ describe("quality report case detail", () => {
 	it("labels unmet target assertions with the target verdict key", () => {
 		const result = makeCaseResult();
 		const targetSection = between(
-			renderCaseDetailHtml(result, true),
+			renderCaseDetailHtml(result, true, "local"),
 			'<h2 data-i18n="targetComparison">',
 			"</section>",
 		);
@@ -377,6 +381,7 @@ describe("quality report without a previous run", () => {
 		const detail = renderCaseDetailHtml(
 			makeCaseResultWithoutPreviousRun(),
 			false,
+			"local",
 		);
 		expect(detail).not.toContain('data-i18n="baseline"');
 		expect(detail).not.toContain('data-i18n="delta"');
@@ -412,7 +417,11 @@ describe("quality report without a metric reference", () => {
 	});
 
 	it("hides the metric values measured against the case's own output", () => {
-		const detail = renderCaseDetailHtml(autoCaseWithoutBaseline(), false);
+		const detail = renderCaseDetailHtml(
+			autoCaseWithoutBaseline(),
+			false,
+			"local",
+		);
 		const table = between(detail, "<tbody>", "</table>");
 		expect(table).not.toContain(">1.5<");
 		expect(table).not.toContain(">0.9<");
@@ -424,6 +433,7 @@ describe("quality report without a metric reference", () => {
 		const detail = renderCaseDetailHtml(
 			makeCaseResultWithoutPreviousRun(),
 			false,
+			"local",
 		);
 		const table = between(detail, "<tbody>", "</table>");
 		expect(table).toContain(">1.5<");
@@ -440,7 +450,9 @@ describe("quality report without a metric reference", () => {
 		expect(markdown).toContain(
 			"- Top-1 size accuracy: 100.0% (1 of 2 cases with a reference output)",
 		);
-		expect(renderMarkdown(results)).toContain("- Top-1 size accuracy: 100.0%\n");
+		expect(renderMarkdown(results)).toContain(
+			"- Top-1 size accuracy: 100.0%\n",
+		);
 	});
 
 	it("reports the reference-dependent summary as n/a when nothing is comparable", () => {
@@ -463,6 +475,26 @@ describe("quality report without a metric reference", () => {
 	});
 });
 
+describe("quality report for a pull request", () => {
+	it("labels the comparison reference as the base branch", () => {
+		const results = makeResults([makeCaseResult()]);
+		const pullRequestResults: QualityResults = {
+			...results,
+			metadata: { ...results.metadata, kind: "pull-request" },
+		};
+		const index = renderHtml(pullRequestResults);
+		const detail = renderCaseDetailHtml(makeCaseResult(), true, "pull-request");
+		expect(renderMarkdown(pullRequestResults)).toContain(
+			"|Case|Target quality|Change from base branch|",
+		);
+		for (const html of [index, detail]) {
+			expect(html).toContain('"baseline":"Base branch"');
+			expect(html).toContain('"baseline":"ベースブランチ"');
+			expect(html).toContain('"baseline":"基础分支"');
+		}
+	});
+});
+
 describe("quality report for a release", () => {
 	const releaseResults = (previousVersion: string | null): QualityResults => {
 		const results = makeResults([makeCaseResult()]);
@@ -480,6 +512,7 @@ describe("quality report for a release", () => {
 
 	it("links the release tag the previous run came from", () => {
 		const index = renderHtml(releaseResults("v1.1.2"));
+		expect(index).toContain('"baseline":"Previous run"');
 		expect(index).toContain('data-i18n="releaseReport"');
 		expect(index).toContain('data-i18n="previousVersion"');
 		expect(index).toContain(

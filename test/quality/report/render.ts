@@ -1,5 +1,9 @@
 import path from "node:path";
-import type { QualityCaseResult, QualityResults } from "../types";
+import type {
+	QualityCaseResult,
+	QualityReportKind,
+	QualityResults,
+} from "../types";
 import {
 	renderAutoDiagnosticBadges,
 	renderCandidateDiagnostics,
@@ -128,17 +132,18 @@ ${renderReportSidebar(results, previousRunAvailable)}
 		<main class="report-main">${cards}</main>
 	</div>
 ${renderImageDialog()}
-	<script>${renderClientScript()}</script>
+	<script>${renderClientScript(results.metadata.kind)}</script>
 </body>
 </html>`;
 };
 
-// [Intended] 前回生成の有無は既定値を持たせず必ず渡させる。一覧と Markdown は
-// results から自分で判定するので、詳細ページだけ渡し忘れると一覧では省いた前回比較の
-// 欄が詳細ページにだけ空で残る。
+// [Intended] 前回生成の有無とレポート種別は既定値を持たせず必ず渡させる。一覧と
+// Markdown は results から自分で判定するので、詳細ページだけ渡し忘れると、一覧では
+// 省いた前回比較の欄が詳細ページにだけ空で残り、比較元の表記も一覧と食い違う。
 export const renderCaseDetailHtml = (
 	result: QualityCaseResult,
 	previousRunAvailable: boolean,
+	kind: QualityReportKind,
 ): string => {
 	const description = describeCase(result);
 	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];
@@ -385,7 +390,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 		</section>
 	</main>
 ${renderImageDialog()}
-	<script>${renderClientScript()}</script>
+	<script>${renderClientScript(kind)}</script>
 </body>
 </html>`;
 };
@@ -395,9 +400,13 @@ export const renderMarkdown = (results: QualityResults): string => {
 	// [Intended] 前回生成が無いレポートでは全ケースが "new" になるので、変化の列と
 	// その集計を出さない。HTML と同じ判断で、比較できなかった事実を欠測として扱う。
 	const previousRunAvailable = hasPreviousRun(results);
+	const changeHeader =
+		results.metadata.kind === "pull-request"
+			? "Change from base branch|"
+			: "Change from previous run|";
 	const markdownHeader = [
 		"|Case|Target quality|",
-		previousRunAvailable ? "Change from previous run|" : "",
+		previousRunAvailable ? changeHeader : "",
 		"Output|",
 		"Classification confidence|Grid confidence|",
 		"Candidate modal (expected)|WARNING presentation|",

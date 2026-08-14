@@ -174,7 +174,7 @@ export const aggregateQualityReport = (
 		mkdirSync(caseDirectory, { recursive: true });
 		writeFileSync(
 			path.join(caseDirectory, "index.html"),
-			renderCaseDetailHtml(result, previousRunAvailable),
+			renderCaseDetailHtml(result, previousRunAvailable, results.metadata.kind),
 		);
 	}
 	return results;

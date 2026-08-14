@@ -106,7 +106,18 @@ export const assertBaselineUpdateIsSafe = (profile: string): void => {
 };
 
 export const loadBaseline = (): QualityBaseline => {
-	const file = baselineFile();
+	return loadBaselineFile(baselineFile());
+};
+
+/**
+ * PR ベース側への差し替えを無視し、head にチェックインされた指標を読み込む。
+ * [Intended] PR レポートの比較対象は base のまま保ちつつ、head 自身のベースラインが
+ * 現在の生成結果と同期しているかを別に検証するために使う。
+ */
+export const loadCheckedInBaseline = (): QualityBaseline =>
+	loadBaselineFile(DEFAULT_BASELINE_FILE);
+
+const loadBaselineFile = (file: string): QualityBaseline => {
 	if (!existsSync(file))
 		return {
 			version: QUALITY_BASELINE_VERSION,

@@ -1,17 +1,19 @@
+import type { QualityReportKind } from "../types";
 import {
 	applyInitialQualityReportTheme,
 	QUALITY_REPORT_THEME_CONFIG,
 	runQualityReportClient,
 } from "./client";
-import { REPORT_TRANSLATIONS } from "./translations";
+import { reportTranslations } from "./translations";
 
 const serializedThemeConfig = JSON.stringify(QUALITY_REPORT_THEME_CONFIG);
 
 export const renderThemeBootstrapScript = (): string =>
 	`(${applyInitialQualityReportTheme.toString()})(${serializedThemeConfig});`;
 
-export const renderClientScript = (): string =>
-	`window.__QUALITY_REPORT_TRANSLATIONS__=${JSON.stringify(REPORT_TRANSLATIONS)};(${runQualityReportClient.toString()})(${serializedThemeConfig});`;
+export const renderClientScript = (kind: QualityReportKind): string =>
+	`window.__QUALITY_REPORT_TRANSLATIONS__=${JSON.stringify(reportTranslations(kind))};` +
+	`(${runQualityReportClient.toString()})(${serializedThemeConfig});`;
 
 export const renderThemeToggle = (): string => `<div class="theme-toggle-row">
 	<button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">

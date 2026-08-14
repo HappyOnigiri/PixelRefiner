@@ -4,10 +4,12 @@ import {
 	assertBaselineUpdateIsSafe,
 	isBaselineImageDeclaredUpdated,
 	loadBaseline,
+	loadCheckedInBaseline,
 } from "./baseline";
 import {
+	evaluateQualityCase,
+	generateQualityBaseline,
 	runQualityCase,
-	toBaselineCaseEntry,
 	writeQualityBaselineImage,
 } from "./benchmark";
 import { compareMetrics } from "./comparison";
@@ -113,6 +115,12 @@ const registerGateShard = (
 	const baselineById = new Map(
 		loadBaseline().cases.map((baselineCase) => [baselineCase.id, baselineCase]),
 	);
+	const checkedInBaselineById = new Map(
+		loadCheckedInBaseline().cases.map((baselineCase) => [
+			baselineCase.id,
+			baselineCase,
+		]),
+	);
 	// [Intended] CI のゲートステップだけが立てる環境変数。ローカル実行では常に false になり、
 	// 従来どおりすべての regression がゲート失敗になる。
 	const allowDeclaredAutoChanges = allowDeclaredAutoChangesFromEnvironment();
@@ -121,10 +129,26 @@ const registerGateShard = (
 	it.each(cases)(
 		writeReport ? "reports and evaluates $id" : "evaluates $id",
 		(qualityCase) => {
-			const result = runQualityCase(qualityCase, writeReport);
+			const evaluation = evaluateQualityCase(qualityCase, writeReport);
+			const result = evaluation.result;
 			if (writeReport) results.push(result);
 			const isAutoCase = caseParameterMode(qualityCase) === "auto";
+			// [Intended] 同一実行内の再現性を先に確かめる。出力が非決定的になった変更では
+			// 下の同期チェックも必ず落ちるため、順序を逆にすると「ベースラインが古いだけ」と
+			// 誤診させ、ベースライン更新で非決定性を承認してしまう。
 			expect(result.metrics.byteIdentical).toBe(true);
+			expect(
+				evaluation.checkedInBaselineMatches,
+				`${qualityCase.id} output differs from the checked-in head baseline; ` +
+					"inspect the report with make report, then run pnpm test:quality:update " +
+					"if the change is intended",
+			).toBe(true);
+			expect(
+				evaluation.checkedInBaselineEntry,
+				`${qualityCase.id} metrics differ from the checked-in head baseline; ` +
+					"inspect the report with make report, then run pnpm test:quality:update " +
+					"if the change is intended",
+			).toEqual(checkedInBaselineById.get(qualityCase.id));
 			// [Intended] 自動判定ケースには正解画像がなく、破綻や出力サイズは
 			// 「今の自動判定の実力」そのものなので絶対値では落とさない。悪化は
 			// ベースライン比較（catastrophicFailure の false→true や指標低下）で捕まえる。
@@ -189,11 +213,11 @@ const registerGateShard = (
 };
 
 /**
- * ベースライン更新の stage1（並列生成）。各ケースを書き換え前の既存ベースラインに
- * 対して測定し、指標と新しい出力画像をステージング領域へ書き出す。全シャードが
- * 読むのは同じ既存ベースラインだけなので、この段階は読み取り専用で並列安全。
+ * ベースライン更新の stage1（並列生成）。各ケースの新しい出力画像と、それを基準
+ * （explicit ケースはケース定義の正解画像）に測った指標をステージング領域へ書き出す。
+ * 既存のベースラインは読まないので、この段階は追跡ファイルに触れず並列安全。
  * test/quality/baseline.json と baseline/ 本体の置き換えは stage2（cases.test.ts の
- * 更新ブロック）が集約後に一括で行う。
+ * 更新ブロック）が集約後に一括で行い、画像と指標を同じ生成結果で揃える。
  */
 const registerUpdateShard = (
 	cases: QualityImageCase[],
@@ -203,11 +227,11 @@ const registerUpdateShard = (
 	it.each(cases)(
 		"stages baseline update for $id",
 		(qualityCase) => {
-			const result = runQualityCase(qualityCase);
-			entries.push(toBaselineCaseEntry(result));
+			const generated = generateQualityBaseline(qualityCase);
+			entries.push(generated.entry);
 			writeQualityBaselineImage(
-				qualityCase,
 				stagingBaselineImagePath(qualityCase.id),
+				generated.image,
 			);
 		},
 		QUALITY_CASE_TIMEOUT_MS,

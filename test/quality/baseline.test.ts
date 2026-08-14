@@ -6,6 +6,7 @@ import {
 	assertBaselineUpdateIsSafe,
 	isBaselineImageDeclaredUpdated,
 	loadBaseline,
+	loadCheckedInBaseline,
 } from "./baseline";
 import { QUALITY_BASELINE_VERSION } from "./types";
 
@@ -42,6 +43,28 @@ describe("quality baseline", () => {
 		expect(() => assertBaselineUpdateIsSafe("full")).toThrow(
 			"cannot use QUALITY_BASELINE_ROOT",
 		);
+	});
+
+	it("reads checked-in head metrics independently from the comparison baseline", () => {
+		const directory = mkdtempSync(
+			path.join(tmpdir(), "pixel-refiner-external-baseline-"),
+		);
+		const file = path.join(directory, "baseline.json");
+		try {
+			writeFileSync(
+				file,
+				JSON.stringify({
+					version: QUALITY_BASELINE_VERSION,
+					commit: "external",
+					cases: [],
+				}),
+			);
+			vi.stubEnv("QUALITY_BASELINE_FILE", file);
+			expect(loadBaseline().cases).toEqual([]);
+			expect(loadCheckedInBaseline().cases.length).toBeGreaterThan(0);
+		} finally {
+			rmSync(directory, { recursive: true, force: true });
+		}
 	});
 });
 

@@ -1,3 +1,5 @@
+import type { QualityReportKind } from "../types";
+
 export const REPORT_TRANSLATIONS = {
 	en: {
 		title: "PixelRefiner quality report",
@@ -518,3 +520,74 @@ export const REPORT_TRANSLATIONS = {
 		},
 	},
 } as const;
+
+/**
+ * 既存辞書のキー集合から導く上書き辞書の型。
+ * [Intended] 独立したオブジェクト型にすると、キー名の打ち間違いは未使用キーが増える
+ * だけで型検査を通り、表示が黙って上書き前の文言に戻る。言語の取りこぼしも同様に
+ * 検出できないため、言語ごとに既存キーの部分集合であることを型で強制する。
+ */
+type ReportTranslationOverrides = {
+	[L in keyof typeof REPORT_TRANSLATIONS]: {
+		[K in keyof (typeof REPORT_TRANSLATIONS)[L]]?: (typeof REPORT_TRANSLATIONS)[L][K] extends string
+			? string
+			: (typeof REPORT_TRANSLATIONS)[L][K];
+	};
+};
+
+const PULL_REQUEST_REFERENCE_TRANSLATIONS: ReportTranslationOverrides = {
+	en: {
+		baseline: "Base branch",
+		baselineDifference: "Base-branch difference",
+		changed: "changed from base branch",
+		unchanged: "unchanged from base branch",
+		changeStatus: "Change from base branch",
+		previousRunUnavailable:
+			"The base-branch output is unavailable, so comparisons with it are omitted.",
+		metricImproved: "metric improved against base branch",
+		metricRegressed: "metric regressed against base branch",
+		metricUnchanged: "metric unchanged against base branch",
+	},
+	ja: {
+		baseline: "ベースブランチ",
+		baselineDifference: "ベースブランチ差分",
+		changed: "ベースブランチと差分あり",
+		unchanged: "ベースブランチと差分なし",
+		changeStatus: "ベースブランチとの比較",
+		previousRunUnavailable:
+			"ベースブランチの生成結果を取得できないため、比較を表示していません。",
+		metricImproved: "指標がベースブランチより改善",
+		metricRegressed: "指標がベースブランチより悪化",
+		metricUnchanged: "指標がベースブランチと同じ",
+	},
+	"zh-CN": {
+		baseline: "基础分支",
+		baselineDifference: "与基础分支的差异",
+		changed: "与基础分支不同",
+		unchanged: "与基础分支相同",
+		changeStatus: "与基础分支的比较",
+		previousRunUnavailable: "无法获取基础分支的生成结果，因此不显示相关比较。",
+		metricImproved: "指标优于基础分支",
+		metricRegressed: "指标劣于基础分支",
+		metricUnchanged: "指标与基础分支相同",
+	},
+} as const;
+
+/** PR レポートだけ比較元をベースブランチと明示し、リリース比較の表現は維持する。 */
+export const reportTranslations = (kind: QualityReportKind) => {
+	if (kind !== "pull-request") return REPORT_TRANSLATIONS;
+	return {
+		en: {
+			...REPORT_TRANSLATIONS.en,
+			...PULL_REQUEST_REFERENCE_TRANSLATIONS.en,
+		},
+		ja: {
+			...REPORT_TRANSLATIONS.ja,
+			...PULL_REQUEST_REFERENCE_TRANSLATIONS.ja,
+		},
+		"zh-CN": {
+			...REPORT_TRANSLATIONS["zh-CN"],
+			...PULL_REQUEST_REFERENCE_TRANSLATIONS["zh-CN"],
+		},
+	};
+};

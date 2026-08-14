@@ -39,15 +39,14 @@ so local report generation performs only the work needed for its artifacts.
 
 `pnpm test:quality:update` also runs Vitest twice. The first run
 (`quality:update:generate`) executes the shards with
-`UPDATE_QUALITY_BASELINE=1`: each case is measured against the still-unchanged
-baseline images (read-only, so parallel shards cannot race each other) and the
-resulting metrics and output image are written to
-`tmp/quality-baseline-update`. The second run (`quality:update:apply`)
+`UPDATE_QUALITY_BASELINE=1`: each case generates its next approved image and
+measures the stored metrics against the same reference the gate uses — the newly
+generated image for auto cases and the declared expectation image for explicit
+cases — then writes both to `tmp/quality-baseline-update`. The second run (`quality:update:apply`)
 executes `cases.test.ts`, which merges the staged results back into manifest
 order and performs the only write to `test/quality/baseline.json` and
-`test/quality/baseline/`. Splitting the write from the measurement keeps the
-"measure against the old baseline, then replace it" requirement intact while
-letting the measurement itself run in parallel.
+`test/quality/baseline/`. Splitting generation from the final write keeps the
+checked-in image and metrics consistent while letting generation run in parallel.
 
 Open `tmp/quality-report/latest/index.html` directly in a browser after
 generating a report. The report includes JSON and Markdown summaries plus, for
@@ -159,11 +158,17 @@ The stored baseline records approved result images as well as mean RGBA error,
 edge F1, background-mask IoU, small-component retention, and
 catastrophic-failure status. On pull requests, CI reads these files from the PR
 base commit, so updating baseline files in the head commit cannot hide a change.
-Each run additionally reports Top-1 and Top-3 output-size accuracy, grid phase
-error, byte determinism, runtime, and an image-buffer memory approximation.
+The gate separately requires the head output and metrics to match the baseline
+checked into the head commit. This prevents a merged change from leaving a stale
+comparison reference for later pull requests. Each run additionally reports
+Top-1 and Top-3 output-size accuracy, grid phase error, byte determinism, runtime,
+and an image-buffer memory approximation.
 
 A catastrophic failure means a 1-pixel dimension, an unreasonable output area,
-or removal of more than 80% of expected opaque pixels. Baseline updates are
+or removal of more than 80% of expected opaque pixels. Auto cases measure the
+stored value against their own output, so only the dimension and area conditions
+can fire there; losing opaque pixels surfaces in the gate comparison against the
+PR base instead of in the stored entry. Baseline updates are
 explicit; regular test and report commands never rewrite checked-in
 expectations.
 
