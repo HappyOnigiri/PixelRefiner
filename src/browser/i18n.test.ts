@@ -180,11 +180,11 @@ describe("I18nManager", () => {
 				"tooltip.help.quick_auto_trim",
 				"option.auto_trim_auto",
 				"option.auto_trim_none",
-				"option.size_smallest",
+				"option.size_very_small",
 				"option.size_small",
-				"option.size_medium",
+				"option.size_slightly_small",
+				"option.size_standard",
 				"option.size_large",
-				"option.size_largest",
 			] as const) {
 				expect(i18n.t(key)).not.toBe(key);
 			}

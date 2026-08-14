@@ -1,7 +1,3 @@
-import { CONVERT_DETAIL_SCALES } from "../shared/config";
-
-const asPercentage = (scale: number): string => `${String(scale * 100)}%`;
-
 export type Language = "ja" | "en" | "zh-CN";
 
 const isLanguage = (value: string | null): value is Language =>
@@ -96,11 +92,11 @@ const resources = {
 		"option.processing_refine": "ドットを整える",
 		"option.processing_convert": "ドット絵へ変換",
 		"option.processing_preserve": "原寸を維持",
-		"option.size_smallest": `最小（${asPercentage(CONVERT_DETAIL_SCALES.smallest)}）`,
-		"option.size_small": `小（${asPercentage(CONVERT_DETAIL_SCALES.small)}）`,
-		"option.size_medium": `中（${asPercentage(CONVERT_DETAIL_SCALES.coarse)}）`,
-		"option.size_large": `大（${asPercentage(CONVERT_DETAIL_SCALES.balanced)}）`,
-		"option.size_largest": `最大（${asPercentage(CONVERT_DETAIL_SCALES.detailed)}）`,
+		"option.size_very_small": "とても小さい",
+		"option.size_small": "小さい",
+		"option.size_slightly_small": "やや小さい",
+		"option.size_standard": "標準",
+		"option.size_large": "大きい",
 		"option.detail_coarse": "粗め",
 		"option.detail_balanced": "バランス",
 		"option.detail_detailed": "細かめ",
@@ -208,7 +204,7 @@ const resources = {
 		"tooltip.help.quick_processing_mode":
 			"画像の処理方法を選びます。\n\nAuto: 画像を解析して処理経路を自動選択。\nドットを整える: 拡大・補間されたドット絵を復元。\nドット絵へ変換: 通常画像をドット絵化。\n原寸を維持: 縮小せずに仕上げます。",
 		"tooltip.help.quick_detail":
-			"「ドット絵へ変換」で、自動算出した基準サイズ（100%）に対する出力サイズの目安を選びます。色数など、ほかの設定には影響しません。\n\nAutoでは「ドット絵へ変換」が選ばれた画像にだけ適用されます。",
+			"「ドット絵へ変換」で使う出力サイズを5段階から選びます。「標準」は自動算出した基準サイズで、「大きい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\nAutoでは「ドット絵へ変換」が選ばれた画像にだけ適用されます。",
 		"tooltip.help.quick_reduction_mode":
 			"減色しないか、固定色数または標準パレットで減色するかを選びます。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
@@ -491,11 +487,11 @@ const resources = {
 		"option.processing_refine": "优化像素",
 		"option.processing_convert": "转换为像素画",
 		"option.processing_preserve": "保持原尺寸",
-		"option.size_smallest": `最小（${asPercentage(CONVERT_DETAIL_SCALES.smallest)}）`,
-		"option.size_small": `小（${asPercentage(CONVERT_DETAIL_SCALES.small)}）`,
-		"option.size_medium": `中（${asPercentage(CONVERT_DETAIL_SCALES.coarse)}）`,
-		"option.size_large": `大（${asPercentage(CONVERT_DETAIL_SCALES.balanced)}）`,
-		"option.size_largest": `最大（${asPercentage(CONVERT_DETAIL_SCALES.detailed)}）`,
+		"option.size_very_small": "非常小",
+		"option.size_small": "小",
+		"option.size_slightly_small": "较小",
+		"option.size_standard": "标准",
+		"option.size_large": "大",
 		"option.detail_coarse": "粗略",
 		"option.detail_balanced": "平衡",
 		"option.detail_detailed": "精细",
@@ -602,7 +598,7 @@ const resources = {
 		"tooltip.help.quick_processing_mode":
 			"选择图像的处理方式。\n\nAuto：分析图像并自动选择处理路径。\n优化像素：还原放大或插值后的像素画。\n转换为像素画：把普通图像转换为像素画。\n保持原尺寸：不缩小图像。",
 		"tooltip.help.quick_detail":
-			"在“转换为像素画”路径中，选择相对于自动计算的基准尺寸（100%）的近似输出尺寸，不影响颜色数量等其他设置。\n\n在Auto中，仅当图像选择了转换路径时生效。",
+			"在“转换为像素画”路径中，从五档输出尺寸中进行选择。“标准”使用自动计算的基准尺寸，“大”也不会放大到超过原图尺寸。不影响颜色数量等其他设置。\n\n在Auto中，仅当图像选择了转换路径时生效。",
 		"tooltip.help.quick_reduction_mode":
 			"选择不减色、固定颜色数量或内置标准调色板。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
@@ -885,11 +881,11 @@ const resources = {
 		"option.processing_refine": "Refine Pixels",
 		"option.processing_convert": "Convert to Pixel Art",
 		"option.processing_preserve": "Preserve Original Size",
-		"option.size_smallest": `Smallest (${asPercentage(CONVERT_DETAIL_SCALES.smallest)})`,
-		"option.size_small": `Small (${asPercentage(CONVERT_DETAIL_SCALES.small)})`,
-		"option.size_medium": `Medium (${asPercentage(CONVERT_DETAIL_SCALES.coarse)})`,
-		"option.size_large": `Large (${asPercentage(CONVERT_DETAIL_SCALES.balanced)})`,
-		"option.size_largest": `Largest (${asPercentage(CONVERT_DETAIL_SCALES.detailed)})`,
+		"option.size_very_small": "Very small",
+		"option.size_small": "Small",
+		"option.size_slightly_small": "Slightly small",
+		"option.size_standard": "Standard",
+		"option.size_large": "Large",
 		"option.detail_coarse": "Coarse",
 		"option.detail_balanced": "Balanced",
 		"option.detail_detailed": "Detailed",
@@ -997,7 +993,7 @@ const resources = {
 		"tooltip.help.quick_processing_mode":
 			"Chooses how the image is processed.\n\nAuto: Analyzes the image and selects a route.\nRefine: Restores enlarged or interpolated pixel art.\nConvert: Turns a regular image into pixel art.\nPreserve: Avoids downscaling.",
 		"tooltip.help.quick_detail":
-			"Selects the approximate output size relative to the automatically calculated reference size (100%) on the Convert route. It does not change color count or other settings.\n\nIn Auto, it applies only to images assigned to Convert.",
+			"Chooses from five output sizes on the Convert route. Standard uses the automatically calculated reference size, and Large never upscales beyond the original image. It does not change color count or other settings.\n\nIn Auto, it applies only to images assigned to Convert.",
 		"tooltip.help.quick_reduction_mode":
 			"Selects no color reduction, a fixed color count, or a built-in standard palette. Arbitrary color counts and imported fixed palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":

@@ -642,31 +642,34 @@
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
-                          data-tooltip="Selects the approximate output size relative to the automatically calculated reference size (100%) on the Convert route. It does not change color count or other settings. In Auto, it applies only when Convert is selected."
+                          data-tooltip="Chooses from five output sizes on the Convert route. Standard uses the automatically calculated reference size, and Large never upscales beyond the original image. It does not change color count or other settings. In Auto, it applies only when Convert is selected."
                           >?</span
                         >
                       </span>
                       <select id="quick-detail-level">
                         <option
                           value="smallest"
-                          data-i18n="option.size_smallest"
+                          data-i18n="option.size_very_small"
                         >
-                          25%
+                          Very small
                         </option>
                         <option value="small" data-i18n="option.size_small">
-                          50%
-                        </option>
-                        <option value="coarse" data-i18n="option.size_medium">
-                          65%
-                        </option>
-                        <option value="balanced" data-i18n="option.size_large">
-                          100%
+                          Small
                         </option>
                         <option
-                          value="detailed"
-                          data-i18n="option.size_largest"
+                          value="coarse"
+                          data-i18n="option.size_slightly_small"
                         >
-                          150%
+                          Slightly small
+                        </option>
+                        <option
+                          value="balanced"
+                          data-i18n="option.size_standard"
+                        >
+                          Standard
+                        </option>
+                        <option value="detailed" data-i18n="option.size_large">
+                          Large
                         </option>
                       </select>
                     </label>
