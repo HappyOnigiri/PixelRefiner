@@ -7,8 +7,8 @@ import {
 } from "../shared/theme";
 
 const THEME_COLORS: Record<ColorTheme, string> = {
-	light: "#f7f8fc",
-	dark: "#0f1115",
+	light: "#f3f1eb",
+	dark: "#121416",
 };
 
 const readSavedTheme = (): ColorTheme | null => {

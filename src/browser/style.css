@@ -1,47 +1,55 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 
 :root {
   /* 色 */
   color-scheme: light;
-  --bg-app: #f7f8fc;
-  --bg-panel: #ffffff;
-  --bg-input: #eef2f7;
-  --border-color: #d8dee9;
-  --primary: #4f46e5;
-  /* インディゴ */
-  --primary-hover: #4338ca;
-  --accent: #0e7490;
-  /* シアン */
-  --text-main: #172033;
-  --text-muted: #526077;
-  --text-dim: #687386;
-  --heading-start: #111827;
-  --logo-start: #60a5fa;
-  --logo-end: #1d4ed8;
-  --surface-hover: rgb(15 23 42 / 0.05);
-  --surface-hover-strong: rgb(15 23 42 / 0.1);
-  --panel-hover-border: #aeb7c5;
-  --loading-overlay: rgb(15 17 21 / 0.82);
+  --bg-app: #f3f1eb;
+  --bg-panel: #fbfaf7;
+  --bg-input: #e9e6de;
+  --border-color: #cfc9bd;
+  /* [Intended] 入力部品の枠は隣接するパネル背景に対して3:1以上を確保するため、
+     区切り線用の --border-color とは別に定義する。 */
+  --input-border: #8a8172;
+  --primary: #285d88;
+  --primary-hover: #1f496c;
+  --primary-action: #285d88;
+  --primary-action-hover: #1f496c;
+  --accent: #a3442c;
+  --accent-action: #983e28;
+  --accent-action-hover: #7d3320;
+  --text-main: #202426;
+  --text-muted: #525b60;
+  --text-dim: #5f676b;
+  --heading-start: #202426;
+  --logo-start: #285d88;
+  --surface-hover: rgb(32 36 38 / 0.06);
+  --surface-hover-strong: rgb(32 36 38 / 0.12);
+  --panel-hover-border: #9f988c;
+  --focus-ring: #8a5300;
+  --loading-overlay: rgb(32 36 38 / 0.82);
   --loading-text: #ffffff;
-  --image-list-bg: #f0f3f8;
-  --scrollbar-track: #eef2f7;
-  --scrollbar-thumb: #aeb7c5;
-  --thumbnail-bg: #ffffff;
-  --thumbnail-grid: #d8dee9;
-  --preview-control-border: rgb(15 23 42 / 0.24);
-  --swatch-border: rgb(15 23 42 / 0.22);
-  --swatch-hover-border: rgb(15 23 42 / 0.65);
+  --image-list-bg: #eeebe4;
+  --scrollbar-track: #e9e6de;
+  --scrollbar-thumb: #9f988c;
+  --thumbnail-bg: #fbfaf7;
+  --thumbnail-grid: #d6d0c5;
+  --preview-control-border: rgb(32 36 38 / 0.24);
+  --swatch-border: rgb(32 36 38 / 0.22);
+  --swatch-hover-border: rgb(32 36 38 / 0.65);
   --footer-icon-filter: invert(1);
 
+  /* 文字 */
+  --font-mono: 'IBM Plex Mono', monospace;
+
   /* 効果 */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 8px 20px -12px rgb(15 23 42 / 0.25), 0 2px 6px -2px rgb(15 23 42 / 0.16);
-  --shadow-glow: 0 0 15px rgba(99, 102, 241, 0.3);
+  --shadow-sm: 0 1px 1px rgb(32 36 38 / 0.08);
+  --shadow-md: 0 2px 8px rgb(32 36 38 / 0.1);
+  --shadow-xl: 0 12px 32px rgb(32 36 38 / 0.2);
 
   /* レイアウト */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
 
   /* 市松模様の背景 */
   --bg-checkered-color: #d0d0d0;
@@ -49,67 +57,81 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg-app: #0f1115;
-  --bg-panel: #181b21;
-  --bg-input: #0f1115;
-  --border-color: #2a2e37;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --accent: #06b6d4;
-  --text-main: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --heading-start: #ffffff;
-  --logo-start: #dbeafe;
-  --logo-end: #3b82f6;
+  --bg-app: #121416;
+  --bg-panel: #1b1e20;
+  --bg-input: #101214;
+  --border-color: #353a3d;
+  --input-border: #666f74;
+  --primary: #82add1;
+  --primary-hover: #a1c4df;
+  --primary-action: #315f87;
+  --primary-action-hover: #3d7099;
+  --accent: #e18a6f;
+  --accent-action: #9a402a;
+  --accent-action-hover: #b34c30;
+  --text-main: #e6e3dc;
+  --text-muted: #aeb5b8;
+  --text-dim: #858e92;
+  --heading-start: #e6e3dc;
+  --logo-start: #8bb6dc;
   --surface-hover: rgb(255 255 255 / 0.05);
   --surface-hover-strong: rgb(255 255 255 / 0.1);
-  --panel-hover-border: #3f4451;
+  --panel-hover-border: #596166;
+  --focus-ring: #ffbf47;
   --loading-overlay: rgb(15 17 21 / 0.8);
   --loading-text: #e2e8f0;
-  --image-list-bg: #1a1d23;
-  --scrollbar-track: #1a1d23;
-  --scrollbar-thumb: #4a4e55;
-  --thumbnail-bg: #0f1115;
-  --thumbnail-grid: #1a1d23;
+  --image-list-bg: #171a1c;
+  --scrollbar-track: #171a1c;
+  --scrollbar-thumb: #596166;
+  --thumbnail-bg: #101214;
+  --thumbnail-grid: #272c2f;
   --preview-control-border: rgb(255 255 255 / 0.14);
   --swatch-border: rgb(255 255 255 / 0.15);
   --swatch-hover-border: rgb(255 255 255 / 0.8);
   --footer-icon-filter: none;
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.2);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 0.24);
+  --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.4);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --bg-app: #0f1115;
-    --bg-panel: #181b21;
-    --bg-input: #0f1115;
-    --border-color: #2a2e37;
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --accent: #06b6d4;
-    --text-main: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-dim: #64748b;
-    --heading-start: #ffffff;
-    --logo-start: #dbeafe;
-    --logo-end: #3b82f6;
+    --bg-app: #121416;
+    --bg-panel: #1b1e20;
+    --bg-input: #101214;
+    --border-color: #353a3d;
+    --input-border: #666f74;
+    --primary: #82add1;
+    --primary-hover: #a1c4df;
+    --primary-action: #315f87;
+    --primary-action-hover: #3d7099;
+    --accent: #e18a6f;
+    --accent-action: #9a402a;
+    --accent-action-hover: #b34c30;
+    --text-main: #e6e3dc;
+    --text-muted: #aeb5b8;
+    --text-dim: #858e92;
+    --heading-start: #e6e3dc;
+    --logo-start: #8bb6dc;
     --surface-hover: rgb(255 255 255 / 0.05);
     --surface-hover-strong: rgb(255 255 255 / 0.1);
-    --panel-hover-border: #3f4451;
+    --panel-hover-border: #596166;
+    --focus-ring: #ffbf47;
     --loading-overlay: rgb(15 17 21 / 0.8);
     --loading-text: #e2e8f0;
-    --image-list-bg: #1a1d23;
-    --scrollbar-track: #1a1d23;
-    --scrollbar-thumb: #4a4e55;
-    --thumbnail-bg: #0f1115;
-    --thumbnail-grid: #1a1d23;
+    --image-list-bg: #171a1c;
+    --scrollbar-track: #171a1c;
+    --scrollbar-thumb: #596166;
+    --thumbnail-bg: #101214;
+    --thumbnail-grid: #272c2f;
     --preview-control-border: rgb(255 255 255 / 0.14);
     --swatch-border: rgb(255 255 255 / 0.15);
     --swatch-hover-border: rgb(255 255 255 / 0.8);
     --footer-icon-filter: none;
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.2);
+    --shadow-md: 0 2px 8px rgb(0 0 0 / 0.24);
+    --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.4);
   }
 }
 
@@ -121,7 +143,7 @@ body {
   margin: 0;
   background-color: var(--bg-app);
   color: var(--text-main);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
 }
@@ -131,47 +153,39 @@ body.modal-open {
 }
 
 .app {
-  max-width: 1400px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
 }
 
 /* ヘッダー */
 h1 {
   font-family: 'Pixelify Sans', sans-serif;
-  font-size: 3.5rem;
+  font-size: clamp(2.35rem, 6vw, 3.1rem);
   font-weight: 700;
   letter-spacing: 0.02em;
   margin: 0;
-  background: linear-gradient(135deg, var(--heading-start) 0%, var(--text-muted) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-align: center;
-  margin-bottom: 4px;
+  color: var(--heading-start);
+  text-align: left;
 }
 
 .logo-p {
-  background: linear-gradient(135deg, var(--logo-start) 0%, var(--logo-end) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--logo-start);
 }
 
 .header-top {
-  position: relative;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
 }
 
 .header-actions {
-  position: absolute;
-  right: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -192,7 +206,7 @@ h1 {
   cursor: pointer;
   padding: 2px 4px;
   border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .lang-btn:hover {
@@ -202,7 +216,7 @@ h1 {
 
 .lang-btn.active {
   color: var(--accent);
-  background: rgba(6, 182, 212, 0.1);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .theme-toggle {
@@ -215,7 +229,7 @@ h1 {
   color: var(--text-muted);
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: color 0.2s, border-color 0.2s, background 0.2s;
@@ -227,11 +241,6 @@ h1 {
   background: var(--surface-hover);
 }
 
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
 .theme-toggle [hidden] {
   display: none;
 }
@@ -239,59 +248,31 @@ h1 {
 @media (max-width: 760px) {
   .header-top {
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .header-actions {
-    position: static;
+    align-items: flex-start;
+    gap: 16px;
   }
 }
 
 .app-description {
-  text-align: center;
+  text-align: left;
   color: var(--text-muted);
-  margin: 0 auto 32px;
+  margin: 12px 0 0;
   max-width: 700px;
-  font-size: 1.15rem;
-  line-height: 1.6;
-}
-
-.badge-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-  position: relative;
-  /* 必要に応じて追加する */
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 16px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 9999px;
-  color: var(--primary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-  white-space: nowrap;
-  /* テキストの折り返しを防ぐ */
+  font-size: 1rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .text-highlight {
   color: var(--text-main);
   font-weight: 500;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 h2 {
   font-size: 1rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
   margin: 0 0 16px 0;
   display: flex;
@@ -302,17 +283,15 @@ h2 {
 h2::before {
   content: '';
   display: block;
-  width: 4px;
-  height: 16px;
+  width: 8px;
+  height: 8px;
   background: var(--accent);
-  border-radius: 2px;
-  box-shadow: 0 0 8px var(--accent);
 }
 
 main {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 24px;
 }
 
 /* パネル */
@@ -320,8 +299,8 @@ main {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 32px;
-  box-shadow: var(--shadow-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.2s;
   display: flex;
   flex-direction: column;
@@ -352,10 +331,9 @@ main {
 .settings-group-title::before {
   content: '';
   display: block;
-  width: 3px;
-  height: 12px;
+  width: 6px;
+  height: 6px;
   background: var(--primary);
-  border-radius: 1px;
 }
 
 .panel:hover {
@@ -366,14 +344,21 @@ main {
 
 .input-panel.drag-over {
   border-color: var(--primary);
-  background: rgba(99, 102, 241, 0.05);
+  background: color-mix(in srgb, var(--primary) 7%, var(--bg-panel));
 }
 
 /* レイアウトヘルパー */
 .app-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.col-main,
+.col-preview,
+.panel,
+.quick-settings {
+  min-width: 0;
 }
 
 @media (min-width: 900px) {
@@ -424,7 +409,7 @@ main {
   flex: 1;
   height: 6px;
   background: var(--bg-input);
-  border-radius: 3px;
+  border-radius: 0;
   accent-color: var(--primary);
   cursor: pointer;
 }
@@ -452,6 +437,7 @@ main {
   height: 400px;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -461,6 +447,7 @@ main {
 
 #input-canvas-container {
   cursor: pointer;
+  border-style: dashed;
 }
 
 canvas {
@@ -597,7 +584,7 @@ canvas {
 .view-controls {
   display: flex;
   background: var(--bg-input);
-  padding: 4px;
+  padding: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
   margin-right: 12px;
@@ -611,8 +598,8 @@ canvas {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: 0;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .view-btn:hover {
@@ -620,7 +607,7 @@ canvas {
 }
 
 .view-btn.active {
-  background: var(--primary);
+  background: var(--primary-action);
   color: white;
 }
 
@@ -756,20 +743,18 @@ label {
 input[type="number"],
 input[type="text"] {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
 input[type="number"]:focus,
 input[type="text"]:focus {
-  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 input[type="checkbox"] {
@@ -780,20 +765,18 @@ input[type="checkbox"] {
 
 select {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: border-color 0.15s, background-color 0.15s;
   cursor: pointer;
 }
 
 select:focus {
-  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 .rgb-input-group {
@@ -816,7 +799,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
 .icon-button:hover {
@@ -825,9 +808,9 @@ select:focus {
 }
 
 .icon-button.active {
-  background: var(--primary);
+  background: var(--primary-action);
   color: white;
-  border-color: var(--primary);
+  border-color: var(--primary-action);
 }
 
 /* モーダル */
@@ -842,7 +825,6 @@ select:focus {
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  backdrop-filter: blur(4px);
 }
 
 .modal .modal-content {
@@ -942,26 +924,26 @@ select:focus {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 32px;
-  box-shadow: var(--shadow-md);
-  margin-top: 40px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-top: 20px;
 }
 
 .settings-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  margin-bottom: 28px;
-  padding: 4px;
-  border-radius: var(--radius-md);
-  background: var(--bg-main);
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .settings-tab {
   min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius-md) - 2px);
+  padding: 10px 12px 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
@@ -975,10 +957,9 @@ select:focus {
 }
 
 .settings-tab.is-active {
-  border-color: var(--border-color);
-  background: var(--bg-panel);
+  border-bottom-color: var(--accent);
+  background: transparent;
   color: var(--text-main);
-  box-shadow: var(--shadow-sm);
 }
 
 .settings-tab-panel[hidden] {
@@ -1023,18 +1004,16 @@ select:focus {
 /* ボタン */
 .action-button {
   flex: 1;
-  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+  background: var(--primary-action);
   color: white;
   border: none;
   padding: 16px;
   font-size: 1.1rem;
   font-weight: 700;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  transition: background-color 0.15s, border-color 0.15s;
+  letter-spacing: 0.01em;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1043,24 +1022,24 @@ select:focus {
 }
 
 .action-button.download-button {
-  background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
-  box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.4);
+  background: var(--accent-action);
 }
 
+/* [Intended] 塗り面のホバーは前景用の --primary / --accent ではなく塗り面用トークンを使う。
+   白文字とのコントラストがダークテーマでAAを割るため。 */
 .action-button:hover:not(:disabled) {
-  /* transform: translateY(-2px); */
-  box-shadow: 0 8px 12px -1px rgba(99, 102, 241, 0.5);
+  background: var(--primary-action-hover);
 }
 
-.action-button.download-button:hover:not(:disabled) {
-  box-shadow: 0 8px 12px -1px rgba(6, 182, 212, 0.5);
+.action-button.download-button:hover:not(:disabled),
+.action-button.download-dropdown-button:hover:not(:disabled) {
+  background: var(--accent-action-hover);
 }
 
 .action-button:disabled {
   background: var(--bg-panel);
   color: var(--text-dim);
   cursor: not-allowed;
-  box-shadow: none;
   border: 1px solid var(--border-color);
   opacity: 0.6;
 }
@@ -1083,7 +1062,7 @@ select:focus {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-  background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
+  background: var(--accent-action);
   padding: 0 !important;
   min-width: 50px;
 }
@@ -1147,7 +1126,7 @@ select:focus {
   /* 赤-500 */
   color: white;
   padding: 12px 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   font-weight: 600;
@@ -1202,7 +1181,7 @@ select:focus {
 	min-height: 180px;
 	padding: 12px;
 	border: 1px solid var(--border-color);
-	border-radius: 10px;
+	border-radius: var(--radius-sm);
 	background: var(--bg-panel);
 	color: var(--text-main);
 	text-align: left;
@@ -1221,7 +1200,6 @@ select:focus {
 	justify-content: center;
 	min-height: 156px;
 	overflow: hidden;
-	border-radius: 6px;
 	background-color: #fff;
 	background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
 		linear-gradient(-45deg, #ccc 25%, transparent 25%),
@@ -1259,8 +1237,7 @@ select:focus {
 .candidate-recommended {
 	align-self: flex-start;
 	padding: 2px 7px;
-	border-radius: 999px;
-	background: var(--primary);
+	background: var(--primary-action);
 	color: #fff;
 	font-size: 0.72rem;
 }
@@ -1284,10 +1261,10 @@ select:focus {
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: var(--accent);
+  background: var(--accent-action);
   color: white;
   padding: 12px 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   font-weight: 600;
@@ -1308,7 +1285,7 @@ select:focus {
 .status-text {
   font-size: 0.85rem;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .status-bar {
@@ -1341,8 +1318,6 @@ select:focus {
 
 .processing-warning:focus-visible {
   border-radius: 2px;
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .controls-right {
@@ -1376,11 +1351,10 @@ select:focus {
   border: 1px solid var(--preview-control-border);
   cursor: pointer;
   padding: 0;
-  transition: all 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .bg-btn:hover {
-  transform: scale(1.1);
   border-color: var(--text-muted);
 }
 
@@ -1540,7 +1514,7 @@ select:focus {
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(99, 102, 241, 0.1);
+  border: 4px solid color-mix(in srgb, var(--primary) 14%, transparent);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1564,7 +1538,7 @@ select:focus {
   justify-content: center;
   cursor: pointer;
   color: var(--text-dim);
-  transition: all 0.2s;
+  transition: color 0.15s, background-color 0.15s;
   padding: 4px;
   border-radius: var(--radius-sm);
 }
@@ -1580,7 +1554,7 @@ select:focus {
 
 .zoom-toggle:has(input:checked) {
   color: var(--accent);
-  background: rgba(6, 182, 212, 0.1);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 /* ツールチップ */
@@ -1668,16 +1642,16 @@ select:focus {
 .js-output-size {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .app-version {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-dim);
   background: var(--surface-hover);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -1716,19 +1690,17 @@ select:focus {
 .color-swatch {
   width: 28px;
   height: 28px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--swatch-border);
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: border-color 0.15s, outline-color 0.15s;
   position: relative;
 }
 
 .color-swatch:hover {
-  transform: scale(1.2) translateY(-2px);
   z-index: 10;
   border-color: var(--swatch-hover-border);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  outline: 2px solid var(--bg-panel);
 }
 
 
@@ -1749,12 +1721,10 @@ select:focus {
   background: transparent;
   border: 1px solid var(--primary);
   color: var(--primary);
-  box-shadow: none;
 }
 
 .outline-button:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .accent-outline-button {
@@ -1763,8 +1733,7 @@ select:focus {
 }
 
 .accent-outline-button:hover:not(:disabled) {
-  background: rgba(6, 182, 212, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 
@@ -1793,7 +1762,6 @@ select:focus {
   align-items: center;
   justify-content: center;
   z-index: 3000;
-  backdrop-filter: blur(4px);
 }
 
 .modal-overlay .modal-content {
@@ -1901,7 +1869,7 @@ select:focus {
   margin-top: 1rem;
   padding: 1rem;
   background-color: var(--image-list-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
 }
 
@@ -1975,7 +1943,7 @@ select:focus {
   cursor: pointer;
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 .text-button:hover {
   background-color: var(--surface-hover);
@@ -2005,7 +1973,7 @@ select:focus {
 }
 .image-list-container::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 
 .image-item {
@@ -2013,7 +1981,7 @@ select:focus {
   flex: 0 0 80px;
   width: 80px;
   height: 84px;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   border: 2px solid transparent;
   background-color: var(--thumbnail-bg);
   cursor: pointer;
@@ -2062,7 +2030,8 @@ select:focus {
   z-index: 10;
 }
 
-.image-item:hover .remove-btn {
+.image-item:hover .remove-btn,
+.image-item:focus-within .remove-btn {
   opacity: 1;
 }
 
@@ -2096,4 +2065,54 @@ select:focus {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.2); opacity: 0.7; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+:where(button, a, input, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 24px 16px;
+    gap: 24px;
+  }
+
+  .panel,
+  .quick-settings {
+    padding: 18px;
+  }
+
+  #input-canvas-container,
+  .js-result-canvas-container {
+    height: clamp(280px, 90vw, 400px);
+    min-height: 280px;
+  }
+
+  .settings-tabs {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .settings-tab {
+    flex: 1 0 max-content;
+  }
+
+  .image-list-header,
+  .batch-controls,
+  .status-bar,
+  .result-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
