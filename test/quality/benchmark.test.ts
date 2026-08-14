@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RawImage } from "../../src/shared/types";
-import { generateQualityBaseline, writeQualityBaselineImage } from "./benchmark";
+import {
+	generateQualityBaseline,
+	writeQualityBaselineImage,
+} from "./benchmark";
 import type { QualityImageCase } from "./types";
 
 // [Intended] 入力から決まる固定値で寸法を固定する。generateQualityBaseline の戻り値から
