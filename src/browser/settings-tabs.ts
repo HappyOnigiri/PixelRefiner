@@ -42,10 +42,17 @@ export const setupSettingsTabs = ({
 		triggerAutoProcess();
 	};
 
+	// [Intended] モードが変わらない操作では何もしない。
+	// 同じタブの再選択で候補プレビューの選択が破棄され、再処理が走るのを避ける。
+	const selectSettingsMode = (mode: SettingsMode): void => {
+		if (mode === processingState.settingsMode) return;
+		setSettingsMode(mode);
+	};
+
 	for (const tab of els.settingsTabs) {
 		tab.addEventListener("click", () => {
 			const mode = tab.dataset.settingsMode as SettingsMode | undefined;
-			if (mode) setSettingsMode(mode);
+			if (mode) selectSettingsMode(mode);
 		});
 		tab.addEventListener("keydown", (event) => {
 			const current = SETTINGS_MODES.indexOf(processingState.settingsMode);
@@ -58,7 +65,7 @@ export const setupSettingsTabs = ({
 			else if (event.key === "End") next = SETTINGS_MODES.length - 1;
 			else return;
 			event.preventDefault();
-			setSettingsMode(SETTINGS_MODES[next]);
+			selectSettingsMode(SETTINGS_MODES[next]);
 			els.settingsTabs[next]?.focus();
 		});
 	}
