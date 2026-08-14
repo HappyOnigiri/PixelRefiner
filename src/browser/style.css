@@ -1009,10 +1009,6 @@ select:focus {
   grid-column: 1 / -1;
 }
 
-.quick-checkbox-setting input {
-  align-self: flex-start;
-}
-
 .quick-background-picker {
   display: none;
   gap: 8px;

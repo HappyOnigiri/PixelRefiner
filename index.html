@@ -728,20 +728,22 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.background">Background</span>
+                        <span data-i18n="setting.background"
+                          >Background Transparency</span
+                        >
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_background"
-                          data-tooltip="Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent."
+                          data-tooltip="Chooses whether to leave the background unchanged, detect it automatically and make it transparent, or make a selected color transparent."
                           >?</span
                         >
                       </span>
                       <select id="quick-background">
                         <option value="keep" data-i18n="option.background_keep">
-                          Keep
+                          None
                         </option>
                         <option value="auto" data-i18n="option.background_auto">
-                          Auto transparent
+                          Auto
                         </option>
                         <option value="pick" data-i18n="option.background_pick">
                           Pick color
@@ -766,34 +768,6 @@
                           ◉
                         </button>
                       </div>
-                    </label>
-                    <label class="setting-item">
-                      <span class="label-text">
-                        <span data-i18n="setting.bg_removal_scope"
-                          >Background Removal Scope</span
-                        >
-                        <span
-                          class="help"
-                          data-i18n-attr="data-tooltip:tooltip.help.quick_bg_removal_scope"
-                          data-tooltip="Range of background to make transparent.&#10;&#10;Auto: Outer background, plus enclosed holes that clearly match the background color.&#10;Outer all: All background connected to the image border.&#10;All: Outer + every inner area matching the background color.&#10;&#10;Unavailable when Background is Keep."
-                          >?</span
-                        >
-                      </span>
-                      <select id="quick-bg-removal-scope">
-                        <option
-                          value="auto"
-                          data-i18n="option.bg_scope_auto"
-                          selected
-                        >
-                          Auto
-                        </option>
-                        <option value="outer" data-i18n="option.bg_scope_outer">
-                          Outer all
-                        </option>
-                        <option value="all" data-i18n="option.bg_scope_all">
-                          All
-                        </option>
-                      </select>
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
@@ -825,40 +799,26 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.outline">Outline</span>
-                        <span
-                          class="help"
-                          data-i18n-attr="data-tooltip:tooltip.help.quick_outline"
-                          data-tooltip="Adds a one-pixel outline after processing. Rounded softens corners, while Sharp keeps square corners."
-                          >?</span
-                        >
-                      </span>
-                      <select id="quick-outline-style">
-                        <option value="none" data-i18n="option.outline_none">
-                          Off
-                        </option>
-                        <option
-                          value="rounded"
-                          data-i18n="option.outline_rounded"
-                        >
-                          Rounded
-                        </option>
-                        <option value="sharp" data-i18n="option.outline_sharp">
-                          Sharp
-                        </option>
-                      </select>
-                    </label>
-                    <label class="setting-item quick-checkbox-setting">
-                      <span class="label-text">
                         <span data-i18n="setting.auto_trim">Auto Trim</span>
                         <span
                           class="help"
-                          data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
-                          data-tooltip="Automatically trims the output to the bounds containing visible content. It removes transparent or detected background margins."
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_auto_trim"
+                          data-tooltip="Automatically trims the output to the bounds containing visible content. Unavailable when Background Transparency is None."
                           >?</span
                         >
                       </span>
-                      <input id="quick-auto-trim" type="checkbox" checked />
+                      <select id="quick-auto-trim">
+                        <option
+                          value="auto"
+                          data-i18n="option.auto_trim_auto"
+                          selected
+                        >
+                          Auto
+                        </option>
+                        <option value="none" data-i18n="option.auto_trim_none">
+                          None
+                        </option>
+                      </select>
                     </label>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Elements } from "./app-elements";
 import {
+	readQuickSettings,
 	setupQuickSettingsControls,
 	updateQuickSettingsDisabledStates,
 } from "./quick-settings-controls";
@@ -34,21 +35,17 @@ const createElements = () => {
 		quickDetailLevelSelect: new MockControl(),
 		quickReductionModeSelect: new MockControl(),
 		quickBackgroundSelect: new MockControl(),
-		quickBgRemovalScopeSelect: new MockControl(),
 		quickBackgroundPicker: new MockControl(),
 		quickBackgroundColorInput: new MockControl(),
 		quickDitheringSelect: new MockControl(),
-		quickOutlineStyleSelect: new MockControl(),
-		quickAutoTrimCheck: new MockControl(),
+		quickAutoTrimSelect: new MockControl(),
 	};
 	controls.quickProcessingModeSelect.value = "auto";
 	controls.quickDetailLevelSelect.value = "balanced";
 	controls.quickReductionModeSelect.value = "none";
 	controls.quickBackgroundSelect.value = "auto";
-	controls.quickBgRemovalScopeSelect.value = "auto";
 	controls.quickDitheringSelect.value = "off";
-	controls.quickOutlineStyleSelect.value = "none";
-	controls.quickAutoTrimCheck.checked = true;
+	controls.quickAutoTrimSelect.value = "auto";
 	return controls;
 };
 
@@ -82,14 +79,35 @@ describe("quick settings controls", () => {
 		els.quickBackgroundSelect.value = "keep";
 		els.quickReductionModeSelect.value = "none";
 		updateQuickSettingsDisabledStates(els as unknown as Elements);
-		expect(els.quickBgRemovalScopeSelect.disabled).toBe(true);
+		expect(els.quickAutoTrimSelect.disabled).toBe(true);
+		expect(
+			els.quickAutoTrimSelect.settingItem.classList.contains("disabled"),
+		).toBe(true);
 		expect(els.quickDitheringSelect.disabled).toBe(true);
+		expect(readQuickSettings(els as unknown as Elements).trimToContent).toBe(
+			false,
+		);
 
 		els.quickBackgroundSelect.value = "pick";
 		els.quickReductionModeSelect.value = "gb_pocket";
 		updateQuickSettingsDisabledStates(els as unknown as Elements);
-		expect(els.quickBgRemovalScopeSelect.disabled).toBe(false);
+		expect(els.quickAutoTrimSelect.disabled).toBe(false);
+		expect(
+			els.quickAutoTrimSelect.settingItem.classList.contains("disabled"),
+		).toBe(false);
 		expect(els.quickDitheringSelect.disabled).toBe(false);
 		expect(els.quickBackgroundPicker.style.display).toBe("flex");
+		expect(readQuickSettings(els as unknown as Elements).trimToContent).toBe(
+			true,
+		);
+	});
+
+	it("maps the auto-trim select to a boolean setting", () => {
+		const els = createElements();
+		els.quickAutoTrimSelect.value = "none";
+
+		expect(readQuickSettings(els as unknown as Elements).trimToContent).toBe(
+			false,
+		);
 	});
 });

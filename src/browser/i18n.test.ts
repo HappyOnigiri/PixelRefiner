@@ -175,10 +175,10 @@ describe("I18nManager", () => {
 				"tooltip.help.quick_detail",
 				"tooltip.help.quick_reduction_mode",
 				"tooltip.help.quick_background",
-				"tooltip.help.quick_bg_removal_scope",
 				"tooltip.help.quick_dithering",
-				"tooltip.help.quick_outline",
-				"tooltip.help.auto_trim",
+				"tooltip.help.quick_auto_trim",
+				"option.auto_trim_auto",
+				"option.auto_trim_none",
 			] as const) {
 				expect(i18n.t(key)).not.toBe(key);
 			}

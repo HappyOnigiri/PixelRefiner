@@ -14,7 +14,6 @@ describe("quick settings", () => {
 			processingMode: PROCESS_DEFAULTS.processingMode,
 			detailLevel: PROCESS_DEFAULTS.detailLevel,
 			reductionMode: "none",
-			outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 			trimToContent: PROCESS_DEFAULTS.trimToContent,
 		});
 	});
@@ -108,21 +107,19 @@ describe("quick settings", () => {
 		expect(options).toMatchObject({
 			bgExtractionMethod: "rgb",
 			bgRgb: "#123456",
+			bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
+			outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 			ditherMode: "floyd-steinberg",
 			ditherStrength: 60,
 		});
 	});
 
-	it.each(["auto", "outer", "all"] as const)(
-		"maps the %s background scope directly",
-		(bgRemovalScope) => {
-			const options = createQuickProcessOptions({
-				...QUICK_SETTINGS_DEFAULTS,
-				bgRemovalScope,
-			});
-			expect(options.bgRemovalScope).toBe(bgRemovalScope);
-		},
-	);
+	it("keeps hidden background scope and outline at their shared defaults", () => {
+		const options = createQuickProcessOptions(QUICK_SETTINGS_DEFAULTS);
+
+		expect(options.bgRemovalScope).toBe(PROCESS_DEFAULTS.bgRemovalScope);
+		expect(options.outlineStyle).toBe(PROCESS_DEFAULTS.outlineStyle);
+	});
 
 	it("defines six self-contained built-in presets", () => {
 		expect(BUILT_IN_PRESETS.map((preset) => preset.id)).toEqual([

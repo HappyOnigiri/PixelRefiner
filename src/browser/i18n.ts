@@ -79,7 +79,7 @@ const resources = {
 		"setting.preset": "プリセット",
 		"setting.processing_mode": "処理方法",
 		"setting.detail": "細かさ",
-		"setting.background": "背景",
+		"setting.background": "背景透過",
 		"setting.dithering": "ディザリング",
 		"preset.auto": "Auto",
 		"preset.crisp_sprite": "くっきりスプライト",
@@ -97,9 +97,11 @@ const resources = {
 		"option.colors_8": "8色",
 		"option.colors_16": "16色",
 		"option.colors_32": "32色",
-		"option.background_keep": "維持",
-		"option.background_auto": "自動で透過",
+		"option.background_keep": "なし",
+		"option.background_auto": "自動",
 		"option.background_pick": "色を選択",
+		"option.auto_trim_auto": "自動",
+		"option.auto_trim_none": "なし",
 		"option.dithering_off": "なし",
 		"option.dithering_subtle": "控えめ",
 		"option.dithering_strong": "強め",
@@ -200,11 +202,11 @@ const resources = {
 		"tooltip.help.quick_reduction_mode":
 			"減色しないか、固定色数または標準パレットで減色するかを選びます。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
-			"背景をそのまま残すか、自動判定で透過するか、選んだ色を透過するかを指定します。",
+			"背景透過を行わないか、自動判定で透過するか、選んだ色を透過するかを指定します。",
+		"tooltip.help.quick_auto_trim":
+			"内容が存在する範囲に合わせて出力を自動でトリミングします。背景透過が「なし」のときは使用できません。",
 		"tooltip.help.quick_dithering":
 			"減色時に隣り合う色を模様として混ぜ、中間色を表現します。強くするほどグラデーションを残しやすくなりますが、質感も目立ちます。",
-		"tooltip.help.quick_outline":
-			"処理後の画像に1ピクセルのアウトラインを追加します。「丸め」は角をなだらかにし、「くっきり」は角を四角く保ちます。",
 
 		// ツールチップ
 		"tooltip.help.color_mode":
@@ -293,8 +295,6 @@ const resources = {
 			"処理完了【後】に、背景色を透明に置き換えて出力します。\n\nメリット: 背景透明のPNGとして保存できます。\n注意: グリッド検出処理自体には影響しません。",
 		"tooltip.help.bg_removal_scope":
 			"背景をどこまで透過するかの範囲です。\n\nおまかせ: 外側に加え、背景色そのものだと判断できた内側の閉じた領域だけ透過。\n選択部分のみ: 選択した角から繋がる背景だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 背景色に近い領域を内側も含めてすべて透過。\n\n背景が「維持」のときは使用しません。",
-		"tooltip.help.quick_bg_removal_scope":
-			"背景をどこまで透過するかの範囲です。\n\nおまかせ: 外側に加え、背景色そのものだと判断できた内側の閉じた領域だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 背景色に近い領域を内側も含めてすべて透過。\n\n背景が「維持」のときは使用しません。",
 		"tooltip.help.bg_connectivity":
 			"「繋がっている」の判定方法です。\n\n4方向: 斜めを含めない厳しい判定。\n8方向: 斜めも繋がりとみなします。",
 		"tooltip.help.gemini_watermark_removal":
@@ -468,7 +468,7 @@ const resources = {
 		"setting.preset": "预设",
 		"setting.processing_mode": "处理方式",
 		"setting.detail": "细节",
-		"setting.background": "背景",
+		"setting.background": "背景透明",
 		"setting.dithering": "抖动",
 		"preset.auto": "Auto",
 		"preset.crisp_sprite": "清晰精灵",
@@ -486,9 +486,11 @@ const resources = {
 		"option.colors_8": "8色",
 		"option.colors_16": "16色",
 		"option.colors_32": "32色",
-		"option.background_keep": "保留",
-		"option.background_auto": "自动透明",
+		"option.background_keep": "无",
+		"option.background_auto": "自动",
 		"option.background_pick": "选择颜色",
+		"option.auto_trim_auto": "自动",
+		"option.auto_trim_none": "无",
 		"option.dithering_off": "关闭",
 		"option.dithering_subtle": "轻微",
 		"option.dithering_strong": "强烈",
@@ -588,11 +590,11 @@ const resources = {
 		"tooltip.help.quick_reduction_mode":
 			"选择不减色、固定颜色数量或内置标准调色板。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
-			"选择保留背景、自动检测并设为透明，或将选定颜色设为透明。",
+			"选择不进行背景透明化、自动检测并透明化背景，或将选定颜色设为透明。",
+		"tooltip.help.quick_auto_trim":
+			"根据内容范围自动裁剪输出。背景透明设为“无”时不可用。",
 		"tooltip.help.quick_dithering":
 			"减色时将相邻颜色混合成图案，以表现中间色调。强度越高越能保留渐变，但纹理也会更明显。",
-		"tooltip.help.quick_outline":
-			"处理后添加1像素描边。“圆润”会柔化拐角，“锐利”会保留方形拐角。",
 
 		// ツールチップ
 		"tooltip.help.color_mode":
@@ -681,8 +683,6 @@ const resources = {
 			"处理完成后将背景色替换为透明。\n\n优点：可以保存为透明背景 PNG。\n注意：不会影响网格检测过程本身。",
 		"tooltip.help.bg_removal_scope":
 			"决定背景透明化的范围。\n\n自动：在外侧的基础上，只透明化可确定为背景色的内部封闭区域。\n仅选中部分：只透明化从所选角落连通的背景。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：包括内部在内，透明化所有接近背景色的区域。\n\n背景设为“保留”时不可用。",
-		"tooltip.help.quick_bg_removal_scope":
-			"决定背景透明化的范围。\n\n自动：在外侧的基础上，只透明化可确定为背景色的内部封闭区域。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：包括内部在内，透明化所有接近背景色的区域。\n\n背景设为“保留”时不可用。",
 		"tooltip.help.bg_connectivity":
 			"决定相邻区域是否算作连通。\n\n4 方向：更严格，不包含斜向。\n8 方向：包含斜向相邻。",
 		"tooltip.help.gemini_watermark_removal":
@@ -856,7 +856,7 @@ const resources = {
 		"setting.preset": "Preset",
 		"setting.processing_mode": "Processing",
 		"setting.detail": "Detail",
-		"setting.background": "Background",
+		"setting.background": "Background Transparency",
 		"setting.dithering": "Dithering",
 		"preset.auto": "Auto",
 		"preset.crisp_sprite": "Crisp Sprite",
@@ -874,9 +874,11 @@ const resources = {
 		"option.colors_8": "8 colors",
 		"option.colors_16": "16 colors",
 		"option.colors_32": "32 colors",
-		"option.background_keep": "Keep",
-		"option.background_auto": "Auto transparent",
+		"option.background_keep": "None",
+		"option.background_auto": "Auto",
 		"option.background_pick": "Pick color",
+		"option.auto_trim_auto": "Auto",
+		"option.auto_trim_none": "None",
 		"option.dithering_off": "Off",
 		"option.dithering_subtle": "Subtle",
 		"option.dithering_strong": "Strong",
@@ -977,11 +979,11 @@ const resources = {
 		"tooltip.help.quick_reduction_mode":
 			"Selects no color reduction, a fixed color count, or a built-in standard palette. Arbitrary color counts and imported fixed palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":
-			"Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent.",
+			"Chooses whether to leave the background unchanged, detect it automatically and make it transparent, or make a selected color transparent.",
+		"tooltip.help.quick_auto_trim":
+			"Automatically trims the output to fit its visible content. Unavailable when Background Transparency is None.",
 		"tooltip.help.quick_dithering":
 			"Mixes neighboring colors into a pattern during color reduction to represent intermediate tones. Stronger settings preserve gradients but add more texture.",
-		"tooltip.help.quick_outline":
-			"Adds a one-pixel outline after processing. Rounded softens corners, while Sharp keeps square corners.",
 
 		// ツールチップ
 		"tooltip.help.color_mode":
@@ -1070,8 +1072,6 @@ const resources = {
 			"Replaces the background color with transparency AFTER processing is complete.\n\nBenefit: Allows saving as a PNG with a transparent background.\nNote: Does not affect the grid detection process itself.",
 		"tooltip.help.bg_removal_scope":
 			"Range of background to make transparent.\n\nAuto: Outer background, plus enclosed holes that clearly match the background color.\nSelected only: Only background connected from the chosen corner.\nOuter all: All background connected to the image border.\nAll: Every area matching the background color, inner ones included.\n\nUnavailable when Background is Keep.",
-		"tooltip.help.quick_bg_removal_scope":
-			"Range of background to make transparent.\n\nAuto: Outer background, plus enclosed holes that clearly match the background color.\nOuter all: All background connected to the image border.\nAll: Every area matching the background color, inner ones included.\n\nUnavailable when Background is Keep.",
 		"tooltip.help.bg_connectivity":
 			"Whether diagonal neighbors are considered connected.\n\n4-way: Strict (no diagonals).\n8-way: Includes diagonals.",
 		"tooltip.help.gemini_watermark_removal":
