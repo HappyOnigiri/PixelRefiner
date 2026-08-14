@@ -634,7 +634,7 @@ canvas {
 }
 
 .view-btn.active {
-  background: var(--primary);
+  background: var(--primary-action);
   color: white;
 }
 
@@ -837,9 +837,9 @@ select:focus {
 }
 
 .icon-button.active {
-  background: var(--primary);
+  background: var(--primary-action);
   color: white;
-  border-color: var(--primary);
+  border-color: var(--primary-action);
 }
 
 /* モーダル */
@@ -1274,7 +1274,7 @@ select:focus {
 	align-self: flex-start;
 	padding: 2px 7px;
 	border-radius: 0;
-	background: var(--primary);
+	background: var(--primary-action);
 	color: #fff;
 	font-size: 0.72rem;
 }
@@ -1298,7 +1298,7 @@ select:focus {
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: var(--accent);
+  background: var(--accent-action);
   color: white;
   padding: 12px 24px;
   border-radius: var(--radius-sm);
