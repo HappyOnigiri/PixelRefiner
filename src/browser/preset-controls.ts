@@ -16,6 +16,7 @@ type PresetControlsOptions = {
 	processingState: ProcessingState;
 	presetModalController: ModalController;
 	updateDisabledStates: () => void;
+	updateAdvancedProcessingDisabledStates: () => void;
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
 	updateProcessButtonVisibility: () => void;
@@ -41,6 +42,7 @@ export const setupPresetControls = ({
 	processingState,
 	presetModalController,
 	updateDisabledStates,
+	updateAdvancedProcessingDisabledStates,
 	updateReduceColorsDisabledStates,
 	updateBgDisabledStates,
 	updateProcessButtonVisibility,
@@ -179,6 +181,7 @@ export const setupPresetControls = ({
 		}
 		clearCandidateSelections();
 		updateDisabledStates();
+		updateAdvancedProcessingDisabledStates();
 		updateReduceColorsDisabledStates();
 		updateBgDisabledStates();
 		updateProcessButtonVisibility();

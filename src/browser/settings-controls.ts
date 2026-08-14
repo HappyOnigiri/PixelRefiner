@@ -36,6 +36,7 @@ export type SettingsControls = {
 	updateProcessButtonVisibility: () => void;
 	triggerAutoProcess: () => void;
 	updateDisabledStates: () => void;
+	updateAdvancedProcessingDisabledStates: () => void;
 	updatePaletteButtonVisibility: () => void;
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
@@ -626,6 +627,7 @@ export const setupSettingsControls = ({
 		updateProcessButtonVisibility,
 		triggerAutoProcess,
 		updateDisabledStates,
+		updateAdvancedProcessingDisabledStates,
 		updatePaletteButtonVisibility,
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
