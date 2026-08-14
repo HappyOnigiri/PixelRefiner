@@ -672,13 +672,22 @@
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_reduction_mode"
-                          data-tooltip="Selects no reduction or a built-in palette. Custom color counts and imported palettes are available in Advanced Settings."
+                          data-tooltip="Selects no reduction, a fixed color count, or a built-in palette. Arbitrary color counts and imported palettes are available in Advanced Settings."
                           >?</span
                         >
                       </span>
                       <select id="quick-reduction-mode">
                         <option value="none" data-i18n="option.none">
                           None
+                        </option>
+                        <option value="8" data-i18n="option.colors_8">
+                          8 colors
+                        </option>
+                        <option value="16" data-i18n="option.colors_16">
+                          16 colors
+                        </option>
+                        <option value="32" data-i18n="option.colors_32">
+                          32 colors
                         </option>
                         <option value="mono" data-i18n="option.mono">
                           Monochrome
@@ -705,6 +714,15 @@
                         </option>
                         <option value="arne16" data-i18n="option.arne16">
                           Arne 16
+                        </option>
+                        <option
+                          value="sfc_sprite"
+                          data-i18n="option.sfc_sprite"
+                        >
+                          SFC Style (16 colors/Sprite)
+                        </option>
+                        <option value="sfc_bg" data-i18n="option.sfc_bg">
+                          SFC Style (256 colors/BG)
                         </option>
                       </select>
                     </label>

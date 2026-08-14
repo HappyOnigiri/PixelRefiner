@@ -10,6 +10,9 @@ import type {
 
 export type QuickReductionMode =
 	| "none"
+	| "8"
+	| "16"
+	| "32"
 	| "mono"
 	| "gb_legacy"
 	| "gb_pocket"
@@ -19,7 +22,9 @@ export type QuickReductionMode =
 	| "pc98"
 	| "msx"
 	| "c64"
-	| "arne16";
+	| "arne16"
+	| "sfc_sprite"
+	| "sfc_bg";
 export type QuickBackground = "keep" | "auto" | "pick";
 export type QuickDithering = "off" | "subtle" | "strong";
 
@@ -66,6 +71,12 @@ const resolveBgRemovalScope = (
 export const createQuickProcessOptions = (
 	quick: QuickSettingsState,
 ): ProcessOptions => {
+	const fixedColorCount =
+		quick.reductionMode === "8" ||
+		quick.reductionMode === "16" ||
+		quick.reductionMode === "32"
+			? Number(quick.reductionMode)
+			: undefined;
 	const options: ProcessOptions = {
 		...createDefaultProcessOptions(),
 		processingMode: quick.processingMode,
@@ -73,7 +84,9 @@ export const createQuickProcessOptions = (
 		outlineStyle: quick.outlineStyle,
 		trimToContent: quick.trimToContent,
 		reduceColors: quick.reductionMode !== "none",
-		reduceColorMode: quick.reductionMode,
+		reduceColorMode:
+			fixedColorCount === undefined ? quick.reductionMode : "auto",
+		colorCount: fixedColorCount ?? PROCESS_DEFAULTS.colorCount,
 		fixedPalette: undefined,
 	};
 

@@ -95,6 +95,9 @@ const resources = {
 		"option.detail_coarse": "粗め",
 		"option.detail_balanced": "バランス",
 		"option.detail_detailed": "細かめ",
+		"option.colors_8": "8色",
+		"option.colors_16": "16色",
+		"option.colors_32": "32色",
 		"option.background_keep": "維持",
 		"option.background_auto": "自動で透過",
 		"option.background_pick": "色を選択",
@@ -196,7 +199,7 @@ const resources = {
 		"tooltip.help.quick_detail":
 			"「ドット絵へ変換」で使う出力サイズを調整します。色数など、ほかの設定には影響しません。\n\nAutoでは「ドット絵へ変換」が選ばれた画像にだけ適用されます。",
 		"tooltip.help.quick_reduction_mode":
-			"減色しないか、標準パレットで減色するかを選びます。色数指定と固定パレットの読み込みは詳細設定で行えます。",
+			"減色しないか、固定色数または標準パレットで減色するかを選びます。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
 			"背景をそのまま残すか、自動判定で透過するか、選んだ色を透過するかを指定します。",
 		"tooltip.help.quick_dithering":
@@ -480,6 +483,9 @@ const resources = {
 		"option.detail_coarse": "粗略",
 		"option.detail_balanced": "平衡",
 		"option.detail_detailed": "精细",
+		"option.colors_8": "8色",
+		"option.colors_16": "16色",
+		"option.colors_32": "32色",
 		"option.background_keep": "保留",
 		"option.background_auto": "自动透明",
 		"option.background_pick": "选择颜色",
@@ -580,7 +586,7 @@ const resources = {
 		"tooltip.help.quick_detail":
 			"调整“转换为像素画”路径的输出尺寸，不影响颜色数量等其他设置。\n\n在Auto中，仅当图像选择了转换路径时生效。",
 		"tooltip.help.quick_reduction_mode":
-			"选择不减色或使用内置标准调色板。颜色数量和导入固定调色板可在高级设置中指定。",
+			"选择不减色、固定颜色数量或内置标准调色板。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
 			"选择保留背景、自动检测并设为透明，或将选定颜色设为透明。",
 		"tooltip.help.quick_dithering":
@@ -864,6 +870,9 @@ const resources = {
 		"option.detail_coarse": "Coarse",
 		"option.detail_balanced": "Balanced",
 		"option.detail_detailed": "Detailed",
+		"option.colors_8": "8 colors",
+		"option.colors_16": "16 colors",
+		"option.colors_32": "32 colors",
 		"option.background_keep": "Keep",
 		"option.background_auto": "Auto transparent",
 		"option.background_pick": "Pick color",
@@ -965,7 +974,7 @@ const resources = {
 		"tooltip.help.quick_detail":
 			"Controls output size on the Convert route without changing color count or other settings.\n\nIn Auto, it applies only to images assigned to Convert.",
 		"tooltip.help.quick_reduction_mode":
-			"Selects no color reduction or a built-in standard palette. Color counts and imported fixed palettes are available in Advanced Settings.",
+			"Selects no color reduction, a fixed color count, or a built-in standard palette. Arbitrary color counts and imported fixed palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":
 			"Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent.",
 		"tooltip.help.quick_dithering":

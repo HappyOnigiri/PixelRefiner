@@ -40,8 +40,21 @@ describe("quick settings", () => {
 		"msx",
 		"c64",
 		"arne16",
-	] as const)(
-		"maps the %s standard palette without a numeric color count",
+		"sfc_sprite",
+		"sfc_bg",
+	] as const)("maps the %s standard palette directly", (reductionMode) => {
+		const options = createQuickProcessOptions({
+			...QUICK_SETTINGS_DEFAULTS,
+			reductionMode,
+		});
+		expect(options).toMatchObject({
+			reduceColors: true,
+			reduceColorMode: reductionMode,
+		});
+	});
+
+	it.each(["8", "16", "32"] as const)(
+		"maps the %s-color choice to automatic reduction with a fixed count",
 		(reductionMode) => {
 			const options = createQuickProcessOptions({
 				...QUICK_SETTINGS_DEFAULTS,
@@ -49,7 +62,8 @@ describe("quick settings", () => {
 			});
 			expect(options).toMatchObject({
 				reduceColors: true,
-				reduceColorMode: reductionMode,
+				reduceColorMode: "auto",
+				colorCount: Number(reductionMode),
 			});
 		},
 	);
