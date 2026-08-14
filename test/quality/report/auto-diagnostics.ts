@@ -14,7 +14,7 @@ const CANDIDATE_MODAL_DECISION_KEYS: Record<CandidateModalDecision, string> = {
 
 const WARNING_PRESENTATION_KEYS: Record<WarningPresentation, string> = {
 	"candidate-modal": "warningPresentationCandidateModal",
-	toast: "warningPresentationToast",
+	indicator: "warningPresentationIndicator",
 	none: "warningPresentationNone",
 };
 
@@ -57,7 +57,7 @@ const renderWarningItem = (warning: string): string => {
 /**
  * WARNING の詳細。コード、利用者へ出る文言、どの判定で付いたかを 1 件ずつ並べる。
  * [Intended] 一覧はバッジしか出さないので、判定条件を辿れる場所はここだけになる。
- * 表示先も併記して、通常通知と候補モーダルのどちらへ出るのかを同じ場所で読めるようにする。
+ * 表示先も併記して、警告アイコンと候補モーダルのどちらへ出るのかを同じ場所で読めるようにする。
  */
 export const renderWarningDetails = (result: QualityCaseResult): string => {
 	const presentationKey = WARNING_PRESENTATION_KEYS[result.warningPresentation];

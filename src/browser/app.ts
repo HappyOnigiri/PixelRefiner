@@ -25,6 +25,7 @@ import { createProcessPendingImages } from "./pending-processing";
 import { setupPresetControls } from "./preset-controls";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { createRunProcessing } from "./processing-controller";
+import { translateProcessingWarnings } from "./processing-warnings";
 import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
 import { type ImageItem, ImageSession } from "./session";
@@ -54,8 +55,13 @@ export const initApp = (): void => {
 	};
 	const updateProcessingAnalysis = (item: ImageItem | null | undefined) => {
 		const text = formatAnalysisText(item);
+		const warnings = item?.analysis
+			? translateProcessingWarnings(item.analysis.warnings)
+			: [];
 		mainResultViewer.updateAnalysis(text);
 		modalResultViewer.updateAnalysis(text);
+		mainResultViewer.updateWarnings(warnings);
+		modalResultViewer.updateWarnings(warnings);
 	};
 	const candidateChooser = new CandidateChooser(
 		els.candidateModal,

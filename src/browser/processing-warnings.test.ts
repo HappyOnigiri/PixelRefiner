@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { i18n, type Language } from "./i18n";
 import {
-	shouldNotifyProcessingWarnings,
 	translateProcessingWarning,
+	translateProcessingWarnings,
 } from "./processing-warnings";
 
 const originalLanguage: Language = i18n.currentLang;
@@ -27,29 +27,17 @@ describe("translateProcessingWarning", () => {
 	});
 });
 
-describe("shouldNotifyProcessingWarnings", () => {
-	it("候補モーダルが表示された場合は重複する通知を抑止する", () => {
+describe("translateProcessingWarnings", () => {
+	it("複数の警告をアイコンのツールチップ用に翻訳する", () => {
+		i18n.currentLang = "ja";
 		expect(
-			shouldNotifyProcessingWarnings(
-				["LOW_GRID_CONFIDENCE", "EXTREME_OUTPUT_SIZE"],
-				true,
-			),
-		).toBe(false);
-	});
-
-	it("候補モーダルを表示できない場合は通知を残す", () => {
-		expect(shouldNotifyProcessingWarnings(["LOW_GRID_CONFIDENCE"], false)).toBe(
-			true,
-		);
-	});
-
-	it("候補モーダルの対象外の WARNING も通常通知へ送る", () => {
-		expect(shouldNotifyProcessingWarnings(["CONTENT_LOSS_RISK"], false)).toBe(
-			true,
-		);
-	});
-
-	it("警告がない場合は通知しない", () => {
-		expect(shouldNotifyProcessingWarnings([], false)).toBe(false);
+			translateProcessingWarnings([
+				"LOW_GRID_CONFIDENCE",
+				"EXTREME_OUTPUT_SIZE",
+			]),
+		).toEqual([
+			"グリッド判定の信頼度が低いため、結果を確認してください。",
+			"出力サイズが非常に大きくなっています。",
+		]);
 	});
 });
