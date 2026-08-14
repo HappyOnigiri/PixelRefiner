@@ -132,18 +132,23 @@ const registerGateShard = (
 			const evaluation = evaluateQualityCase(qualityCase, writeReport);
 			const result = evaluation.result;
 			if (writeReport) results.push(result);
+			const isAutoCase = caseParameterMode(qualityCase) === "auto";
+			// [Intended] 同一実行内の再現性を先に確かめる。出力が非決定的になった変更では
+			// 下の同期チェックも必ず落ちるため、順序を逆にすると「ベースラインが古いだけ」と
+			// 誤診させ、ベースライン更新で非決定性を承認してしまう。
+			expect(result.metrics.byteIdentical).toBe(true);
 			expect(
 				evaluation.checkedInBaselineMatches,
 				`${qualityCase.id} output differs from the checked-in head baseline; ` +
-					"run pnpm test:quality:update",
+					"inspect the report with make report, then run pnpm test:quality:update " +
+					"if the change is intended",
 			).toBe(true);
 			expect(
 				evaluation.checkedInBaselineEntry,
 				`${qualityCase.id} metrics differ from the checked-in head baseline; ` +
-					"run pnpm test:quality:update",
+					"inspect the report with make report, then run pnpm test:quality:update " +
+					"if the change is intended",
 			).toEqual(checkedInBaselineById.get(qualityCase.id));
-			const isAutoCase = caseParameterMode(qualityCase) === "auto";
-			expect(result.metrics.byteIdentical).toBe(true);
 			// [Intended] 自動判定ケースには正解画像がなく、破綻や出力サイズは
 			// 「今の自動判定の実力」そのものなので絶対値では落とさない。悪化は
 			// ベースライン比較（catastrophicFailure の false→true や指標低下）で捕まえる。
