@@ -74,9 +74,9 @@ describe("quality case manifest", () => {
 		"updates the stored quality baseline",
 		() => {
 			assertBaselineUpdateIsSafe(profile);
-			// [Intended] 自動判定ケースの指標は既存のベースライン画像を基準に測るため、
-			// stage1（並列生成）は画像を書き換える前の状態に対して全ケースを評価しきり、
-			// 結果をステージング領域へ書き出している。ここではそれを集約するだけ。
+			// [Intended] stage1（並列生成）は各ケースの新しい出力画像と、その画像を基準に
+			// 測った指標をステージング領域へ書き出している。ここで集約してから追跡ファイルへ
+			// 一括で書くことで、画像と baseline.json が必ず同じ生成結果で揃う。
 			const entryById = new Map(
 				readQualityUpdatePartials().map((entry) => [entry.id, entry]),
 			);

@@ -40,8 +40,9 @@ so local report generation performs only the work needed for its artifacts.
 `pnpm test:quality:update` also runs Vitest twice. The first run
 (`quality:update:generate`) executes the shards with
 `UPDATE_QUALITY_BASELINE=1`: each case generates its next approved image and
-measures the stored metrics against that new reference, then writes both to
-`tmp/quality-baseline-update`. The second run (`quality:update:apply`)
+measures the stored metrics against the same reference the gate uses — the newly
+generated image for auto cases and the declared expectation image for explicit
+cases — then writes both to `tmp/quality-baseline-update`. The second run (`quality:update:apply`)
 executes `cases.test.ts`, which merges the staged results back into manifest
 order and performs the only write to `test/quality/baseline.json` and
 `test/quality/baseline/`. Splitting generation from the final write keeps the
