@@ -263,31 +263,6 @@ h1 {
   overflow-wrap: anywhere;
 }
 
-.badge-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-  position: relative;
-  /* 必要に応じて追加する */
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 16px;
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
-  border-radius: var(--radius-sm);
-  color: var(--primary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  box-shadow: none;
-  white-space: nowrap;
-  /* テキストの折り返しを防ぐ */
-}
-
 .text-highlight {
   color: var(--text-main);
   font-weight: 500;
