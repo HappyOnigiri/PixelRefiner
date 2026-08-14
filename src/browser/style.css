@@ -99,8 +99,10 @@
     --primary: #82add1;
     --primary-hover: #a1c4df;
     --primary-action: #315f87;
+    --primary-action-hover: #3d7099;
     --accent: #e18a6f;
     --accent-action: #9a402a;
+    --accent-action-hover: #b34c30;
     --text-main: #e6e3dc;
     --text-muted: #aeb5b8;
     --text-dim: #858e92;
@@ -109,6 +111,7 @@
     --surface-hover: rgb(255 255 255 / 0.05);
     --surface-hover-strong: rgb(255 255 255 / 0.1);
     --panel-hover-border: #596166;
+    --focus-ring: #ffbf47;
     --loading-overlay: rgb(15 17 21 / 0.8);
     --loading-text: #e2e8f0;
     --image-list-bg: #171a1c;
