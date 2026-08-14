@@ -56,7 +56,11 @@ export const createProcessPendingImages = ({
 				item.candidateSelection,
 			);
 			const processResult = await processor.process(item.original, options);
-			imageSession.updateImageResult(id, processResult);
+			imageSession.updateImageResult(
+				id,
+				processResult,
+				processingState.settingsMode,
+			);
 			// [Intended] 変換の待機中にこの画像がアクティブになっていた場合は、結果を表示へ反映する。
 			if (imageSession.getActiveImage()?.id === id) {
 				imageSession.setActiveImage(id);

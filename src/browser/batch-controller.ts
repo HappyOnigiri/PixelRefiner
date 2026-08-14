@@ -121,7 +121,11 @@ export const setupBatchController = ({
 			for (let index = 0; index < batchResult.items.length; index += 1) {
 				const item = batchResult.items[index];
 				if (item.status === "done") {
-					imageSession.updateImageResult(item.id, item.processResult);
+					imageSession.updateImageResult(
+						item.id,
+						item.processResult,
+						processingState.settingsMode,
+					);
 				} else {
 					imageSession.setImageStatus(item.id, "error", item.error);
 				}

@@ -107,7 +107,12 @@ export const initApp = (): void => {
 		onActiveChange: (item) => {
 			candidateChooser.dismiss();
 			updateProcessingAnalysis(item);
-			updateQuickSettingsDisabledStates(els, item?.analysis?.route);
+			// [Intended] 経路はかんたん設定で処理した結果にだけ適用する。
+			// 他タブで処理した画像へ切り替えたときに、細かさが理由なく編集不可にならないようにする。
+			updateQuickSettingsDisabledStates(
+				els,
+				item?.settingsMode === "quick" ? item.analysis?.route : undefined,
+			);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
