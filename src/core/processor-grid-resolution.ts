@@ -37,6 +37,31 @@ export type ResolvedProcessingGrid = {
 	gridMethod: string;
 	downsampleOptions: DownsampleOptions;
 	allowSmallTrimmedGrid: boolean;
+	gridAlignedToContent: boolean;
+};
+
+/** 被写体基準の格子位相とセル倍率を保ったまま、元キャンバス全体へ広げる。 */
+export const expandContentGridToCanvas = (
+	grid: PixelGrid,
+	source: Pick<RawImage, "width" | "height">,
+): PixelGrid => {
+	const baseCropX = grid.cropX ?? grid.offsetX;
+	const baseCropY = grid.cropY ?? grid.offsetY;
+	const leftCells = Math.max(0, Math.ceil(baseCropX / grid.cellW));
+	const topCells = Math.max(0, Math.ceil(baseCropY / grid.cellH));
+	const cropX = baseCropX - leftCells * grid.cellW;
+	const cropY = baseCropY - topCells * grid.cellH;
+	const outW = Math.max(1, Math.ceil((source.width - cropX) / grid.cellW));
+	const outH = Math.max(1, Math.ceil((source.height - cropY) / grid.cellH));
+	return {
+		...grid,
+		cropX,
+		cropY,
+		cropW: outW * grid.cellW,
+		cropH: outH * grid.cellH,
+		outW,
+		outH,
+	};
 };
 
 /**
@@ -62,6 +87,7 @@ export const resolveProcessingGrid = ({
 		watermarkRemovedFromGeometry,
 	);
 	let allowSmallTrimmedGrid = false;
+	let gridAlignedToContent = false;
 
 	if (o.autoGridFromTrimmed && maskedForDebugOrAuto) {
 		log("Auto grid from trimmed mode");
@@ -135,10 +161,10 @@ export const resolveProcessingGrid = ({
 				// 「常に無効」にすると小さな格子が許可されず、refine から preserve へ
 				// フォールバックする場合がある（ツールチップにも同じ注意を書いている）。
 				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
-				// [Intended] 被写体境界はセル倍率の補正だけに使い、サンプリング範囲は
-				// 常に元キャンバスへ投影する。トリムの有無で倍率や被写体サイズを変えない。
-				const alignToTrimmedBounds =
-					isSmallAspectAdjustedGrid && !o.preserveProcessingScale;
+				// [Intended] 寸法決定時は常に被写体境界へ揃える。キャンバス全体が必要な場合は
+				// 経路判定後に同じ格子位相のまま外側へ拡張し、倍率とディテールを変えない。
+				const alignToTrimmedBounds = isSmallAspectAdjustedGrid;
+				gridAlignedToContent = alignToTrimmedBounds;
 				let gridBounds = b;
 				let gridEstimate = selectedEstimate;
 				if (isSmallAspectAdjustedGrid) {
@@ -257,5 +283,11 @@ export const resolveProcessingGrid = ({
 		});
 	}
 
-	return { grid, gridMethod, downsampleOptions, allowSmallTrimmedGrid };
+	return {
+		grid,
+		gridMethod,
+		downsampleOptions,
+		allowSmallTrimmedGrid,
+		gridAlignedToContent,
+	};
 };

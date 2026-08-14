@@ -4,14 +4,26 @@ import {
 	type AutomaticBackgroundResult,
 	removeAutomaticBackground,
 } from "./background";
-import { removeGeminiWatermark } from "./gemini-watermark";
+import { getBackgroundTargets } from "./background-removal";
+import {
+	prepareGeminiWatermarkAwareAutoMask,
+	prepareGeminiWatermarkGeometry,
+} from "./gemini-watermark-preprocessing";
 import {
 	getBackgroundBehavior,
 	type NormalizedProcessOptions,
 } from "./processor-options";
 
 export type ProcessingGeometry = {
-	mask: RawImage;
+	working: RawImage;
+	autoMask: RawImage;
+	preparedMask?: RawImage;
+	watermarkRemoved: boolean;
+};
+
+type ReusableWatermarkGeometry = {
+	working: RawImage;
+	preparedMask?: RawImage;
 	watermarkRemoved: boolean;
 };
 
@@ -26,7 +38,15 @@ export const prepareProcessingGeometry = (
 	image: RawImage,
 	options: NormalizedProcessOptions,
 	reusableAutomaticBackground?: AutomaticBackgroundResult,
+	reusableWatermarkGeometry?: ReusableWatermarkGeometry,
 ): ProcessingGeometry => {
+	const geometryOptions: NormalizedProcessOptions = {
+		...options,
+		preRemoveBackground: true,
+		postRemoveBackground: true,
+		bgExtractionMethod: "auto",
+		bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
+	};
 	const canReuse =
 		reusableAutomaticBackground !== undefined &&
 		options.bgExtractionMethod === "auto" &&
@@ -39,14 +59,41 @@ export const prepareProcessingGeometry = (
 				PROCESS_DEFAULTS.bgRemovalScope,
 				options.bgConnectivity,
 				undefined,
-				getBackgroundBehavior(options),
+				getBackgroundBehavior(geometryOptions),
 			);
-	if (options.geminiWatermarkRemoval === "off") {
-		return { mask: automaticBackground.image, watermarkRemoved: false };
-	}
-	const watermark = removeGeminiWatermark(
-		automaticBackground.image,
-		automaticBackground.image,
-	);
-	return { mask: watermark.image, watermarkRemoved: watermark.removed };
+	const backgroundTargets = getBackgroundTargets(image, "auto", undefined, 16);
+	const watermarkGeometry = reusableWatermarkGeometry
+		? reusableWatermarkGeometry
+		: (() => {
+				const prepared = prepareGeminiWatermarkGeometry({
+					inputImage: image,
+					image,
+					working: automaticBackground.image,
+					options: geometryOptions,
+					automaticBackground,
+					getBackgroundMaskedInput: () => automaticBackground.image,
+					backgroundTargets,
+					backgroundModel: automaticBackground.model,
+				});
+				return {
+					working: prepared.working,
+					preparedMask: prepared.mask,
+					watermarkRemoved: prepared.removed,
+				};
+			})();
+	const { preparedMask, watermarkRemoved } = watermarkGeometry;
+	const autoMask = prepareGeminiWatermarkAwareAutoMask({
+		needed: true,
+		preparedMask,
+		options: geometryOptions,
+		geometryWorking: watermarkGeometry.working,
+		backgroundTargets,
+		backgroundModel: automaticBackground.model,
+	});
+	return {
+		working: watermarkGeometry.working,
+		autoMask: autoMask ?? watermarkGeometry.working,
+		preparedMask,
+		watermarkRemoved,
+	};
 };

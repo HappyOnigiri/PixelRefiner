@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
+import { cropRawImage, findOpaqueBounds } from "./image-operations";
 import { processImage } from "./processor";
 import { readPngAsRawImage } from "./processor-test-helpers";
 
@@ -131,6 +132,26 @@ describe("processing router", () => {
 		expect(transparentAndTrimmed.result.height).toBe(
 			keptAndTrimmed.result.height,
 		);
+		expect(kept.analysis.classification).toBe(
+			transparent.analysis.classification,
+		);
+		expect(kept.analysis.route).toBe(transparent.analysis.route);
+		expect(keptAndTrimmed.analysis.classification).toBe(
+			kept.analysis.classification,
+		);
+		expect(keptAndTrimmed.analysis.route).toBe(kept.analysis.route);
+		const transparentBounds = findOpaqueBounds(transparent.result, 16);
+		expect(transparentBounds).not.toBeNull();
+		if (transparentBounds) {
+			const subject = cropRawImage(
+				transparent.result,
+				transparentBounds.x,
+				transparentBounds.y,
+				transparentBounds.w,
+				transparentBounds.h,
+			);
+			expect(subject).toEqual(transparentAndTrimmed.result);
+		}
 	});
 
 	it("uses automatic routing when processingMode is omitted", () => {
