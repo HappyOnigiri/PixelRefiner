@@ -31,6 +31,7 @@ import {
 	type QuickColors,
 	type QuickDithering,
 } from "./quick-settings";
+import { updateQuickSettingsDisabledStates } from "./quick-settings-controls";
 import type { ResultViewer } from "./result-viewer";
 import { BROWSER_RUNTIME_CONFIG } from "./runtime-config";
 import type { ImageSession } from "./session";
@@ -329,6 +330,7 @@ export const createRunProcessing = ({
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
 			if (imageSession.getActiveImage()?.id !== currentItem.id) return;
+			updateQuickSettingsDisabledStates(els, analysis.route);
 
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);

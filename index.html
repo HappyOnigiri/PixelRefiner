@@ -492,15 +492,29 @@
                 </h3>
                 <div class="quick-settings-grid">
                   <label class="setting-item quick-preset-setting">
-                    <span class="label-text" data-i18n="setting.preset"
-                      >Preset</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.preset">Preset</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_preset"
+                        data-tooltip="Applies a coordinated set of settings for a purpose. Changing an individual setting switches the preset to Custom."
+                        >?</span
+                      >
+                    </span>
                     <select id="built-in-preset"></select>
                   </label>
                   <label class="setting-item">
-                    <span class="label-text" data-i18n="setting.processing_mode"
-                      >Processing</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.processing_mode"
+                        >Processing</span
+                      >
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_processing_mode"
+                        data-tooltip="Chooses how the image is processed. Auto analyzes the image and selects a route. Refine restores enlarged pixel art, Convert turns a regular image into pixel art, and Preserve avoids downscaling."
+                        >?</span
+                      >
+                    </span>
                     <select id="quick-processing-mode">
                       <option value="auto" data-i18n="option.processing_auto">
                         Auto
@@ -526,9 +540,15 @@
                     </select>
                   </label>
                   <label class="setting-item">
-                    <span class="label-text" data-i18n="setting.detail"
-                      >Detail</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.detail">Detail</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
+                        data-tooltip="Controls the output resolution and amount of detail on the Convert route. In Auto, it applies only when Convert is selected. It is unavailable for Refine and Preserve."
+                        >?</span
+                      >
+                    </span>
                     <select id="quick-detail-level">
                       <option value="coarse" data-i18n="option.detail_coarse">
                         Coarse
@@ -548,9 +568,15 @@
                     </select>
                   </label>
                   <label class="setting-item">
-                    <span class="label-text" data-i18n="setting.colors"
-                      >Colors</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.colors">Colors</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_colors"
+                        data-tooltip="Sets the maximum number of colors in the output. Auto lets the selected processing route choose an appropriate color reduction."
+                        >?</span
+                      >
+                    </span>
                     <select id="quick-colors">
                       <option value="auto" data-i18n="option.colors_auto">
                         Auto
@@ -570,9 +596,15 @@
                     </select>
                   </label>
                   <label class="setting-item">
-                    <span class="label-text" data-i18n="setting.background"
-                      >Background</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.background">Background</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_background"
+                        data-tooltip="Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent."
+                        >?</span
+                      >
+                    </span>
                     <select id="quick-background">
                       <option value="keep" data-i18n="option.background_keep">
                         Keep
@@ -615,7 +647,7 @@
                       <span
                         class="help"
                         data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
-                        data-tooltip="Range of background to make transparent.&#10;&#10;Auto: Outer background, plus enclosed holes that clearly match the background color.&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + every inner area matching the background color."
+                        data-tooltip="Range of background to make transparent.&#10;&#10;Auto: Outer background, plus enclosed holes that clearly match the background color.&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + every inner area matching the background color.&#10;&#10;Unavailable when Background is Keep."
                         >?</span
                       >
                     </span>
@@ -642,9 +674,15 @@
                     </select>
                   </label>
                   <label class="setting-item">
-                    <span class="label-text" data-i18n="setting.dithering"
-                      >Dithering</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.dithering">Dithering</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_dithering"
+                        data-tooltip="Mixes neighboring colors into a pattern during color reduction to represent intermediate tones. Stronger settings preserve gradients but add more texture."
+                        >?</span
+                      >
+                    </span>
                     <select id="quick-dithering">
                       <option value="off" data-i18n="option.dithering_off">
                         Off
@@ -667,9 +705,15 @@
                     </select>
                   </label>
                   <label class="setting-item">
-                    <span class="label-text" data-i18n="setting.outline"
-                      >Outline</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.outline">Outline</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.quick_outline"
+                        data-tooltip="Adds a one-pixel outline after processing. Rounded softens corners, while Sharp keeps square corners."
+                        >?</span
+                      >
+                    </span>
                     <select id="quick-outline-style">
                       <option value="none" data-i18n="option.outline_none">
                         Off
@@ -686,9 +730,15 @@
                     </select>
                   </label>
                   <label class="setting-item quick-checkbox-setting">
-                    <span class="label-text" data-i18n="setting.auto_trim"
-                      >Auto Trim</span
-                    >
+                    <span class="label-text">
+                      <span data-i18n="setting.auto_trim">Auto Trim</span>
+                      <span
+                        class="help"
+                        data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
+                        data-tooltip="Automatically trims the output to the bounds containing visible content. It removes transparent or detected background margins."
+                        >?</span
+                      >
+                    </span>
                     <input id="quick-auto-trim" type="checkbox" checked />
                   </label>
                 </div>

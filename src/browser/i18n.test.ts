@@ -169,6 +169,19 @@ describe("I18nManager", () => {
 		for (const lang of ["ja", "en", "zh-CN"] as const) {
 			i18n.setLanguage(lang);
 			expect(i18n.t("preset.photo_to_pixel")).not.toBe("preset.photo_to_pixel");
+			for (const key of [
+				"tooltip.help.quick_preset",
+				"tooltip.help.quick_processing_mode",
+				"tooltip.help.quick_detail",
+				"tooltip.help.quick_colors",
+				"tooltip.help.quick_background",
+				"tooltip.help.bg_removal_scope",
+				"tooltip.help.quick_dithering",
+				"tooltip.help.quick_outline",
+				"tooltip.help.auto_trim",
+			] as const) {
+				expect(i18n.t(key)).not.toBe(key);
+			}
 			expect(i18n.t("classification.scaled-pixel")).not.toBe(
 				"classification.scaled-pixel",
 			);

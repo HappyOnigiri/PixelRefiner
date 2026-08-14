@@ -25,6 +25,7 @@ import { createProcessPendingImages } from "./pending-processing";
 import { setupPresetControls } from "./preset-controls";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { createRunProcessing } from "./processing-controller";
+import { updateQuickSettingsDisabledStates } from "./quick-settings-controls";
 import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
 import { type ImageItem, ImageSession } from "./session";
@@ -99,6 +100,7 @@ export const initApp = (): void => {
 		onActiveChange: (item) => {
 			candidateChooser.dismiss();
 			updateProcessingAnalysis(item);
+			updateQuickSettingsDisabledStates(els, item?.analysis?.route);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
