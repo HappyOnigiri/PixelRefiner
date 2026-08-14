@@ -26,16 +26,16 @@
   --surface-hover-strong: rgb(32 36 38 / 0.12);
   --panel-hover-border: #9f988c;
   --focus-ring: #8a5300;
-  --loading-overlay: rgb(15 17 21 / 0.82);
+  --loading-overlay: rgb(32 36 38 / 0.82);
   --loading-text: #ffffff;
   --image-list-bg: #eeebe4;
   --scrollbar-track: #e9e6de;
   --scrollbar-thumb: #9f988c;
   --thumbnail-bg: #fbfaf7;
   --thumbnail-grid: #d6d0c5;
-  --preview-control-border: rgb(15 23 42 / 0.24);
-  --swatch-border: rgb(15 23 42 / 0.22);
-  --swatch-hover-border: rgb(15 23 42 / 0.65);
+  --preview-control-border: rgb(32 36 38 / 0.24);
+  --swatch-border: rgb(32 36 38 / 0.22);
+  --swatch-hover-border: rgb(32 36 38 / 0.65);
   --footer-icon-filter: invert(1);
 
   /* 文字 */
