@@ -301,19 +301,27 @@ export const evaluateQualityCase = (
 		: null;
 	const checkedInExpected =
 		parameterMode === "auto" ? (checkedInImage ?? currentRun.result) : expected;
-	const checkedInMetrics = calculateMetrics(
-		currentRun.result,
-		input,
-		checkedInExpected,
-		currentRun.grid,
-		repeatRun.result,
-		runtime,
-	);
-	const checkedInFailed = failedAssertions(
-		qualityCase,
-		checkedInMetrics,
-		imagesEqual(currentRun.result, checkedInExpected),
-	);
+	// [Intended] explicit ケースと、PR ベースへの差し替えが無いローカル実行では、
+	// 参照画像がゲート側の expected と同一インスタンスになる。同じ参照で測り直しても
+	// 結果は変わらないので判定一式を使い回し、同じ 3 段のロジックを 2 組持たない。
+	const checkedInSharesReference = checkedInExpected === expected;
+	const checkedInMetrics = checkedInSharesReference
+		? metrics
+		: calculateMetrics(
+				currentRun.result,
+				input,
+				checkedInExpected,
+				currentRun.grid,
+				repeatRun.result,
+				runtime,
+			);
+	const checkedInFailed = checkedInSharesReference
+		? failed
+		: failedAssertions(
+				qualityCase,
+				checkedInMetrics,
+				imagesEqual(currentRun.result, checkedInExpected),
+			);
 	const checkedInStatus = checkedInFailed.length === 0 ? "passed" : "failed";
 	const checkedInBaselineEntry = toBaselineCaseEntry(
 		qualityCase.id,
