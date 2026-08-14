@@ -7,6 +7,9 @@
   --bg-panel: #fbfaf7;
   --bg-input: #e9e6de;
   --border-color: #cfc9bd;
+  /* [Intended] 入力部品の枠は隣接するパネル背景に対して3:1以上を確保するため、
+     区切り線用の --border-color とは別に定義する。 */
+  --input-border: #8a8172;
   --primary: #285d88;
   --primary-hover: #1f496c;
   --primary-action: #285d88;
@@ -58,6 +61,7 @@
   --bg-panel: #1b1e20;
   --bg-input: #101214;
   --border-color: #353a3d;
+  --input-border: #666f74;
   --primary: #82add1;
   --primary-hover: #a1c4df;
   --primary-action: #315f87;
@@ -96,6 +100,7 @@
     --bg-panel: #1b1e20;
     --bg-input: #101214;
     --border-color: #353a3d;
+    --input-border: #666f74;
     --primary: #82add1;
     --primary-hover: #a1c4df;
     --primary-action: #315f87;
@@ -774,7 +779,7 @@ label {
 input[type="number"],
 input[type="text"] {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
@@ -797,7 +802,7 @@ input[type="checkbox"] {
 
 select {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
