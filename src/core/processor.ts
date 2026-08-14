@@ -39,6 +39,7 @@ import {
 	detectedGridConfidenceWarnings,
 	findCandidateIndexForGrid,
 } from "./processing-analysis";
+import { prepareProcessingGeometry } from "./processing-geometry";
 import {
 	applyPostRemovalOutcome,
 	prepareAutomaticBackground,
@@ -101,6 +102,9 @@ const processImageCore = (
 			: [];
 	const { automaticBackground, backgroundModel, backgroundDiagnostic } =
 		prepareAutomaticBackground(inputImage, o);
+	const processingGeometry = o.preserveProcessingScale
+		? prepareProcessingGeometry(inputImage, o, automaticBackground)
+		: undefined;
 	let backgroundMaskedInput: RawImage | undefined;
 	let preRemovedInput: RawImage | undefined;
 	const getBackgroundMaskedInput = (): RawImage => {
@@ -218,6 +222,8 @@ const processImageCore = (
 	const geometryImage = watermarkGeometry.image;
 	const geometryWorking = watermarkGeometry.working;
 	const preparedWatermarkMask = watermarkGeometry.mask;
+	const geometryMask = processingGeometry?.mask ?? preparedWatermarkMask;
+	const analysisGeometry = processingGeometry?.mask ?? geometryWorking;
 	log(
 		`Pre-background removal done in ${(performance.now() - workingStart).toFixed(2)}ms`,
 	);
@@ -242,7 +248,7 @@ const processImageCore = (
 		backgroundDiagnostic,
 		backgroundModel,
 		smallComponentRemoval,
-		preparedMask: preparedWatermarkMask,
+		preparedMask: geometryMask,
 		preBackgroundRemoved,
 	};
 	const finishProcessing = watermarkGeometry.finish;
@@ -283,9 +289,9 @@ const processImageCore = (
 		needed: Boolean(
 			o.debugHook || autoGridFromTrimmed || o.floatingMaxPixels > 0,
 		),
-		preparedMask: preparedWatermarkMask,
+		preparedMask: geometryMask,
 		options: o,
-		geometryWorking,
+		geometryWorking: analysisGeometry,
 		backgroundTargets: bgTargets,
 		backgroundModel,
 	});
@@ -338,18 +344,20 @@ const processImageCore = (
 	const { grid, gridMethod, downsampleOptions, allowSmallTrimmedGrid } =
 		resolveProcessingGrid({
 			o,
-			working,
-			geometryImage,
-			geometryWorking,
+			working: processingGeometry ? inputImage : working,
+			geometryImage: processingGeometry ? inputImage : geometryImage,
+			geometryWorking: analysisGeometry,
 			maskedForDebugOrAuto,
 			bgTargets,
 			trimAlphaThreshold,
-			watermarkRemovedFromGeometry,
+			watermarkRemovedFromGeometry:
+				(processingGeometry?.watermarkRemoved ?? false) ||
+				watermarkRemovedFromGeometry,
 			log,
 		});
 
 	const rankedGridCandidates = rankGridCandidates(
-		geometryWorking,
+		analysisGeometry,
 		grid,
 		gridMethod,
 	);
@@ -357,7 +365,7 @@ const processImageCore = (
 	// 加工前の入力画像を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
 		o.processingMode === "auto"
-			? classifyInput(geometryWorking, rankedGridCandidates)
+			? classifyInput(analysisGeometry, rankedGridCandidates)
 			: undefined;
 	const selectedCandidateIndex = findCandidateIndexForGrid(
 		rankedGridCandidates,
@@ -419,7 +427,7 @@ const processImageCore = (
 					// 復元候補の存在をユーザーが知る手段が無くなる。
 					...(autoRoute.route === "preserve"
 						? detectedGridConfidenceWarnings(
-								geometryWorking,
+								analysisGeometry,
 								grid,
 								selectedCandidateConfidence,
 							)
@@ -436,8 +444,8 @@ const processImageCore = (
 	const diagnosticGrid = grid;
 	const down = downsample(working, grid, downsampleOptions);
 	const geometryDown = downsampleGeminiWatermarkGeometry(
-		preparedWatermarkMask,
-		geometryWorking,
+		geometryMask,
+		analysisGeometry,
 		working,
 		down,
 		grid,

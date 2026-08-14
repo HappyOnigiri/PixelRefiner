@@ -132,12 +132,10 @@ export const processConvertRoute = (
 		};
 	}
 
-	// [Intended] 候補の解像度は被写体の寸法から決める。透明余白を含めたまま算出すると、
-	// 余白の広い画像で被写体の実効解像度だけが落ちる。
 	let source = working;
 	let sourceX = 0;
 	let sourceY = 0;
-	if (o.trimToContent && masked) {
+	if (!o.preserveProcessingScale && o.trimToContent && masked) {
 		const bounds = findOpaqueBounds(masked, trimAlphaThreshold);
 		if (bounds) {
 			source = cropRawImage(working, bounds.x, bounds.y, bounds.w, bounds.h);
@@ -181,18 +179,20 @@ export const processConvertRoute = (
 	);
 	let compareBeforeSanitized = finalResult;
 	const logicalMask =
-		o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off"
-			? removeBackground(
-					finalResult,
-					o.backgroundTolerance,
-					o.bgRemovalScope,
-					o.bgConnectivity,
-					bgTargets,
-					o.bgExtractionMethod,
-					backgroundModel,
-					behavior,
-				)
-			: finalResult;
+		o.preserveProcessingScale && masked
+			? edgeAwareAreaResample(masked, selected.outW, selected.outH)
+			: o.bgExtractionMethod !== "none" && o.bgRemovalScope !== "off"
+				? removeBackground(
+						finalResult,
+						o.backgroundTolerance,
+						o.bgRemovalScope,
+						o.bgConnectivity,
+						bgTargets,
+						o.bgExtractionMethod,
+						backgroundModel,
+						behavior,
+					)
+				: finalResult;
 	const componentResult = removeSmallComponents(
 		finalResult,
 		logicalMask,
@@ -241,6 +241,52 @@ export const processConvertRoute = (
 			log,
 			o.fixedPalette,
 		);
+	}
+
+	if (o.preserveProcessingScale && o.trimToContent) {
+		// [Intended] かんたん設定のトリムは変換後のキャンバスだけを切り詰め、
+		// 候補の解像度を変えない。先に切ると被写体まで拡大される。
+		const bounds = findOpaqueBounds(componentResult.mask, trimAlphaThreshold);
+		if (
+			bounds &&
+			(bounds.x !== 0 ||
+				bounds.y !== 0 ||
+				bounds.w !== finalResult.width ||
+				bounds.h !== finalResult.height)
+		) {
+			finalResult = cropRawImage(
+				finalResult,
+				bounds.x,
+				bounds.y,
+				bounds.w,
+				bounds.h,
+			);
+			compareBefore = cropRawImage(
+				compareBefore,
+				bounds.x,
+				bounds.y,
+				bounds.w,
+				bounds.h,
+			);
+			compareBeforeSanitized = cropRawImage(
+				compareBeforeSanitized,
+				bounds.x,
+				bounds.y,
+				bounds.w,
+				bounds.h,
+			);
+			const cropX = grid.cropX ?? grid.offsetX;
+			const cropY = grid.cropY ?? grid.offsetY;
+			grid = {
+				...grid,
+				outW: bounds.w,
+				outH: bounds.h,
+				cropX: cropX + bounds.x * grid.cellW,
+				cropY: cropY + bounds.y * grid.cellH,
+				cropW: bounds.w * grid.cellW,
+				cropH: bounds.h * grid.cellH,
+			};
+		}
 	}
 
 	const padCompanions = (

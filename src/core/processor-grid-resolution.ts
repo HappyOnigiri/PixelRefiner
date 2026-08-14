@@ -4,7 +4,7 @@ import {
 	TRIMMED_GRID_SEARCH_LIMITS,
 } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
-import { removeBackground } from "./background-removal";
+import { getBackgroundTargets, removeBackground } from "./background-removal";
 import { detectGrid } from "./detector";
 import { getGeminiWatermarkDownsampleOptions } from "./gemini-watermark-preprocessing";
 import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
@@ -116,9 +116,10 @@ export const resolveProcessingGrid = ({
 				const isSmallAspectAdjustedGrid =
 					!phaseAwareReliable &&
 					o.smallAspectGridAlignmentEnabled &&
-					o.bgExtractionMethod === "auto" &&
-					o.bgRemovalScope !== "off" &&
-					trimToContent &&
+					(o.preserveProcessingScale ||
+						(o.bgExtractionMethod === "auto" &&
+							o.bgRemovalScope !== "off" &&
+							trimToContent)) &&
 					(selectedEstimate.outW ?? 0) <=
 						TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputWidth &&
 					(selectedEstimate.outH ?? 0) <=
@@ -134,9 +135,10 @@ export const resolveProcessingGrid = ({
 				// 「常に無効」にすると小さな格子が許可されず、refine から preserve へ
 				// フォールバックする場合がある（ツールチップにも同じ注意を書いている）。
 				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
-				// [Intended] トリミング領域で推定した格子は、元画像の左上へ投影せず
-				// コンテンツ BBox をそのままサンプリング領域として使う。
-				const alignToTrimmedBounds = isSmallAspectAdjustedGrid;
+				// [Intended] 被写体境界はセル倍率の補正だけに使い、サンプリング範囲は
+				// 常に元キャンバスへ投影する。トリムの有無で倍率や被写体サイズを変えない。
+				const alignToTrimmedBounds =
+					isSmallAspectAdjustedGrid && !o.preserveProcessingScale;
 				let gridBounds = b;
 				let gridEstimate = selectedEstimate;
 				if (isSmallAspectAdjustedGrid) {
@@ -145,9 +147,13 @@ export const resolveProcessingGrid = ({
 					const cornerMask = removeBackground(
 						geometryImage,
 						o.backgroundTolerance,
-						o.bgRemovalScope,
+						o.preserveProcessingScale
+							? PROCESS_DEFAULTS.bgRemovalScope
+							: o.bgRemovalScope,
 						o.bgConnectivity,
-						bgTargets,
+						o.preserveProcessingScale
+							? getBackgroundTargets(geometryImage, "top-left", undefined, 16)
+							: bgTargets,
 						"top-left",
 						undefined,
 						getBackgroundBehavior(o),
@@ -211,7 +217,7 @@ export const resolveProcessingGrid = ({
 								const c = "candidate" in entry ? entry.candidate : entry;
 								const phaseAware = "phaseAware" in entry;
 								const candidateEstimate =
-									alignToTrimmedBounds && !phaseAware
+									isSmallAspectAdjustedGrid && !phaseAware
 										? {
 												...c,
 												cellW: gridBounds.w / Math.max(1, c.outW ?? 1),

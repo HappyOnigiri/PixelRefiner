@@ -36,6 +36,26 @@ const createContinuousImage = (): RawImage => {
 	return { width, height, data };
 };
 
+const createPaddedScaledSprite = (): RawImage => {
+	const width = 64;
+	const height = 64;
+	const data = new Uint8ClampedArray(width * height * 4);
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const index = (y * width + x) * 4;
+			const inside = x >= 16 && x < 48 && y >= 8 && y < 56;
+			const logicalX = Math.floor((x - 16) / 4);
+			const logicalY = Math.floor((y - 8) / 4);
+			const foreground = (logicalX + logicalY) % 2 === 0;
+			data[index] = inside ? (foreground ? 32 : 208) : 244;
+			data[index + 1] = inside ? (foreground ? 72 : 48) : 246;
+			data[index + 2] = inside ? (foreground ? 160 : 80) : 248;
+			data[index + 3] = 255;
+		}
+	}
+	return { width, height, data };
+};
+
 const safeOptions = {
 	debug: false,
 	processingMode: "auto",
@@ -47,6 +67,72 @@ const safeOptions = {
 } as const;
 
 describe("processing router", () => {
+	it("keeps the processing scale independent from background transparency and trimming", () => {
+		const image = createPaddedScaledSprite();
+		const common = {
+			processingMode: "refine",
+			preserveProcessingScale: true,
+			autoGridFromTrimmed: true,
+			fastAutoGridFromTrimmed: true,
+			smallComponentMode: "off",
+			geminiWatermarkRemoval: "off",
+		} as const;
+		const keepBackground = {
+			...common,
+			bgExtractionMethod: "none",
+			bgRemovalScope: "off",
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+		} as const;
+		const transparentBackground = {
+			...common,
+			bgExtractionMethod: "auto",
+			bgRemovalScope: "auto",
+			preRemoveBackground: true,
+			postRemoveBackground: true,
+		} as const;
+
+		const kept = processImage(image, {
+			...keepBackground,
+			trimToContent: false,
+		});
+		const transparent = processImage(image, {
+			...transparentBackground,
+			trimToContent: false,
+		});
+		const keptAndTrimmed = processImage(image, {
+			...keepBackground,
+			trimToContent: true,
+		});
+		const transparentAndTrimmed = processImage(image, {
+			...transparentBackground,
+			trimToContent: true,
+		});
+
+		expect(kept.grid.cellW).toBeCloseTo(transparent.grid.cellW, 10);
+		expect(kept.grid.cellH).toBeCloseTo(transparent.grid.cellH, 10);
+		expect(kept.result.width).toBe(transparent.result.width);
+		expect(kept.result.height).toBe(transparent.result.height);
+		expect(keptAndTrimmed.grid.cellW).toBeCloseTo(kept.grid.cellW, 10);
+		expect(keptAndTrimmed.grid.cellH).toBeCloseTo(kept.grid.cellH, 10);
+		expect(transparentAndTrimmed.grid.cellW).toBeCloseTo(
+			transparent.grid.cellW,
+			10,
+		);
+		expect(transparentAndTrimmed.grid.cellH).toBeCloseTo(
+			transparent.grid.cellH,
+			10,
+		);
+		expect(keptAndTrimmed.result.width).toBeLessThan(kept.result.width);
+		expect(keptAndTrimmed.result.height).toBeLessThan(kept.result.height);
+		expect(transparentAndTrimmed.result.width).toBe(
+			keptAndTrimmed.result.width,
+		);
+		expect(transparentAndTrimmed.result.height).toBe(
+			keptAndTrimmed.result.height,
+		);
+	});
+
 	it("uses automatic routing when processingMode is omitted", () => {
 		const { processingMode: _processingMode, ...defaultOptions } = safeOptions;
 		const processed = processImage(createContinuousImage(), defaultOptions);
@@ -131,7 +217,7 @@ describe("processing router", () => {
 		},
 	);
 
-	it("derives convert candidate sizes from the trimmed subject", () => {
+	it("keeps the convert scale when trimming the output canvas", () => {
 		const size = 64;
 		const image: RawImage = {
 			width: size,
@@ -147,27 +233,18 @@ describe("processing router", () => {
 				image.data[index + 3] = 255;
 			}
 		}
-		const options = { ...safeOptions, processingMode: "convert" } as const;
+		const options = {
+			...safeOptions,
+			processingMode: "convert",
+			preserveProcessingScale: true,
+		} as const;
 		const trimmed = processImage(image, { ...options, trimToContent: true });
 		const untrimmed = processImage(image, { ...options, trimToContent: false });
 
-		const opaqueWidth = (output: RawImage): number => {
-			let min = output.width;
-			let max = -1;
-			for (let y = 0; y < output.height; y += 1) {
-				for (let x = 0; x < output.width; x += 1) {
-					if (output.data[(y * output.width + x) * 4 + 3] === 0) continue;
-					min = Math.min(min, x);
-					max = Math.max(max, x);
-				}
-			}
-			return max < min ? 0 : max - min + 1;
-		};
-
-		// 余白込みで候補を算出すると被写体に割り当たる画素が減る。
-		expect(opaqueWidth(trimmed.result)).toBeGreaterThan(
-			opaqueWidth(untrimmed.result),
-		);
+		expect(trimmed.grid.cellW).toBeCloseTo(untrimmed.grid.cellW, 10);
+		expect(trimmed.grid.cellH).toBeCloseTo(untrimmed.grid.cellH, 10);
+		expect(trimmed.result.width).toBeLessThan(untrimmed.result.width);
+		expect(trimmed.result.height).toBeLessThan(untrimmed.result.height);
 		expect(trimmed.grid.cropX).toBe(16);
 		expect(trimmed.grid.cropY).toBe(16);
 	});

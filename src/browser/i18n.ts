@@ -210,7 +210,7 @@ const resources = {
 		"tooltip.help.quick_background":
 			"背景透過を行わないか、自動判定で透過するか、選んだ色を透過するかを指定します。",
 		"tooltip.help.quick_auto_trim":
-			"内容が存在する範囲に合わせて出力を自動でトリミングします。背景透過が「なし」のときは使用できません。",
+			"被写体の大きさを変えず、検出した内容の範囲に合わせて出力を自動でトリミングします。背景を透過しない場合も使用できます。",
 		"tooltip.help.quick_dithering":
 			"減色時に隣り合う色を模様として混ぜ、中間色を表現します。強くするほどグラデーションを残しやすくなりますが、質感も目立ちます。",
 
@@ -308,7 +308,7 @@ const resources = {
 		"tooltip.help.small_component_mode":
 			"復元後の論理ピクセルを基準に孤立ノイズを整理します。近接・反復・対称・輪郭の延長・強いエッジ・高い不透明度を持つ細部は保護します。背景判定が不確かな場合は自動削除しません。",
 		"tooltip.help.auto_trim":
-			"出力後に内容物が存在する範囲で自動的にトリミング（余白削除）を行います。\n\n余白（背景）が大きい画像に対して、これをONにすることで正しい縦横のマス数が検出されやすくなります。",
+			"処理後に、検出した内容の範囲まで出力を自動でトリミングします。被写体の大きさとディテール設定は変わりません。",
 		"tooltip.help.make_square":
 			"画像全体が正方形になるように、足りない部分を透過ピクセルで埋め合わせます。\n\n元の画像は中心に配置されます。",
 		"tooltip.help.keep_aspect_ratio":
@@ -604,7 +604,7 @@ const resources = {
 		"tooltip.help.quick_background":
 			"选择不进行背景透明化、自动检测并透明化背景，或将选定颜色设为透明。",
 		"tooltip.help.quick_auto_trim":
-			"根据内容范围自动裁剪输出。背景透明设为“无”时不可用。",
+			"在不改变主体大小的情况下，根据检测到的内容范围自动裁剪输出。即使不透明化背景也可使用。",
 		"tooltip.help.quick_dithering":
 			"减色时将相邻颜色混合成图案，以表现中间色调。强度越高越能保留渐变，但纹理也会更明显。",
 
@@ -702,7 +702,7 @@ const resources = {
 		"tooltip.help.small_component_mode":
 			"根据恢复后的逻辑像素清理孤立噪点。会保护邻近、重复、对称、位于轮廓延长线、边缘清晰或高不透明度的细节。背景判断不确定时不会自动删除。",
 		"tooltip.help.auto_trim":
-			"处理后自动裁剪到包含内容的范围。\n\n对于留白（背景）较大的图片，开启后更容易检测到正确的横纵格数。",
+			"处理完成后，自动裁剪到检测到的内容范围。主体大小和细节设置保持不变。",
 		"tooltip.help.make_square":
 			"用透明像素填充不足的边，使整张图片变为正方形。\n\n原内容会居中放置。",
 		"tooltip.help.keep_aspect_ratio":
@@ -999,7 +999,7 @@ const resources = {
 		"tooltip.help.quick_background":
 			"Chooses whether to leave the background unchanged, detect it automatically and make it transparent, or make a selected color transparent.",
 		"tooltip.help.quick_auto_trim":
-			"Automatically trims the output to fit its visible content. Unavailable when Background Transparency is None.",
+			"Automatically trims the output to the detected content bounds without changing its scale. Available even when the background remains opaque.",
 		"tooltip.help.quick_dithering":
 			"Mixes neighboring colors into a pattern during color reduction to represent intermediate tones. Stronger settings preserve gradients but add more texture.",
 
@@ -1097,7 +1097,7 @@ const resources = {
 		"tooltip.help.small_component_mode":
 			"Cleans isolated noise using restored logical pixels. Nearby, repeated, symmetric, outline-aligned, strongly edged, and highly opaque details are protected. Automatic removal is skipped when the background estimate is uncertain.",
 		"tooltip.help.auto_trim":
-			"Automatically trims the output to fit the range containing the content.\n\nUseful for correctly detecting the number of vertical and horizontal cells in images with large margins (background).",
+			"Automatically trims the output to the detected content bounds after processing. The content scale and detail level stay unchanged.",
 		"tooltip.help.make_square":
 			"Pads the image with transparent pixels to make it perfectly square.\n\nThe original content is placed in the center.",
 		"tooltip.help.keep_aspect_ratio":
