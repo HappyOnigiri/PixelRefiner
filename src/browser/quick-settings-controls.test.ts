@@ -74,6 +74,79 @@ describe("quick settings controls", () => {
 		expect(els.quickDetailLevelSelect.disabled).toBe(false);
 	});
 
+	it("keeps the confirmed Auto route state while reprocessing", () => {
+		const els = createElements();
+		const triggerAutoProcess = vi.fn();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess,
+			clearCandidateSelections: vi.fn(),
+		});
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "refine");
+
+		els.quickBackgroundSelect.value = "keep";
+		els.quickBackgroundSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDetailLevelSelect.disabled).toBe(true);
+		expect(
+			els.quickDetailLevelSelect.settingItem.classList.contains("disabled"),
+		).toBe(true);
+		expect(triggerAutoProcess).toHaveBeenCalledOnce();
+	});
+
+	it("keeps the confirmed Auto convert state while reprocessing", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
+
+		els.quickBackgroundSelect.value = "keep";
+		els.quickBackgroundSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDetailLevelSelect.disabled).toBe(false);
+		expect(
+			els.quickDetailLevelSelect.settingItem.classList.contains("disabled"),
+		).toBe(false);
+	});
+
+	it("updates detail immediately for an explicit processing route", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "refine");
+
+		els.quickProcessingModeSelect.value = "convert";
+		els.quickProcessingModeSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDetailLevelSelect.disabled).toBe(false);
+	});
+
+	it("re-enables detail when switching back to Auto", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		els.quickProcessingModeSelect.value = "refine";
+		els.quickProcessingModeSelect.dispatchEvent(new Event("change"));
+		expect(els.quickDetailLevelSelect.disabled).toBe(true);
+
+		els.quickProcessingModeSelect.value = "auto";
+		els.quickProcessingModeSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDetailLevelSelect.disabled).toBe(false);
+		expect(
+			els.quickDetailLevelSelect.settingItem.classList.contains("disabled"),
+		).toBe(false);
+	});
+
 	it("disables dependent controls only", () => {
 		const els = createElements();
 		els.quickBackgroundSelect.value = "keep";

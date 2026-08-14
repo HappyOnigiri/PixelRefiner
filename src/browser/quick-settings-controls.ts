@@ -22,6 +22,10 @@ export type QuickSettingsControls = {
 	setBackgroundColor: (hex: string) => void;
 };
 
+type QuickSettingsDisabledStateOptions = {
+	preservePendingAutoRoute?: boolean;
+};
+
 const setQuickControlDisabled = (
 	control: HTMLInputElement | HTMLSelectElement,
 	disabled: boolean,
@@ -36,16 +40,24 @@ const setQuickControlDisabled = (
 export const updateQuickSettingsDisabledStates = (
 	els: Elements,
 	activeRoute?: ProcessingRoute,
+	options: QuickSettingsDisabledStateOptions = {},
 ): void => {
 	const processingMode = els.quickProcessingModeSelect.value as ProcessingMode;
 	const effectiveRoute =
 		processingMode === "auto" ? activeRoute : processingMode;
-	// [Intended] Auto は画像ごとに経路が変わるため、処理結果が無い間は選択を許可する。
-	// 結果が出た後は、その画像で実際に採用された経路に合わせて無効状態を示す。
-	setQuickControlDisabled(
-		els.quickDetailLevelSelect,
-		effectiveRoute !== undefined && effectiveRoute !== "convert",
-	);
+	// [Intended] Auto の再処理中は直前に確定した経路の表示状態を維持し、
+	// 新しい処理結果が確定してからサイズ項目を切り替える。維持するのは
+	// activeRoute が未確定のときだけで、確定経路を渡す呼び出しは常に更新する。
+	const keepPendingAutoRoute =
+		processingMode === "auto" &&
+		options.preservePendingAutoRoute === true &&
+		activeRoute === undefined;
+	if (!keepPendingAutoRoute) {
+		setQuickControlDisabled(
+			els.quickDetailLevelSelect,
+			effectiveRoute !== undefined && effectiveRoute !== "convert",
+		);
+	}
 
 	const background = els.quickBackgroundSelect.value as QuickBackground;
 	els.quickBackgroundPicker.style.display =
@@ -83,8 +95,22 @@ export const setupQuickSettingsControls = ({
 		els.quickBackgroundColorInput.value = hex;
 	};
 
+	const handleQuickSettingChange = (preservePendingAutoRoute: boolean) => {
+		clearCandidateSelections();
+		updateQuickSettingsDisabledStates(els, undefined, {
+			preservePendingAutoRoute,
+		});
+		triggerAutoProcess();
+	};
+
+	// [Intended] 処理方法自体の変更では直前の表示状態を維持しない。
+	// 維持したいのは Auto のまま他項目を変えたときのちらつきだけで、
+	// 別モードから Auto へ切り替えた時点の表示状態は引き継ぐ対象ではない。
+	els.quickProcessingModeSelect.addEventListener("change", () => {
+		handleQuickSettingChange(false);
+	});
+
 	[
-		els.quickProcessingModeSelect,
 		els.quickDetailLevelSelect,
 		els.quickReductionModeSelect,
 		els.quickBackgroundSelect,
@@ -92,9 +118,7 @@ export const setupQuickSettingsControls = ({
 		els.quickAutoTrimSelect,
 	].forEach((control) => {
 		control.addEventListener("change", () => {
-			clearCandidateSelections();
-			updateQuickSettingsDisabledStates(els);
-			triggerAutoProcess();
+			handleQuickSettingChange(true);
 		});
 	});
 
