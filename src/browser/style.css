@@ -1058,7 +1058,8 @@ select:focus {
   box-shadow: none;
 }
 
-.action-button.download-button:hover:not(:disabled) {
+.action-button.download-button:hover:not(:disabled),
+.action-button.download-dropdown-button:hover:not(:disabled) {
   background: var(--accent);
   box-shadow: none;
 }
