@@ -1,5 +1,9 @@
 import path from "node:path";
-import type { QualityCaseResult, QualityResults } from "../types";
+import type {
+	QualityCaseResult,
+	QualityReportKind,
+	QualityResults,
+} from "../types";
 import {
 	renderAutoDiagnosticBadges,
 	renderCandidateDiagnostics,
@@ -128,7 +132,7 @@ ${renderReportSidebar(results, previousRunAvailable)}
 		<main class="report-main">${cards}</main>
 	</div>
 ${renderImageDialog()}
-	<script>${renderClientScript()}</script>
+	<script>${renderClientScript(results.metadata.kind)}</script>
 </body>
 </html>`;
 };
@@ -139,6 +143,7 @@ ${renderImageDialog()}
 export const renderCaseDetailHtml = (
 	result: QualityCaseResult,
 	previousRunAvailable: boolean,
+	kind: QualityReportKind = "local",
 ): string => {
 	const description = describeCase(result);
 	const targetStateKey = TARGET_STATE_KEYS[result.targetStatus];
@@ -385,7 +390,7 @@ ${DETAIL_REPORT_STYLES}	</style>
 		</section>
 	</main>
 ${renderImageDialog()}
-	<script>${renderClientScript()}</script>
+	<script>${renderClientScript(kind)}</script>
 </body>
 </html>`;
 };
@@ -395,9 +400,13 @@ export const renderMarkdown = (results: QualityResults): string => {
 	// [Intended] 前回生成が無いレポートでは全ケースが "new" になるので、変化の列と
 	// その集計を出さない。HTML と同じ判断で、比較できなかった事実を欠測として扱う。
 	const previousRunAvailable = hasPreviousRun(results);
+	const changeHeader =
+		results.metadata.kind === "pull-request"
+			? "Change from base branch|"
+			: "Change from previous run|";
 	const markdownHeader = [
 		"|Case|Target quality|",
-		previousRunAvailable ? "Change from previous run|" : "",
+		previousRunAvailable ? changeHeader : "",
 		"Output|",
 		"Classification confidence|Grid confidence|",
 		"Candidate modal (expected)|WARNING presentation|",

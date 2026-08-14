@@ -440,7 +440,9 @@ describe("quality report without a metric reference", () => {
 		expect(markdown).toContain(
 			"- Top-1 size accuracy: 100.0% (1 of 2 cases with a reference output)",
 		);
-		expect(renderMarkdown(results)).toContain("- Top-1 size accuracy: 100.0%\n");
+		expect(renderMarkdown(results)).toContain(
+			"- Top-1 size accuracy: 100.0%\n",
+		);
 	});
 
 	it("reports the reference-dependent summary as n/a when nothing is comparable", () => {
@@ -463,6 +465,26 @@ describe("quality report without a metric reference", () => {
 	});
 });
 
+describe("quality report for a pull request", () => {
+	it("labels the comparison reference as the base branch", () => {
+		const results = makeResults([makeCaseResult()]);
+		const pullRequestResults: QualityResults = {
+			...results,
+			metadata: { ...results.metadata, kind: "pull-request" },
+		};
+		const index = renderHtml(pullRequestResults);
+		const detail = renderCaseDetailHtml(makeCaseResult(), true, "pull-request");
+		expect(renderMarkdown(pullRequestResults)).toContain(
+			"|Case|Target quality|Change from base branch|",
+		);
+		for (const html of [index, detail]) {
+			expect(html).toContain('"baseline":"Base branch"');
+			expect(html).toContain('"baseline":"ベースブランチ"');
+			expect(html).toContain('"baseline":"基础分支"');
+		}
+	});
+});
+
 describe("quality report for a release", () => {
 	const releaseResults = (previousVersion: string | null): QualityResults => {
 		const results = makeResults([makeCaseResult()]);
@@ -480,6 +502,7 @@ describe("quality report for a release", () => {
 
 	it("links the release tag the previous run came from", () => {
 		const index = renderHtml(releaseResults("v1.1.2"));
+		expect(index).toContain('"baseline":"Previous run"');
 		expect(index).toContain('data-i18n="releaseReport"');
 		expect(index).toContain('data-i18n="previousVersion"');
 		expect(index).toContain(
