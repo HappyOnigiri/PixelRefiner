@@ -137,8 +137,6 @@ export type ConvertCandidate = {
 	label: DetailLevel;
 	outW: number;
 	outH: number;
-	colorCount: number;
-	ditherStrength: number;
 };
 
 export type InputClassification =

@@ -81,9 +81,13 @@ export type Elements = {
 
 	autoProcessToggle: HTMLInputElement;
 	builtInPresetSelect: HTMLSelectElement;
+	settingsTabs: HTMLButtonElement[];
+	presetSettingsPanel: HTMLElement;
+	quickSettingsPanel: HTMLElement;
+	advancedSettingsPanel: HTMLElement;
 	quickProcessingModeSelect: HTMLSelectElement;
 	quickDetailLevelSelect: HTMLSelectElement;
-	quickColorsSelect: HTMLSelectElement;
+	quickReductionModeSelect: HTMLSelectElement;
 	quickBackgroundSelect: HTMLSelectElement;
 	quickBgRemovalScopeSelect: HTMLSelectElement;
 	quickBackgroundPicker: HTMLElement;
@@ -92,6 +96,9 @@ export type Elements = {
 	quickDitheringSelect: HTMLSelectElement;
 	quickOutlineStyleSelect: HTMLSelectElement;
 	quickAutoTrimCheck: HTMLInputElement;
+	advancedProcessingModeSelect: HTMLSelectElement;
+	advancedDetailLevelSelect: HTMLSelectElement;
+	advancedBgRemovalScopeSelect: HTMLSelectElement;
 
 	// パレット UI
 	// パレット UI
@@ -128,6 +135,10 @@ export type Elements = {
 	downloadAllDropdownButton: HTMLButtonElement;
 	downloadAllMenu: HTMLElement;
 	sharedPaletteToggle: HTMLInputElement;
+	sharedPaletteSettings: HTMLElement;
+	batchColorCountInput: HTMLInputElement;
+	batchDitherModeSelect: HTMLSelectElement;
+	batchDitherStrengthInput: HTMLInputElement;
 	includeDiagnosticsToggle: HTMLInputElement;
 
 	// プリセット
@@ -261,9 +272,15 @@ export const getElements = (): Elements => {
 		eyedropperCanvas: get<HTMLCanvasElement>("eyedropper-canvas"),
 		autoProcessToggle: get<HTMLInputElement>("auto-process-toggle"),
 		builtInPresetSelect: get<HTMLSelectElement>("built-in-preset"),
+		settingsTabs: Array.from(
+			document.querySelectorAll<HTMLButtonElement>("[data-settings-mode]"),
+		),
+		presetSettingsPanel: get<HTMLElement>("preset-settings-panel"),
+		quickSettingsPanel: get<HTMLElement>("quick-settings-panel"),
+		advancedSettingsPanel: get<HTMLElement>("advanced-settings-panel"),
 		quickProcessingModeSelect: get<HTMLSelectElement>("quick-processing-mode"),
 		quickDetailLevelSelect: get<HTMLSelectElement>("quick-detail-level"),
-		quickColorsSelect: get<HTMLSelectElement>("quick-colors"),
+		quickReductionModeSelect: get<HTMLSelectElement>("quick-reduction-mode"),
 		quickBackgroundSelect: get<HTMLSelectElement>("quick-background"),
 		quickBgRemovalScopeSelect: get<HTMLSelectElement>("quick-bg-removal-scope"),
 		quickBackgroundPicker: get<HTMLElement>("quick-background-picker"),
@@ -272,6 +289,13 @@ export const getElements = (): Elements => {
 		quickDitheringSelect: get<HTMLSelectElement>("quick-dithering"),
 		quickOutlineStyleSelect: get<HTMLSelectElement>("quick-outline-style"),
 		quickAutoTrimCheck: get<HTMLInputElement>("quick-auto-trim"),
+		advancedProcessingModeSelect: get<HTMLSelectElement>(
+			"advanced-processing-mode",
+		),
+		advancedDetailLevelSelect: get<HTMLSelectElement>("advanced-detail-level"),
+		advancedBgRemovalScopeSelect: get<HTMLSelectElement>(
+			"advanced-bg-removal-scope",
+		),
 		paletteColors: get<HTMLElement>("palette-colors"),
 		exportGPLButton: get<HTMLButtonElement>("export-gpl-button"),
 		exportPNGButton: get<HTMLButtonElement>("export-png-button"),
@@ -313,6 +337,10 @@ export const getElements = (): Elements => {
 		),
 		downloadAllMenu: get<HTMLElement>("download-all-menu"),
 		sharedPaletteToggle: get<HTMLInputElement>("shared-palette-toggle"),
+		sharedPaletteSettings: get<HTMLElement>("shared-palette-settings"),
+		batchColorCountInput: get<HTMLInputElement>("batch-color-count"),
+		batchDitherModeSelect: get<HTMLSelectElement>("batch-dither-mode"),
+		batchDitherStrengthInput: get<HTMLInputElement>("batch-dither-strength"),
 		includeDiagnosticsToggle: get<HTMLInputElement>(
 			"include-diagnostics-toggle",
 		),

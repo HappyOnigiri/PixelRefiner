@@ -6,8 +6,9 @@ import { createLoadingOverlay } from "./loading-overlay";
 import { showWarning } from "./notifications";
 import { createPendingImageQueue } from "./pending-queue";
 import type { RunProcessingOptions } from "./processing-controller";
-import { createProcessOptions, processor } from "./processing-controller";
+import { processor } from "./processing-controller";
 import type { ImageSession } from "./session";
+import { createProcessOptions } from "./settings-options";
 
 type PendingProcessingOptions = {
 	els: Elements;

@@ -1,4 +1,4 @@
-import { CONVERT_CANDIDATE_DEFAULTS, CONVERT_LIMITS } from "../shared/config";
+import { CONVERT_DETAIL_SCALES, CONVERT_LIMITS } from "../shared/config";
 import type { ConvertCandidate, DetailLevel, RawImage } from "../shared/types";
 
 const LABELS = ["coarse", "balanced", "detailed"] as const;
@@ -131,17 +131,14 @@ export const createConvertCandidates = (
 	);
 
 	return LABELS.map((label) => {
-		const defaults = CONVERT_CANDIDATE_DEFAULTS[label];
 		const shortSide = clamp(
-			Math.round(balancedShort * defaults.scale),
+			Math.round(balancedShort * CONVERT_DETAIL_SCALES[label]),
 			1,
 			sourceShort,
 		);
 		return {
 			label,
 			...dimensionsForShortSide(image, shortSide),
-			colorCount: defaults.colorCount,
-			ditherStrength: defaults.ditherStrength,
 		};
 	});
 };

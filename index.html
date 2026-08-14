@@ -467,6 +467,38 @@
                     >?</span
                   >
                 </div>
+                <div
+                  id="shared-palette-settings"
+                  class="batch-shared-palette-settings disabled"
+                >
+                  <label class="setting-item">
+                    <span data-i18n="setting.color_count">Color Count</span>
+                    <input id="batch-color-count" type="number" />
+                  </label>
+                  <label class="setting-item">
+                    <span data-i18n="setting.dither_mode">Dithering</span>
+                    <select id="batch-dither-mode">
+                      <option value="none" data-i18n="option.dither_none">
+                        None
+                      </option>
+                      <option
+                        value="floyd-steinberg"
+                        data-i18n="option.dither_floyd"
+                      >
+                        Floyd-Steinberg
+                      </option>
+                      <option value="ordered" data-i18n="option.dither_ordered">
+                        Ordered
+                      </option>
+                    </select>
+                  </label>
+                  <label class="setting-item">
+                    <span data-i18n="setting.dither_strength"
+                      >Dithering Strength</span
+                    >
+                    <input id="batch-dither-strength" type="number" />
+                  </label>
+                </div>
                 <div class="batch-option">
                   <label>
                     <input id="include-diagnostics-toggle" type="checkbox" />
@@ -486,269 +518,417 @@
             </section>
 
             <div class="quick-settings">
-              <div class="settings-group primary-settings-group">
-                <h3 class="settings-group-title" data-i18n="setting.quick">
+              <div
+                class="settings-tabs"
+                role="tablist"
+                data-i18n-attr="aria-label:setting.mode"
+                aria-label="Settings mode"
+              >
+                <button
+                  id="settings-tab-preset"
+                  class="settings-tab is-active"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="preset-settings-panel"
+                  data-settings-mode="preset"
+                  data-i18n="setting.preset"
+                >
+                  Preset
+                </button>
+                <button
+                  id="settings-tab-quick"
+                  class="settings-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="quick-settings-panel"
+                  tabindex="-1"
+                  data-settings-mode="quick"
+                  data-i18n="setting.quick"
+                >
                   Quick Settings
-                </h3>
-                <div class="quick-settings-grid">
-                  <label class="setting-item quick-preset-setting">
-                    <span class="label-text">
-                      <span data-i18n="setting.preset">Preset</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_preset"
-                        data-tooltip="Applies a coordinated set of settings for a purpose. Changing an individual setting switches the preset to Custom."
-                        >?</span
-                      >
-                    </span>
-                    <select id="built-in-preset"></select>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.processing_mode"
-                        >Processing</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_processing_mode"
-                        data-tooltip="Chooses how the image is processed. Auto analyzes the image and selects a route. Refine restores enlarged pixel art, Convert turns a regular image into pixel art, and Preserve avoids downscaling."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-processing-mode">
-                      <option value="auto" data-i18n="option.processing_auto">
-                        Auto
-                      </option>
-                      <option
-                        value="refine"
-                        data-i18n="option.processing_refine"
-                      >
-                        Refine
-                      </option>
-                      <option
-                        value="convert"
-                        data-i18n="option.processing_convert"
-                      >
-                        Convert
-                      </option>
-                      <option
-                        value="preserve"
-                        data-i18n="option.processing_preserve"
-                      >
-                        Preserve
-                      </option>
-                    </select>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.detail">Detail</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
-                        data-tooltip="Controls the output resolution and amount of detail on the Convert route. In Auto, it applies only when Convert is selected. It is unavailable for Refine and Preserve."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-detail-level">
-                      <option value="coarse" data-i18n="option.detail_coarse">
-                        Coarse
-                      </option>
-                      <option
-                        value="balanced"
-                        data-i18n="option.detail_balanced"
-                      >
-                        Balanced
-                      </option>
-                      <option
-                        value="detailed"
-                        data-i18n="option.detail_detailed"
-                      >
-                        Detailed
-                      </option>
-                    </select>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.colors">Colors</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_colors"
-                        data-tooltip="Sets the maximum number of colors in the output. Auto lets the selected processing route choose an appropriate color reduction."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-colors">
-                      <option value="auto" data-i18n="option.colors_auto">
-                        Auto
-                      </option>
-                      <option value="16" data-i18n="option.colors_16">
-                        16 colors
-                      </option>
-                      <option value="32" data-i18n="option.colors_32">
-                        32 colors
-                      </option>
-                      <option value="64" data-i18n="option.colors_64">
-                        64 colors
-                      </option>
-                      <option value="custom" data-i18n="option.custom" hidden>
-                        Custom
-                      </option>
-                    </select>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.background">Background</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_background"
-                        data-tooltip="Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-background">
-                      <option value="keep" data-i18n="option.background_keep">
-                        Keep
-                      </option>
-                      <option value="auto" data-i18n="option.background_auto">
-                        Auto transparent
-                      </option>
-                      <option value="pick" data-i18n="option.background_pick">
-                        Pick color
-                      </option>
-                      <option value="custom" data-i18n="option.custom" hidden>
-                        Custom
-                      </option>
-                    </select>
-                    <div
-                      id="quick-background-picker"
-                      class="quick-background-picker"
-                    >
-                      <input
-                        id="quick-background-color"
-                        type="color"
-                        value="#ffffff"
-                        data-i18n-attr="aria-label:attr.aria.background_color"
-                      />
-                      <button
-                        type="button"
-                        id="quick-eyedropper-button"
-                        class="action-button small-button outline-button"
-                        data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
-                      >
-                        ◉
-                      </button>
-                    </div>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.bg_removal_scope"
-                        >Background Removal Scope</span
-                      >
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
-                        data-tooltip="Range of background to make transparent.&#10;&#10;Auto: Outer background, plus enclosed holes that clearly match the background color.&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + every inner area matching the background color.&#10;&#10;Unavailable when Background is Keep."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-bg-removal-scope">
-                      <option
-                        value="auto"
-                        data-i18n="option.bg_scope_auto"
-                        selected
-                      >
-                        Auto
-                      </option>
-                      <option
-                        value="selected"
-                        data-i18n="option.bg_scope_selected"
-                      >
-                        Selected only
-                      </option>
-                      <option value="outer" data-i18n="option.bg_scope_outer">
-                        Outer all
-                      </option>
-                      <option value="all" data-i18n="option.bg_scope_all">
-                        All
-                      </option>
-                    </select>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.dithering">Dithering</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_dithering"
-                        data-tooltip="Mixes neighboring colors into a pattern during color reduction to represent intermediate tones. Stronger settings preserve gradients but add more texture."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-dithering">
-                      <option value="off" data-i18n="option.dithering_off">
-                        Off
-                      </option>
-                      <option
-                        value="subtle"
-                        data-i18n="option.dithering_subtle"
-                      >
-                        Subtle
-                      </option>
-                      <option
-                        value="strong"
-                        data-i18n="option.dithering_strong"
-                      >
-                        Strong
-                      </option>
-                      <option value="custom" data-i18n="option.custom" hidden>
-                        Custom
-                      </option>
-                    </select>
-                  </label>
-                  <label class="setting-item">
-                    <span class="label-text">
-                      <span data-i18n="setting.outline">Outline</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.quick_outline"
-                        data-tooltip="Adds a one-pixel outline after processing. Rounded softens corners, while Sharp keeps square corners."
-                        >?</span
-                      >
-                    </span>
-                    <select id="quick-outline-style">
-                      <option value="none" data-i18n="option.outline_none">
-                        Off
-                      </option>
-                      <option
-                        value="rounded"
-                        data-i18n="option.outline_rounded"
-                      >
-                        Rounded
-                      </option>
-                      <option value="sharp" data-i18n="option.outline_sharp">
-                        Sharp
-                      </option>
-                    </select>
-                  </label>
-                  <label class="setting-item quick-checkbox-setting">
-                    <span class="label-text">
-                      <span data-i18n="setting.auto_trim">Auto Trim</span>
-                      <span
-                        class="help"
-                        data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
-                        data-tooltip="Automatically trims the output to the bounds containing visible content. It removes transparent or detected background margins."
-                        >?</span
-                      >
-                    </span>
-                    <input id="quick-auto-trim" type="checkbox" checked />
-                  </label>
+                </button>
+                <button
+                  id="settings-tab-advanced"
+                  class="settings-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="advanced-settings-panel"
+                  tabindex="-1"
+                  data-settings-mode="advanced"
+                  data-i18n="setting.advanced"
+                >
+                  Advanced Settings
+                </button>
+              </div>
+
+              <div
+                id="preset-settings-panel"
+                class="settings-tab-panel"
+                role="tabpanel"
+                aria-labelledby="settings-tab-preset"
+              >
+                <div class="settings-group primary-settings-group">
+                  <div class="quick-settings-grid">
+                    <label class="setting-item quick-preset-setting">
+                      <span class="label-text">
+                        <span data-i18n="setting.preset">Preset</span>
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_preset"
+                          data-tooltip="Selects a coordinated set of settings for a purpose. Only values in the preset affect processing."
+                          >?</span
+                        >
+                      </span>
+                      <select id="built-in-preset"></select>
+                    </label>
+                  </div>
                 </div>
               </div>
 
-              <details id="advanced-settings" class="advanced-settings">
-                <summary data-i18n="setting.advanced">
-                  Advanced Settings
-                </summary>
+              <div
+                id="quick-settings-panel"
+                class="settings-tab-panel"
+                role="tabpanel"
+                aria-labelledby="settings-tab-quick"
+                hidden
+              >
+                <div class="settings-group primary-settings-group">
+                  <h3 class="settings-group-title" data-i18n="setting.quick">
+                    Quick Settings
+                  </h3>
+                  <div class="quick-settings-grid">
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.processing_mode"
+                          >Processing</span
+                        >
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_processing_mode"
+                          data-tooltip="Chooses how the image is processed. Auto analyzes the image and selects a route. Refine restores enlarged pixel art, Convert turns a regular image into pixel art, and Preserve avoids downscaling."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-processing-mode">
+                        <option value="auto" data-i18n="option.processing_auto">
+                          Auto
+                        </option>
+                        <option
+                          value="refine"
+                          data-i18n="option.processing_refine"
+                        >
+                          Refine
+                        </option>
+                        <option
+                          value="convert"
+                          data-i18n="option.processing_convert"
+                        >
+                          Convert
+                        </option>
+                        <option
+                          value="preserve"
+                          data-i18n="option.processing_preserve"
+                        >
+                          Preserve
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.detail">Detail</span>
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
+                          data-tooltip="Controls output size on the Convert route without changing color count or other settings. In Auto, it applies only when Convert is selected."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-detail-level">
+                        <option value="coarse" data-i18n="option.detail_coarse">
+                          Coarse
+                        </option>
+                        <option
+                          value="balanced"
+                          data-i18n="option.detail_balanced"
+                        >
+                          Balanced
+                        </option>
+                        <option
+                          value="detailed"
+                          data-i18n="option.detail_detailed"
+                        >
+                          Detailed
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.color_mode"
+                          >Reduction Mode</span
+                        >
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_reduction_mode"
+                          data-tooltip="Selects no reduction or a built-in palette. Custom color counts and imported palettes are available in Advanced Settings."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-reduction-mode">
+                        <option value="none" data-i18n="option.none">
+                          None
+                        </option>
+                        <option value="mono" data-i18n="option.mono">
+                          Monochrome
+                        </option>
+                        <option value="gb_legacy" data-i18n="option.gb_legacy">
+                          Game Boy (Original)
+                        </option>
+                        <option value="gb_pocket" data-i18n="option.gb_pocket">
+                          Game Boy (Pocket)
+                        </option>
+                        <option value="gb_light" data-i18n="option.gb_light">
+                          Game Boy (Light)
+                        </option>
+                        <option value="pico8" data-i18n="option.pico8">
+                          PICO-8
+                        </option>
+                        <option value="nes" data-i18n="option.nes">NES</option>
+                        <option value="pc98" data-i18n="option.pc98">
+                          PC-9801
+                        </option>
+                        <option value="msx" data-i18n="option.msx">MSX1</option>
+                        <option value="c64" data-i18n="option.c64">
+                          Commodore 64
+                        </option>
+                        <option value="arne16" data-i18n="option.arne16">
+                          Arne 16
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.background">Background</span>
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_background"
+                          data-tooltip="Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-background">
+                        <option value="keep" data-i18n="option.background_keep">
+                          Keep
+                        </option>
+                        <option value="auto" data-i18n="option.background_auto">
+                          Auto transparent
+                        </option>
+                        <option value="pick" data-i18n="option.background_pick">
+                          Pick color
+                        </option>
+                      </select>
+                      <div
+                        id="quick-background-picker"
+                        class="quick-background-picker"
+                      >
+                        <input
+                          id="quick-background-color"
+                          type="color"
+                          value="#ffffff"
+                          data-i18n-attr="aria-label:attr.aria.background_color"
+                        />
+                        <button
+                          type="button"
+                          id="quick-eyedropper-button"
+                          class="action-button small-button outline-button"
+                          data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
+                        >
+                          ◉
+                        </button>
+                      </div>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.bg_removal_scope"
+                          >Background Removal Scope</span
+                        >
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
+                          data-tooltip="Range of background to make transparent.&#10;&#10;Auto: Outer background, plus enclosed holes that clearly match the background color.&#10;Selected only: Only background connected from the chosen corner.&#10;Outer all: All background connected to the image border.&#10;All: Outer + every inner area matching the background color.&#10;&#10;Unavailable when Background is Keep."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-bg-removal-scope">
+                        <option
+                          value="auto"
+                          data-i18n="option.bg_scope_auto"
+                          selected
+                        >
+                          Auto
+                        </option>
+                        <option
+                          value="selected"
+                          data-i18n="option.bg_scope_selected"
+                        >
+                          Selected only
+                        </option>
+                        <option value="outer" data-i18n="option.bg_scope_outer">
+                          Outer all
+                        </option>
+                        <option value="all" data-i18n="option.bg_scope_all">
+                          All
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.dithering">Dithering</span>
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_dithering"
+                          data-tooltip="Mixes neighboring colors into a pattern during color reduction to represent intermediate tones. Stronger settings preserve gradients but add more texture."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-dithering">
+                        <option value="off" data-i18n="option.dithering_off">
+                          Off
+                        </option>
+                        <option
+                          value="subtle"
+                          data-i18n="option.dithering_subtle"
+                        >
+                          Subtle
+                        </option>
+                        <option
+                          value="strong"
+                          data-i18n="option.dithering_strong"
+                        >
+                          Strong
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
+                        <span data-i18n="setting.outline">Outline</span>
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_outline"
+                          data-tooltip="Adds a one-pixel outline after processing. Rounded softens corners, while Sharp keeps square corners."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-outline-style">
+                        <option value="none" data-i18n="option.outline_none">
+                          Off
+                        </option>
+                        <option
+                          value="rounded"
+                          data-i18n="option.outline_rounded"
+                        >
+                          Rounded
+                        </option>
+                        <option value="sharp" data-i18n="option.outline_sharp">
+                          Sharp
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item quick-checkbox-setting">
+                      <span class="label-text">
+                        <span data-i18n="setting.auto_trim">Auto Trim</span>
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
+                          data-tooltip="Automatically trims the output to the bounds containing visible content. It removes transparent or detected background margins."
+                          >?</span
+                        >
+                      </span>
+                      <input id="quick-auto-trim" type="checkbox" checked />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="advanced-settings-panel"
+                class="settings-tab-panel advanced-settings"
+                role="tabpanel"
+                aria-labelledby="settings-tab-advanced"
+                hidden
+              >
                 <div class="advanced-settings-content">
+                  <div class="settings-group">
+                    <h3
+                      class="settings-group-title"
+                      data-i18n="setting.processing"
+                    >
+                      Processing
+                    </h3>
+                    <div class="grid-settings">
+                      <label class="setting-item">
+                        <span
+                          class="label-text"
+                          data-i18n="setting.processing_mode"
+                          >Processing</span
+                        >
+                        <select id="advanced-processing-mode">
+                          <option
+                            value="auto"
+                            data-i18n="option.processing_auto"
+                          >
+                            Auto
+                          </option>
+                          <option
+                            value="refine"
+                            data-i18n="option.processing_refine"
+                          >
+                            Refine
+                          </option>
+                          <option
+                            value="convert"
+                            data-i18n="option.processing_convert"
+                          >
+                            Convert
+                          </option>
+                          <option
+                            value="preserve"
+                            data-i18n="option.processing_preserve"
+                          >
+                            Preserve
+                          </option>
+                        </select>
+                      </label>
+                      <label class="setting-item">
+                        <span class="label-text" data-i18n="setting.detail"
+                          >Detail</span
+                        >
+                        <select id="advanced-detail-level">
+                          <option
+                            value="coarse"
+                            data-i18n="option.detail_coarse"
+                          >
+                            Coarse
+                          </option>
+                          <option
+                            value="balanced"
+                            data-i18n="option.detail_balanced"
+                          >
+                            Balanced
+                          </option>
+                          <option
+                            value="detailed"
+                            data-i18n="option.detail_detailed"
+                          >
+                            Detailed
+                          </option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+
                   <div class="settings-group">
                     <h3
                       class="settings-group-title"
@@ -1533,6 +1713,40 @@
                         </select>
                       </label>
 
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.bg_removal_scope"
+                            >Background Removal Scope</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
+                            data-tooltip="Range of background to make transparent."
+                            >?</span
+                          >
+                        </span>
+                        <select id="advanced-bg-removal-scope">
+                          <option value="auto" data-i18n="option.bg_scope_auto">
+                            Auto
+                          </option>
+                          <option
+                            value="selected"
+                            data-i18n="option.bg_scope_selected"
+                          >
+                            Selected only
+                          </option>
+                          <option
+                            value="outer"
+                            data-i18n="option.bg_scope_outer"
+                          >
+                            Outer all
+                          </option>
+                          <option value="all" data-i18n="option.bg_scope_all">
+                            All
+                          </option>
+                        </select>
+                      </label>
+
                       <div id="rgb-picker-container" class="setting-item">
                         <span class="label-text">
                           <span data-i18n="setting.bg_rgb"
@@ -1962,36 +2176,6 @@
                     </div>
                   </div>
 
-                  <!-- 自動変換の設定 -->
-                  <div class="settings-group">
-                    <h3
-                      class="settings-group-title"
-                      data-i18n="setting.processing"
-                    >
-                      Processing
-                    </h3>
-                    <div class="grid-settings">
-                      <label class="setting-item full-width">
-                        <span class="label-text">
-                          <span data-i18n="setting.auto_process"
-                            >Auto Process</span
-                          >
-                          <span
-                            class="help"
-                            data-i18n-attr="data-tooltip:tooltip.help.auto_process"
-                            data-tooltip="Automatically runs processing when settings are changed.&#10;&#10;Turn OFF if you prefer to manually click the Process button."
-                            >?</span
-                          >
-                        </span>
-                        <input
-                          id="auto-process-toggle"
-                          type="checkbox"
-                          checked
-                        />
-                      </label>
-                    </div>
-                  </div>
-
                   <!-- プリセット管理 -->
                   <div class="settings-group">
                     <h3
@@ -2031,7 +2215,22 @@
                     </div>
                   </div>
                 </div>
-              </details>
+              </div>
+
+              <div class="settings-common-controls">
+                <label class="setting-item full-width">
+                  <span class="label-text">
+                    <span data-i18n="setting.auto_process">Auto Process</span>
+                    <span
+                      class="help"
+                      data-i18n-attr="data-tooltip:tooltip.help.auto_process"
+                      data-tooltip="Automatically runs processing when settings are changed.&#10;&#10;Turn OFF if you prefer to manually click the Process button."
+                      >?</span
+                    >
+                  </span>
+                  <input id="auto-process-toggle" type="checkbox" checked />
+                </label>
+              </div>
             </div>
           </div>
 

@@ -2,6 +2,7 @@ import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import {
+	advancedModeControls,
 	advancedSettingControls,
 	applyAdvancedSettingDefaults,
 	backgroundDependentAdvancedControls,
@@ -14,11 +15,11 @@ import { i18n, type Language } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { showError } from "./notifications";
 import type { RunProcessingOptions } from "./processing-controller";
+import { QUICK_SETTINGS_DEFAULTS } from "./quick-settings";
 import {
-	QUICK_SETTINGS_DEFAULTS,
-	type QuickSettingsState,
-} from "./quick-settings";
-import { setupQuickSettingsControls } from "./quick-settings-controls";
+	setupQuickSettingsControls,
+	updateQuickSettingsDisabledStates,
+} from "./quick-settings-controls";
 import type { ImageSession } from "./session";
 
 type SettingsControlsOptions = {
@@ -39,8 +40,6 @@ export type SettingsControls = {
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
 	updateBgColorFromMethod: () => void;
-	getQuickSettings: () => QuickSettingsState;
-	applyQuickSettings: (settings: QuickSettingsState, presetId?: string) => void;
 };
 
 export const setupSettingsControls = ({
@@ -64,32 +63,28 @@ export const setupSettingsControls = ({
 
 	const quickSettingsControls = setupQuickSettingsControls({
 		els,
-		processingState,
 		triggerAutoProcess: () => triggerAutoProcess(),
-		updateReduceColorsDisabledStates: () => updateReduceColorsDisabledStates(),
-		updateBgDisabledStates: () => updateBgDisabledStates(),
 		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
 	});
-	const {
-		getQuickSettings,
-		applyQuickSettings,
-		setBackgroundColor,
-		syncQuickSettingsToAdvanced,
-	} = quickSettingsControls;
+	const { setBackgroundColor } = quickSettingsControls;
 
 	// RGB 入力を同期
 	const updateRgbInputs = (hex: string) => {
+		if (processingState.settingsMode === "quick") {
+			setBackgroundColor(hex);
+			els.quickBackgroundSelect.value = "pick";
+			updateQuickSettingsDisabledStates(els);
+			imageSession.clearCandidateSelections();
+			return;
+		}
+		if (processingState.settingsMode !== "advanced") return;
 		els.bgRgbInput.value = hex;
 		els.bgColorInput.value = hex;
-		setBackgroundColor(hex);
 	};
 
 	els.closeEyedropperModal.addEventListener("click", closeEyedropperModal);
 	els.quickBackgroundColorInput.addEventListener("input", () => {
-		updateRgbInputs(els.quickBackgroundColorInput.value);
-		els.quickBackgroundSelect.value = "pick";
-		els.builtInPresetSelect.value = "custom";
-		syncQuickSettingsToAdvanced();
+		imageSession.clearCandidateSelections();
 		triggerAutoProcess();
 	});
 	els.quickEyedropperButton.addEventListener("click", () => {
@@ -101,25 +96,11 @@ export const setupSettingsControls = ({
 		if (/^#?[0-9a-fA-F]{6}$/.test(val)) {
 			if (!val.startsWith("#")) val = `#${val}`;
 			els.bgColorInput.value = val;
-			// 手動入力時に RGB モードへ切り替え
-			if (els.bgExtractionMethod.value !== "rgb") {
-				els.bgExtractionMethod.value = "rgb";
-				updateBgDisabledStates();
-			}
-			els.quickBackgroundSelect.value = "pick";
-			els.builtInPresetSelect.value = "custom";
 		}
 	});
 
 	els.bgColorInput.addEventListener("input", () => {
 		els.bgRgbInput.value = els.bgColorInput.value;
-		// 手動入力時に RGB モードへ切り替え
-		if (els.bgExtractionMethod.value !== "rgb") {
-			els.bgExtractionMethod.value = "rgb";
-			updateBgDisabledStates();
-		}
-		els.quickBackgroundSelect.value = "pick";
-		els.builtInPresetSelect.value = "custom";
 	});
 
 	els.eyedropperButton.addEventListener("click", (e) => {
@@ -158,10 +139,6 @@ export const setupSettingsControls = ({
 			const b = currentImage.data[idx + 2];
 			const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 			updateRgbInputs(hex);
-			// スポイトで色を選択したときに RGB モードへ切り替え
-			els.bgExtractionMethod.value = "rgb";
-			els.quickBackgroundSelect.value = "pick";
-			els.builtInPresetSelect.value = "custom";
 			updateBgDisabledStates();
 			closeEyedropperModal();
 			triggerAutoProcess();
@@ -274,6 +251,7 @@ export const setupSettingsControls = ({
 		els.preRemoveCheck.checked = defaults.preRemoveBackground;
 		els.postRemoveCheck.checked = defaults.postRemoveBackground;
 		els.quickBgRemovalScopeSelect.value = defaults.bgRemovalScope;
+		els.advancedBgRemovalScopeSelect.value = defaults.bgRemovalScope;
 		els.bgConnectivitySelect.value = defaults.bgConnectivity;
 		els.smallComponentModeSelect.value = defaults.smallComponentMode;
 		els.geminiWatermarkRemovalSelect.value = defaults.geminiWatermarkRemoval;
@@ -289,16 +267,17 @@ export const setupSettingsControls = ({
 		els.outlineColorInput.value = rgbToHex(defaults.outlineColor);
 
 		els.bgExtractionMethod.value = defaults.bgExtractionMethod;
+		els.advancedProcessingModeSelect.value = defaults.processingMode;
+		els.advancedDetailLevelSelect.value = defaults.detailLevel;
 		els.quickProcessingModeSelect.value =
 			QUICK_SETTINGS_DEFAULTS.processingMode;
 		els.quickDetailLevelSelect.value = QUICK_SETTINGS_DEFAULTS.detailLevel;
-		els.quickColorsSelect.value = QUICK_SETTINGS_DEFAULTS.colors;
+		els.quickReductionModeSelect.value = QUICK_SETTINGS_DEFAULTS.reductionMode;
 		els.quickBackgroundSelect.value = QUICK_SETTINGS_DEFAULTS.background;
 		els.quickDitheringSelect.value = QUICK_SETTINGS_DEFAULTS.dithering;
 		els.quickOutlineStyleSelect.value = QUICK_SETTINGS_DEFAULTS.outlineStyle;
 		els.quickAutoTrimCheck.checked = QUICK_SETTINGS_DEFAULTS.trimToContent;
 		els.builtInPresetSelect.value = "auto";
-		syncQuickSettingsToAdvanced();
 
 		// 言語切替ボタンのイベントリスナー
 		document.querySelectorAll("[data-lang-btn]").forEach((el) => {
@@ -342,16 +321,11 @@ export const setupSettingsControls = ({
 		}, 300);
 	};
 
-	// グリッド設定を直接変えた場合は、候補プレビューでの選択より新しい指定として扱う。
+	// 設定を直接変えた場合は、候補プレビューでの選択より新しい指定として扱う。
 	const clearCandidateSelections = () => {
 		imageSession.clearCandidateSelections();
 	};
-	[
-		els.gridDetectionModeSelect,
-		els.forcePixelsWInput,
-		els.forcePixelsHInput,
-		...gridDetectionAdvancedControls(els),
-	].forEach((el) => {
+	advancedModeControls(els).forEach((el) => {
 		el.addEventListener("change", clearCandidateSelections);
 		el.addEventListener("input", clearCandidateSelections);
 	});
@@ -408,8 +382,20 @@ export const setupSettingsControls = ({
 			setDisabledClass(el, !isAutoOrHint);
 		});
 	};
+	const updateAdvancedProcessingDisabledStates = () => {
+		const mode = els.advancedProcessingModeSelect.value;
+		const disabled = mode !== "auto" && mode !== "convert";
+		els.advancedDetailLevelSelect.disabled = disabled;
+		els.advancedDetailLevelSelect
+			.closest(".setting-item")
+			?.classList.toggle("disabled", disabled);
+	};
 
 	els.gridDetectionModeSelect.addEventListener("change", updateDisabledStates);
+	els.advancedProcessingModeSelect.addEventListener(
+		"change",
+		updateAdvancedProcessingDisabledStates,
+	);
 
 	// 減色設定の UI 制御
 	const updatePaletteButtonVisibility = () => {
@@ -430,13 +416,11 @@ export const setupSettingsControls = ({
 	const updateReduceColorsDisabledStates = () => {
 		const mode = els.reduceColorModeSelect.value;
 		const isAuto = mode === "auto";
-		const isSharedPalette = els.sharedPaletteToggle.checked;
 
 		// モードに応じてセクションを有効・無効にする
-		const isEnabled = isDitherSettingsEnabled(mode, isSharedPalette);
+		const isEnabled = isDitherSettingsEnabled(mode);
 
-		els.colorCountSetting.style.display =
-			isAuto || isSharedPalette ? "flex" : "none";
+		els.colorCountSetting.style.display = isAuto ? "flex" : "none";
 
 		const ditherMode = els.ditherModeSelect.value;
 		const isDitherNone = ditherMode === "none";
@@ -484,6 +468,7 @@ export const setupSettingsControls = ({
 	updateReduceColorsDisabledStates();
 
 	updateDisabledStates();
+	updateAdvancedProcessingDisabledStates();
 
 	// 背景除去方法が none の場合は背景関連 UI を無効にする
 	const updateBgDisabledStates = () => {
@@ -495,7 +480,7 @@ export const setupSettingsControls = ({
 			els.toleranceSlider,
 			els.preRemoveCheck,
 			els.postRemoveCheck,
-			els.quickBgRemovalScopeSelect,
+			els.advancedBgRemovalScopeSelect,
 			els.bgConnectivitySelect,
 			els.smallComponentModeSelect,
 			els.geminiWatermarkRemovalSelect,
@@ -512,7 +497,7 @@ export const setupSettingsControls = ({
 		// 一致画素をシードにして内側の閉領域まで落ちるため、選べるままにする。
 		const selectedScopeHasNoEffect = els.bgExtractionMethod.value === "auto";
 		const selectedScopeOption =
-			els.quickBgRemovalScopeSelect.querySelector<HTMLOptionElement>(
+			els.advancedBgRemovalScopeSelect.querySelector<HTMLOptionElement>(
 				'option[value="selected"]',
 			);
 		if (selectedScopeOption) {
@@ -520,9 +505,9 @@ export const setupSettingsControls = ({
 		}
 		if (
 			selectedScopeHasNoEffect &&
-			els.quickBgRemovalScopeSelect.value === "selected"
+			els.advancedBgRemovalScopeSelect.value === "selected"
 		) {
-			els.quickBgRemovalScopeSelect.value = "outer";
+			els.advancedBgRemovalScopeSelect.value = "outer";
 		}
 
 		const rgbContainer = els.rgbPickerContainer;
@@ -534,6 +519,7 @@ export const setupSettingsControls = ({
 	};
 
 	const updateBgColorFromMethod = () => {
+		if (processingState.settingsMode !== "advanced") return;
 		const method = els.bgExtractionMethod.value;
 		const currentImage = imageSession.getActiveImage()?.original;
 		if (
@@ -600,6 +586,9 @@ export const setupSettingsControls = ({
 		els.gridDetectionModeSelect,
 		els.reduceColorModeSelect,
 		els.ditherModeSelect,
+		els.advancedProcessingModeSelect,
+		els.advancedDetailLevelSelect,
+		els.advancedBgRemovalScopeSelect,
 
 		els.bgExtractionMethod,
 		els.bgRgbInput,
@@ -624,7 +613,5 @@ export const setupSettingsControls = ({
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateBgColorFromMethod,
-		getQuickSettings,
-		applyQuickSettings,
 	};
 };

@@ -41,6 +41,45 @@ export const advancedSettingControls = (
 	els.trimAlphaThresholdInput,
 ];
 
+/** 詳細設定タブに属する入力。保存と候補選択の破棄で同じ範囲を使う。 */
+export const advancedModeControls = (
+	els: Elements,
+): Array<HTMLInputElement | HTMLSelectElement> => [
+	els.advancedProcessingModeSelect,
+	els.advancedDetailLevelSelect,
+	els.quantStepInput,
+	els.quantStepSlider,
+	els.forcePixelsWInput,
+	els.forcePixelsHInput,
+	els.sampleWindowInput,
+	els.sampleWindowSlider,
+	...advancedSettingControls(els),
+	els.toleranceInput,
+	els.toleranceSlider,
+	els.preRemoveCheck,
+	els.postRemoveCheck,
+	els.advancedBgRemovalScopeSelect,
+	els.bgConnectivitySelect,
+	els.trimToContentCheck,
+	els.fastAutoGridFromTrimmedCheck,
+	els.makeSquareCheck,
+	els.keepAspectRatioCheck,
+	els.gridDetectionModeSelect,
+	els.reduceColorModeSelect,
+	els.ditherModeSelect,
+	els.colorCountInput,
+	els.colorCountSlider,
+	els.ditherStrengthInput,
+	els.ditherStrengthSlider,
+	els.outlineStyleSelect,
+	els.outlineColorInput,
+	els.smallComponentModeSelect,
+	els.geminiWatermarkRemovalSelect,
+	els.bgExtractionMethod,
+	els.bgRgbInput,
+	els.bgColorInput,
+];
+
 /**
  * 格子検出でしか効かない詳細設定。
  *

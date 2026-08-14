@@ -31,6 +31,7 @@ import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
 import { type ImageItem, ImageSession } from "./session";
 import { setupSettingsControls } from "./settings-controls";
+import { setupSettingsTabs } from "./settings-tabs";
 
 export const initApp = (): void => {
 	const els = getElements();
@@ -262,7 +263,6 @@ export const initApp = (): void => {
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateBgColorFromMethod,
-		applyQuickSettings,
 	} = setupSettingsControls({
 		els,
 		processingState,
@@ -272,10 +272,6 @@ export const initApp = (): void => {
 		onLanguageChange: () =>
 			updateProcessingAnalysis(imageSession.getActiveImage()),
 	});
-	els.sharedPaletteToggle.addEventListener(
-		"change",
-		updateReduceColorsDisabledStates,
-	);
 	const updateGrid = () => {
 		mainResultViewer.drawGrid();
 		modalResultViewer.drawGrid();
@@ -596,15 +592,22 @@ export const initApp = (): void => {
 	loadSettings();
 
 	// ---------------------------------------------------------
+	const { setSettingsMode } = setupSettingsTabs({
+		els,
+		processingState,
+		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
+		triggerAutoProcess,
+	});
 	setupPresetControls({
 		els,
+		processingState,
 		presetModalController,
 		updateDisabledStates,
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateProcessButtonVisibility,
 		triggerAutoProcess,
-		applyQuickSettings,
+		setSettingsMode,
 		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
 		clearFixedPalette: () => {
 			processingState.currentFixedPalette = undefined;

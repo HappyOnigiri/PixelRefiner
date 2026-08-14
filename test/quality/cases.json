@@ -2224,13 +2224,20 @@
   {
     "id": "convert-illustration-detailed",
     "featureIds": ["PRF-310"],
-    "optionNames": ["processingMode", "detailLevel"],
+    "optionNames": [
+      "processingMode",
+      "detailLevel",
+      "colorCount",
+      "ditherStrength"
+    ],
     "profile": "smoke",
     "inputKind": "continuous-illustration",
     "degradationPatterns": [],
     "options": {
       "processingMode": "convert",
       "detailLevel": "detailed",
+      "colorCount": 40,
+      "ditherStrength": 10,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
       "bgRemovalScope": "off",
