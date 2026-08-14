@@ -89,6 +89,7 @@
   --swatch-border: rgb(255 255 255 / 0.15);
   --swatch-hover-border: rgb(255 255 255 / 0.8);
   --footer-icon-filter: none;
+  --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.2);
   --shadow-md: 0 2px 8px rgb(0 0 0 / 0.24);
   --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.4);
 }
@@ -128,6 +129,7 @@
     --swatch-border: rgb(255 255 255 / 0.15);
     --swatch-hover-border: rgb(255 255 255 / 0.8);
     --footer-icon-filter: none;
+    --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.2);
     --shadow-md: 0 2px 8px rgb(0 0 0 / 0.24);
     --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.4);
   }
