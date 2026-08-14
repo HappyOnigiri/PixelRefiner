@@ -371,6 +371,8 @@ export const setupSettingsControls = ({
 	};
 
 	applyConfigToUi();
+	// [Intended] HTML の初期値ではなく、適用済みのかんたん設定の既定値で表示状態を決める。
+	updateQuickSettingsDisabledStates(els);
 	syncSliderAndInput(els.quantStepSlider, els.quantStepInput);
 	syncSliderAndInput(els.sampleWindowSlider, els.sampleWindowInput);
 	syncSliderAndInput(els.toleranceSlider, els.toleranceInput);

@@ -995,16 +995,6 @@ select:focus {
   gap: 20px;
 }
 
-/* [Intended] 詳細設定の disabled は非表示だが、かんたん設定では無効な組み合わせを見せる。 */
-.quick-settings-grid .setting-item.disabled {
-  display: flex;
-  opacity: 0.5;
-}
-
-.quick-settings-grid .setting-item.disabled .help {
-  opacity: 1;
-}
-
 .quick-preset-setting {
   grid-column: 1 / -1;
 }
@@ -1958,7 +1948,7 @@ select:focus {
 }
 
 .batch-shared-palette-settings.disabled {
-  opacity: 0.5;
+  display: none;
 }
 
 .batch-shared-palette-settings .setting-item {
