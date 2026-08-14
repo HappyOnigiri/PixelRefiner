@@ -46,14 +46,13 @@ export const updateQuickSettingsDisabledStates = (
 	const effectiveRoute =
 		processingMode === "auto" ? activeRoute : processingMode;
 	// [Intended] Auto の再処理中は直前に確定した経路の表示状態を維持し、
-	// 新しい処理結果が確定してからサイズ項目を切り替える。
-	if (
-		!(
-			processingMode === "auto" &&
-			options.preservePendingAutoRoute &&
-			activeRoute === undefined
-		)
-	) {
+	// 新しい処理結果が確定してからサイズ項目を切り替える。維持するのは
+	// activeRoute が未確定のときだけで、確定経路を渡す呼び出しは常に更新する。
+	const keepPendingAutoRoute =
+		processingMode === "auto" &&
+		options.preservePendingAutoRoute === true &&
+		activeRoute === undefined;
+	if (!keepPendingAutoRoute) {
 		setQuickControlDisabled(
 			els.quickDetailLevelSelect,
 			effectiveRoute !== undefined && effectiveRoute !== "convert",
