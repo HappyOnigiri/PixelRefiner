@@ -521,6 +521,9 @@ export const runQualityCase = (
  * 更新後の画像そのものを参照にして、保存用の画像と指標を同じ処理結果から作る。
  * [Intended] auto ケースの保存指標を旧 baseline との比較値から作ると、画像を差し替えた
  * 直後から baseline.json だけが不整合になるため、新しい画像を自己参照にする。
+ * この自己参照により、auto ケースの保存 catastrophicFailure は出力単体で判定できる条件
+ * （1px 寸法・過大な面積）だけを表し、不透明画素の消失では立たない。消失は PR ベースを
+ * 基準にするゲート比較で捕まえる。
  */
 export const generateQualityBaseline = (
 	qualityCase: QualityImageCase,

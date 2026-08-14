@@ -165,7 +165,10 @@ Top-1 and Top-3 output-size accuracy, grid phase error, byte determinism, runtim
 and an image-buffer memory approximation.
 
 A catastrophic failure means a 1-pixel dimension, an unreasonable output area,
-or removal of more than 80% of expected opaque pixels. Baseline updates are
+or removal of more than 80% of expected opaque pixels. Auto cases measure the
+stored value against their own output, so only the dimension and area conditions
+can fire there; losing opaque pixels surfaces in the gate comparison against the
+PR base instead of in the stored entry. Baseline updates are
 explicit; regular test and report commands never rewrite checked-in
 expectations.
 
