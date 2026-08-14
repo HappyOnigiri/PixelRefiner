@@ -521,7 +521,21 @@ export const REPORT_TRANSLATIONS = {
 	},
 } as const;
 
-const PULL_REQUEST_REFERENCE_TRANSLATIONS = {
+/**
+ * 既存辞書のキー集合から導く上書き辞書の型。
+ * [Intended] 独立したオブジェクト型にすると、キー名の打ち間違いは未使用キーが増える
+ * だけで型検査を通り、表示が黙って上書き前の文言に戻る。言語の取りこぼしも同様に
+ * 検出できないため、言語ごとに既存キーの部分集合であることを型で強制する。
+ */
+type ReportTranslationOverrides = {
+	[L in keyof typeof REPORT_TRANSLATIONS]: {
+		[K in keyof (typeof REPORT_TRANSLATIONS)[L]]?: (typeof REPORT_TRANSLATIONS)[L][K] extends string
+			? string
+			: (typeof REPORT_TRANSLATIONS)[L][K];
+	};
+};
+
+const PULL_REQUEST_REFERENCE_TRANSLATIONS: ReportTranslationOverrides = {
 	en: {
 		baseline: "Base branch",
 		baselineDifference: "Base-branch difference",
