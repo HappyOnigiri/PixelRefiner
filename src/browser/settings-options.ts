@@ -1,22 +1,14 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { clampInt, PROCESS_RANGES } from "../shared/config";
-import type {
-	DetailLevel,
-	DitherMode,
-	OutlineStyle,
-	ProcessingMode,
-} from "../shared/types";
+import type { DitherMode, OutlineStyle } from "../shared/types";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import {
 	createBuiltInPresetOptions,
 	createQuickProcessOptions,
-	type QuickBackground,
-	type QuickBackgroundRemovalScope,
-	type QuickDithering,
-	type QuickReductionMode,
 } from "./quick-settings";
+import { readQuickSettings } from "./quick-settings-controls";
 import { BROWSER_RUNTIME_CONFIG } from "./runtime-config";
 
 const parseOptionalInt = (
@@ -178,18 +170,7 @@ export const createProcessOptions = (
 	}
 	if (processingState.settingsMode === "quick") {
 		return {
-			...createQuickProcessOptions({
-				processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
-				detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
-				reductionMode: els.quickReductionModeSelect.value as QuickReductionMode,
-				background: els.quickBackgroundSelect.value as QuickBackground,
-				backgroundColor: els.quickBackgroundColorInput.value,
-				bgRemovalScope: els.quickBgRemovalScopeSelect
-					.value as QuickBackgroundRemovalScope,
-				dithering: els.quickDitheringSelect.value as QuickDithering,
-				outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
-				trimToContent: els.quickAutoTrimCheck.checked,
-			}),
+			...createQuickProcessOptions(readQuickSettings(els)),
 			debug: BROWSER_RUNTIME_CONFIG.debug,
 		};
 	}

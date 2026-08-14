@@ -59,23 +59,31 @@ export const updateQuickSettingsDisabledStates = (
 	setQuickControlDisabled(els.quickDitheringSelect, reductionMode === "none");
 };
 
+/**
+ * かんたん設定の DOM から状態を読み出す。
+ *
+ * [Policy] 処理オプションの生成もこの関数を通す。読み出しが分かれていると、
+ * 項目を足したときに片方だけ更新されて処理に反映されない状態になる。
+ */
+export const readQuickSettings = (els: Elements): QuickSettingsState => ({
+	processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
+	detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
+	reductionMode: els.quickReductionModeSelect.value as QuickReductionMode,
+	background: els.quickBackgroundSelect.value as QuickBackground,
+	backgroundColor: els.quickBackgroundColorInput.value,
+	bgRemovalScope: els.quickBgRemovalScopeSelect
+		.value as QuickBackgroundRemovalScope,
+	dithering: els.quickDitheringSelect.value as QuickDithering,
+	outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
+	trimToContent: els.quickAutoTrimCheck.checked,
+});
+
 export const setupQuickSettingsControls = ({
 	els,
 	triggerAutoProcess,
 	clearCandidateSelections,
 }: QuickSettingsControlsOptions): QuickSettingsControls => {
-	const getQuickSettings = (): QuickSettingsState => ({
-		processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
-		detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
-		reductionMode: els.quickReductionModeSelect.value as QuickReductionMode,
-		background: els.quickBackgroundSelect.value as QuickBackground,
-		backgroundColor: els.quickBackgroundColorInput.value,
-		bgRemovalScope: els.quickBgRemovalScopeSelect
-			.value as QuickBackgroundRemovalScope,
-		dithering: els.quickDitheringSelect.value as QuickDithering,
-		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
-		trimToContent: els.quickAutoTrimCheck.checked,
-	});
+	const getQuickSettings = (): QuickSettingsState => readQuickSettings(els);
 
 	const setBackgroundColor = (hex: string) => {
 		els.quickBackgroundColorInput.value = hex;
