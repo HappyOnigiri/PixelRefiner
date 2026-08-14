@@ -4,10 +4,12 @@ import {
 	assertBaselineUpdateIsSafe,
 	isBaselineImageDeclaredUpdated,
 	loadBaseline,
+	loadCheckedInBaseline,
 } from "./baseline";
 import {
+	evaluateQualityCase,
+	generateQualityBaseline,
 	runQualityCase,
-	toBaselineCaseEntry,
 	writeQualityBaselineImage,
 } from "./benchmark";
 import { compareMetrics } from "./comparison";
@@ -113,6 +115,12 @@ const registerGateShard = (
 	const baselineById = new Map(
 		loadBaseline().cases.map((baselineCase) => [baselineCase.id, baselineCase]),
 	);
+	const checkedInBaselineById = new Map(
+		loadCheckedInBaseline().cases.map((baselineCase) => [
+			baselineCase.id,
+			baselineCase,
+		]),
+	);
 	// [Intended] CI のゲートステップだけが立てる環境変数。ローカル実行では常に false になり、
 	// 従来どおりすべての regression がゲート失敗になる。
 	const allowDeclaredAutoChanges = allowDeclaredAutoChangesFromEnvironment();
@@ -121,8 +129,19 @@ const registerGateShard = (
 	it.each(cases)(
 		writeReport ? "reports and evaluates $id" : "evaluates $id",
 		(qualityCase) => {
-			const result = runQualityCase(qualityCase, writeReport);
+			const evaluation = evaluateQualityCase(qualityCase, writeReport);
+			const result = evaluation.result;
 			if (writeReport) results.push(result);
+			expect(
+				evaluation.checkedInBaselineMatches,
+				`${qualityCase.id} output differs from the checked-in head baseline; ` +
+					"run pnpm test:quality:update",
+			).toBe(true);
+			expect(
+				evaluation.checkedInBaselineEntry,
+				`${qualityCase.id} metrics differ from the checked-in head baseline; ` +
+					"run pnpm test:quality:update",
+			).toEqual(checkedInBaselineById.get(qualityCase.id));
 			const isAutoCase = caseParameterMode(qualityCase) === "auto";
 			expect(result.metrics.byteIdentical).toBe(true);
 			// [Intended] 自動判定ケースには正解画像がなく、破綻や出力サイズは
@@ -203,11 +222,11 @@ const registerUpdateShard = (
 	it.each(cases)(
 		"stages baseline update for $id",
 		(qualityCase) => {
-			const result = runQualityCase(qualityCase);
-			entries.push(toBaselineCaseEntry(result));
+			const generated = generateQualityBaseline(qualityCase);
+			entries.push(generated.entry);
 			writeQualityBaselineImage(
-				qualityCase,
 				stagingBaselineImagePath(qualityCase.id),
+				generated.image,
 			);
 		},
 		QUALITY_CASE_TIMEOUT_MS,

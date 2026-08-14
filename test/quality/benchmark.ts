@@ -12,7 +12,11 @@ import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
 import type { CandidateSelection, RawImage } from "../../src/shared/types";
 import { AUTO_CASE_OPTIONS } from "./auto-cases";
-import { baselineImagePath, loadBaseline } from "./baseline";
+import {
+	baselineImagePath,
+	checkedInBaselineImagePath,
+	loadBaseline,
+} from "./baseline";
 import { classifyChange, compareImages, compareMetrics } from "./comparison";
 import { imagesEqual, readPng, writePng } from "./image";
 import { caseParameterMode, qualityCaseDirectory } from "./manifest";
@@ -92,6 +96,26 @@ const processQualityCase = (
 		);
 	}
 	return primary.processResult;
+};
+
+const runQualityCasePair = (qualityCase: QualityImageCase) => {
+	const inputPath = path.resolve(qualityCase.input);
+	const input = readPng(inputPath);
+	const effectiveOptions = effectiveCaseOptions(qualityCase);
+	const options = { ...effectiveOptions, debug: false };
+	const start = performance.now();
+	const currentRun = processQualityCase(qualityCase, input, options);
+	const runtime = performance.now() - start;
+	const repeatRun = processQualityCase(qualityCase, input, options);
+	return {
+		inputPath,
+		input,
+		effectiveOptions,
+		options,
+		currentRun,
+		repeatRun,
+		runtime,
+	};
 };
 
 /**
@@ -200,20 +224,40 @@ const failedAssertions = (
 	return failed;
 };
 
-export const runQualityCase = (
+const toBaselineCaseEntry = (
+	id: string,
+	status: QualityBaselineCase["status"],
+	metrics: ReturnType<typeof calculateMetrics>,
+): QualityBaselineCase => ({
+	id,
+	status,
+	outputWidth: metrics.outputWidth,
+	outputHeight: metrics.outputHeight,
+	meanRgbaError: Number(metrics.meanRgbaError.toFixed(6)),
+	edgeF1: Number(metrics.edgeF1.toFixed(6)),
+	backgroundMaskIou: Number(metrics.backgroundMaskIou.toFixed(6)),
+	smallComponentRetention: Number(metrics.smallComponentRetention.toFixed(6)),
+	catastrophicFailure: metrics.catastrophicFailure,
+});
+
+export const evaluateQualityCase = (
 	qualityCase: QualityImageCase,
 	writeArtifacts = false,
-): QualityCaseResult => {
+): {
+	result: QualityCaseResult;
+	checkedInBaselineMatches: boolean;
+	checkedInBaselineEntry: QualityBaselineCase;
+} => {
 	const parameterMode = caseParameterMode(qualityCase);
-	const inputPath = path.resolve(qualityCase.input);
-	const input = readPng(inputPath);
-	const effectiveOptions = effectiveCaseOptions(qualityCase);
-	const options = { ...effectiveOptions, debug: false };
-
-	const start = performance.now();
-	const currentRun = processQualityCase(qualityCase, input, options);
-	const runtime = performance.now() - start;
-	const repeatRun = processQualityCase(qualityCase, input, options);
+	const {
+		inputPath,
+		input,
+		effectiveOptions,
+		options,
+		currentRun,
+		repeatRun,
+		runtime,
+	} = runQualityCasePair(qualityCase);
 
 	const storedBaselinePath = baselineImagePath(qualityCase.id);
 	const baselineImage = existsSync(storedBaselinePath)
@@ -251,6 +295,31 @@ export const runQualityCase = (
 		imagesEqual(currentRun.result, expected),
 	);
 	const status = failed.length === 0 ? "passed" : "failed";
+	const checkedInPath = checkedInBaselineImagePath(qualityCase.id);
+	const checkedInImage = existsSync(checkedInPath)
+		? readPng(checkedInPath)
+		: null;
+	const checkedInExpected =
+		parameterMode === "auto" ? (checkedInImage ?? currentRun.result) : expected;
+	const checkedInMetrics = calculateMetrics(
+		currentRun.result,
+		input,
+		checkedInExpected,
+		currentRun.grid,
+		repeatRun.result,
+		runtime,
+	);
+	const checkedInFailed = failedAssertions(
+		qualityCase,
+		checkedInMetrics,
+		imagesEqual(currentRun.result, checkedInExpected),
+	);
+	const checkedInStatus = checkedInFailed.length === 0 ? "passed" : "failed";
+	const checkedInBaselineEntry = toBaselineCaseEntry(
+		qualityCase.id,
+		checkedInStatus,
+		checkedInMetrics,
+	);
 	const targetFailedAssertions =
 		targetMetrics === null || targetExpectation === null
 			? []
@@ -373,7 +442,7 @@ export const runQualityCase = (
 			);
 		}
 	}
-	return {
+	const result: QualityCaseResult = {
 		id: qualityCase.id,
 		featureIds: qualityCase.featureIds,
 		parameterMode,
@@ -427,34 +496,60 @@ export const runQualityCase = (
 		files,
 		imageSizes,
 	};
+	return {
+		result,
+		checkedInBaselineMatches:
+			checkedInImage !== null && imagesEqual(currentRun.result, checkedInImage),
+		checkedInBaselineEntry,
+	};
 };
 
-// [Intended] QualityCaseResult からベースラインへ書き込むフィールドだけを取り出す。
-// ベースライン更新の並列生成側（shard.ts）から呼ぶ。抽出ロジックを1箇所にまとめ、
-// 書き込むフィールドの定義がベースラインの型定義から離れて重複しないようにする。
-export const toBaselineCaseEntry = (
-	result: QualityCaseResult,
-): QualityBaselineCase => ({
-	id: result.id,
-	status: result.status,
-	outputWidth: result.metrics.outputWidth,
-	outputHeight: result.metrics.outputHeight,
-	meanRgbaError: Number(result.metrics.meanRgbaError.toFixed(6)),
-	edgeF1: Number(result.metrics.edgeF1.toFixed(6)),
-	backgroundMaskIou: Number(result.metrics.backgroundMaskIou.toFixed(6)),
-	smallComponentRetention: Number(
-		result.metrics.smallComponentRetention.toFixed(6),
-	),
-	catastrophicFailure: result.metrics.catastrophicFailure,
-});
+export const runQualityCase = (
+	qualityCase: QualityImageCase,
+	writeArtifacts = false,
+): QualityCaseResult => evaluateQualityCase(qualityCase, writeArtifacts).result;
+
+/**
+ * 更新後の画像そのものを参照にして、保存用の画像と指標を同じ処理結果から作る。
+ * [Intended] auto ケースの保存指標を旧 baseline との比較値から作ると、画像を差し替えた
+ * 直後から baseline.json だけが不整合になるため、新しい画像を自己参照にする。
+ */
+export const generateQualityBaseline = (
+	qualityCase: QualityImageCase,
+): { entry: QualityBaselineCase; image: RawImage } => {
+	const parameterMode = caseParameterMode(qualityCase);
+	const { input, currentRun, repeatRun, runtime } =
+		runQualityCasePair(qualityCase);
+	const expected =
+		parameterMode === "auto"
+			? currentRun.result
+			: readPng(path.resolve(qualityCase.expected ?? ""));
+	const metrics = calculateMetrics(
+		currentRun.result,
+		input,
+		expected,
+		currentRun.grid,
+		repeatRun.result,
+		runtime,
+	);
+	const failed = failedAssertions(
+		qualityCase,
+		metrics,
+		imagesEqual(currentRun.result, expected),
+	);
+	return {
+		entry: toBaselineCaseEntry(
+			qualityCase.id,
+			failed.length === 0 ? "passed" : "failed",
+			metrics,
+		),
+		image: currentRun.result,
+	};
+};
 
 export const writeQualityBaselineImage = (
-	qualityCase: QualityImageCase,
 	outputPath: string,
-): void => {
-	const input = readPng(path.resolve(qualityCase.input));
-	const options = { ...effectiveCaseOptions(qualityCase), debug: false };
-	writePng(outputPath, processQualityCase(qualityCase, input, options).result);
-};
+	image: RawImage,
+): void => writePng(outputPath, image);
 
 export const reportRoot = REPORT_ROOT;
