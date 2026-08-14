@@ -294,6 +294,8 @@ const resources = {
 			"処理完了【後】に、背景色を透明に置き換えて出力します。\n\nメリット: 背景透明のPNGとして保存できます。\n注意: グリッド検出処理自体には影響しません。",
 		"tooltip.help.bg_removal_scope":
 			"背景をどこまで透過するかの範囲です。\n\nおまかせ: 外側に加え、背景色そのものだと判断できた内側の閉じた領域だけ透過。\n選択部分のみ: 選択した角から繋がる背景だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 背景色に近い領域を内側も含めてすべて透過。\n\n背景が「維持」のときは使用しません。",
+		"tooltip.help.quick_bg_removal_scope":
+			"背景をどこまで透過するかの範囲です。\n\nおまかせ: 外側に加え、背景色そのものだと判断できた内側の閉じた領域だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 背景色に近い領域を内側も含めてすべて透過。\n\n背景が「維持」のときは使用しません。",
 		"tooltip.help.bg_connectivity":
 			"「繋がっている」の判定方法です。\n\n4方向: 斜めを含めない厳しい判定。\n8方向: 斜めも繋がりとみなします。",
 		"tooltip.help.gemini_watermark_removal":
@@ -681,6 +683,8 @@ const resources = {
 			"处理完成后将背景色替换为透明。\n\n优点：可以保存为透明背景 PNG。\n注意：不会影响网格检测过程本身。",
 		"tooltip.help.bg_removal_scope":
 			"决定背景透明化的范围。\n\n自动：在外侧的基础上，只透明化可确定为背景色的内部封闭区域。\n仅选中部分：只透明化从所选角落连通的背景。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：包括内部在内，透明化所有接近背景色的区域。\n\n背景设为“保留”时不可用。",
+		"tooltip.help.quick_bg_removal_scope":
+			"决定背景透明化的范围。\n\n自动：在外侧的基础上，只透明化可确定为背景色的内部封闭区域。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：包括内部在内，透明化所有接近背景色的区域。\n\n背景设为“保留”时不可用。",
 		"tooltip.help.bg_connectivity":
 			"决定相邻区域是否算作连通。\n\n4 方向：更严格，不包含斜向。\n8 方向：包含斜向相邻。",
 		"tooltip.help.gemini_watermark_removal":
@@ -1069,6 +1073,8 @@ const resources = {
 			"Replaces the background color with transparency AFTER processing is complete.\n\nBenefit: Allows saving as a PNG with a transparent background.\nNote: Does not affect the grid detection process itself.",
 		"tooltip.help.bg_removal_scope":
 			"Range of background to make transparent.\n\nAuto: Outer background, plus enclosed holes that clearly match the background color.\nSelected only: Only background connected from the chosen corner.\nOuter all: All background connected to the image border.\nAll: Every area matching the background color, inner ones included.\n\nUnavailable when Background is Keep.",
+		"tooltip.help.quick_bg_removal_scope":
+			"Range of background to make transparent.\n\nAuto: Outer background, plus enclosed holes that clearly match the background color.\nOuter all: All background connected to the image border.\nAll: Every area matching the background color, inner ones included.\n\nUnavailable when Background is Keep.",
 		"tooltip.help.bg_connectivity":
 			"Whether diagonal neighbors are considered connected.\n\n4-way: Strict (no diagonals).\n8-way: Includes diagonals.",
 		"tooltip.help.gemini_watermark_removal":

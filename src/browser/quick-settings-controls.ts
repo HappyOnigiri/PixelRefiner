@@ -1,5 +1,4 @@
 import type {
-	BackgroundRemovalScope,
 	DetailLevel,
 	OutlineStyle,
 	ProcessingMode,
@@ -8,6 +7,7 @@ import type {
 import type { Elements } from "./app-elements";
 import type {
 	QuickBackground,
+	QuickBackgroundRemovalScope,
 	QuickDithering,
 	QuickReductionMode,
 	QuickSettingsState,
@@ -71,7 +71,7 @@ export const setupQuickSettingsControls = ({
 		background: els.quickBackgroundSelect.value as QuickBackground,
 		backgroundColor: els.quickBackgroundColorInput.value,
 		bgRemovalScope: els.quickBgRemovalScopeSelect
-			.value as BackgroundRemovalScope,
+			.value as QuickBackgroundRemovalScope,
 		dithering: els.quickDitheringSelect.value as QuickDithering,
 		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
 		trimToContent: els.quickAutoTrimCheck.checked,

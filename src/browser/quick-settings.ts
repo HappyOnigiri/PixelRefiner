@@ -2,7 +2,6 @@ import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
-	BackgroundRemovalScope,
 	DetailLevel,
 	OutlineStyle,
 	ProcessingMode,
@@ -26,6 +25,7 @@ export type QuickReductionMode =
 	| "sfc_sprite"
 	| "sfc_bg";
 export type QuickBackground = "keep" | "auto" | "pick";
+export type QuickBackgroundRemovalScope = "auto" | "outer" | "all";
 export type QuickDithering = "off" | "subtle" | "strong";
 
 export type QuickSettingsState = {
@@ -33,7 +33,7 @@ export type QuickSettingsState = {
 	detailLevel: DetailLevel;
 	reductionMode: QuickReductionMode;
 	background: QuickBackground;
-	bgRemovalScope: BackgroundRemovalScope;
+	bgRemovalScope: QuickBackgroundRemovalScope;
 	dithering: QuickDithering;
 	outlineStyle: OutlineStyle;
 	trimToContent: boolean;
@@ -56,13 +56,6 @@ export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 	trimToContent: PROCESS_DEFAULTS.trimToContent,
 };
-
-/** Auto 抽出で意味を持たない角シード限定を、等価な外周指定へ寄せる。 */
-const resolveBgRemovalScope = (
-	scope: BackgroundRemovalScope,
-	method: NonNullable<ProcessOptions["bgExtractionMethod"]>,
-): BackgroundRemovalScope =>
-	scope === "selected" && method === "auto" ? "outer" : scope;
 
 /**
  * かんたん設定だけから処理オプションを作る。
@@ -98,10 +91,7 @@ export const createQuickProcessOptions = (
 	} else {
 		const method = quick.background === "auto" ? "auto" : "rgb";
 		options.bgExtractionMethod = method;
-		options.bgRemovalScope = resolveBgRemovalScope(
-			quick.bgRemovalScope,
-			method,
-		);
+		options.bgRemovalScope = quick.bgRemovalScope;
 		options.preRemoveBackground = true;
 		options.postRemoveBackground = true;
 		if (method === "rgb") options.bgRgb = quick.backgroundColor;

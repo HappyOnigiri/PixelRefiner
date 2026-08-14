@@ -2,7 +2,6 @@ import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
-	BackgroundRemovalScope,
 	DetailLevel,
 	DitherMode,
 	OutlineStyle,
@@ -14,6 +13,7 @@ import {
 	createBuiltInPresetOptions,
 	createQuickProcessOptions,
 	type QuickBackground,
+	type QuickBackgroundRemovalScope,
 	type QuickDithering,
 	type QuickReductionMode,
 } from "./quick-settings";
@@ -185,7 +185,7 @@ export const createProcessOptions = (
 				background: els.quickBackgroundSelect.value as QuickBackground,
 				backgroundColor: els.quickBackgroundColorInput.value,
 				bgRemovalScope: els.quickBgRemovalScopeSelect
-					.value as BackgroundRemovalScope,
+					.value as QuickBackgroundRemovalScope,
 				dithering: els.quickDitheringSelect.value as QuickDithering,
 				outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
 				trimToContent: els.quickAutoTrimCheck.checked,

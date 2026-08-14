@@ -175,7 +175,7 @@ describe("I18nManager", () => {
 				"tooltip.help.quick_detail",
 				"tooltip.help.quick_reduction_mode",
 				"tooltip.help.quick_background",
-				"tooltip.help.bg_removal_scope",
+				"tooltip.help.quick_bg_removal_scope",
 				"tooltip.help.quick_dithering",
 				"tooltip.help.quick_outline",
 				"tooltip.help.auto_trim",

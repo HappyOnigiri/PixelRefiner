@@ -112,6 +112,17 @@ describe("quick settings", () => {
 		});
 	});
 
+	it.each(["auto", "outer", "all"] as const)(
+		"maps the %s background scope directly",
+		(bgRemovalScope) => {
+			const options = createQuickProcessOptions({
+				...QUICK_SETTINGS_DEFAULTS,
+				bgRemovalScope,
+			});
+			expect(options.bgRemovalScope).toBe(bgRemovalScope);
+		},
+	);
+
 	it("defines six self-contained built-in presets", () => {
 		expect(BUILT_IN_PRESETS.map((preset) => preset.id)).toEqual([
 			"auto",
