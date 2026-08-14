@@ -94,6 +94,24 @@ describe("quick settings controls", () => {
 		expect(triggerAutoProcess).toHaveBeenCalledOnce();
 	});
 
+	it("keeps the confirmed Auto convert state while reprocessing", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
+
+		els.quickBackgroundSelect.value = "keep";
+		els.quickBackgroundSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDetailLevelSelect.disabled).toBe(false);
+		expect(
+			els.quickDetailLevelSelect.settingItem.classList.contains("disabled"),
+		).toBe(false);
+	});
+
 	it("updates detail immediately for an explicit processing route", () => {
 		const els = createElements();
 		setupQuickSettingsControls({
