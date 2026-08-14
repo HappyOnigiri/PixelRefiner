@@ -22,7 +22,7 @@
   --surface-hover: rgb(32 36 38 / 0.06);
   --surface-hover-strong: rgb(32 36 38 / 0.12);
   --panel-hover-border: #9f988c;
-  --focus-ring: #ffbf47;
+  --focus-ring: #8a5300;
   --loading-overlay: rgb(15 17 21 / 0.82);
   --loading-text: #ffffff;
   --image-list-bg: #eeebe4;
@@ -73,6 +73,7 @@
   --surface-hover: rgb(255 255 255 / 0.05);
   --surface-hover-strong: rgb(255 255 255 / 0.1);
   --panel-hover-border: #596166;
+  --focus-ring: #ffbf47;
   --loading-overlay: rgb(15 17 21 / 0.8);
   --loading-text: #e2e8f0;
   --image-list-bg: #171a1c;
