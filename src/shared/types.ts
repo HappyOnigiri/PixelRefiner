@@ -118,7 +118,12 @@ export type ProcessingRoute = "refine" | "convert" | "preserve";
 
 export type ProcessingMode = "auto" | ProcessingRoute;
 
-export type DetailLevel = "coarse" | "balanced" | "detailed";
+export type DetailLevel =
+	| "smallest"
+	| "small"
+	| "coarse"
+	| "balanced"
+	| "detailed";
 
 export type SmallComponentRemovalMode = "off" | "light" | "auto" | "strong";
 

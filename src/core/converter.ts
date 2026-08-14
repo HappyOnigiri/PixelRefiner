@@ -1,7 +1,7 @@
 import { CONVERT_DETAIL_SCALES, CONVERT_LIMITS } from "../shared/config";
 import type { ConvertCandidate, DetailLevel, RawImage } from "../shared/types";
 
-const LABELS = ["coarse", "balanced", "detailed"] as const;
+const LABELS = ["smallest", "small", "coarse", "balanced", "detailed"] as const;
 
 const clamp = (value: number, min: number, max: number): number =>
 	Math.min(max, Math.max(min, value));

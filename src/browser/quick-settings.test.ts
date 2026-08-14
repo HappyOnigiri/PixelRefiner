@@ -68,10 +68,10 @@ describe("quick settings", () => {
 		},
 	);
 
-	it("changes only size-related settings when detail changes", () => {
-		const coarse = createQuickProcessOptions({
+	it("changes only the size level across the full five-step range", () => {
+		const smallest = createQuickProcessOptions({
 			...QUICK_SETTINGS_DEFAULTS,
-			detailLevel: "coarse",
+			detailLevel: "smallest",
 			reductionMode: "pico8",
 			dithering: "strong",
 		});
@@ -82,13 +82,13 @@ describe("quick settings", () => {
 			dithering: "strong",
 		});
 
-		expect(coarse.detailLevel).toBe("coarse");
+		expect(smallest.detailLevel).toBe("smallest");
 		expect(detailed.detailLevel).toBe("detailed");
 		expect({
-			mode: coarse.reduceColorMode,
-			count: coarse.colorCount,
-			dither: coarse.ditherMode,
-			strength: coarse.ditherStrength,
+			mode: smallest.reduceColorMode,
+			count: smallest.colorCount,
+			dither: smallest.ditherMode,
+			strength: smallest.ditherStrength,
 		}).toEqual({
 			mode: detailed.reduceColorMode,
 			count: detailed.colorCount,
