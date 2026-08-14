@@ -1,0 +1,249 @@
+/* AI画像生成レシピ集ページ（guide.html）専用のスタイル。
+   配色・角丸・影は style.css のトークンをそのまま使う。 */
+
+/* [Intended] 本体アプリより横幅を狭くして、長い本文の行長を読みやすく保つ。 */
+.app.guide-page {
+  max-width: 940px;
+}
+
+.guide-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.guide-back-link {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-decoration: none;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+
+.guide-back-link:hover {
+  color: var(--primary);
+}
+
+.guide-page h1 {
+  font-size: clamp(1.9rem, 5vw, 2.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.guide-page-name {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: var(--radius-md);
+}
+
+.guide-section p {
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.guide-section p:last-child {
+  margin-bottom: 0;
+}
+
+.guide-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+
+.guide-section code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface-hover);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+}
+
+.guide-section strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* はじめに: 直せるもの / 直せないもの */
+.guide-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.guide-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.guide-card-caution {
+  border-left-color: var(--accent);
+}
+
+.guide-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+/* 原則・レシピの本体 */
+.guide-article {
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.guide-article:first-of-type {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
+}
+
+.guide-meta {
+  margin: 0 0 16px;
+}
+
+.guide-meta-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  background: var(--surface-hover);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  margin-right: 8px;
+}
+
+/* プロンプト */
+.prompt-block {
+  position: relative;
+  margin: 0 0 16px;
+}
+
+.prompt-code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text-main);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin: 0;
+  padding: 16px 16px 44px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.prompt-copy {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.prompt-copy:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+
+/* 作例画像 */
+.guide-figure {
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.guide-figure img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--thumbnail-bg);
+  background-image: linear-gradient(
+      45deg,
+      var(--bg-checkered-color) 25%,
+      transparent 25%
+    ),
+    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+/* [Intended] 変換結果は小さなドット絵なので、拡大時もドットの角を保つ。 */
+.guide-figure-output img {
+  image-rendering: pixelated;
+  width: 256px;
+}
+
+.guide-figure figcaption {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* うまくいかないときは */
+.guide-table-wrap {
+  overflow-x: auto;
+}
+
+.guide-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.guide-table th,
+.guide-table td {
+  border: 1px solid var(--border-color);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.65;
+}
+
+.guide-table th {
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.guide-table td {
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .prompt-code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

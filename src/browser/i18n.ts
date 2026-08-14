@@ -21,6 +21,7 @@ const resources = {
 		"app.description":
 			'AIで生成したドット絵を、<span class="text-highlight">素材</span>や<span class="text-highlight">アイコン</span>として使えるクオリティに。<br />' +
 			'<span class="text-highlight">アンチエイリアス除去</span>・<span class="text-highlight">背景透過</span>を数秒で完了します。',
+		"app.guide_link": "きれいにドット絵化できる画像の作り方（レシピ集）",
 		"section.input": "入力画像",
 		"section.result": "処理結果",
 		"section.palette": "パレット",
@@ -412,6 +413,125 @@ const resources = {
 		// フッター
 		"footer.privacy": "画像はブラウザ内で安全に処理されます",
 		"footer.qualityReport": "品質レポート",
+
+		// AI画像生成レシピ集（guide.html）
+		"guide.page_title": "AI画像生成レシピ集 | Pixel Refiner",
+		"guide.page_name": "AI画像生成レシピ集",
+		"guide.subtitle": "きれいにドット絵化できる入力画像の作り方",
+		"guide.back_to_app": "Pixel Refiner に戻る",
+		"guide.copy_prompt": "プロンプトをコピー",
+		"guide.copied": "コピーしました",
+		"guide.intro.heading": "はじめに — 考え方",
+		"guide.intro.body1":
+			"Pixel Refiner は「ドットのぼやけ」「グリッドのずれ」「多すぎる色」を自動で直せます。一方で、生成画像そのものに起因する問題は、変換の段階では直せません。",
+		"guide.intro.body2":
+			"このページは、<strong>直せない問題を画像生成の段階で防ぐ</strong>ためのプロンプト集です。",
+		"guide.intro.fixable_heading":
+			"ツールが直せるもの（生成時に気にしなくてよい）",
+		"guide.intro.fixable_1": "ドットのぼやけ・アンチエイリアス",
+		"guide.intro.fixable_2": "ドットサイズの不揃いな拡大縮小・グリッドのずれ",
+		"guide.intro.fixable_3": "多すぎる色数（減色・パレット変換）",
+		"guide.intro.fixable_4": "ベタ塗り背景の透過",
+		"guide.intro.unfixable_heading": "ツールでは直せないもの（生成時に防ぐ）",
+		"guide.intro.unfixable_1": "背景色が被写体の中にも使われている",
+		"guide.intro.unfixable_2": "被写体が画像の端で見切れている",
+		"guide.intro.unfixable_3": "影・グロー・ソフトシャドウ",
+		"guide.intro.unfixable_4": "画像全体のわずかな傾き",
+		"guide.intro.unfixable_5": "1枚に複数の被写体が入っている",
+		"guide.principles.heading": "5つの基本原則",
+		"guide.principles.p1_heading":
+			"原則1: 背景は「被写体に含まれない」原色のベタ一色にする",
+		"guide.principles.p1_body":
+			"白い背景に白い目のキャラクターのように、背景色が被写体の中にもあると、透過処理が被写体側を巻き込むことがあります。暖色系の被写体には緑（#00FF00）、緑系の被写体にはマゼンタ（#FF00FF）のように、被写体から色相の遠い色を選びます。",
+		"guide.principles.p2_heading":
+			"原則2: 影・グロー・ソフトシャドウを付けない",
+		"guide.principles.p2_body":
+			"被写体と背景の間にできる半透明のグラデーションは、透過後のフチ残りや輪郭の変色の原因になります。",
+		"guide.principles.p3_heading": "原則3: 被写体を見切れさせず、余白を取る",
+		"guide.principles.p3_body":
+			"被写体が画像の端に接していると、背景の推定が乱れます。全身が収まり、周囲に余白のある構図にします。",
+		"guide.principles.p4_heading": "原則4: 傾けない",
+		"guide.principles.p4_body":
+			"ドットのグリッドがわずかに傾いた画像は苦手です。生成の段階でまっすぐな構図にします。",
+		"guide.principles.p5_heading":
+			"原則5: 1画像1被写体・ドットの大きさを揃える",
+		"guide.principles.p5_body":
+			"複数のスプライトを1枚にまとめた画像や、場所によってドットの大きさが違う画像は、グリッド検出を混乱させます。",
+		"guide.principles.no_effort_heading": "逆に、頑張らなくてよいこと",
+		"guide.principles.no_effort_body":
+			"アンチエイリアスを完全に消すことや、正確に 32×32 ピクセルで生成することは、生成側で頑張る必要はありません。<code>32x32 pixel art</code> のような指定はそのまま守られなくても、ドットを大きく均一にする方向に働くので有効です。",
+		"guide.recipes.heading": "レシピ集",
+		"guide.recipes.intro":
+			"各レシピは「ねらい → プロンプト → 生成画像 → Pixel Refiner の設定 → 変換結果」のセットです。作例のプロンプトと画像はサンプルです（実物に差し替え予定）。",
+		"guide.recipes.goal_label": "ねらい",
+		"guide.recipes.settings_label": "Pixel Refiner の設定",
+		"guide.recipes.caption_input": "生成画像（サンプル）",
+		"guide.recipes.caption_output": "変換結果（サンプル）",
+		"guide.recipe1.heading": "レシピ1: ゲームキャラクターのスプライト",
+		"guide.recipe1.goal":
+			"透過素材の基本形。背景色の選び方（暖色のキャラ × マゼンタ背景）と、見切れ防止の余白がテーマです。",
+		"guide.recipe1.settings":
+			"「プリセット」を「Auto」のままにします（背景は自動で透過されます）。",
+		"guide.recipe1.input_alt": "レシピ1の生成画像（差し替え予定のサンプル）",
+		"guide.recipe1.output_alt": "レシピ1の変換結果（差し替え予定のサンプル）",
+		"guide.recipe2.heading": "レシピ2: アイテムアイコン",
+		"guide.recipe2.goal":
+			"UI 用の単一オブジェクト。赤い被写体には緑背景、という補色ルールの実例です。縁取りは生成時ではなく、プリセットに含まれるアウトラインで後付けします。",
+		"guide.recipe2.settings":
+			"「プリセット」で「透過アイコン」を選びます（アウトラインまで含まれます）。",
+		"guide.recipe2.input_alt": "レシピ2の生成画像（差し替え予定のサンプル）",
+		"guide.recipe2.output_alt": "レシピ2の変換結果（差し替え予定のサンプル）",
+		"guide.recipe3.heading":
+			"レシピ3: レトロ携帯ゲーム機風（Game Boy パレット）",
+		"guide.recipe3.goal":
+			"生成の段階から少ない階調に寄せておき、パレット変換とディザリングで仕上げます。",
+		"guide.recipe3.settings":
+			"「かんたん設定」の「減色モード」で「ゲームボーイ (初代)」を選び、「ディザリング」を調整します。",
+		"guide.recipe3.input_alt": "レシピ3の生成画像（差し替え予定のサンプル）",
+		"guide.recipe3.output_alt": "レシピ3の変換結果（差し替え予定のサンプル）",
+		"guide.recipe4.heading": "レシピ4: 一枚絵イラスト（背景ごと使う）",
+		"guide.recipe4.goal":
+			"透過しないケース。グリッド検出と減色だけを活かします。画面全体でドットの大きさを揃える指示がポイントです。",
+		"guide.recipe4.settings":
+			"「かんたん設定」の「背景透過」を「なし」にします（「処理方法」は Auto のままで構いません）。",
+		"guide.recipe4.input_alt": "レシピ4の生成画像（差し替え予定のサンプル）",
+		"guide.recipe4.output_alt": "レシピ4の変換結果（差し替え予定のサンプル）",
+		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
+		"guide.recipe5.goal":
+			"ドット絵風に生成できないモデルや画風でも問題ない、という救済例です。フラットな塗りと太い輪郭線が変換に強く効きます。",
+		"guide.recipe5.settings":
+			"「かんたん設定」の「処理方法」を「ドット絵へ変換」にして、「サイズ」と「減色モード」を好みに調整します。",
+		"guide.recipe5.input_alt": "レシピ5の生成画像（差し替え予定のサンプル）",
+		"guide.recipe5.output_alt": "レシピ5の変換結果（差し替え予定のサンプル）",
+		"guide.troubleshooting.heading": "うまくいかないときは",
+		"guide.troubleshooting.col_symptom": "症状",
+		"guide.troubleshooting.col_cause": "原因",
+		"guide.troubleshooting.col_fix": "プロンプトの直し方",
+		"guide.troubleshooting.r1_symptom": "キャラクターの白目などに穴が開く",
+		"guide.troubleshooting.r1_cause": "背景色が被写体の中にも使われている",
+		"guide.troubleshooting.r1_fix":
+			"背景を被写体に含まれない原色に変える（例: <code>solid magenta background</code>）",
+		"guide.troubleshooting.r2_symptom":
+			"輪郭の周りに背景色のフチが残る・にじむ",
+		"guide.troubleshooting.r2_cause": "影やグローが被写体の周囲にある",
+		"guide.troubleshooting.r2_fix":
+			"<code>no drop shadow, no outer glow, flat lighting</code> を追加する",
+		"guide.troubleshooting.r3_symptom":
+			"出力サイズが極端に小さい・ドットが潰れる",
+		"guide.troubleshooting.r3_cause": "画像内でドットの大きさが揃っていない",
+		"guide.troubleshooting.r3_fix":
+			"<code>consistent pixel size throughout</code> を追加する。結果の候補選択が出た場合は見比べて選ぶ",
+		"guide.troubleshooting.r4_symptom": "輪郭がギザギザに波打つ・斜めになる",
+		"guide.troubleshooting.r4_cause": "生成画像がわずかに傾いている",
+		"guide.troubleshooting.r4_fix":
+			"<code>upright, straight-on</code> を追加して生成し直す",
+		"guide.troubleshooting.r5_symptom": "被写体の端が欠ける",
+		"guide.troubleshooting.r5_cause": "被写体が画像の端で見切れている",
+		"guide.troubleshooting.r5_fix":
+			"<code>full body, centered, with margin, not cropped</code> を追加する",
+		"guide.notes.heading": "注記",
+		"guide.notes.body":
+			"作例は Google Gemini（Nano Banana 2）で生成しています。プロンプトの効き方は生成モデルやバージョンによって異なります。意図通りにならないときは、表現を少しずつ変えて複数回生成し、このページの原則に合う1枚を選んでください。",
 	},
 	"zh-CN": {
 		// UI 見出しとラベル
@@ -419,6 +539,7 @@ const resources = {
 		"app.description":
 			'将 AI 生成的像素画优化为可直接用于<span class="text-highlight">素材</span>和<span class="text-highlight">图标</span>的品质。<br />' +
 			'数秒内完成<span class="text-highlight">抗锯齿清理</span>和<span class="text-highlight">背景透明化</span>。',
+		"app.guide_link": "如何准备能干净转换成像素画的图片（配方集）",
 		"section.input": "输入图片",
 		"section.result": "处理结果",
 		"section.palette": "调色板",
@@ -801,6 +922,116 @@ const resources = {
 		// フッター
 		"footer.privacy": "图片会在浏览器内安全处理",
 		"footer.qualityReport": "质量报告",
+
+		// AI画像生成レシピ集（guide.html）
+		"guide.page_title": "AI 图像生成配方集 | Pixel Refiner",
+		"guide.page_name": "AI 图像生成配方集",
+		"guide.subtitle": "如何准备能干净转换成像素画的输入图片",
+		"guide.back_to_app": "返回 Pixel Refiner",
+		"guide.copy_prompt": "复制提示词",
+		"guide.copied": "已复制",
+		"guide.intro.heading": "开始之前 — 基本思路",
+		"guide.intro.body1":
+			"Pixel Refiner 能自动修正“像素模糊”“网格错位”“颜色过多”。但源自生成图片本身的问题，在转换阶段无法解决。",
+		"guide.intro.body2":
+			"本页收集的提示词，用于<strong>在生成阶段就避免那些无法修正的问题</strong>。",
+		"guide.intro.fixable_heading": "工具可以修正的问题（生成时无需在意）",
+		"guide.intro.fixable_1": "像素模糊与抗锯齿",
+		"guide.intro.fixable_2": "像素大小不一致的缩放与网格错位",
+		"guide.intro.fixable_3": "颜色数量过多（减色与调色板转换）",
+		"guide.intro.fixable_4": "纯色平涂背景的透明化",
+		"guide.intro.unfixable_heading": "工具无法修正的问题（需在生成时避免）",
+		"guide.intro.unfixable_1": "背景色也出现在主体内部",
+		"guide.intro.unfixable_2": "主体在画面边缘被裁切",
+		"guide.intro.unfixable_3": "阴影、辉光、柔和投影",
+		"guide.intro.unfixable_4": "整幅图片存在轻微倾斜",
+		"guide.intro.unfixable_5": "一张图中包含多个主体",
+		"guide.principles.heading": "五条基本原则",
+		"guide.principles.p1_heading": "原则 1：背景使用主体中不存在的纯色平涂",
+		"guide.principles.p1_body":
+			"如果背景色也出现在主体中，例如白色背景上有白色眼睛的角色，背景透明化就可能连主体一起去掉。请选择与主体色相相距较远的颜色：暖色主体用绿色（#00FF00），绿色主体用品红（#FF00FF）。",
+		"guide.principles.p2_heading": "原则 2：不要添加阴影、辉光、柔和投影",
+		"guide.principles.p2_body":
+			"主体与背景之间的半透明渐变，会在透明化之后留下残边，或让轮廓变色。",
+		"guide.principles.p3_heading": "原则 3：不要让主体出框，四周留出空白",
+		"guide.principles.p3_body":
+			"主体一旦贴到画面边缘，背景推定就会出现混乱。请让主体完整入画，四周留出空白。",
+		"guide.principles.p4_heading": "原则 4：不要倾斜",
+		"guide.principles.p4_body":
+			"像素网格轻微倾斜的图片很难处理。请在生成阶段就要求端正的构图。",
+		"guide.principles.p5_heading": "原则 5：一图一主体，并统一像素大小",
+		"guide.principles.p5_body":
+			"把多个精灵拼在一张图上，或者不同区域像素大小不一致的图片，都会干扰网格检测。",
+		"guide.principles.no_effort_heading": "反过来，不必刻意追求的事",
+		"guide.principles.no_effort_body":
+			"在生成阶段不必完全消除抗锯齿，也不必精确输出 32×32 像素。<code>32x32 pixel art</code> 这类指定即使没有被严格遵守，也会促使模型输出更大、更均匀的像素，因此仍然值得写上。",
+		"guide.recipes.heading": "配方集",
+		"guide.recipes.intro":
+			"每个配方都是一组“目标 → 提示词 → 生成图片 → Pixel Refiner 设置 → 转换结果”。此处的提示词与图片为示例，之后会替换为实际内容。",
+		"guide.recipes.goal_label": "目标",
+		"guide.recipes.settings_label": "Pixel Refiner 设置",
+		"guide.recipes.caption_input": "生成图片（示例）",
+		"guide.recipes.caption_output": "转换结果（示例）",
+		"guide.recipe1.heading": "配方 1：游戏角色精灵",
+		"guide.recipe1.goal":
+			"透明素材的基本形态。重点是背景色的选法（暖色角色配品红背景），以及留出空白避免出框。",
+		"guide.recipe1.settings": "把“预设”保持为“Auto”（背景会自动透明化）。",
+		"guide.recipe1.input_alt": "配方 1 的生成图片（待替换的示例）",
+		"guide.recipe1.output_alt": "配方 1 的转换结果（待替换的示例）",
+		"guide.recipe2.heading": "配方 2：道具图标",
+		"guide.recipe2.goal":
+			"用于 UI 的单一物件，是互补色规则的实例：红色主体配绿色背景。描边不在生成时要求，而是交给预设自带的描边功能。",
+		"guide.recipe2.settings": "在“预设”中选择“透明图标”（其中已包含描边）。",
+		"guide.recipe2.input_alt": "配方 2 的生成图片（待替换的示例）",
+		"guide.recipe2.output_alt": "配方 2 的转换结果（待替换的示例）",
+		"guide.recipe3.heading": "配方 3：复古掌机风格（Game Boy 调色板）",
+		"guide.recipe3.goal":
+			"从生成阶段就把画面压到较少的层次，再用调色板转换和抖动完成收尾。",
+		"guide.recipe3.settings":
+			"在“快速设置”的“减色模式”中选择“Game Boy (初代)”，并调整“抖动”。",
+		"guide.recipe3.input_alt": "配方 3 的生成图片（待替换的示例）",
+		"guide.recipe3.output_alt": "配方 3 的转换结果（待替换的示例）",
+		"guide.recipe4.heading": "配方 4：整幅插画（连背景一起使用）",
+		"guide.recipe4.goal":
+			"不做透明化的情况，只利用网格检测和减色。关键是要求整幅画面的像素大小保持一致。",
+		"guide.recipe4.settings":
+			"在“快速设置”中把“背景透明”设为“无”（“处理方式”保持 Auto 即可）。",
+		"guide.recipe4.input_alt": "配方 4 的生成图片（待替换的示例）",
+		"guide.recipe4.output_alt": "配方 4 的转换结果（待替换的示例）",
+		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
+		"guide.recipe5.goal":
+			"即使模型或画风无法直接生成像素画也没关系的补救例。平涂的上色和粗轮廓线对转换特别有利。",
+		"guide.recipe5.settings":
+			"在“快速设置”中把“处理方式”设为“转换为像素画”，再按喜好调整“尺寸”和“减色模式”。",
+		"guide.recipe5.input_alt": "配方 5 的生成图片（待替换的示例）",
+		"guide.recipe5.output_alt": "配方 5 的转换结果（待替换的示例）",
+		"guide.troubleshooting.heading": "效果不理想时",
+		"guide.troubleshooting.col_symptom": "现象",
+		"guide.troubleshooting.col_cause": "原因",
+		"guide.troubleshooting.col_fix": "提示词的调整方法",
+		"guide.troubleshooting.r1_symptom": "角色的眼白等部位出现空洞",
+		"guide.troubleshooting.r1_cause": "背景色也出现在主体内部",
+		"guide.troubleshooting.r1_fix":
+			"把背景换成主体中不存在的纯色（例如 <code>solid magenta background</code>）",
+		"guide.troubleshooting.r2_symptom": "轮廓周围残留背景色的边缘或发生渗色",
+		"guide.troubleshooting.r2_cause": "主体周围存在阴影或辉光",
+		"guide.troubleshooting.r2_fix":
+			"追加 <code>no drop shadow, no outer glow, flat lighting</code>",
+		"guide.troubleshooting.r3_symptom": "输出尺寸过小、像素被压扁",
+		"guide.troubleshooting.r3_cause": "图片内部的像素大小不一致",
+		"guide.troubleshooting.r3_fix":
+			"追加 <code>consistent pixel size throughout</code>。出现结果候选时请对比后选择",
+		"guide.troubleshooting.r4_symptom": "轮廓呈锯齿状起伏或整体倾斜",
+		"guide.troubleshooting.r4_cause": "生成图片存在轻微倾斜",
+		"guide.troubleshooting.r4_fix":
+			"追加 <code>upright, straight-on</code> 后重新生成",
+		"guide.troubleshooting.r5_symptom": "主体的边缘缺失",
+		"guide.troubleshooting.r5_cause": "主体在画面边缘被裁切",
+		"guide.troubleshooting.r5_fix":
+			"追加 <code>full body, centered, with margin, not cropped</code>",
+		"guide.notes.heading": "备注",
+		"guide.notes.body":
+			"示例图片使用 Google Gemini（Nano Banana 2）生成。提示词的效果会随生成模型和版本而变化。如果结果不理想，请逐步调整措辞并多生成几次，从中挑选最符合本页原则的一张。",
 	},
 	en: {
 		// UI 見出しとラベル
@@ -808,6 +1039,8 @@ const resources = {
 		"app.description":
 			'Optimize AI-generated pixel art into <span class="text-highlight">high-quality assets</span> and <span class="text-highlight">icons</span>.<br />' +
 			'Complete <span class="text-highlight">anti-aliasing removal</span> and <span class="text-highlight">background transparency</span> in seconds.',
+		"app.guide_link":
+			"How to create images that convert cleanly (Prompt Recipes)",
 		"section.input": "Input Image",
 		"section.result": "Result",
 		"section.palette": "Palette",
@@ -1202,6 +1435,149 @@ const resources = {
 		// フッター
 		"footer.privacy": "Images are processed safely within your browser",
 		"footer.qualityReport": "Quality report",
+
+		// AI画像生成レシピ集（guide.html）
+		"guide.page_title": "Prompt Recipes | Pixel Refiner",
+		"guide.page_name": "Prompt Recipes",
+		"guide.subtitle":
+			"How to create input images that convert cleanly into pixel art",
+		"guide.back_to_app": "Back to Pixel Refiner",
+		"guide.copy_prompt": "Copy prompt",
+		"guide.copied": "Copied",
+		"guide.intro.heading": "Before You Start: The Idea",
+		"guide.intro.body1":
+			"Pixel Refiner can automatically fix blurred pixels, misaligned grids, and too many colors. Problems that come from the generated image itself, however, cannot be fixed at the conversion stage.",
+		"guide.intro.body2":
+			"This page collects prompts that <strong>prevent the unfixable problems while the image is being generated</strong>.",
+		"guide.intro.fixable_heading":
+			"What the tool can fix (no need to worry when generating)",
+		"guide.intro.fixable_1": "Blurred pixels and anti-aliasing",
+		"guide.intro.fixable_2":
+			"Uneven scaling of pixel size and misaligned grids",
+		"guide.intro.fixable_3":
+			"Too many colors (color reduction and palette conversion)",
+		"guide.intro.fixable_4": "Background transparency for flat backgrounds",
+		"guide.intro.unfixable_heading":
+			"What the tool cannot fix (prevent it when generating)",
+		"guide.intro.unfixable_1":
+			"The background color also appears inside the subject",
+		"guide.intro.unfixable_2":
+			"The subject is cropped at the edge of the image",
+		"guide.intro.unfixable_3": "Shadows, glows, and soft shadows",
+		"guide.intro.unfixable_4": "A slight tilt across the whole image",
+		"guide.intro.unfixable_5": "Several subjects packed into one image",
+		"guide.principles.heading": "Five Basic Principles",
+		"guide.principles.p1_heading":
+			"Principle 1: Use a flat, saturated background color that never appears in the subject",
+		"guide.principles.p1_body":
+			"When the background color also appears in the subject — a character with white eyes on a white background, for example — background transparency can eat into the subject. Pick a hue far from the subject: green (#00FF00) for warm-colored subjects, magenta (#FF00FF) for green ones.",
+		"guide.principles.p2_heading":
+			"Principle 2: No drop shadows, glows, or soft shadows",
+		"guide.principles.p2_body":
+			"The semi-transparent gradient between the subject and the background leaves a fringe or discolors the outline once the background is removed.",
+		"guide.principles.p3_heading":
+			"Principle 3: Keep the subject uncropped and leave a margin",
+		"guide.principles.p3_body":
+			"When the subject touches the edge of the image, background estimation breaks down. Compose so the whole subject fits with margin around it.",
+		"guide.principles.p4_heading": "Principle 4: Do not tilt the image",
+		"guide.principles.p4_body":
+			"Images whose pixel grid is slightly tilted are hard to handle. Ask for a straight composition at generation time.",
+		"guide.principles.p5_heading":
+			"Principle 5: One subject per image, with a uniform pixel size",
+		"guide.principles.p5_body":
+			"Sheets that pack several sprites into one image, or images whose pixel size varies from place to place, confuse grid detection.",
+		"guide.principles.no_effort_heading":
+			"What you do not need to work hard for",
+		"guide.principles.no_effort_body":
+			"You do not need to remove anti-aliasing completely, or to land on exactly 32×32 pixels, at the generation stage. Even when an instruction such as <code>32x32 pixel art</code> is not followed literally, it still pushes the model toward larger, more uniform pixels, so it is worth including.",
+		"guide.recipes.heading": "Recipes",
+		"guide.recipes.intro":
+			"Each recipe is one set: goal, prompt, generated image, Pixel Refiner settings, and converted result. The prompts and images shown here are samples and will be replaced with real ones.",
+		"guide.recipes.goal_label": "Goal",
+		"guide.recipes.settings_label": "Pixel Refiner settings",
+		"guide.recipes.caption_input": "Generated image (sample)",
+		"guide.recipes.caption_output": "Converted result (sample)",
+		"guide.recipe1.heading": "Recipe 1: Game character sprite",
+		"guide.recipe1.goal":
+			"The basic form of a transparent asset. The themes are how to choose the background color (a warm-colored character against a magenta background) and leaving margin so the subject is never cropped.",
+		"guide.recipe1.settings":
+			"Leave Preset on “Auto” (the background is made transparent automatically).",
+		"guide.recipe1.input_alt":
+			"Generated image for recipe 1 (placeholder sample)",
+		"guide.recipe1.output_alt":
+			"Converted result for recipe 1 (placeholder sample)",
+		"guide.recipe2.heading": "Recipe 2: Item icon",
+		"guide.recipe2.goal":
+			"A single object for UI use, and a worked example of the complementary-color rule: a green background for a red subject. The outline is not requested at generation time; it comes from the preset instead.",
+		"guide.recipe2.settings":
+			"Choose the “Transparent Icon” preset (it already includes the outline).",
+		"guide.recipe2.input_alt":
+			"Generated image for recipe 2 (placeholder sample)",
+		"guide.recipe2.output_alt":
+			"Converted result for recipe 2 (placeholder sample)",
+		"guide.recipe3.heading": "Recipe 3: Retro handheld look (Game Boy palette)",
+		"guide.recipe3.goal":
+			"Push the image toward a few tones from the generation stage, then finish it with palette conversion and dithering.",
+		"guide.recipe3.settings":
+			"In Quick Settings, set Reduction Mode to “Game Boy (Original)” and adjust Dithering.",
+		"guide.recipe3.input_alt":
+			"Generated image for recipe 3 (placeholder sample)",
+		"guide.recipe3.output_alt":
+			"Converted result for recipe 3 (placeholder sample)",
+		"guide.recipe4.heading":
+			"Recipe 4: Full illustration (keep the background)",
+		"guide.recipe4.goal":
+			"A case without transparency that uses only grid detection and color reduction. The key is asking for a uniform pixel size across the whole picture.",
+		"guide.recipe4.settings":
+			"In Quick Settings, set Background Transparency to “None” (Processing can stay on Auto).",
+		"guide.recipe4.input_alt":
+			"Generated image for recipe 4 (placeholder sample)",
+		"guide.recipe4.output_alt":
+			"Converted result for recipe 4 (placeholder sample)",
+		"guide.recipe5.heading":
+			"Recipe 5: Turn a normal illustration into pixel art",
+		"guide.recipe5.goal":
+			"A rescue case for models or styles that cannot generate pixel art directly. Flat coloring and thick outlines survive the conversion well.",
+		"guide.recipe5.settings":
+			"In Quick Settings, set Processing to “Convert to Pixel Art”, then tune Size and Reduction Mode to taste.",
+		"guide.recipe5.input_alt":
+			"Generated image for recipe 5 (placeholder sample)",
+		"guide.recipe5.output_alt":
+			"Converted result for recipe 5 (placeholder sample)",
+		"guide.troubleshooting.heading": "When It Does Not Work",
+		"guide.troubleshooting.col_symptom": "Symptom",
+		"guide.troubleshooting.col_cause": "Cause",
+		"guide.troubleshooting.col_fix": "How to fix the prompt",
+		"guide.troubleshooting.r1_symptom":
+			"Holes appear in the whites of the character's eyes",
+		"guide.troubleshooting.r1_cause":
+			"The background color also appears inside the subject",
+		"guide.troubleshooting.r1_fix":
+			"Switch the background to a saturated color that never appears in the subject (for example <code>solid magenta background</code>)",
+		"guide.troubleshooting.r2_symptom":
+			"A fringe of background color remains or bleeds around the outline",
+		"guide.troubleshooting.r2_cause": "A shadow or glow surrounds the subject",
+		"guide.troubleshooting.r2_fix":
+			"Add <code>no drop shadow, no outer glow, flat lighting</code>",
+		"guide.troubleshooting.r3_symptom":
+			"The output is far too small, or pixels collapse",
+		"guide.troubleshooting.r3_cause":
+			"Pixel size is not uniform within the image",
+		"guide.troubleshooting.r3_fix":
+			"Add <code>consistent pixel size throughout</code>. If the result chooser appears, compare the candidates and pick one",
+		"guide.troubleshooting.r4_symptom":
+			"Outlines ripple with jagged steps or run diagonally",
+		"guide.troubleshooting.r4_cause": "The generated image is slightly tilted",
+		"guide.troubleshooting.r4_fix":
+			"Add <code>upright, straight-on</code> and generate again",
+		"guide.troubleshooting.r5_symptom": "The edge of the subject is missing",
+		"guide.troubleshooting.r5_cause":
+			"The subject is cropped at the edge of the image",
+		"guide.troubleshooting.r5_fix":
+			"Add <code>full body, centered, with margin, not cropped</code>",
+		"guide.notes.heading": "Notes",
+		"guide.notes.body":
+			"The samples were generated with Google Gemini (Nano Banana 2). How well a prompt works depends on the model and its version. When the result is not what you intended, vary the wording a little, generate several times, and pick the one image that matches the principles on this page.",
 	},
 };
 

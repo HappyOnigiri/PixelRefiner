@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- 基本 SEO -->
+    <title data-i18n="guide.page_title">Prompt Recipes | Pixel Refiner</title>
+    <meta
+      name="description"
+      content="Prompt recipes for AI image generation: how to create input images that convert cleanly into pixel art with Pixel Refiner."
+    />
+
+    <!-- 正規 URL / インデックス -->
+    <link rel="canonical" href="https://pixel-refiner.app/guide.html" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+
+    <!-- 言語 / ロケール -->
+    <link
+      rel="alternate"
+      hreflang="en"
+      href="https://pixel-refiner.app/guide.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="ja"
+      href="https://pixel-refiner.app/guide.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="zh-CN"
+      href="https://pixel-refiner.app/guide.html"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://pixel-refiner.app/guide.html"
+    />
+
+    <!-- 追加メタ情報 -->
+    <meta name="author" content="Pixel Refiner" />
+    <meta name="application-name" content="Pixel Refiner" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f3f1eb" />
+
+    <!-- ファビコン / アイコン -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/ogp.png" />
+
+    <!-- Open Graph / Twitter 用メタデータ -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://pixel-refiner.app/guide.html" />
+    <meta property="og:site_name" content="Pixel Refiner" />
+    <meta property="og:title" content="Prompt Recipes | Pixel Refiner" />
+    <meta
+      property="og:description"
+      content="Prompt recipes for AI image generation: how to create input images that convert cleanly into pixel art with Pixel Refiner."
+    />
+    <meta property="og:image" content="https://pixel-refiner.app/ogp.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://pixel-refiner.app/ogp.png" />
+  </head>
+
+  <body>
+    <div class="app guide-page">
+      <header>
+        <div class="header-top">
+          <div class="guide-heading">
+            <a class="guide-back-link" href="/" data-i18n="guide.back_to_app"
+              >Back to Pixel Refiner</a
+            >
+            <h1>
+              <span><span class="logo-p">P</span>ixel Refiner</span>
+              <span class="guide-page-name" data-i18n="guide.page_name"
+                >Prompt Recipes</span
+              >
+            </h1>
+          </div>
+          <div class="header-actions">
+            <div class="lang-selector">
+              <button class="lang-btn" data-lang-btn="en">EN</button>
+              <span class="separator">/</span>
+              <button class="lang-btn" data-lang-btn="ja">JA</button>
+              <span class="separator">/</span>
+              <button class="lang-btn" data-lang-btn="zh-CN">ZH</button>
+            </div>
+            <button
+              class="theme-toggle"
+              type="button"
+              data-theme-toggle
+              data-i18n-attr="aria-label:attr.aria.theme_toggle"
+              aria-label="Toggle color theme"
+              aria-pressed="false"
+            >
+              <svg
+                data-theme-icon="light"
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="4"></circle>
+                <path
+                  d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"
+                ></path>
+              </svg>
+              <svg
+                data-theme-icon="dark"
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                hidden
+              >
+                <path
+                  d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p class="app-description" data-i18n="guide.subtitle">
+          How to create input images that convert cleanly into pixel art
+        </p>
+      </header>
+
+      <main>
+        <!-- 1. はじめに -->
+        <section
+          class="panel guide-section"
+          aria-labelledby="guide-intro-heading"
+        >
+          <h2 id="guide-intro-heading" data-i18n="guide.intro.heading">
+            Before You Start: The Idea
+          </h2>
+          <p data-i18n="guide.intro.body1">
+            Pixel Refiner can automatically fix blurred pixels, misaligned
+            grids, and too many colors. Problems that come from the generated
+            image itself, however, cannot be fixed at the conversion stage.
+          </p>
+          <p data-i18n="guide.intro.body2" data-i18n-html>
+            This page collects prompts that
+            <strong
+              >prevent the unfixable problems while the image is being
+              generated</strong
+            >.
+          </p>
+          <div class="guide-card-grid">
+            <div class="guide-card">
+              <h3 data-i18n="guide.intro.fixable_heading">
+                What the tool can fix (no need to worry when generating)
+              </h3>
+              <ul>
+                <li data-i18n="guide.intro.fixable_1">
+                  Blurred pixels and anti-aliasing
+                </li>
+                <li data-i18n="guide.intro.fixable_2">
+                  Uneven scaling of pixel size and misaligned grids
+                </li>
+                <li data-i18n="guide.intro.fixable_3">
+                  Too many colors (color reduction and palette conversion)
+                </li>
+                <li data-i18n="guide.intro.fixable_4">
+                  Background transparency for flat backgrounds
+                </li>
+              </ul>
+            </div>
+            <div class="guide-card guide-card-caution">
+              <h3 data-i18n="guide.intro.unfixable_heading">
+                What the tool cannot fix (prevent it when generating)
+              </h3>
+              <ul>
+                <li data-i18n="guide.intro.unfixable_1">
+                  The background color also appears inside the subject
+                </li>
+                <li data-i18n="guide.intro.unfixable_2">
+                  The subject is cropped at the edge of the image
+                </li>
+                <li data-i18n="guide.intro.unfixable_3">
+                  Shadows, glows, and soft shadows
+                </li>
+                <li data-i18n="guide.intro.unfixable_4">
+                  A slight tilt across the whole image
+                </li>
+                <li data-i18n="guide.intro.unfixable_5">
+                  Several subjects packed into one image
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. 5つの基本原則 -->
+        <section
+          class="panel guide-section"
+          aria-labelledby="guide-principles-heading"
+        >
+          <h2
+            id="guide-principles-heading"
+            data-i18n="guide.principles.heading"
+          >
+            Five Basic Principles
+          </h2>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.principles.p1_heading">
+              Principle 1: Use a flat, saturated background color that never
+              appears in the subject
+            </h3>
+            <p data-i18n="guide.principles.p1_body">
+              When the background color also appears in the subject — a
+              character with white eyes on a white background, for example —
+              background transparency can eat into the subject. Pick a hue far
+              from the subject: green (#00FF00) for warm-colored subjects,
+              magenta (#FF00FF) for green ones.
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: 原則1 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>solid magenta background (#FF00FF), no gradient, no texture, no vignette</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.principles.p2_heading">
+              Principle 2: No drop shadows, glows, or soft shadows
+            </h3>
+            <p data-i18n="guide.principles.p2_body">
+              The semi-transparent gradient between the subject and the
+              background leaves a fringe or discolors the outline once the
+              background is removed.
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: 原則2 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>no drop shadow, no outer glow, flat lighting</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.principles.p3_heading">
+              Principle 3: Keep the subject uncropped and leave a margin
+            </h3>
+            <p data-i18n="guide.principles.p3_body">
+              When the subject touches the edge of the image, background
+              estimation breaks down. Compose so the whole subject fits with
+              margin around it.
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: 原則3 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>full body, centered, with margin around the subject, not cropped</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.principles.p4_heading">
+              Principle 4: Do not tilt the image
+            </h3>
+            <p data-i18n="guide.principles.p4_body">
+              Images whose pixel grid is slightly tilted are hard to handle. Ask
+              for a straight composition at generation time.
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: 原則4 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>upright, front view, straight-on</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.principles.p5_heading">
+              Principle 5: One subject per image, with a uniform pixel size
+            </h3>
+            <p data-i18n="guide.principles.p5_body">
+              Sheets that pack several sprites into one image, or images whose
+              pixel size varies from place to place, confuse grid detection.
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: 原則5 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>single character, consistent pixel size throughout, chunky pixels</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.principles.no_effort_heading">
+              What you do not need to work hard for
+            </h3>
+            <p data-i18n="guide.principles.no_effort_body" data-i18n-html>
+              You do not need to remove anti-aliasing completely, or to land on
+              exactly 32×32 pixels, at the generation stage. Even when an
+              instruction such as <code>32x32 pixel art</code> is not followed
+              literally, it still pushes the model toward larger, more uniform
+              pixels, so it is worth including.
+            </p>
+          </article>
+        </section>
+
+        <!-- 3. レシピ集 -->
+        <section
+          class="panel guide-section"
+          aria-labelledby="guide-recipes-heading"
+        >
+          <h2 id="guide-recipes-heading" data-i18n="guide.recipes.heading">
+            Recipes
+          </h2>
+          <p data-i18n="guide.recipes.intro">
+            Each recipe is one set: goal, prompt, generated image, Pixel Refiner
+            settings, and converted result. The prompts and images shown here
+            are samples and will be replaced with real ones.
+          </p>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.recipe1.heading">
+              Recipe 1: Game character sprite
+            </h3>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.goal_label"
+                >Goal</span
+              ><span data-i18n="guide.recipe1.goal"
+                >The basic form of a transparent asset. The themes are how to
+                choose the background color (a warm-colored character against a
+                magenta background) and leaving margin so the subject is never
+                cropped.</span
+              >
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: レシピ1 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>Pixel art sprite of a knight character, full body, front view, standing pose,
+16-bit retro game style, chunky pixels, limited color palette, flat shading,
+centered with margin around the character,
+solid magenta background (#FF00FF), no drop shadow, no outer glow, no gradient</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+            <figure class="guide-figure">
+              <!-- REPLACE: public/guide/recipe1-input.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe1-input.png"
+                alt="Generated image for recipe 1 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe1.input_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_input">
+                Generated image (sample)
+              </figcaption>
+            </figure>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.settings_label"
+                >Pixel Refiner settings</span
+              ><span data-i18n="guide.recipe1.settings"
+                >Leave Preset on “Auto” (the background is made transparent
+                automatically).</span
+              >
+            </p>
+            <figure class="guide-figure guide-figure-output">
+              <!-- REPLACE: public/guide/recipe1-output.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe1-output.png"
+                alt="Converted result for recipe 1 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe1.output_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_output">
+                Converted result (sample)
+              </figcaption>
+            </figure>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.recipe2.heading">Recipe 2: Item icon</h3>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.goal_label"
+                >Goal</span
+              ><span data-i18n="guide.recipe2.goal"
+                >A single object for UI use, and a worked example of the
+                complementary-color rule: a green background for a red subject.
+                The outline is not requested at generation time; it comes from
+                the preset instead.</span
+              >
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: レシピ2 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>Pixel art icon of a red potion bottle, single object, centered,
+low resolution sprite, flat colors, limited palette,
+solid bright green background (#00FF00), no shadow, no reflection, no glow</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+            <figure class="guide-figure">
+              <!-- REPLACE: public/guide/recipe2-input.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe2-input.png"
+                alt="Generated image for recipe 2 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe2.input_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_input">
+                Generated image (sample)
+              </figcaption>
+            </figure>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.settings_label"
+                >Pixel Refiner settings</span
+              ><span data-i18n="guide.recipe2.settings"
+                >Choose the “Transparent Icon” preset (it already includes the
+                outline).</span
+              >
+            </p>
+            <figure class="guide-figure guide-figure-output">
+              <!-- REPLACE: public/guide/recipe2-output.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe2-output.png"
+                alt="Converted result for recipe 2 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe2.output_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_output">
+                Converted result (sample)
+              </figcaption>
+            </figure>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.recipe3.heading">
+              Recipe 3: Retro handheld look (Game Boy palette)
+            </h3>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.goal_label"
+                >Goal</span
+              ><span data-i18n="guide.recipe3.goal"
+                >Push the image toward a few tones from the generation stage,
+                then finish it with palette conversion and dithering.</span
+              >
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: レシピ3 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>Pixel art sprite of a small dragon, Game Boy style,
+4-color monochrome green palette, low resolution, chunky pixels,
+solid white background, flat shading</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+            <figure class="guide-figure">
+              <!-- REPLACE: public/guide/recipe3-input.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe3-input.png"
+                alt="Generated image for recipe 3 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe3.input_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_input">
+                Generated image (sample)
+              </figcaption>
+            </figure>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.settings_label"
+                >Pixel Refiner settings</span
+              ><span data-i18n="guide.recipe3.settings"
+                >In Quick Settings, set Reduction Mode to “Game Boy (Original)”
+                and adjust Dithering.</span
+              >
+            </p>
+            <figure class="guide-figure guide-figure-output">
+              <!-- REPLACE: public/guide/recipe3-output.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe3-output.png"
+                alt="Converted result for recipe 3 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe3.output_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_output">
+                Converted result (sample)
+              </figcaption>
+            </figure>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.recipe4.heading">
+              Recipe 4: Full illustration (keep the background)
+            </h3>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.goal_label"
+                >Goal</span
+              ><span data-i18n="guide.recipe4.goal"
+                >A case without transparency that uses only grid detection and
+                color reduction. The key is asking for a uniform pixel size
+                across the whole picture.</span
+              >
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: レシピ4 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>Pixel art illustration of a seaside town at sunset, 16-bit JRPG style,
+detailed pixel art scene, limited color palette,
+consistent pixel grid throughout the entire image</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+            <figure class="guide-figure">
+              <!-- REPLACE: public/guide/recipe4-input.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe4-input.png"
+                alt="Generated image for recipe 4 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe4.input_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_input">
+                Generated image (sample)
+              </figcaption>
+            </figure>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.settings_label"
+                >Pixel Refiner settings</span
+              ><span data-i18n="guide.recipe4.settings"
+                >In Quick Settings, set Background Transparency to “None”
+                (Processing can stay on Auto).</span
+              >
+            </p>
+            <figure class="guide-figure guide-figure-output">
+              <!-- REPLACE: public/guide/recipe4-output.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe4-output.png"
+                alt="Converted result for recipe 4 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe4.output_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_output">
+                Converted result (sample)
+              </figcaption>
+            </figure>
+          </article>
+
+          <article class="guide-article">
+            <h3 data-i18n="guide.recipe5.heading">
+              Recipe 5: Turn a normal illustration into pixel art
+            </h3>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.goal_label"
+                >Goal</span
+              ><span data-i18n="guide.recipe5.goal"
+                >A rescue case for models or styles that cannot generate pixel
+                art directly. Flat coloring and thick outlines survive the
+                conversion well.</span
+              >
+            </p>
+            <div class="prompt-block" data-prompt-block>
+              <!-- REPLACE: レシピ5 のプロンプト（実際に使用したものへ差し替え） -->
+              <pre
+                class="prompt-code"
+              ><code>Cute chibi character illustration, cel shading, flat colors, thick outlines,
+solid blue background, no gradients, no drop shadow</code></pre>
+              <button
+                type="button"
+                class="prompt-copy"
+                data-copy-prompt
+                data-i18n="guide.copy_prompt"
+              >
+                Copy prompt
+              </button>
+            </div>
+            <figure class="guide-figure">
+              <!-- REPLACE: public/guide/recipe5-input.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe5-input.png"
+                alt="Generated image for recipe 5 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe5.input_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_input">
+                Generated image (sample)
+              </figcaption>
+            </figure>
+            <p class="guide-meta">
+              <span
+                class="guide-meta-label"
+                data-i18n="guide.recipes.settings_label"
+                >Pixel Refiner settings</span
+              ><span data-i18n="guide.recipe5.settings"
+                >In Quick Settings, set Processing to “Convert to Pixel Art”,
+                then tune Size and Reduction Mode to taste.</span
+              >
+            </p>
+            <figure class="guide-figure guide-figure-output">
+              <!-- REPLACE: public/guide/recipe5-output.png を実画像へ差し替え -->
+              <img
+                src="/guide/recipe5-output.png"
+                alt="Converted result for recipe 5 (placeholder sample)"
+                data-i18n-attr="alt:guide.recipe5.output_alt"
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption data-i18n="guide.recipes.caption_output">
+                Converted result (sample)
+              </figcaption>
+            </figure>
+          </article>
+        </section>
+
+        <!-- 4. うまくいかないときは -->
+        <section
+          class="panel guide-section"
+          aria-labelledby="guide-troubleshooting-heading"
+        >
+          <h2
+            id="guide-troubleshooting-heading"
+            data-i18n="guide.troubleshooting.heading"
+          >
+            When It Does Not Work
+          </h2>
+          <div class="guide-table-wrap">
+            <table class="guide-table">
+              <thead>
+                <tr>
+                  <th data-i18n="guide.troubleshooting.col_symptom">Symptom</th>
+                  <th data-i18n="guide.troubleshooting.col_cause">Cause</th>
+                  <th data-i18n="guide.troubleshooting.col_fix">
+                    How to fix the prompt
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-i18n="guide.troubleshooting.r1_symptom">
+                    Holes appear in the whites of the character's eyes
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r1_cause">
+                    The background color also appears inside the subject
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r1_fix" data-i18n-html>
+                    Switch the background to a saturated color that never
+                    appears in the subject (for example
+                    <code>solid magenta background</code>)
+                  </td>
+                </tr>
+                <tr>
+                  <td data-i18n="guide.troubleshooting.r2_symptom">
+                    A fringe of background color remains or bleeds around the
+                    outline
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r2_cause">
+                    A shadow or glow surrounds the subject
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r2_fix" data-i18n-html>
+                    Add
+                    <code>no drop shadow, no outer glow, flat lighting</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td data-i18n="guide.troubleshooting.r3_symptom">
+                    The output is far too small, or pixels collapse
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r3_cause">
+                    Pixel size is not uniform within the image
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r3_fix" data-i18n-html>
+                    Add <code>consistent pixel size throughout</code>. If the
+                    result chooser appears, compare the candidates and pick one
+                  </td>
+                </tr>
+                <tr>
+                  <td data-i18n="guide.troubleshooting.r4_symptom">
+                    Outlines ripple with jagged steps or run diagonally
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r4_cause">
+                    The generated image is slightly tilted
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r4_fix" data-i18n-html>
+                    Add <code>upright, straight-on</code> and generate again
+                  </td>
+                </tr>
+                <tr>
+                  <td data-i18n="guide.troubleshooting.r5_symptom">
+                    The edge of the subject is missing
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r5_cause">
+                    The subject is cropped at the edge of the image
+                  </td>
+                  <td data-i18n="guide.troubleshooting.r5_fix" data-i18n-html>
+                    Add
+                    <code>full body, centered, with margin, not cropped</code>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 5. 注記 -->
+        <section
+          class="panel guide-section"
+          aria-labelledby="guide-notes-heading"
+        >
+          <h2 id="guide-notes-heading" data-i18n="guide.notes.heading">
+            Notes
+          </h2>
+          <p data-i18n="guide.notes.body">
+            The samples were generated with Google Gemini (Nano Banana 2). How
+            well a prompt works depends on the model and its version. When the
+            result is not what you intended, vary the wording a little, generate
+            several times, and pick the one image that matches the principles on
+            this page.
+          </p>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <div class="footer-content">
+          <p>Pixel Refiner &copy; 2026</p>
+          <div class="footer-links">
+            <a href="/" data-i18n="guide.back_to_app">Back to Pixel Refiner</a>
+            <span class="separator">|</span>
+            <span class="privacy-note" data-i18n="footer.privacy">
+              Images are processed safely within your browser
+            </span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/browser/guide.ts"></script>
+  </body>
+</html>
