@@ -14,10 +14,8 @@ const quickElements = (): Elements =>
 		quickReductionModeSelect: select("pico8"),
 		quickBackgroundSelect: select("keep"),
 		quickBackgroundColorInput: input("#abcdef"),
-		quickBgRemovalScopeSelect: select("all"),
 		quickDitheringSelect: select("strong"),
-		quickOutlineStyleSelect: select("sharp"),
-		quickAutoTrimCheck: input("", true),
+		quickAutoTrimSelect: select("auto"),
 	}) as Elements;
 
 describe("settings mode options", () => {
@@ -48,6 +46,7 @@ describe("settings mode options", () => {
 			detailLevel: "detailed",
 			reduceColorMode: "pico8",
 			bgExtractionMethod: "none",
+			trimToContent: false,
 			ditherMode: "floyd-steinberg",
 		});
 		expect(options.fixedPalette).toBeUndefined();

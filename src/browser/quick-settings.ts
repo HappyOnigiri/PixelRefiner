@@ -1,11 +1,7 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
-import type {
-	DetailLevel,
-	OutlineStyle,
-	ProcessingMode,
-} from "../shared/types";
+import type { DetailLevel, ProcessingMode } from "../shared/types";
 
 export type QuickReductionMode =
 	| "none"
@@ -25,7 +21,6 @@ export type QuickReductionMode =
 	| "sfc_sprite"
 	| "sfc_bg";
 export type QuickBackground = "keep" | "auto" | "pick";
-export type QuickBackgroundRemovalScope = "auto" | "outer" | "all";
 export type QuickDithering = "off" | "subtle" | "strong";
 
 export type QuickSettingsState = {
@@ -33,9 +28,7 @@ export type QuickSettingsState = {
 	detailLevel: DetailLevel;
 	reductionMode: QuickReductionMode;
 	background: QuickBackground;
-	bgRemovalScope: QuickBackgroundRemovalScope;
 	dithering: QuickDithering;
-	outlineStyle: OutlineStyle;
 	trimToContent: boolean;
 	backgroundColor?: string;
 };
@@ -51,9 +44,7 @@ export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	detailLevel: PROCESS_DEFAULTS.detailLevel,
 	reductionMode: "none",
 	background: "auto",
-	bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
 	dithering: "off",
-	outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 	trimToContent: PROCESS_DEFAULTS.trimToContent,
 };
 
@@ -74,7 +65,7 @@ export const createQuickProcessOptions = (
 		...createDefaultProcessOptions(),
 		processingMode: quick.processingMode,
 		detailLevel: quick.detailLevel,
-		outlineStyle: quick.outlineStyle,
+		outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 		trimToContent: quick.trimToContent,
 		reduceColors: quick.reductionMode !== "none",
 		reduceColorMode:
@@ -91,7 +82,7 @@ export const createQuickProcessOptions = (
 	} else {
 		const method = quick.background === "auto" ? "auto" : "rgb";
 		options.bgExtractionMethod = method;
-		options.bgRemovalScope = quick.bgRemovalScope;
+		options.bgRemovalScope = PROCESS_DEFAULTS.bgRemovalScope;
 		options.preRemoveBackground = true;
 		options.postRemoveBackground = true;
 		if (method === "rgb") options.bgRgb = quick.backgroundColor;
@@ -153,8 +144,13 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 		id: "transparent-icon",
 		labelKey: "preset.transparent_icon",
 		options: presetOptions(
-			{ outlineStyle: "rounded" },
-			{ reduceColors: true, reduceColorMode: "auto", colorCount: 32 },
+			{},
+			{
+				reduceColors: true,
+				reduceColorMode: "auto",
+				colorCount: 32,
+				outlineStyle: "rounded",
+			},
 		),
 	},
 	{

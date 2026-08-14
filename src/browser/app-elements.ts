@@ -89,13 +89,11 @@ export type Elements = {
 	quickDetailLevelSelect: HTMLSelectElement;
 	quickReductionModeSelect: HTMLSelectElement;
 	quickBackgroundSelect: HTMLSelectElement;
-	quickBgRemovalScopeSelect: HTMLSelectElement;
 	quickBackgroundPicker: HTMLElement;
 	quickBackgroundColorInput: HTMLInputElement;
 	quickEyedropperButton: HTMLButtonElement;
 	quickDitheringSelect: HTMLSelectElement;
-	quickOutlineStyleSelect: HTMLSelectElement;
-	quickAutoTrimCheck: HTMLInputElement;
+	quickAutoTrimSelect: HTMLSelectElement;
 	advancedProcessingModeSelect: HTMLSelectElement;
 	advancedDetailLevelSelect: HTMLSelectElement;
 	advancedBgRemovalScopeSelect: HTMLSelectElement;
@@ -282,13 +280,11 @@ export const getElements = (): Elements => {
 		quickDetailLevelSelect: get<HTMLSelectElement>("quick-detail-level"),
 		quickReductionModeSelect: get<HTMLSelectElement>("quick-reduction-mode"),
 		quickBackgroundSelect: get<HTMLSelectElement>("quick-background"),
-		quickBgRemovalScopeSelect: get<HTMLSelectElement>("quick-bg-removal-scope"),
 		quickBackgroundPicker: get<HTMLElement>("quick-background-picker"),
 		quickBackgroundColorInput: get<HTMLInputElement>("quick-background-color"),
 		quickEyedropperButton: get<HTMLButtonElement>("quick-eyedropper-button"),
 		quickDitheringSelect: get<HTMLSelectElement>("quick-dithering"),
-		quickOutlineStyleSelect: get<HTMLSelectElement>("quick-outline-style"),
-		quickAutoTrimCheck: get<HTMLInputElement>("quick-auto-trim"),
+		quickAutoTrimSelect: get<HTMLSelectElement>("quick-auto-trim"),
 		advancedProcessingModeSelect: get<HTMLSelectElement>(
 			"advanced-processing-mode",
 		),

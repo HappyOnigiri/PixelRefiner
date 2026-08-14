@@ -267,7 +267,6 @@ export const setupSettingsControls = ({
 
 		els.preRemoveCheck.checked = defaults.preRemoveBackground;
 		els.postRemoveCheck.checked = defaults.postRemoveBackground;
-		els.quickBgRemovalScopeSelect.value = defaults.bgRemovalScope;
 		els.advancedBgRemovalScopeSelect.value = defaults.bgRemovalScope;
 		els.bgConnectivitySelect.value = defaults.bgConnectivity;
 		els.smallComponentModeSelect.value = defaults.smallComponentMode;
@@ -292,8 +291,9 @@ export const setupSettingsControls = ({
 		els.quickReductionModeSelect.value = QUICK_SETTINGS_DEFAULTS.reductionMode;
 		els.quickBackgroundSelect.value = QUICK_SETTINGS_DEFAULTS.background;
 		els.quickDitheringSelect.value = QUICK_SETTINGS_DEFAULTS.dithering;
-		els.quickOutlineStyleSelect.value = QUICK_SETTINGS_DEFAULTS.outlineStyle;
-		els.quickAutoTrimCheck.checked = QUICK_SETTINGS_DEFAULTS.trimToContent;
+		els.quickAutoTrimSelect.value = QUICK_SETTINGS_DEFAULTS.trimToContent
+			? "auto"
+			: "none";
 		els.builtInPresetSelect.value = "auto";
 
 		// 言語切替ボタンのイベントリスナー

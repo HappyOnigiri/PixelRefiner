@@ -1,13 +1,11 @@
 import type {
 	DetailLevel,
-	OutlineStyle,
 	ProcessingMode,
 	ProcessingRoute,
 } from "../shared/types";
 import type { Elements } from "./app-elements";
 import type {
 	QuickBackground,
-	QuickBackgroundRemovalScope,
 	QuickDithering,
 	QuickReductionMode,
 	QuickSettingsState,
@@ -50,9 +48,11 @@ export const updateQuickSettingsDisabledStates = (
 	);
 
 	const background = els.quickBackgroundSelect.value as QuickBackground;
-	setQuickControlDisabled(els.quickBgRemovalScopeSelect, background === "keep");
 	els.quickBackgroundPicker.style.display =
 		background === "pick" ? "flex" : "none";
+	// [Intended] かんたん設定では背景透過と余白除去を一組として扱い、
+	// 背景透過を行わない場合は自動トリムも処理へ渡さない。
+	setQuickControlDisabled(els.quickAutoTrimSelect, background === "keep");
 
 	const reductionMode = els.quickReductionModeSelect
 		.value as QuickReductionMode;
@@ -71,11 +71,10 @@ export const readQuickSettings = (els: Elements): QuickSettingsState => ({
 	reductionMode: els.quickReductionModeSelect.value as QuickReductionMode,
 	background: els.quickBackgroundSelect.value as QuickBackground,
 	backgroundColor: els.quickBackgroundColorInput.value,
-	bgRemovalScope: els.quickBgRemovalScopeSelect
-		.value as QuickBackgroundRemovalScope,
 	dithering: els.quickDitheringSelect.value as QuickDithering,
-	outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
-	trimToContent: els.quickAutoTrimCheck.checked,
+	trimToContent:
+		els.quickBackgroundSelect.value !== "keep" &&
+		els.quickAutoTrimSelect.value === "auto",
 });
 
 export const setupQuickSettingsControls = ({
@@ -94,10 +93,8 @@ export const setupQuickSettingsControls = ({
 		els.quickDetailLevelSelect,
 		els.quickReductionModeSelect,
 		els.quickBackgroundSelect,
-		els.quickBgRemovalScopeSelect,
 		els.quickDitheringSelect,
-		els.quickOutlineStyleSelect,
-		els.quickAutoTrimCheck,
+		els.quickAutoTrimSelect,
 	].forEach((control) => {
 		control.addEventListener("change", () => {
 			clearCandidateSelections();
