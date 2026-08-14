@@ -263,6 +263,29 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+/* [Intended] ヘッダーの視覚階層を崩さないよう、説明文より一段弱い
+   補助リンクとして扱う。新規タブで開くことは末尾の記号で示す。 */
+.app-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.app-guide-link::after {
+  content: '↗';
+  font-size: 0.75em;
+}
+
+.app-guide-link:hover {
+  color: var(--primary);
+}
+
 .text-highlight {
   color: var(--text-main);
   font-weight: 500;
