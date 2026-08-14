@@ -51,9 +51,8 @@ describe("batch item options", () => {
 		expect(autoResult.forcePixelsH).toBeUndefined();
 	});
 
-	it("keeps dither controls visible for shared-palette processing", () => {
-		expect(isDitherSettingsEnabled("none", true)).toBe(true);
-		expect(isDitherSettingsEnabled("none", false)).toBe(false);
-		expect(isDitherSettingsEnabled("auto", false)).toBe(true);
+	it("derives Advanced dithering only from its reduction mode", () => {
+		expect(isDitherSettingsEnabled("none")).toBe(false);
+		expect(isDitherSettingsEnabled("auto")).toBe(true);
 	});
 });

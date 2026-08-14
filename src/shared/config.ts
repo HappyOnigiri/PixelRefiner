@@ -230,20 +230,20 @@ export const CONVERT_LIMITS = {
 	featureCoverageThreshold: 0.04,
 } as const;
 
-export const CONVERT_CANDIDATE_DEFAULTS = {
-	coarse: { scale: 0.65, colorCount: 12, ditherStrength: 30 },
-	balanced: { scale: 1, colorCount: 24, ditherStrength: 20 },
-	detailed: { scale: 1.5, colorCount: 40, ditherStrength: 10 },
-} as const satisfies Record<
-	DetailLevel,
-	{ scale: number; colorCount: number; ditherStrength: number }
->;
+export const CONVERT_DETAIL_SCALES = {
+	coarse: 0.65,
+	balanced: 1,
+	detailed: 1.5,
+} as const satisfies Record<DetailLevel, number>;
 
 export const CONVERT_DEFAULTS = {
 	detailLevel: "balanced",
 	reduceColors: true,
 	reduceColorMode: "auto",
 	ditherMode: "ordered",
+	// [Intended] 細かさは出力サイズだけを変える。色数とディザ強度は独立した既定値にする。
+	colorCount: 24,
+	ditherStrength: 20,
 } as const;
 
 export const BACKGROUND_MODEL_LIMITS = {

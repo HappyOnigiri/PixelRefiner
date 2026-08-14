@@ -1,17 +1,7 @@
 import { wrap } from "comlink";
 import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
-import type { ProcessOptions } from "../core/processor";
-import { createDefaultProcessOptions } from "../core/processor-options";
 import type { ProcessorWorker } from "../core/worker";
-import { clampInt, PROCESS_RANGES } from "../shared/config";
-import type {
-	BackgroundRemovalScope,
-	CandidateSelection,
-	DetailLevel,
-	DitherMode,
-	OutlineStyle,
-	ProcessingMode,
-} from "../shared/types";
+import type { CandidateSelection } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -22,16 +12,10 @@ import { drawRawImageToCanvas } from "./io";
 import { showError } from "./notifications";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { translateProcessingWarnings } from "./processing-warnings";
-import {
-	applyQuickSettingsToOptions,
-	type QuickBackground,
-	type QuickColors,
-	type QuickDithering,
-} from "./quick-settings";
 import { updateQuickSettingsDisabledStates } from "./quick-settings-controls";
 import type { ResultViewer } from "./result-viewer";
-import { BROWSER_RUNTIME_CONFIG } from "./runtime-config";
 import type { ImageSession } from "./session";
+import { createProcessOptions } from "./settings-options";
 
 const workerInstance = new Worker(
 	new URL("../core/worker.ts", import.meta.url),
@@ -64,171 +48,6 @@ export type RunProcessingOptions = {
 	 * 複数画像を続けて変換する呼び出し側が、一巡の完了時にまとめて通知するために使う。
 	 */
 	suppressErrorNotification?: boolean;
-};
-
-const parseOptionalInt = (
-	input: HTMLInputElement,
-	range: { min: number; max: number; default: number },
-): number | undefined => {
-	const value = input.value.trim();
-	if (value === "") return undefined;
-	const number = Number(value);
-	if (!Number.isFinite(number)) return undefined;
-	return clampInt(number, range);
-};
-
-export const createProcessOptions = (
-	els: Elements,
-	processingState: ProcessingState,
-): ProcessOptions => {
-	const detectionQuantStep = clampInt(
-		Number(els.quantStepInput.value),
-		PROCESS_RANGES.detectionQuantStep,
-	);
-	const pixelsW = parseOptionalInt(
-		els.forcePixelsWInput,
-		PROCESS_RANGES.forcePixelsW,
-	);
-	const pixelsH = parseOptionalInt(
-		els.forcePixelsHInput,
-		PROCESS_RANGES.forcePixelsH,
-	);
-	const sampleWindow = clampInt(
-		Number(els.sampleWindowInput.value),
-		PROCESS_RANGES.sampleWindow,
-	);
-	const tolerance = clampInt(
-		Number(els.toleranceInput.value),
-		PROCESS_RANGES.backgroundTolerance,
-	);
-	const method = els.bgExtractionMethod
-		.value as ProcessOptions["bgExtractionMethod"];
-	const bgEnabled = method !== "none";
-	const smallComponentMode = bgEnabled
-		? (els.smallComponentModeSelect
-				.value as ProcessOptions["smallComponentMode"])
-		: "off";
-	const colorCount = clampInt(
-		Number(els.colorCountInput.value),
-		PROCESS_RANGES.colorCount,
-	);
-	const reduceColorMode = els.reduceColorModeSelect.value;
-	const ditherMode = els.ditherModeSelect.value as DitherMode;
-	const ditherStrength = clampInt(
-		Number(els.ditherStrengthInput.value),
-		PROCESS_RANGES.ditherStrength,
-	);
-	const outlineHex = els.outlineColorInput.value;
-	type GridDetectionMode = "auto" | "hint" | "force" | "off";
-	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
-	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
-
-	// [Intended] 土台は Quick 設定を適用していない詳細設定の既定値にする。
-	// Quick 設定は DOM の実値で最後に一度だけ適用する。
-	const advancedOptions: ProcessOptions = {
-		...createDefaultProcessOptions(),
-		debug: BROWSER_RUNTIME_CONFIG.debug,
-		detectionQuantStep,
-		forcePixelsW: gridMode === "force" && usePixels ? pixelsW : undefined,
-		forcePixelsH: gridMode === "force" && usePixels ? pixelsH : undefined,
-		hintPixelsW: gridMode === "hint" && usePixels ? pixelsW : undefined,
-		hintPixelsH: gridMode === "hint" && usePixels ? pixelsH : undefined,
-		preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
-		postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
-		bgRemovalScope: bgEnabled
-			? (els.quickBgRemovalScopeSelect
-					.value as ProcessOptions["bgRemovalScope"])
-			: "off",
-		bgConnectivity: bgEnabled
-			? (els.bgConnectivitySelect.value as ProcessOptions["bgConnectivity"])
-			: "4",
-		backgroundTolerance: tolerance,
-		sampleWindow,
-		cellSamplingMode: els.cellSamplingModeSelect
-			.value as ProcessOptions["cellSamplingMode"],
-		maxSamplesPerCell: clampInt(
-			Number(els.maxSamplesPerCellInput.value),
-			PROCESS_RANGES.maxSamplesPerCell,
-		),
-		cellAlphaThreshold: clampInt(
-			Number(els.cellAlphaThresholdInput.value),
-			PROCESS_RANGES.cellAlphaThreshold,
-		),
-		trimAlphaThreshold: clampInt(
-			Number(els.trimAlphaThresholdInput.value),
-			PROCESS_RANGES.trimAlphaThreshold,
-		),
-		autoMaxCellsW: clampInt(
-			Number(els.autoMaxCellsWInput.value),
-			PROCESS_RANGES.autoMaxCells,
-		),
-		autoMaxCellsH: clampInt(
-			Number(els.autoMaxCellsHInput.value),
-			PROCESS_RANGES.autoMaxCells,
-		),
-		backgroundMask: els.detectionBackgroundMaskCheck.checked,
-		backgroundMaskTolerance: clampInt(
-			Number(els.backgroundMaskToleranceInput.value),
-			PROCESS_RANGES.backgroundMaskTolerance,
-		),
-		preserveThinFeatures: els.preserveThinFeaturesCheck.checked,
-		autoGridFromTrimmed: els.autoGridFromTrimmedCheck.checked,
-		phaseAwareGridSearch: els.phaseAwareGridSearchCheck.checked,
-		boundaryContrastOverride: els.boundaryContrastOverrideCheck.checked,
-		smallAspectGridAlignment: els.smallAspectGridAlignmentSelect
-			.value as ProcessOptions["smallAspectGridAlignment"],
-		watermarkSamplingCompat: els.watermarkSamplingCompatSelect
-			.value as ProcessOptions["watermarkSamplingCompat"],
-		gridSignals: {
-			colorBoundary: els.gridSignalColorBoundaryCheck.checked,
-			luminanceAlphaGradient: els.gridSignalLuminanceAlphaCheck.checked,
-			autocorrelation: els.gridSignalAutocorrelationCheck.checked,
-			reconstruction: els.gridSignalReconstructionCheck.checked,
-			localPhaseStability: els.gridSignalLocalPhaseCheck.checked,
-		},
-		// [Intended] 背景の自動判定は、背景抽出そのものが無効なら意味を持たない。
-		// 既存の bgEnabled と同じ従属関係へ置き、UI の指定が独り歩きしないようにする。
-		backgroundDehalo: bgEnabled && els.backgroundDehaloCheck.checked,
-		backgroundEdgeCleanup: bgEnabled && els.backgroundEdgeCleanupCheck.checked,
-		backgroundRampFollow: bgEnabled && els.backgroundRampFollowCheck.checked,
-		backgroundRemovalRollback: els.backgroundRemovalRollbackCheck.checked,
-		alphaBorderBackgroundGuard: els.alphaBorderBackgroundGuardCheck.checked,
-		backgroundConfidenceGate: els.backgroundConfidenceGateCheck.checked,
-		smallComponentBackgroundGate: els.smallComponentBackgroundGateCheck.checked,
-		trimToContent: els.trimToContentCheck.checked,
-		fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
-		makeSquare: els.makeSquareCheck.checked,
-		keepAspectRatio: els.keepAspectRatioCheck.checked,
-		enableGridDetection: gridMode !== "off",
-		reduceColors: reduceColorMode !== "none",
-		reduceColorMode,
-		ditherMode,
-		colorCount,
-		ditherStrength,
-		smallComponentMode,
-		geminiWatermarkRemoval: els.geminiWatermarkRemovalSelect
-			.value as ProcessOptions["geminiWatermarkRemoval"],
-		outlineStyle: els.outlineStyleSelect.value as OutlineStyle,
-		outlineColor: {
-			r: parseInt(outlineHex.slice(1, 3), 16),
-			g: parseInt(outlineHex.slice(3, 5), 16),
-			b: parseInt(outlineHex.slice(5, 7), 16),
-		},
-		bgExtractionMethod: method,
-		bgRgb: els.bgRgbInput.value,
-		fixedPalette: processingState.currentFixedPalette,
-	};
-	return applyQuickSettingsToOptions(advancedOptions, {
-		processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
-		detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
-		colors: els.quickColorsSelect.value as QuickColors,
-		background: els.quickBackgroundSelect.value as QuickBackground,
-		bgRemovalScope: els.quickBgRemovalScopeSelect
-			.value as BackgroundRemovalScope,
-		dithering: els.quickDitheringSelect.value as QuickDithering,
-		outlineStyle: els.quickOutlineStyleSelect.value as OutlineStyle,
-		trimToContent: els.quickAutoTrimCheck.checked,
-	});
 };
 
 export const createRunProcessing = ({
@@ -319,19 +138,28 @@ export const createRunProcessing = ({
 			// 簡潔にするためコピーとして保持する。
 			const resultImage = result;
 			// currentResult = resultImage; // 直接使用しなくなった
-			imageSession.updateImageResult(currentItem.id, {
-				result,
-				grid,
-				extractedPalette,
-				compareBefore,
-				compareBeforeSanitized,
-				analysis,
-			});
+			imageSession.updateImageResult(
+				currentItem.id,
+				{
+					result,
+					grid,
+					extractedPalette,
+					compareBefore,
+					compareBeforeSanitized,
+					analysis,
+				},
+				processingState.settingsMode,
+			);
 
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
 			if (imageSession.getActiveImage()?.id !== currentItem.id) return;
-			updateQuickSettingsDisabledStates(els, analysis.route);
+			// [Intended] 経路はかんたん設定で処理したときだけ無効状態の根拠になる。
+			// 他タブの設定で決まった経路を持ち込むと、かんたん設定の細かさが理由なく編集不可になる。
+			updateQuickSettingsDisabledStates(
+				els,
+				processingState.settingsMode === "quick" ? analysis.route : undefined,
+			);
 
 			mainResultViewer.updateImage(resultImage);
 			modalResultViewer.updateImage(resultImage);

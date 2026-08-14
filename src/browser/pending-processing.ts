@@ -6,8 +6,9 @@ import { createLoadingOverlay } from "./loading-overlay";
 import { showWarning } from "./notifications";
 import { createPendingImageQueue } from "./pending-queue";
 import type { RunProcessingOptions } from "./processing-controller";
-import { createProcessOptions, processor } from "./processing-controller";
+import { processor } from "./processing-controller";
 import type { ImageSession } from "./session";
+import { createProcessOptions } from "./settings-options";
 
 type PendingProcessingOptions = {
 	els: Elements;
@@ -55,7 +56,11 @@ export const createProcessPendingImages = ({
 				item.candidateSelection,
 			);
 			const processResult = await processor.process(item.original, options);
-			imageSession.updateImageResult(id, processResult);
+			imageSession.updateImageResult(
+				id,
+				processResult,
+				processingState.settingsMode,
+			);
 			// [Intended] 変換の待機中にこの画像がアクティブになっていた場合は、結果を表示へ反映する。
 			if (imageSession.getActiveImage()?.id === id) {
 				imageSession.setActiveImage(id);

@@ -3,7 +3,7 @@ import { PROCESS_DEFAULTS } from "../shared/config";
 export type PresetValue = string | number | boolean;
 
 export interface Preset {
-	version: 2;
+	version: 3;
 	id: string;
 	name: string;
 	timestamp: number;
@@ -34,27 +34,24 @@ const migratePreset = (value: unknown): Preset | null => {
 			data[key] = entry;
 		}
 	}
-	if (value.version !== 2) {
-		// [Policy] 旧プリセットの低水準値を推測で高水準設定へ変換すると出力が変わり得る。
-		// 既存値をそのまま使う Custom として移行し、処理互換性を優先する。
-		data["quick-processing-mode"] ??= PROCESS_DEFAULTS.processingMode;
-		data["quick-detail-level"] ??= PROCESS_DEFAULTS.detailLevel;
-		data["quick-colors"] ??= "custom";
-		data["quick-background"] ??= "custom";
-		data["quick-dithering"] ??= "custom";
-		data["quick-outline-style"] ??=
-			data["outline-style"] === "none" ||
-			data["outline-style"] === "rounded" ||
-			data["outline-style"] === "sharp"
-				? data["outline-style"]
-				: PROCESS_DEFAULTS.outlineStyle;
-		data["quick-auto-trim"] ??=
-			typeof data["trim-to-content"] === "boolean"
-				? data["trim-to-content"]
-				: PROCESS_DEFAULTS.trimToContent;
+	if (value.version !== 3) {
+		// [Policy] 旧プリセットで処理に使われていた公開設定を、独立した詳細設定へ移す。
+		data["advanced-processing-mode"] ??=
+			data["quick-processing-mode"] ?? PROCESS_DEFAULTS.processingMode;
+		data["advanced-detail-level"] ??=
+			data["quick-detail-level"] ?? PROCESS_DEFAULTS.detailLevel;
+		data["advanced-bg-removal-scope"] ??=
+			data["quick-bg-removal-scope"] ??
+			data["bg-removal-scope"] ??
+			PROCESS_DEFAULTS.bgRemovalScope;
+		for (const key of Object.keys(data)) {
+			if (key.startsWith("quick-") || key === "auto-process-toggle") {
+				delete data[key];
+			}
+		}
 	}
 	return {
-		version: 2,
+		version: 3,
 		id: value.id,
 		name: value.name,
 		timestamp: value.timestamp,
@@ -66,7 +63,7 @@ export const PresetManager = {
 	savePreset(name: string, data: Record<string, PresetValue>): Preset {
 		const presets = this.loadPresets();
 		const newPreset: Preset = {
-			version: 2,
+			version: 3,
 			id: crypto.randomUUID(),
 			name: name || new Date().toLocaleString(),
 			timestamp: Date.now(),
@@ -81,7 +78,7 @@ export const PresetManager = {
 		const presets = this.loadPresets();
 		const idx = presets.findIndex((p) => p.id === id);
 		if (idx !== -1) {
-			presets[idx].version = 2;
+			presets[idx].version = 3;
 			presets[idx].data = data;
 			presets[idx].timestamp = Date.now();
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));

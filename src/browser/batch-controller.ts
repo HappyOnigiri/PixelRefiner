@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { upscaleNearest } from "../core/ops";
-import { clampInt, PROCESS_RANGES } from "../shared/config";
+import { clampInt, PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import type { DitherMode } from "../shared/types";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -16,8 +16,9 @@ import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { createLoadingOverlay } from "./loading-overlay";
 import { showError, showWarning } from "./notifications";
-import { createProcessOptions, processor } from "./processing-controller";
+import { processor } from "./processing-controller";
 import type { ImageSession } from "./session";
+import { createProcessOptions } from "./settings-options";
 
 type BatchControllerOptions = {
 	els: Elements;
@@ -39,6 +40,42 @@ export const setupBatchController = ({
 	imageSession,
 }: BatchControllerOptions): void => {
 	const loadingOverlay = createLoadingOverlay(els);
+	els.batchColorCountInput.min = String(PROCESS_RANGES.colorCount.min);
+	els.batchColorCountInput.max = String(PROCESS_RANGES.colorCount.max);
+	els.batchColorCountInput.value = String(PROCESS_DEFAULTS.colorCount);
+	els.batchDitherModeSelect.value = PROCESS_DEFAULTS.ditherMode;
+	els.batchDitherStrengthInput.min = String(PROCESS_RANGES.ditherStrength.min);
+	els.batchDitherStrengthInput.max = String(PROCESS_RANGES.ditherStrength.max);
+	els.batchDitherStrengthInput.value = String(PROCESS_DEFAULTS.ditherStrength);
+
+	const updateSharedPaletteSettings = (): void => {
+		const enabled = els.sharedPaletteToggle.checked;
+		els.sharedPaletteSettings.classList.toggle("disabled", !enabled);
+		for (const control of [
+			els.batchColorCountInput,
+			els.batchDitherModeSelect,
+			els.batchDitherStrengthInput,
+		]) {
+			control.disabled = !enabled;
+		}
+		els.batchDitherStrengthInput
+			.closest(".setting-item")
+			?.classList.toggle(
+				"disabled",
+				!enabled || els.batchDitherModeSelect.value === "none",
+			);
+		els.batchDitherStrengthInput.disabled =
+			!enabled || els.batchDitherModeSelect.value === "none";
+	};
+	els.sharedPaletteToggle.addEventListener(
+		"change",
+		updateSharedPaletteSettings,
+	);
+	els.batchDitherModeSelect.addEventListener(
+		"change",
+		updateSharedPaletteSettings,
+	);
+	updateSharedPaletteSettings();
 
 	const handleDownloadAll = async (scale: number) => {
 		const images = imageSession.getImages();
@@ -58,7 +95,7 @@ export const setupBatchController = ({
 				imageSession.setImageStatus(images[index].id, "processing");
 			}
 			const colorCount = clampInt(
-				Number(els.colorCountInput.value),
+				Number(els.batchColorCountInput.value),
 				PROCESS_RANGES.colorCount,
 			);
 			const batchResult = await processor.processBatch(
@@ -73,9 +110,9 @@ export const setupBatchController = ({
 				{
 					sharedPalette: els.sharedPaletteToggle.checked,
 					colorCount,
-					ditherMode: els.ditherModeSelect.value as DitherMode,
+					ditherMode: els.batchDitherModeSelect.value as DitherMode,
 					ditherStrength: clampInt(
-						Number(els.ditherStrengthInput.value),
+						Number(els.batchDitherStrengthInput.value),
 						PROCESS_RANGES.ditherStrength,
 					),
 				},
@@ -84,7 +121,11 @@ export const setupBatchController = ({
 			for (let index = 0; index < batchResult.items.length; index += 1) {
 				const item = batchResult.items[index];
 				if (item.status === "done") {
-					imageSession.updateImageResult(item.id, item.processResult);
+					imageSession.updateImageResult(
+						item.id,
+						item.processResult,
+						processingState.settingsMode,
+					);
 				} else {
 					imageSession.setImageStatus(item.id, "error", item.error);
 				}

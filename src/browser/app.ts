@@ -31,6 +31,7 @@ import { setupResultActions } from "./result-actions";
 import { ResultViewer } from "./result-viewer";
 import { type ImageItem, ImageSession } from "./session";
 import { setupSettingsControls } from "./settings-controls";
+import { setupSettingsTabs } from "./settings-tabs";
 
 export const initApp = (): void => {
 	const els = getElements();
@@ -106,7 +107,12 @@ export const initApp = (): void => {
 		onActiveChange: (item) => {
 			candidateChooser.dismiss();
 			updateProcessingAnalysis(item);
-			updateQuickSettingsDisabledStates(els, item?.analysis?.route);
+			// [Intended] 経路はかんたん設定で処理した結果にだけ適用する。
+			// 他タブで処理した画像へ切り替えたときに、細かさが理由なく編集不可にならないようにする。
+			updateQuickSettingsDisabledStates(
+				els,
+				item?.settingsMode === "quick" ? item.analysis?.route : undefined,
+			);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -258,11 +264,11 @@ export const initApp = (): void => {
 		updateProcessButtonVisibility,
 		triggerAutoProcess,
 		updateDisabledStates,
+		updateAdvancedProcessingDisabledStates,
 		updatePaletteButtonVisibility,
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateBgColorFromMethod,
-		applyQuickSettings,
 	} = setupSettingsControls({
 		els,
 		processingState,
@@ -272,10 +278,6 @@ export const initApp = (): void => {
 		onLanguageChange: () =>
 			updateProcessingAnalysis(imageSession.getActiveImage()),
 	});
-	els.sharedPaletteToggle.addEventListener(
-		"change",
-		updateReduceColorsDisabledStates,
-	);
 	const updateGrid = () => {
 		mainResultViewer.drawGrid();
 		modalResultViewer.drawGrid();
@@ -429,6 +431,9 @@ export const initApp = (): void => {
 				if (palette.length > 0) {
 					if (palette.length > 0) {
 						processingState.currentFixedPalette = palette;
+						// [Intended] 固定パレットは詳細設定タブでのみ処理オプションへ渡るため、
+						// 読み込みに成功したら詳細設定へ切り替える。再処理は直後の runProcessing に任せる。
+						setSettingsMode("advanced", false);
 						els.reduceColorModeSelect.value = "fixed";
 						updateReduceColorsDisabledStates();
 						runProcessing();
@@ -518,6 +523,9 @@ export const initApp = (): void => {
 				const palette = parseGPL(text);
 				if (palette.length > 0) {
 					processingState.currentFixedPalette = palette;
+					// [Intended] 固定パレットは詳細設定タブでのみ処理オプションへ渡るため、
+					// 読み込みに成功したら詳細設定へ切り替える。再処理は直後の runProcessing に任せる。
+					setSettingsMode("advanced", false);
 					els.reduceColorModeSelect.value = "fixed";
 					updateReduceColorsDisabledStates();
 					runProcessing();
@@ -547,6 +555,9 @@ export const initApp = (): void => {
 
 					if (colors.length > 0) {
 						processingState.currentFixedPalette = colors;
+						// [Intended] 固定パレットは詳細設定タブでのみ処理オプションへ渡るため、
+						// 読み込みに成功したら詳細設定へ切り替える。再処理は直後の runProcessing に任せる。
+						setSettingsMode("advanced", false);
 						els.reduceColorModeSelect.value = "fixed";
 						updateReduceColorsDisabledStates();
 						runProcessing();
@@ -596,15 +607,23 @@ export const initApp = (): void => {
 	loadSettings();
 
 	// ---------------------------------------------------------
+	const { setSettingsMode } = setupSettingsTabs({
+		els,
+		processingState,
+		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
+		triggerAutoProcess,
+	});
 	setupPresetControls({
 		els,
+		processingState,
 		presetModalController,
 		updateDisabledStates,
+		updateAdvancedProcessingDisabledStates,
 		updateReduceColorsDisabledStates,
 		updateBgDisabledStates,
 		updateProcessButtonVisibility,
 		triggerAutoProcess,
-		applyQuickSettings,
+		setSettingsMode,
 		clearCandidateSelections: () => imageSession.clearCandidateSelections(),
 		clearFixedPalette: () => {
 			processingState.currentFixedPalette = undefined;

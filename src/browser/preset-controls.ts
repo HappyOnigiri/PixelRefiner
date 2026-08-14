@@ -1,24 +1,27 @@
 import { PROCESS_DEFAULTS } from "../shared/config";
 import {
-	advancedSettingControls,
+	advancedModeControls,
 	migrateAdvancedSettings,
 } from "./advanced-settings-fields";
 import type { Elements } from "./app-elements";
+import type { ProcessingState, SettingsMode } from "./app-state";
 import { i18n } from "./i18n";
 import type { ModalController } from "./modal-controller";
 import { showInfo } from "./notifications";
 import { PresetManager } from "./presets";
-import { BUILT_IN_PRESETS, type QuickSettingsState } from "./quick-settings";
+import { BUILT_IN_PRESETS } from "./quick-settings";
 
 type PresetControlsOptions = {
 	els: Elements;
+	processingState: ProcessingState;
 	presetModalController: ModalController;
 	updateDisabledStates: () => void;
+	updateAdvancedProcessingDisabledStates: () => void;
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
 	updateProcessButtonVisibility: () => void;
 	triggerAutoProcess: () => void;
-	applyQuickSettings: (settings: QuickSettingsState, presetId?: string) => void;
+	setSettingsMode: (mode: SettingsMode, process?: boolean) => void;
 	clearCandidateSelections: () => void;
 	clearFixedPalette: () => void;
 };
@@ -36,13 +39,15 @@ export const migrateSmallComponentMode = (
 
 export const setupPresetControls = ({
 	els,
+	processingState,
 	presetModalController,
 	updateDisabledStates,
+	updateAdvancedProcessingDisabledStates,
 	updateReduceColorsDisabledStates,
 	updateBgDisabledStates,
 	updateProcessButtonVisibility,
 	triggerAutoProcess,
-	applyQuickSettings,
+	setSettingsMode,
 	clearCandidateSelections,
 	clearFixedPalette,
 }: PresetControlsOptions): void => {
@@ -56,57 +61,9 @@ export const setupPresetControls = ({
 		);
 		els.builtInPresetSelect.appendChild(option);
 	}
-	const customOption = document.createElement("option");
-	customOption.value = "custom";
-	customOption.dataset.i18n = "option.custom";
-	customOption.textContent = i18n.t("option.custom");
-	customOption.hidden = true;
-	els.builtInPresetSelect.appendChild(customOption);
-
 	const getUiState = (): Record<string, string | number | boolean> => {
 		const state: Record<string, string | number | boolean> = {};
-		const inputs = [
-			els.quantStepInput,
-			els.quantStepSlider,
-			els.forcePixelsWInput,
-			els.forcePixelsHInput,
-			els.sampleWindowInput,
-			els.sampleWindowSlider,
-			...advancedSettingControls(els),
-			els.toleranceInput,
-			els.toleranceSlider,
-			els.preRemoveCheck,
-			els.postRemoveCheck,
-			els.quickBgRemovalScopeSelect,
-			els.bgConnectivitySelect,
-			els.trimToContentCheck,
-			els.fastAutoGridFromTrimmedCheck,
-			els.makeSquareCheck,
-			els.keepAspectRatioCheck,
-			els.gridDetectionModeSelect,
-			els.reduceColorModeSelect,
-			els.ditherModeSelect,
-			els.colorCountInput,
-			els.colorCountSlider,
-			els.ditherStrengthInput,
-			els.ditherStrengthSlider,
-			els.outlineStyleSelect,
-			els.outlineColorInput,
-			els.smallComponentModeSelect,
-			els.geminiWatermarkRemovalSelect,
-			els.bgExtractionMethod,
-			els.bgRgbInput,
-			els.bgColorInput,
-			els.autoProcessToggle,
-			els.quickProcessingModeSelect,
-			els.quickDetailLevelSelect,
-			els.quickColorsSelect,
-			els.quickBackgroundSelect,
-			els.quickBackgroundColorInput,
-			els.quickDitheringSelect,
-			els.quickOutlineStyleSelect,
-			els.quickAutoTrimCheck,
-		];
+		const inputs = advancedModeControls(els);
 
 		for (const input of inputs) {
 			if (input instanceof HTMLInputElement) {
@@ -120,6 +77,11 @@ export const setupPresetControls = ({
 			} else if (input instanceof HTMLSelectElement) {
 				state[input.id] = input.value;
 			}
+		}
+		if (processingState.currentFixedPalette) {
+			state["fixed-palette"] = JSON.stringify(
+				processingState.currentFixedPalette,
+			);
 		}
 		return state;
 	};
@@ -161,17 +123,17 @@ export const setupPresetControls = ({
 				: "outer";
 		}
 
-		// 後方互換性: 詳細設定にあった bg-removal-scope をかんたん設定の項目へ移行
+		// 後方互換性: 旧背景除去スコープを詳細設定の項目へ移行
 		if (
-			state["quick-bg-removal-scope"] === undefined &&
+			state["advanced-bg-removal-scope"] === undefined &&
 			state["bg-removal-scope"] !== undefined
 		) {
-			state["quick-bg-removal-scope"] = state["bg-removal-scope"];
+			state["advanced-bg-removal-scope"] = state["bg-removal-scope"];
 		}
 
 		// 非推奨の背景除去スコープ "off" は "outer" に対応付ける
-		if (state["quick-bg-removal-scope"] === "off") {
-			state["quick-bg-removal-scope"] = "outer";
+		if (state["advanced-bg-removal-scope"] === "off") {
+			state["advanced-bg-removal-scope"] = "outer";
 		}
 
 		for (const [id, value] of Object.entries(state)) {
@@ -193,19 +155,37 @@ export const setupPresetControls = ({
 				el.value = next;
 			}
 		}
-		clearCandidateSelections();
-		if (els.reduceColorModeSelect.value !== "fixed") {
+		const fixedPalette = state["fixed-palette"];
+		if (typeof fixedPalette === "string") {
+			try {
+				const parsed: unknown = JSON.parse(fixedPalette);
+				if (
+					!Array.isArray(parsed) ||
+					!parsed.every(
+						(color) =>
+							typeof color === "object" &&
+							color !== null &&
+							typeof color.r === "number" &&
+							typeof color.g === "number" &&
+							typeof color.b === "number",
+					)
+				) {
+					throw new Error("Invalid fixed palette");
+				}
+				processingState.currentFixedPalette = parsed;
+			} catch {
+				clearFixedPalette();
+			}
+		} else {
 			clearFixedPalette();
 		}
-		els.builtInPresetSelect.value = "custom";
-		els.quickBackgroundColorInput.value = els.bgColorInput.value;
-		els.quickBackgroundPicker.style.display =
-			els.quickBackgroundSelect.value === "pick" ? "flex" : "none";
+		clearCandidateSelections();
 		updateDisabledStates();
+		updateAdvancedProcessingDisabledStates();
 		updateReduceColorsDisabledStates();
 		updateBgDisabledStates();
 		updateProcessButtonVisibility();
-		triggerAutoProcess();
+		setSettingsMode("advanced");
 	};
 
 	els.builtInPresetSelect.addEventListener("change", () => {
@@ -213,10 +193,8 @@ export const setupPresetControls = ({
 			(entry) => entry.id === els.builtInPresetSelect.value,
 		);
 		if (!preset) return;
-		applyQuickSettings(preset.settings, preset.id);
-		updateDisabledStates();
-		updateReduceColorsDisabledStates();
-		updateBgDisabledStates();
+		processingState.selectedBuiltInPresetId = preset.id;
+		clearCandidateSelections();
 		triggerAutoProcess();
 	});
 

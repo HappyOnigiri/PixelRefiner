@@ -23,6 +23,15 @@ const EXCLUDED_DEFAULT_KEYS = new Set<string>([
 ]);
 
 describe("default process options", () => {
+	it("keeps Convert color settings independent from detail", () => {
+		const coarse = normalizeProcessOptions({ detailLevel: "coarse" });
+		const detailed = normalizeProcessOptions({ detailLevel: "detailed" });
+
+		expect(coarse.convertColorCount).toBe(detailed.convertColorCount);
+		expect(coarse.convertDitherMode).toBe(detailed.convertDitherMode);
+		expect(coarse.convertDitherStrength).toBe(detailed.convertDitherStrength);
+	});
+
 	it("covers every shared process default that is not excluded", () => {
 		const options = createDefaultProcessOptions() as Record<string, unknown>;
 

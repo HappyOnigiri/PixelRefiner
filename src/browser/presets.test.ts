@@ -17,16 +17,16 @@ describe("PresetManager", () => {
 		vi.clearAllMocks();
 	});
 
-	it("saves version 2 presets", () => {
+	it("saves version 3 Advanced-only presets", () => {
 		const preset = PresetManager.savePreset("Auto", {
-			"quick-processing-mode": "auto",
+			"advanced-processing-mode": "auto",
 		});
 
-		expect(preset.version).toBe(2);
+		expect(preset.version).toBe(3);
 		expect(PresetManager.loadPresets()).toEqual([preset]);
 	});
 
-	it("migrates legacy data as custom without discarding advanced values", () => {
+	it("migrates legacy public settings into Advanced without discarding values", () => {
 		store.set(
 			"pixel-refiner-presets",
 			JSON.stringify([
@@ -47,17 +47,13 @@ describe("PresetManager", () => {
 
 		const [preset] = PresetManager.loadPresets();
 		expect(preset).toMatchObject({
-			version: 2,
+			version: 3,
 			data: {
 				"reduce-color-mode": "pico8",
 				"bg-extraction-method": "top-left",
-				"quick-processing-mode": "auto",
-				"quick-detail-level": "balanced",
-				"quick-colors": "custom",
-				"quick-background": "custom",
-				"quick-dithering": "custom",
-				"quick-outline-style": "rounded",
-				"quick-auto-trim": false,
+				"advanced-processing-mode": "auto",
+				"advanced-detail-level": "balanced",
+				"advanced-bg-removal-scope": "auto",
 			},
 		});
 		expect(preset.data.unknown).toBeUndefined();
@@ -83,7 +79,7 @@ describe("PresetManager", () => {
 			.mockImplementation(() => undefined);
 
 		expect(PresetManager.loadPresets()).toMatchObject([
-			{ id: "legacy", version: 2 },
+			{ id: "legacy", version: 3 },
 		]);
 		expect(error).toHaveBeenCalledWith(
 			"Failed to persist migrated presets:",
@@ -98,11 +94,11 @@ describe("PresetManager", () => {
 			JSON.stringify([
 				null,
 				{
-					version: 2,
+					version: 3,
 					id: "valid",
 					name: "Valid",
 					timestamp: 20,
-					data: { "quick-colors": "32" },
+					data: { "advanced-processing-mode": "auto" },
 				},
 			]),
 		);

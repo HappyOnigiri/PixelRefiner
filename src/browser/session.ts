@@ -5,6 +5,7 @@ import type {
 	ProcessResult,
 	RawImage,
 } from "../shared/types";
+import type { SettingsMode } from "./app-state";
 import { drawRawImageToCanvas } from "./io";
 
 export interface ImageItem {
@@ -23,6 +24,11 @@ export interface ImageItem {
 	 * UI の設定値は書き換えないため、保持先はこの画像単位の状態になる。
 	 */
 	candidateSelection?: CandidateSelection;
+	/**
+	 * この結果を生成した設定タブ。
+	 * 解析結果の処理経路は、それを選んだ設定方式の文脈でしか意味を持たないため保持する。
+	 */
+	settingsMode?: SettingsMode;
 }
 
 export class ImageSession {
@@ -106,12 +112,14 @@ export class ImageSession {
 	public updateImageResult(
 		id: string,
 		processed: ProcessResult,
+		settingsMode?: SettingsMode,
 	): PixelGrid | undefined {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.result = processed.result;
 			img.grid = processed.grid;
 			img.analysis = processed.analysis;
+			img.settingsMode = settingsMode;
 			img.status = "done";
 			img.error = undefined;
 			this.onUpdate();

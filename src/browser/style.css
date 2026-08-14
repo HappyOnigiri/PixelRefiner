@@ -947,6 +947,44 @@ select:focus {
   margin-top: 40px;
 }
 
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 28px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+}
+
+.settings-tab {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.settings-tab:hover,
+.settings-tab:focus-visible {
+  color: var(--text-main);
+}
+
+.settings-tab.is-active {
+  border-color: var(--border-color);
+  background: var(--bg-panel);
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-tab-panel[hidden] {
+  display: none;
+}
+
 .primary-settings-group {
   margin-bottom: 24px;
 }
@@ -988,25 +1026,6 @@ select:focus {
 .quick-background-picker .action-button {
   flex: 0 0 44px;
   padding: 8px;
-}
-
-.advanced-settings {
-  border-top: 1px solid var(--border-color);
-  padding-top: 16px;
-}
-
-.advanced-settings > summary {
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  list-style-position: outside;
-  margin-left: 16px;
-}
-
-.advanced-settings[open] > summary {
-  color: var(--text-main);
-  margin-bottom: 28px;
 }
 
 .advanced-settings-content {
@@ -1932,6 +1951,28 @@ select:focus {
   display: inline-flex;
   gap: 0.4rem;
   align-items: center;
+}
+
+.batch-shared-palette-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  padding-left: 1.5rem;
+}
+
+.batch-shared-palette-settings.disabled {
+  opacity: 0.5;
+}
+
+.batch-shared-palette-settings .setting-item {
+  min-width: 140px;
+}
+
+.settings-common-controls {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
 }
 
 .batch-options label {

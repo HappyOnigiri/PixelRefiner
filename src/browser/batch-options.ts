@@ -8,7 +8,5 @@ export const createBatchItemOptions = (
 ): ProcessOptions =>
 	selection === undefined ? base : candidateProcessOptions(base, selection);
 
-export const isDitherSettingsEnabled = (
-	reduceColorMode: string,
-	sharedPalette: boolean,
-): boolean => reduceColorMode !== "none" || sharedPalette;
+export const isDitherSettingsEnabled = (reduceColorMode: string): boolean =>
+	reduceColorMode !== "none";

@@ -263,8 +263,8 @@ export const normalizeProcessOptions = (
 	convertReduceColors: boolean;
 	convertReduceColorMode: string;
 	convertDitherMode: DitherMode;
-	convertColorCount?: number;
-	convertDitherStrength?: number;
+	convertColorCount: number;
+	convertDitherStrength: number;
 	preRemoveBackground: boolean;
 	postRemoveBackground: boolean;
 	forcePixelsW?: number;
@@ -462,9 +462,12 @@ export const normalizeProcessOptions = (
 		convertReduceColorMode:
 			raw.reduceColorMode ?? CONVERT_DEFAULTS.reduceColorMode,
 		convertDitherMode: raw.ditherMode ?? CONVERT_DEFAULTS.ditherMode,
-		convertColorCount: raw.colorCount === undefined ? undefined : colorCount,
+		convertColorCount:
+			raw.colorCount === undefined ? CONVERT_DEFAULTS.colorCount : colorCount,
 		convertDitherStrength:
-			raw.ditherStrength === undefined ? undefined : ditherStrength,
+			raw.ditherStrength === undefined
+				? CONVERT_DEFAULTS.ditherStrength
+				: ditherStrength,
 		preRemoveBackground,
 		postRemoveBackground,
 		forcePixelsW,

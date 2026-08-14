@@ -74,11 +74,11 @@ const resources = {
 		"batch.status.error": "エラー",
 
 		// 設定
+		"setting.mode": "設定方式",
 		"setting.quick": "かんたん設定",
-		"setting.preset": "用途プリセット",
+		"setting.preset": "プリセット",
 		"setting.processing_mode": "処理方法",
 		"setting.detail": "細かさ",
-		"setting.colors": "色数",
 		"setting.background": "背景",
 		"setting.dithering": "ディザリング",
 		"preset.auto": "Auto",
@@ -87,7 +87,6 @@ const resources = {
 		"preset.transparent_icon": "透過アイコン",
 		"preset.limited_colors": "色数を制限",
 		"preset.photo_to_pixel": "写真をドット絵化",
-		"option.custom": "詳細設定を使用",
 		"option.processing_auto": "Auto",
 		"option.processing_refine": "ドットを整える",
 		"option.processing_convert": "ドット絵へ変換",
@@ -95,10 +94,9 @@ const resources = {
 		"option.detail_coarse": "粗め",
 		"option.detail_balanced": "バランス",
 		"option.detail_detailed": "細かめ",
-		"option.colors_auto": "Auto",
+		"option.colors_8": "8色",
 		"option.colors_16": "16色",
 		"option.colors_32": "32色",
-		"option.colors_64": "64色",
 		"option.background_keep": "維持",
 		"option.background_auto": "自動で透過",
 		"option.background_pick": "色を選択",
@@ -194,13 +192,13 @@ const resources = {
 		"tooltip.help.auto_process":
 			"設定を変更した際に、自動で変換処理を実行します。\n\n手動でボタンを押して実行したい場合はOFFにしてください。",
 		"tooltip.help.quick_preset":
-			"用途に合わせた設定一式をまとめて適用します。個別の項目を変更すると「カスタム」に切り替わります。",
+			"用途に合わせた設定一式を選びます。プリセット内の値だけが処理に使われます。",
 		"tooltip.help.quick_processing_mode":
 			"画像の処理方法を選びます。\n\nAuto: 画像を解析して処理経路を自動選択。\nドットを整える: 拡大・補間されたドット絵を復元。\nドット絵へ変換: 通常画像をドット絵化。\n原寸を維持: 縮小せずに仕上げます。",
 		"tooltip.help.quick_detail":
-			"「ドット絵へ変換」で使う出力解像度と細部の量を調整します。\n\nAutoでは「ドット絵へ変換」が選ばれた画像にだけ適用されます。「ドットを整える」と「原寸を維持」では使用しません。",
-		"tooltip.help.quick_colors":
-			"出力する色数の上限を選びます。Autoでは、選ばれた処理経路に適した減色へ任せます。",
+			"「ドット絵へ変換」で使う出力サイズを調整します。色数など、ほかの設定には影響しません。\n\nAutoでは「ドット絵へ変換」が選ばれた画像にだけ適用されます。",
+		"tooltip.help.quick_reduction_mode":
+			"減色しないか、固定色数または標準パレットで減色するかを選びます。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
 			"背景をそのまま残すか、自動判定で透過するか、選んだ色を透過するかを指定します。",
 		"tooltip.help.quick_dithering":
@@ -295,6 +293,8 @@ const resources = {
 			"処理完了【後】に、背景色を透明に置き換えて出力します。\n\nメリット: 背景透明のPNGとして保存できます。\n注意: グリッド検出処理自体には影響しません。",
 		"tooltip.help.bg_removal_scope":
 			"背景をどこまで透過するかの範囲です。\n\nおまかせ: 外側に加え、背景色そのものだと判断できた内側の閉じた領域だけ透過。\n選択部分のみ: 選択した角から繋がる背景だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 背景色に近い領域を内側も含めてすべて透過。\n\n背景が「維持」のときは使用しません。",
+		"tooltip.help.quick_bg_removal_scope":
+			"背景をどこまで透過するかの範囲です。\n\nおまかせ: 外側に加え、背景色そのものだと判断できた内側の閉じた領域だけ透過。\n外側全部: 画像の外周に繋がる背景をすべて透過。\n全領域: 背景色に近い領域を内側も含めてすべて透過。\n\n背景が「維持」のときは使用しません。",
 		"tooltip.help.bg_connectivity":
 			"「繋がっている」の判定方法です。\n\n4方向: 斜めを含めない厳しい判定。\n8方向: 斜めも繋がりとみなします。",
 		"tooltip.help.gemini_watermark_removal":
@@ -463,11 +463,11 @@ const resources = {
 		"batch.status.error": "错误",
 
 		// 設定
+		"setting.mode": "设置方式",
 		"setting.quick": "快速设置",
-		"setting.preset": "用途预设",
+		"setting.preset": "预设",
 		"setting.processing_mode": "处理方式",
 		"setting.detail": "细节",
-		"setting.colors": "颜色",
 		"setting.background": "背景",
 		"setting.dithering": "抖动",
 		"preset.auto": "Auto",
@@ -476,7 +476,6 @@ const resources = {
 		"preset.transparent_icon": "透明图标",
 		"preset.limited_colors": "限制颜色",
 		"preset.photo_to_pixel": "照片转像素画",
-		"option.custom": "使用高级设置",
 		"option.processing_auto": "Auto",
 		"option.processing_refine": "优化像素",
 		"option.processing_convert": "转换为像素画",
@@ -484,10 +483,9 @@ const resources = {
 		"option.detail_coarse": "粗略",
 		"option.detail_balanced": "平衡",
 		"option.detail_detailed": "精细",
-		"option.colors_auto": "Auto",
+		"option.colors_8": "8色",
 		"option.colors_16": "16色",
 		"option.colors_32": "32色",
-		"option.colors_64": "64色",
 		"option.background_keep": "保留",
 		"option.background_auto": "自动透明",
 		"option.background_pick": "选择颜色",
@@ -582,13 +580,13 @@ const resources = {
 		"tooltip.help.auto_process":
 			"设置变化时自动运行转换处理。\n\n如果想手动点击处理按钮，请关闭此选项。",
 		"tooltip.help.quick_preset":
-			"按用途一次应用一组相互配合的设置。更改单个项目后，预设会切换为“自定义”。",
+			"选择一组适合用途的设置。处理时只使用预设中的值。",
 		"tooltip.help.quick_processing_mode":
 			"选择图像的处理方式。\n\nAuto：分析图像并自动选择处理路径。\n优化像素：还原放大或插值后的像素画。\n转换为像素画：把普通图像转换为像素画。\n保持原尺寸：不缩小图像。",
 		"tooltip.help.quick_detail":
-			"调整“转换为像素画”路径的输出分辨率和细节量。\n\n在Auto中，仅当图像选择了转换路径时生效；“优化像素”和“保持原尺寸”不会使用此设置。",
-		"tooltip.help.quick_colors":
-			"选择输出颜色数量的上限。Auto会让所选处理路径决定合适的减色方式。",
+			"调整“转换为像素画”路径的输出尺寸，不影响颜色数量等其他设置。\n\n在Auto中，仅当图像选择了转换路径时生效。",
+		"tooltip.help.quick_reduction_mode":
+			"选择不减色、固定颜色数量或内置标准调色板。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
 			"选择保留背景、自动检测并设为透明，或将选定颜色设为透明。",
 		"tooltip.help.quick_dithering":
@@ -683,6 +681,8 @@ const resources = {
 			"处理完成后将背景色替换为透明。\n\n优点：可以保存为透明背景 PNG。\n注意：不会影响网格检测过程本身。",
 		"tooltip.help.bg_removal_scope":
 			"决定背景透明化的范围。\n\n自动：在外侧的基础上，只透明化可确定为背景色的内部封闭区域。\n仅选中部分：只透明化从所选角落连通的背景。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：包括内部在内，透明化所有接近背景色的区域。\n\n背景设为“保留”时不可用。",
+		"tooltip.help.quick_bg_removal_scope":
+			"决定背景透明化的范围。\n\n自动：在外侧的基础上，只透明化可确定为背景色的内部封闭区域。\n外侧全部：透明化所有与图片边缘连通的背景。\n全区域：包括内部在内，透明化所有接近背景色的区域。\n\n背景设为“保留”时不可用。",
 		"tooltip.help.bg_connectivity":
 			"决定相邻区域是否算作连通。\n\n4 方向：更严格，不包含斜向。\n8 方向：包含斜向相邻。",
 		"tooltip.help.gemini_watermark_removal":
@@ -851,11 +851,11 @@ const resources = {
 		"batch.status.error": "Error",
 
 		// 設定
+		"setting.mode": "Settings mode",
 		"setting.quick": "Quick Settings",
-		"setting.preset": "Purpose Preset",
+		"setting.preset": "Preset",
 		"setting.processing_mode": "Processing",
 		"setting.detail": "Detail",
-		"setting.colors": "Colors",
 		"setting.background": "Background",
 		"setting.dithering": "Dithering",
 		"preset.auto": "Auto",
@@ -864,7 +864,6 @@ const resources = {
 		"preset.transparent_icon": "Transparent Icon",
 		"preset.limited_colors": "Limited Colors",
 		"preset.photo_to_pixel": "Photo to Pixel",
-		"option.custom": "Use Advanced Settings",
 		"option.processing_auto": "Auto",
 		"option.processing_refine": "Refine Pixels",
 		"option.processing_convert": "Convert to Pixel Art",
@@ -872,10 +871,9 @@ const resources = {
 		"option.detail_coarse": "Coarse",
 		"option.detail_balanced": "Balanced",
 		"option.detail_detailed": "Detailed",
-		"option.colors_auto": "Auto",
+		"option.colors_8": "8 colors",
 		"option.colors_16": "16 colors",
 		"option.colors_32": "32 colors",
-		"option.colors_64": "64 colors",
 		"option.background_keep": "Keep",
 		"option.background_auto": "Auto transparent",
 		"option.background_pick": "Pick color",
@@ -971,13 +969,13 @@ const resources = {
 		"tooltip.help.auto_process":
 			"Automatically runs processing when settings are changed.\n\nTurn OFF if you prefer to manually click the Process button.",
 		"tooltip.help.quick_preset":
-			"Applies a coordinated set of settings for a purpose. Changing an individual setting switches the preset to Custom.",
+			"Selects a coordinated set of settings for a purpose. Only values in the preset affect processing.",
 		"tooltip.help.quick_processing_mode":
 			"Chooses how the image is processed.\n\nAuto: Analyzes the image and selects a route.\nRefine: Restores enlarged or interpolated pixel art.\nConvert: Turns a regular image into pixel art.\nPreserve: Avoids downscaling.",
 		"tooltip.help.quick_detail":
-			"Controls the output resolution and amount of detail on the Convert route.\n\nIn Auto, it applies only to images assigned to Convert. Refine and Preserve do not use this setting.",
-		"tooltip.help.quick_colors":
-			"Sets the maximum number of colors in the output. Auto lets the selected processing route choose an appropriate color reduction.",
+			"Controls output size on the Convert route without changing color count or other settings.\n\nIn Auto, it applies only to images assigned to Convert.",
+		"tooltip.help.quick_reduction_mode":
+			"Selects no color reduction, a fixed color count, or a built-in standard palette. Arbitrary color counts and imported fixed palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":
 			"Chooses whether to keep the background, detect it automatically and make it transparent, or make a selected color transparent.",
 		"tooltip.help.quick_dithering":
@@ -1072,6 +1070,8 @@ const resources = {
 			"Replaces the background color with transparency AFTER processing is complete.\n\nBenefit: Allows saving as a PNG with a transparent background.\nNote: Does not affect the grid detection process itself.",
 		"tooltip.help.bg_removal_scope":
 			"Range of background to make transparent.\n\nAuto: Outer background, plus enclosed holes that clearly match the background color.\nSelected only: Only background connected from the chosen corner.\nOuter all: All background connected to the image border.\nAll: Every area matching the background color, inner ones included.\n\nUnavailable when Background is Keep.",
+		"tooltip.help.quick_bg_removal_scope":
+			"Range of background to make transparent.\n\nAuto: Outer background, plus enclosed holes that clearly match the background color.\nOuter all: All background connected to the image border.\nAll: Every area matching the background color, inner ones included.\n\nUnavailable when Background is Keep.",
 		"tooltip.help.bg_connectivity":
 			"Whether diagonal neighbors are considered connected.\n\n4-way: Strict (no diagonals).\n8-way: Includes diagonals.",
 		"tooltip.help.gemini_watermark_removal":

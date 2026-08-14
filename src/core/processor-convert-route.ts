@@ -236,8 +236,8 @@ export const processConvertRoute = (
 			finalResult,
 			o.convertReduceColorMode,
 			o.convertDitherMode,
-			o.convertColorCount ?? selected.colorCount,
-			o.convertDitherStrength ?? selected.ditherStrength,
+			o.convertColorCount,
+			o.convertDitherStrength,
 			log,
 			o.fixedPalette,
 		);

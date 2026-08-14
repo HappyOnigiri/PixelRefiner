@@ -2,37 +2,54 @@ import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type {
-	BackgroundRemovalScope,
 	DetailLevel,
 	OutlineStyle,
 	ProcessingMode,
 } from "../shared/types";
 
-export type QuickColors = "auto" | "16" | "32" | "64" | "custom";
-export type QuickBackground = "keep" | "auto" | "pick" | "custom";
-export type QuickDithering = "off" | "subtle" | "strong" | "custom";
+export type QuickReductionMode =
+	| "none"
+	| "8"
+	| "16"
+	| "32"
+	| "mono"
+	| "gb_legacy"
+	| "gb_pocket"
+	| "gb_light"
+	| "pico8"
+	| "nes"
+	| "pc98"
+	| "msx"
+	| "c64"
+	| "arne16"
+	| "sfc_sprite"
+	| "sfc_bg";
+export type QuickBackground = "keep" | "auto" | "pick";
+export type QuickBackgroundRemovalScope = "auto" | "outer" | "all";
+export type QuickDithering = "off" | "subtle" | "strong";
 
 export type QuickSettingsState = {
 	processingMode: ProcessingMode;
 	detailLevel: DetailLevel;
-	colors: QuickColors;
+	reductionMode: QuickReductionMode;
 	background: QuickBackground;
-	bgRemovalScope: BackgroundRemovalScope;
+	bgRemovalScope: QuickBackgroundRemovalScope;
 	dithering: QuickDithering;
 	outlineStyle: OutlineStyle;
 	trimToContent: boolean;
+	backgroundColor?: string;
 };
 
 export type BuiltInPreset = {
 	id: string;
 	labelKey: string;
-	settings: QuickSettingsState;
+	options: ProcessOptions;
 };
 
 export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	processingMode: PROCESS_DEFAULTS.processingMode,
 	detailLevel: PROCESS_DEFAULTS.detailLevel,
-	colors: "auto",
+	reductionMode: "none",
 	background: "auto",
 	bgRemovalScope: PROCESS_DEFAULTS.bgRemovalScope,
 	dithering: "off",
@@ -40,119 +57,44 @@ export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	trimToContent: PROCESS_DEFAULTS.trimToContent,
 };
 
-export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
-	{
-		id: "auto",
-		labelKey: "preset.auto",
-		settings: { ...QUICK_SETTINGS_DEFAULTS },
-	},
-	{
-		id: "crisp-sprite",
-		labelKey: "preset.crisp_sprite",
-		settings: {
-			...QUICK_SETTINGS_DEFAULTS,
-			processingMode: "refine",
-		},
-	},
-	{
-		id: "keep-fine-details",
-		labelKey: "preset.keep_fine_details",
-		settings: {
-			...QUICK_SETTINGS_DEFAULTS,
-			detailLevel: "detailed",
-		},
-	},
-	{
-		id: "transparent-icon",
-		labelKey: "preset.transparent_icon",
-		settings: {
-			...QUICK_SETTINGS_DEFAULTS,
-			colors: "32",
-			outlineStyle: "rounded",
-		},
-	},
-	{
-		id: "limited-colors",
-		labelKey: "preset.limited_colors",
-		settings: {
-			...QUICK_SETTINGS_DEFAULTS,
-			colors: "16",
-			dithering: "subtle",
-		},
-	},
-	{
-		id: "photo-to-pixel",
-		labelKey: "preset.photo_to_pixel",
-		settings: {
-			...QUICK_SETTINGS_DEFAULTS,
-			processingMode: "convert",
-			colors: "32",
-			background: "keep",
-			dithering: "subtle",
-		},
-	},
-] as const;
-
 /**
- * Auto 抽出では角シードが無く "selected" が "outer" と同じ結果になるため、
- * 実際に渡すオプションでは "outer" へ寄せる。
- *
- * [Intended] 色を指定する抽出も角シードは持たないが、"selected" では画像全体の
- * 一致画素からフラッドフィルするため内側の閉領域まで落ちる。"outer" とは結果が
- * 異なるので寄せない。
+ * かんたん設定だけから処理オプションを作る。
+ * [Intended] 詳細設定を土台にしないことで、非表示タブの値が混入しないようにする。
  */
-const resolveBgRemovalScope = (
-	scope: BackgroundRemovalScope,
-	method: NonNullable<ProcessOptions["bgExtractionMethod"]>,
-): BackgroundRemovalScope =>
-	scope === "selected" && method === "auto" ? "outer" : scope;
-
-export const applyQuickSettingsToOptions = (
-	advanced: ProcessOptions,
+export const createQuickProcessOptions = (
 	quick: QuickSettingsState,
 ): ProcessOptions => {
+	const fixedColorCount =
+		quick.reductionMode === "8" ||
+		quick.reductionMode === "16" ||
+		quick.reductionMode === "32"
+			? Number(quick.reductionMode)
+			: undefined;
 	const options: ProcessOptions = {
-		...advanced,
+		...createDefaultProcessOptions(),
 		processingMode: quick.processingMode,
 		detailLevel: quick.detailLevel,
 		outlineStyle: quick.outlineStyle,
 		trimToContent: quick.trimToContent,
+		reduceColors: quick.reductionMode !== "none",
+		reduceColorMode:
+			fixedColorCount === undefined ? quick.reductionMode : "auto",
+		colorCount: fixedColorCount ?? PROCESS_DEFAULTS.colorCount,
+		fixedPalette: undefined,
 	};
-
-	if (quick.colors === "auto") {
-		delete options.reduceColors;
-		delete options.reduceColorMode;
-		delete options.colorCount;
-	} else if (quick.colors !== "custom") {
-		options.reduceColors = true;
-		options.reduceColorMode = "auto";
-		options.colorCount = Number(quick.colors);
-	}
 
 	if (quick.background === "keep") {
 		options.bgExtractionMethod = "none";
 		options.bgRemovalScope = "off";
 		options.preRemoveBackground = false;
 		options.postRemoveBackground = false;
-	} else if (quick.background === "auto") {
-		options.bgExtractionMethod = "auto";
-		options.bgRemovalScope = resolveBgRemovalScope(
-			quick.bgRemovalScope,
-			"auto",
-		);
+	} else {
+		const method = quick.background === "auto" ? "auto" : "rgb";
+		options.bgExtractionMethod = method;
+		options.bgRemovalScope = quick.bgRemovalScope;
 		options.preRemoveBackground = true;
 		options.postRemoveBackground = true;
-	} else if (quick.background === "pick") {
-		options.bgExtractionMethod = "rgb";
-		options.bgRemovalScope = resolveBgRemovalScope(quick.bgRemovalScope, "rgb");
-		options.preRemoveBackground = true;
-		options.postRemoveBackground = true;
-	} else if (options.bgExtractionMethod !== "none") {
-		// 背景が custom（詳細設定の抽出方法を使う）でも、範囲はかんたん設定が持つ。
-		options.bgRemovalScope = resolveBgRemovalScope(
-			quick.bgRemovalScope,
-			options.bgExtractionMethod ?? PROCESS_DEFAULTS.bgExtractionMethod,
-		);
+		if (method === "rgb") options.bgRgb = quick.backgroundColor;
 	}
 
 	if (quick.dithering === "off") {
@@ -161,7 +103,7 @@ export const applyQuickSettingsToOptions = (
 	} else if (quick.dithering === "subtle") {
 		options.ditherMode = "ordered";
 		options.ditherStrength = 20;
-	} else if (quick.dithering === "strong") {
+	} else {
 		options.ditherMode = "floyd-steinberg";
 		options.ditherStrength = 60;
 	}
@@ -169,14 +111,81 @@ export const applyQuickSettingsToOptions = (
 	return options;
 };
 
+const presetOptions = (
+	quick: Partial<QuickSettingsState>,
+	overrides: ProcessOptions = {},
+): ProcessOptions => ({
+	...createQuickProcessOptions({ ...QUICK_SETTINGS_DEFAULTS, ...quick }),
+	...overrides,
+});
+
 /**
- * UI の初期状態（詳細設定の既定値と Auto プリセット）を処理オプションへ変換する。
+ * 減色の指定を取り除き、処理経路の既定に委ねる。
  *
- * [Intended] UI に表示していない詳細設定も既定値から取り込むため、DOM の
- * 初期化経路と同じ設定になる。Auto 品質ケースもこの関数を使って同じ状態を測る。
+ * [Intended] かんたん設定の減色モード「なし」は減色しないという明示的な指定なので、
+ * そのまま渡すと経路任せの Auto と結果が変わる。経路へ委ねるには指定自体を落とす必要がある。
  */
+const withRouteManagedReduction = (options: ProcessOptions): ProcessOptions => {
+	const next = { ...options };
+	delete next.reduceColors;
+	delete next.reduceColorMode;
+	delete next.colorCount;
+	return next;
+};
+
+export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
+	{
+		id: "auto",
+		labelKey: "preset.auto",
+		options: withRouteManagedReduction(presetOptions({})),
+	},
+	{
+		id: "crisp-sprite",
+		labelKey: "preset.crisp_sprite",
+		options: presetOptions({ processingMode: "refine" }),
+	},
+	{
+		id: "keep-fine-details",
+		labelKey: "preset.keep_fine_details",
+		options: presetOptions({ detailLevel: "detailed" }),
+	},
+	{
+		id: "transparent-icon",
+		labelKey: "preset.transparent_icon",
+		options: presetOptions(
+			{ outlineStyle: "rounded" },
+			{ reduceColors: true, reduceColorMode: "auto", colorCount: 32 },
+		),
+	},
+	{
+		id: "limited-colors",
+		labelKey: "preset.limited_colors",
+		options: presetOptions(
+			{ dithering: "subtle" },
+			{ reduceColors: true, reduceColorMode: "auto", colorCount: 16 },
+		),
+	},
+	{
+		id: "photo-to-pixel",
+		labelKey: "preset.photo_to_pixel",
+		options: presetOptions(
+			{
+				processingMode: "convert",
+				background: "keep",
+				dithering: "subtle",
+			},
+			{ reduceColors: true, reduceColorMode: "auto", colorCount: 32 },
+		),
+	},
+] as const;
+
+export const createBuiltInPresetOptions = (
+	presetId: string,
+): ProcessOptions => {
+	const preset = BUILT_IN_PRESETS.find((entry) => entry.id === presetId);
+	return { ...(preset ?? BUILT_IN_PRESETS[0]).options };
+};
+
+/** UI 初期状態と品質テストで共有するAutoプリセット。 */
 export const createUiInitialProcessOptions = (): ProcessOptions =>
-	applyQuickSettingsToOptions(
-		createDefaultProcessOptions(),
-		QUICK_SETTINGS_DEFAULTS,
-	);
+	createBuiltInPresetOptions("auto");
