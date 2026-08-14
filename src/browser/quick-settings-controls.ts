@@ -6,6 +6,7 @@ import type {
 	DetailLevel,
 	OutlineStyle,
 	ProcessingMode,
+	ProcessingRoute,
 } from "../shared/types";
 import {
 	advancedSettingControls,
@@ -34,6 +35,38 @@ export type QuickSettingsControls = {
 	applyQuickSettings: (settings: QuickSettingsState, presetId?: string) => void;
 	setBackgroundColor: (hex: string) => void;
 	syncQuickSettingsToAdvanced: () => void;
+};
+
+const setQuickControlDisabled = (
+	control: HTMLInputElement | HTMLSelectElement,
+	disabled: boolean,
+): void => {
+	control.disabled = disabled;
+	const item = control.closest(".setting-item");
+	if (!item) return;
+	item.classList.toggle("disabled", disabled);
+	item.setAttribute("aria-disabled", String(disabled));
+};
+
+export const updateQuickSettingsDisabledStates = (
+	els: Elements,
+	activeRoute?: ProcessingRoute,
+): void => {
+	const processingMode = els.quickProcessingModeSelect.value as ProcessingMode;
+	const effectiveRoute =
+		processingMode === "auto" ? activeRoute : processingMode;
+	// [Intended] Auto は画像ごとに経路が変わるため、処理結果が無い間は選択を許可する。
+	// 結果が出た後は、その画像で実際に採用された経路に合わせて無効状態を示す。
+	setQuickControlDisabled(
+		els.quickDetailLevelSelect,
+		effectiveRoute !== undefined && effectiveRoute !== "convert",
+	);
+
+	const background = els.quickBackgroundSelect.value as QuickBackground;
+	const backgroundDisabled =
+		background === "keep" ||
+		(background === "custom" && els.bgExtractionMethod.value === "none");
+	setQuickControlDisabled(els.quickBgRemovalScopeSelect, backgroundDisabled);
 };
 
 export const setupQuickSettingsControls = ({
@@ -98,6 +131,7 @@ export const setupQuickSettingsControls = ({
 		}
 		els.outlineStyleSelect.value = quick.outlineStyle;
 		els.trimToContentCheck.checked = quick.trimToContent;
+		updateQuickSettingsDisabledStates(els);
 	};
 
 	const applyQuickSettings = (
@@ -174,6 +208,7 @@ export const setupQuickSettingsControls = ({
 	const markBackgroundCustom = () => {
 		els.quickBackgroundSelect.value = "custom";
 		els.builtInPresetSelect.value = "custom";
+		updateQuickSettingsDisabledStates(els);
 	};
 	[
 		els.bgExtractionMethod,
@@ -247,6 +282,8 @@ export const setupQuickSettingsControls = ({
 		control.addEventListener("change", markPresetCustom);
 		control.addEventListener("input", markPresetCustom);
 	}
+
+	updateQuickSettingsDisabledStates(els);
 
 	return {
 		getQuickSettings,
