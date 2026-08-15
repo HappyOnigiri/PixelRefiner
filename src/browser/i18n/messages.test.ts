@@ -130,9 +130,16 @@ describe("i18n messages", () => {
 		const misplaced: string[] = [];
 		for (const [name, catalog] of Object.entries(catalogs)) {
 			for (const key of Object.keys(catalog)) {
-				const expected = MODULE_OF_PREFIX[key.split(".")[0]];
+				const prefix = key.split(".")[0];
+				const expected = MODULE_OF_PREFIX[prefix];
+				if (expected === undefined) {
+					misplaced.push(
+						`${key}: プレフィックス ${prefix} が MODULE_OF_PREFIX に未登録`,
+					);
+					continue;
+				}
 				if (expected !== name) {
-					misplaced.push(`${key}: ${name} にあるが ${expected ?? "不明"} が正`);
+					misplaced.push(`${key}: ${name} にあるが ${expected} が正`);
 				}
 			}
 		}
