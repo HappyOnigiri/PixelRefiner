@@ -159,6 +159,19 @@ describe("effectiveCaseOptions", () => {
 		);
 	});
 
+	it("かんたん設定のドットの大きさを処理オプションへ通す", () => {
+		// [Intended] 候補診断はこの値を基準に「いま出ている段階」を候補から外す。
+		// 途中で落ちるとアプリと診断の候補集合が食い違う。
+		expect(
+			effectiveCaseOptions({
+				...explicitCase,
+				id: "quick-settings-cell-scale-test",
+				options: {},
+				quickSettings: { cellScale: "double" },
+			}).cellScale,
+		).toBe("double");
+	});
+
 	it("resolves preset cases through the shipped preset values", () => {
 		expect(
 			effectiveCaseOptions({

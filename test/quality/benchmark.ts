@@ -420,7 +420,12 @@ export const evaluateQualityCase = (
 	// 候補生成の失敗を含まない決定論的な診断である。選択肢の画像は判定後に別途生成する。
 	// [Policy] 実際に並ぶ枚数はこれ以下になる。アプリは生成した候補の実出力を見て、
 	// 1 ドットしか無いものや隣の段階と同寸法のものを落とすため。
-	const candidatePlans = selectCandidatePlans(currentRun.analysis);
+	// 現在の倍率を渡さないと、アプリが除外する段階と診断が食い違う。
+	const candidatePlans = selectCandidatePlans(
+		currentRun.analysis,
+		undefined,
+		effectiveOptions.cellScale,
+	);
 	const candidatePlanCount = candidatePlans.length;
 	const candidateSuggestion = evaluateCandidateSuggestion({
 		isAuto: effectiveOptions.processingMode === "auto",
