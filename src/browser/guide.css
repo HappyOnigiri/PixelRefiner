@@ -241,6 +241,21 @@
   image-rendering: pixelated;
 }
 
+/* [Intended] 掲載画像は表示用に縮小したコピーなので、変換を手元で再現するための
+   原寸画像はここからダウンロードさせる。ページの転送量には載せない。 */
+.guide-figure-source {
+  margin-top: 4px;
+  font-size: 0.78rem;
+}
+
+.guide-figure-source a {
+  color: var(--text-dim);
+}
+
+.guide-figure-source a:hover {
+  color: var(--primary);
+}
+
 .guide-figure figcaption {
   margin-top: 6px;
   font-size: 0.78rem;

@@ -496,6 +496,8 @@ const resources = {
 			"各レシピでは、プロンプト、生成画像、Pixel Refiner の設定、変換結果を順に紹介します。作例は、掲載したプロンプトで生成し、掲載した設定で変換したものです。",
 		"guide.recipes.goal_label": "ねらい",
 		"guide.recipes.settings_label": "Pixel Refiner の設定",
+		"guide.recipes.download_source":
+			"この生成画像を原寸でダウンロードして、同じ手順を試す",
 		"guide.recipes.scale_actual": "等倍",
 		"guide.recipes.scale_zoomed": "4倍表示",
 		"guide.recipe1.heading": "レシピ1: ゲームキャラクターのスプライト",
@@ -508,8 +510,7 @@ const resources = {
 		"guide.recipe1.output_alt":
 			"レシピ1の変換結果。背景が透過した騎士のドット絵",
 		"guide.recipe1.caption_input": "生成画像（2048×2048px・縮小表示）",
-		"guide.recipe1.caption_output":
-			"変換結果（おまかせ・60×85px の等倍出力）",
+		"guide.recipe1.caption_output": "変換結果（おまかせ・60×85px の等倍出力）",
 		"guide.recipe2.heading": "レシピ2: アイテムアイコン",
 		"guide.recipe2.goal":
 			"UI 用の単一オブジェクト。赤い被写体に緑の背景を組み合わせると、背景と被写体を区別しやすく、きれいに透過できます。",
@@ -1063,6 +1064,8 @@ const resources = {
 			"每个配方会依次介绍提示词、生成图片、Pixel Refiner 设置和转换结果。每个示例都使用页面所示的提示词生成，并按页面所示的设置转换。",
 		"guide.recipes.goal_label": "目标",
 		"guide.recipes.settings_label": "Pixel Refiner 设置",
+		"guide.recipes.download_source":
+			"下载这张生成图片的原始尺寸版本，按同样的步骤试用",
 		"guide.recipes.scale_actual": "原尺寸",
 		"guide.recipes.scale_zoomed": "4 倍显示",
 		"guide.recipe1.heading": "配方 1：游戏角色精灵",
@@ -1649,6 +1652,8 @@ const resources = {
 			"Each recipe shows a prompt, the image it generated, the Pixel Refiner settings, and the converted result. Each example was generated with the shown prompt and converted with the shown settings.",
 		"guide.recipes.goal_label": "Goal",
 		"guide.recipes.settings_label": "Pixel Refiner settings",
+		"guide.recipes.download_source":
+			"Download this generated image at full size and try the same steps",
 		"guide.recipes.scale_actual": "Actual size (1×)",
 		"guide.recipes.scale_zoomed": "Enlarged (4×)",
 		"guide.recipe1.heading": "Recipe 1: Game character sprite",
