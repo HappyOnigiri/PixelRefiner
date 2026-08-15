@@ -30,6 +30,10 @@ export type ProcessOptions = DetectOptions & {
 	processingMode?: ProcessingMode;
 	/** Convert 経路で採用する論理解像度。 */
 	detailLevel?: DetailLevel;
+	/** Convert 経路で使う明示的な出力幅。片軸だけなら比率から高さを補完する。 */
+	convertPixelsW?: number;
+	/** Convert 経路で使う明示的な出力高さ。片軸だけなら比率から幅を補完する。 */
+	convertPixelsH?: number;
 	/** グリッド候補の各信号を個別に有効／無効にする。 */
 	gridSignals?: Partial<GridSignalOptions>;
 	/** 縁のにじみ（ハロー）を背景色から遠ざける補正を行う。 */
@@ -265,6 +269,8 @@ export const normalizeProcessOptions = (
 	detect: DetectOptions;
 	processingMode: ProcessingMode;
 	detailLevel: DetailLevel;
+	convertPixelsW?: number;
+	convertPixelsH?: number;
 	convertReduceColors: boolean;
 	convertReduceColorMode: string;
 	convertDitherMode: DitherMode;
@@ -301,9 +307,9 @@ export const normalizeProcessOptions = (
 	smallComponentBackgroundGate: boolean;
 	phaseAwareGridSearch: boolean;
 	boundaryContrastOverride: boolean;
-	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	/** 3 択の生値を on/off へ解決した実効値。生値と区別するため名前を分ける。 */
 	smallAspectGridAlignmentEnabled: boolean;
-	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	/** 3 択の生値を on/off へ解決した実効値。生値と区別するため名前を分ける。 */
 	watermarkSamplingCompatEnabled: boolean;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
@@ -350,6 +356,14 @@ export const normalizeProcessOptions = (
 		raw.preRemoveBackground ?? PROCESS_DEFAULTS.preRemoveBackground;
 	const processingMode = raw.processingMode ?? PROCESS_DEFAULTS.processingMode;
 	const detailLevel = raw.detailLevel ?? PROCESS_DEFAULTS.detailLevel;
+	const convertPixelsW = clampOptionalInt(
+		raw.convertPixelsW,
+		PROCESS_RANGES.convertPixelsW,
+	);
+	const convertPixelsH = clampOptionalInt(
+		raw.convertPixelsH,
+		PROCESS_RANGES.convertPixelsH,
+	);
 	const postRemoveBackground =
 		raw.postRemoveBackground ?? PROCESS_DEFAULTS.postRemoveBackground;
 	const forcePixelsW = clampOptionalInt(
@@ -414,14 +428,14 @@ export const normalizeProcessOptions = (
 		...GRID_SIGNAL_DEFAULTS,
 		...raw.gridSignals,
 	};
-	// [Intended] "auto" は Auto 経路でだけ有効という従来の条件をそのまま表す。
-	// 明示指定された "on" / "off" は経路に関わらず優先する。
+	// [Policy] 保存済み設定の "auto" は "on" と同じ意味に移行する。
+	// 処理経路で有効状態を変えると、Auto が選んだ経路を手動で再現できなくなる。
 	const resolveAutoBehavior = (
 		setting: AutoBehaviorSetting | undefined,
 		fallback: AutoBehaviorSetting,
 	): boolean => {
 		const value = setting ?? fallback;
-		return value === "auto" ? processingMode === "auto" : value === "on";
+		return value !== "off";
 	};
 	const smallAspectGridAlignmentEnabled = resolveAutoBehavior(
 		raw.smallAspectGridAlignment,
@@ -466,6 +480,8 @@ export const normalizeProcessOptions = (
 		detect,
 		processingMode,
 		detailLevel,
+		convertPixelsW,
+		convertPixelsH,
 		convertReduceColors: raw.reduceColors ?? CONVERT_DEFAULTS.reduceColors,
 		convertReduceColorMode:
 			raw.reduceColorMode ?? CONVERT_DEFAULTS.reduceColorMode,

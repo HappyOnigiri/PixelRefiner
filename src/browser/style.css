@@ -416,12 +416,35 @@ main {
   gap: 8px;
 }
 
+.setting-item[hidden] {
+  display: none;
+}
+
 .setting-item.disabled {
   display: none;
 }
 
 .setting-item.full-width {
   grid-column: 1 / -1;
+}
+
+.setting-item.is-disabled-visible {
+  opacity: 0.62;
+}
+
+.processing-mode-notice {
+  align-self: end;
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-panel));
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.processing-mode-notice[hidden] {
+  display: none;
 }
 
 .input-with-slider,

@@ -31,12 +31,14 @@ const advancedElements = (
 		preRemoveCheck: input("", preRemove),
 		postRemoveCheck: input("", postRemove),
 		advancedProcessingModeSelect: select("auto"),
-		advancedDetailLevelSelect: select("balanced"),
+		advancedConvertSizeModeSelect: select("custom-both"),
+		advancedConvertWidthInput: input("24"),
+		advancedConvertHeightInput: input("18"),
 		advancedBgRemovalScopeSelect: select("auto"),
 		bgConnectivitySelect: select("4"),
 		cellSamplingModeSelect: select("hard-alpha-medoid"),
-		smallAspectGridAlignmentSelect: select("auto"),
-		watermarkSamplingCompatSelect: select("auto"),
+		smallAspectGridAlignmentSelect: select("on"),
+		watermarkSamplingCompatSelect: select("on"),
 		gridDetectionModeSelect: select("auto"),
 		reduceColorModeSelect: select("none"),
 		ditherModeSelect: select("none"),
@@ -103,4 +105,55 @@ describe("settings mode options", () => {
 			expect(options.trimToContent).toBe(trimToContent);
 		},
 	);
+
+	it("passes Advanced Convert output dimensions independently of forced grid dimensions", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedProcessingModeSelect.value = "convert";
+		els.gridDetectionModeSelect.value = "auto";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options).toMatchObject({
+			processingMode: "convert",
+			convertPixelsW: 24,
+			convertPixelsH: 18,
+		});
+		expect(options.forcePixelsW).toBeUndefined();
+		expect(options.forcePixelsH).toBeUndefined();
+	});
+
+	it("passes only the selected Convert dimension", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedConvertSizeModeSelect.value = "custom-width";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options.convertPixelsW).toBe(24);
+		expect(options.convertPixelsH).toBeUndefined();
+	});
+
+	it("uses a five-level Convert size without explicit dimensions", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedConvertSizeModeSelect.value = "small";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options.detailLevel).toBe("small");
+		expect(options.convertPixelsW).toBeUndefined();
+		expect(options.convertPixelsH).toBeUndefined();
+	});
+
+	it("does not apply a partially entered two-dimension size", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedConvertHeightInput.value = "";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options.convertPixelsW).toBeUndefined();
+		expect(options.convertPixelsH).toBeUndefined();
+	});
 });

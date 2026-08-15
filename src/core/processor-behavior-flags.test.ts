@@ -52,7 +52,7 @@ const createGradientPaddedArt = (): RawImage =>
 	});
 
 describe("auto behavior settings", () => {
-	it("follows the processing route while the setting stays at auto", () => {
+	it("uses the same default behavior for automatic and explicit routes", () => {
 		expect(
 			normalizeProcessOptions({ processingMode: "auto" })
 				.smallAspectGridAlignmentEnabled,
@@ -60,7 +60,7 @@ describe("auto behavior settings", () => {
 		expect(
 			normalizeProcessOptions({ processingMode: "refine" })
 				.smallAspectGridAlignmentEnabled,
-		).toBe(false);
+		).toBe(true);
 		expect(
 			normalizeProcessOptions({ processingMode: "auto" })
 				.watermarkSamplingCompatEnabled,
@@ -68,11 +68,10 @@ describe("auto behavior settings", () => {
 		expect(
 			normalizeProcessOptions({ processingMode: "preserve" })
 				.watermarkSamplingCompatEnabled,
-		).toBe(false);
+		).toBe(true);
 	});
 
-	it("lets an explicit choice win over the processing route", () => {
-		// [Intended] これが「手動 refine で Auto と同じ出力を再現する」ための入口になる。
+	it("keeps explicit on and off independent from the processing route", () => {
 		expect(
 			normalizeProcessOptions({
 				processingMode: "refine",
@@ -97,6 +96,21 @@ describe("auto behavior settings", () => {
 				watermarkSamplingCompat: "off",
 			}).watermarkSamplingCompatEnabled,
 		).toBe(false);
+	});
+
+	it("treats the legacy auto value as on for every route", () => {
+		expect(
+			normalizeProcessOptions({
+				processingMode: "refine",
+				smallAspectGridAlignment: "auto",
+			}).smallAspectGridAlignmentEnabled,
+		).toBe(true);
+		expect(
+			normalizeProcessOptions({
+				processingMode: "preserve",
+				watermarkSamplingCompat: "auto",
+			}).watermarkSamplingCompatEnabled,
+		).toBe(true);
 	});
 });
 

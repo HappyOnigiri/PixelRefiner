@@ -36,6 +36,12 @@ export class ImageSession {
 	private activeImageId: string | null = null;
 	private onUpdate: () => void;
 	private onActiveChange: (image: ImageItem | null) => void;
+	/**
+	 * 画像ごとの変換開始の通し番号。
+	 * 個別処理と一括処理は別々の Worker で並行しうるため、開始が古い処理の結果で
+	 * 新しい結果を上書きしないよう、書き込み側がこの番号で自分の順番を確かめる。
+	 */
+	private processingTokens = new Map<string, number>();
 
 	constructor(callbacks: {
 		onUpdate: () => void;
@@ -71,6 +77,7 @@ export class ImageSession {
 
 		const wasActive = this.activeImageId === id;
 		this.images.splice(idx, 1);
+		this.processingTokens.delete(id);
 
 		if (wasActive) {
 			// 次に利用可能な画像を選択し、空なら null にする
@@ -88,7 +95,24 @@ export class ImageSession {
 
 	public clearAll(): void {
 		this.images = [];
+		this.processingTokens.clear();
 		this.setActiveImage(null);
+	}
+
+	/**
+	 * この画像の変換開始を記録し、結果を書き込んでよいかを判定するトークンを返す。
+	 * 状態を processing にする役割も兼ねる。
+	 */
+	public beginProcessing(id: string): number {
+		const token = (this.processingTokens.get(id) ?? 0) + 1;
+		this.processingTokens.set(id, token);
+		this.setImageStatus(id, "processing");
+		return token;
+	}
+
+	/** beginProcessing で得たトークンが、この画像の最新の変換のものかを返す。 */
+	public isProcessingCurrent(id: string, token: number): boolean {
+		return this.processingTokens.get(id) === token;
 	}
 
 	public setActiveImage(id: string | null): void {

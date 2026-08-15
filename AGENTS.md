@@ -6,6 +6,13 @@
 - Define processing ranges and defaults in `src/shared/config.ts`; consume `PROCESS_RANGES` and `PROCESS_DEFAULTS` instead of duplicating setting values.
 - In per-pixel core paths, use indexed `for` loops, avoid allocations inside large loops, and avoid unnecessary image-buffer copies.
 
+## Settings Consistency
+
+- 「おまかせ」は公開済みの選択肢から最適なものを選ぶだけにする。「おまかせ」だけで使う処理経路や処理条件が必要になった場合は、その内容を通常の選択肢として追加する。
+- 組み込みの「プリセット」は「かんたん設定」の組み合わせだけで再現できるようにする。
+- 「かんたん設定」は「詳細設定」の組み合わせだけで再現できるようにする。
+- 再現先に同名の「おまかせ」は不要。自動選択で確定した具体的な選択肢や値を手動指定して同じ結果を得られれば、再現可能とみなす。
+
 ## Localization
 
 When adding or changing `data-i18n` or `data-i18n-attr` attributes in the app UI (`index.html` and `src/browser`), register their keys in the `ja`, `en`, and `zh-CN` resources in `src/browser/i18n.ts`.

@@ -1,7 +1,5 @@
-import { wrap } from "comlink";
 import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
-import type { ProcessorWorker } from "../core/worker";
-import type { CandidateSelection } from "../shared/types";
+import type { CandidateSelection, ProcessingRoute } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -9,19 +7,18 @@ import type { CandidateChooser } from "./candidate-chooser";
 import type { ImageComparer } from "./compare";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
+import { createLatestProcessingState } from "./latest-processing-state";
 import { showError } from "./notifications";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
 import { translateProcessingWarnings } from "./processing-warnings";
+import {
+	createCancellableProcessor,
+	isProcessingCancelledError,
+} from "./processor-worker";
 import { updateQuickSettingsDisabledStates } from "./quick-settings-controls";
 import type { ResultViewer } from "./result-viewer";
 import type { ImageSession } from "./session";
 import { createProcessOptions } from "./settings-options";
-
-const workerInstance = new Worker(
-	new URL("../core/worker.ts", import.meta.url),
-	{ type: "module" },
-);
-export const processor = wrap<ProcessorWorker>(workerInstance);
 
 type ProcessingControllerOptions = {
 	els: Elements;
@@ -33,6 +30,7 @@ type ProcessingControllerOptions = {
 	updatePaletteDisplay: () => void;
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
+	updateAdvancedProcessingControls: (activeRoute?: ProcessingRoute) => void;
 	candidateChooser: CandidateChooser;
 };
 
@@ -50,7 +48,12 @@ export type RunProcessingOptions = {
 	suppressErrorNotification?: boolean;
 };
 
-export const createRunProcessing = ({
+export type ProcessingController = {
+	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
+	setAutoProcessScheduled: (scheduled: boolean) => void;
+};
+
+export const createProcessingController = ({
 	els,
 	processingState,
 	imageSession,
@@ -60,16 +63,23 @@ export const createRunProcessing = ({
 	updatePaletteDisplay,
 	updateGrid,
 	updateBgColorFromMethod,
+	updateAdvancedProcessingControls,
 	candidateChooser,
-}: ProcessingControllerOptions): ((
-	options?: RunProcessingOptions,
-) => Promise<void>) => {
+}: ProcessingControllerOptions): ProcessingController => {
 	const compareBeforeCanvas = document.createElement("canvas");
 	const compareAfterCanvas = document.createElement("canvas");
 	const compareBeforeSanitizedCanvas = document.createElement("canvas");
-	// [Intended] 候補プレビューの生成は await を挟むため、完了時に自分が最新の処理か判定する。
-	// これがないと、遅れて返った旧画像・旧設定の候補が現在の状態のものとして表示される。
-	let latestGeneration = 0;
+	const processor = createCancellableProcessor();
+	const latestProcessing = createLatestProcessingState();
+	let latestImageId: string | undefined;
+
+	const hideLoading = () => {
+		mainResultViewer.setLoading(false);
+		els.loadingOverlay.style.display = "none";
+		els.outputPanel.classList.remove("is-processing");
+		els.outputPanel.removeAttribute("aria-busy");
+		els.processButton.disabled = false;
+	};
 
 	const runProcessing = async (
 		selection?: CandidateSelection,
@@ -78,7 +88,9 @@ export const createRunProcessing = ({
 		const showCandidates = options.showCandidates !== false;
 		const images = imageSession.getImages();
 		if (images.length === 0) return;
-		const generation = ++latestGeneration;
+		const generation = latestProcessing.begin();
+		// [Intended] 最新設定の結果を優先し、実行中の同期 Worker 処理と待機中の要求を破棄する。
+		processor.cancelActive();
 		if (!selection) candidateChooser.dismiss();
 
 		// [Intended] 設定変更前の警告を処理中の設定へ引き継がない。
@@ -97,13 +109,13 @@ export const createRunProcessing = ({
 		// （一括処理には別実装が必要だが、現在は切替時に自動処理する）
 		const currentItem = imageSession.getActiveImage();
 		if (!currentItem) {
-			// クリーンアップして完了
-			els.loadingOverlay.style.display = "none";
-			els.outputPanel.classList.remove("is-processing");
-			els.outputPanel.removeAttribute("aria-busy");
-			els.processButton.disabled = false;
+			latestImageId = undefined;
+			if (latestProcessing.finish(generation, false) === "hide-loading") {
+				hideLoading();
+			}
 			return;
 		}
+		latestImageId = currentItem.id;
 
 		const currentImage = currentItem.original;
 		// 明示的な選択がなければ、この画像に対して以前選ばれた候補を引き継ぐ。
@@ -111,7 +123,11 @@ export const createRunProcessing = ({
 		if (selection) {
 			imageSession.setCandidateSelection(currentItem.id, selection);
 		}
-		imageSession.setImageStatus(currentItem.id, "processing");
+		const processingToken = imageSession.beginProcessing(currentItem.id);
+
+		// [Intended] 結果を書き込んだ後に中断された場合は、done の画像を pending へ戻さない。
+		// 戻すと一覧が未変換のまま表示され、保留キューが同じ設定で変換をやり直す。
+		let resultApplied = false;
 
 		try {
 			const processOptions = createProcessOptions(els, processingState);
@@ -130,6 +146,18 @@ export const createRunProcessing = ({
 						effectiveSelection,
 					)
 				: await processor.process(currentImage, processOptions);
+			// [Intended] キャンセル直前に完了通知が届いた旧処理も、結果や画像状態を上書きさせない。
+			// 一括処理など別経路がこの画像を処理し直していた場合は、状態もその経路に委ねる。
+			const superseded = !imageSession.isProcessingCurrent(
+				currentItem.id,
+				processingToken,
+			);
+			if (superseded || !latestProcessing.isLatest(generation)) {
+				if (!superseded && currentItem.id !== latestImageId) {
+					imageSession.setImageStatus(currentItem.id, "pending");
+				}
+				return;
+			}
 
 			// 転送したデータは呼び出し元スレッドで利用できなくなる可能性がある（Comlink の挙動に依存し、
 			// RawImage を再利用しない設計のため、ここで再代入する）
@@ -150,6 +178,7 @@ export const createRunProcessing = ({
 				},
 				processingState.settingsMode,
 			);
+			resultApplied = true;
 
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
@@ -159,6 +188,30 @@ export const createRunProcessing = ({
 			updateQuickSettingsDisabledStates(
 				els,
 				processingState.settingsMode === "quick" ? analysis.route : undefined,
+			);
+			// [Intended] Convert 候補の選択を、詳細設定でも同じサイズ指定として表示する。
+			if (
+				processingState.settingsMode === "advanced" &&
+				effectiveSelection?.processingMode === "convert"
+			) {
+				if (effectiveSelection.detailLevel) {
+					els.advancedConvertSizeModeSelect.value =
+						effectiveSelection.detailLevel;
+				} else if (
+					effectiveSelection.outW !== undefined &&
+					effectiveSelection.outH !== undefined
+				) {
+					els.advancedConvertSizeModeSelect.value = "custom-both";
+					els.advancedConvertWidthInput.value = String(effectiveSelection.outW);
+					els.advancedConvertHeightInput.value = String(
+						effectiveSelection.outH,
+					);
+				}
+			}
+			updateAdvancedProcessingControls(
+				processingState.settingsMode === "advanced"
+					? analysis.route
+					: undefined,
 			);
 
 			mainResultViewer.updateImage(resultImage);
@@ -250,7 +303,7 @@ export const createRunProcessing = ({
 					);
 					// 待機中に別の処理が始まった、または表示対象が切り替わった場合は表示しない。
 					const stillCurrent =
-						generation === latestGeneration &&
+						latestProcessing.isLatest(generation) &&
 						imageSession.getActiveImage()?.id === currentItem.id;
 					const candidateModalAfterPreview = evaluateCandidateModalDecision({
 						...candidateModalInput,
@@ -262,6 +315,7 @@ export const createRunProcessing = ({
 						candidateChooser.show(previews, analysis.warnings, currentItem.id);
 					}
 				} catch (error) {
+					if (isProcessingCancelledError(error)) throw error;
 					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
 					console.error("Failed to create candidate previews:", error);
 				}
@@ -271,23 +325,43 @@ export const createRunProcessing = ({
 			// 背景除去方法がコーナーベースの場合は、抽出した色を UI に反映
 			updateBgColorFromMethod();
 		} catch (err) {
+			if (
+				isProcessingCancelledError(err) ||
+				!latestProcessing.isLatest(generation)
+			) {
+				if (
+					!resultApplied &&
+					currentItem.id !== latestImageId &&
+					imageSession.isProcessingCurrent(currentItem.id, processingToken)
+				) {
+					imageSession.setImageStatus(currentItem.id, "pending");
+				}
+				return;
+			}
 			const msg = `${i18n.t("error.process_failed")}: ${(err as Error).message}`;
 			// [Intended] トーストは重ねて表示できないため、呼び出し側がまとめて通知する場合は出さない。
 			// 原因は画像一覧の状態として残るので、ここで失われるわけではない。
 			if (!options.suppressErrorNotification) showError(msg);
-			imageSession.setImageStatus(currentItem.id, "error", msg);
-		} finally {
-			// [Intended] 続けて別の画像を変換する呼び出し側は、オーバーレイの開閉を自分で行う。
-			// mainResultViewer の読み込み表示は els.loadingOverlay と同じ要素なので、
-			// ここで閉じると呼び出し側が開いたままにできない。
-			if (!options.keepLoadingOverlay) {
-				// [Intended] 途中で表示対象が切り替わった場合や失敗した場合も読み込み表示を残さない。
-				mainResultViewer.setLoading(false);
-				els.loadingOverlay.style.display = "none";
+			if (imageSession.isProcessingCurrent(currentItem.id, processingToken)) {
+				imageSession.setImageStatus(currentItem.id, "error", msg);
 			}
-			els.outputPanel.classList.remove("is-processing");
-			els.outputPanel.removeAttribute("aria-busy");
-			els.processButton.disabled = false;
+		} finally {
+			const finishDecision = latestProcessing.finish(
+				generation,
+				options.keepLoadingOverlay === true,
+			);
+			if (finishDecision === "hide-loading") hideLoading();
+			if (finishDecision === "keep-loading") {
+				// [Intended] 結果の表示更新が同じオーバーレイを閉じるため、維持する場合は開き直す。
+				// 開き直さないと、次の変換が始まるまで処理中表示が一度消えて点滅する。
+				mainResultViewer.setLoading(true);
+				els.loadingOverlay.style.display = "flex";
+				if (options.keepLoadingOverlay) {
+					els.outputPanel.classList.remove("is-processing");
+					els.outputPanel.removeAttribute("aria-busy");
+					els.processButton.disabled = false;
+				}
+			}
 		}
 	};
 
@@ -298,5 +372,11 @@ export const createRunProcessing = ({
 			await runProcessing(selection);
 		},
 	});
-	return (options?: RunProcessingOptions) => runProcessing(undefined, options);
+	return {
+		runProcessing: (options?: RunProcessingOptions) =>
+			runProcessing(undefined, options),
+		setAutoProcessScheduled: (scheduled: boolean) => {
+			if (latestProcessing.setAutoProcessScheduled(scheduled)) hideLoading();
+		},
+	};
 };

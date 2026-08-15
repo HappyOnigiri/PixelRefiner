@@ -80,25 +80,30 @@ const resources = {
 		"setting.preset": "プリセット",
 		"setting.quick_finish": "仕上がり",
 		"setting.quick_pixel_detail": "ドットの細かさ",
-		"setting.quick_colors": "色数・配色",
+		"setting.quick_colors": "減色",
 		"setting.quick_background": "背景",
 		"setting.quick_gradient": "グラデーション表現",
 		"setting.processing_mode": "処理方法",
 		"setting.size": "サイズ",
 		"setting.detail": "細かさ",
+		"setting.convert_output_size": "出力サイズ",
+		"setting.convert_output_width": "出力幅",
+		"setting.convert_output_height": "出力高さ",
 		"setting.background": "背景透過",
 		"setting.dithering": "ディザリング",
 		"preset.auto": "おまかせ",
 		"preset.crisp_sprite": "くっきりドット",
 		"preset.keep_fine_details": "細部を残す",
-		"preset.transparent_icon": "縁取り透過アイコン",
+		"preset.transparent_icon": "透過アイコン",
 		"preset.limited_colors": "16色レトロ",
 		"preset.photo_to_pixel": "階調を残したドット絵",
 		"option.quick_processing_auto": "おまかせ",
 		"option.quick_processing_refine": "輪郭をくっきり",
 		"option.quick_processing_convert": "細部を残してドット化",
 		"option.quick_processing_preserve": "サイズを変えず補正",
-		"option.processing_auto": "Auto",
+		"option.processing_auto": "自動選択",
+		"notice.processing_mode_forced_size":
+			"完全ピクセル指定が優先されるため、処理方法は使用されません。",
 		"option.processing_refine": "ドットを整える",
 		"option.processing_convert": "ドット絵へ変換",
 		"option.processing_preserve": "原寸を維持",
@@ -107,12 +112,17 @@ const resources = {
 		"option.size_slightly_small": "やや粗い",
 		"option.size_standard": "標準",
 		"option.size_large": "細かい",
+		"option.size_custom_width": "幅を指定",
+		"option.size_custom_height": "高さを指定",
+		"option.size_custom_both": "幅と高さを指定",
 		"option.detail_coarse": "粗め",
 		"option.detail_balanced": "バランス",
 		"option.detail_detailed": "細かめ",
 		"option.colors_8": "8色",
 		"option.colors_16": "16色",
+		"option.colors_24": "24色",
 		"option.colors_32": "32色",
+		"option.quick_colors_auto": "おまかせ",
 		"option.quick_colors_original": "元の色を維持",
 		"option.background_keep": "背景を残す",
 		"option.background_auto": "自動で透過",
@@ -170,7 +180,6 @@ const resources = {
 		"option.cell_sampling_hard": "ハードアルファ（既定）",
 		"option.cell_sampling_alpha_aware": "半透明を保持",
 		"option.cell_sampling_legacy": "互換（中央値）",
-		"option.auto_behavior_auto": "Auto（処理方法に従う）",
 		"option.auto_behavior_on": "常に有効",
 		"option.auto_behavior_off": "常に無効",
 		"setting.force_width": "強制幅 (px)",
@@ -211,10 +220,14 @@ const resources = {
 			"目指す仕上がりに合わせて、サイズ、色、背景などをまとめて設定します。",
 		"tooltip.help.quick_processing_mode":
 			"目指す仕上がりを選びます。\n\nおまかせ: 画像に合う仕上がりを自動で選びます。\n輪郭をくっきり: ぼかしを除き、色と透明度をドット単位で揃えます。\n細部を残してドット化: 階調や細い線を残しながら低解像度化します。\nサイズを変えず補正: 縮小せず、背景や色だけを補正します。",
+		"tooltip.help.convert_output_size":
+			"5段階の細かさから選ぶか、Convertでリサンプリングする幅、高さ、または両方を指定します。片方だけ指定した場合、もう片方は画像の縦横比に合わせます。",
+		"tooltip.help.convert_output_dimension":
+			"Convertでリサンプリングする寸法を指定します。背景トリム、アウトライン、余白追加によって最終キャンバスの寸法は変わる場合があります。",
 		"tooltip.help.quick_detail":
 			"「細部を残してドット化」で使うドットの細かさを5段階から選びます。粗くするほど出力が小さくなり、1ドットが大きく見えます。「細かい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\n「おまかせ」では、細部を残す仕上がりが自動で選ばれた画像にだけ適用されます。",
 		"tooltip.help.quick_reduction_mode":
-			"元の色を残すか、色数を制限するか、標準パレットに揃えるかを選びます。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
+			"減色方法を選びます。おまかせでは、「輪郭をくっきり」と「サイズを変えず補正」は元の色を維持し、「細部を残してドット化」は24色に減色します。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
 			"背景を残すか、自動判定で透過するか、選んだ色を透過するかを選びます。背景を残す場合はキャンバス全体を維持し、透過する場合は透明な余白も自動で切り詰めます。",
 		"tooltip.help.quick_dithering":
@@ -244,7 +257,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"セル境界が実際のエッジに明確によく乗る粗い倍率が見つかったとき、採用する格子をそちらへ乗り換えます。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。\n\n「常に無効」にすると、Auto の経路判定でも小さな格子が許可されなくなり、等倍のまま仕上げる経路へ切り替わる場合があります。",
+			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。無効にすると、「自動選択」が小さな格子ではなく「原寸を維持」を選ぶ場合があります。",
 		"tooltip.help.max_samples_per_cell":
 			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.cell_alpha_threshold":
@@ -282,7 +295,7 @@ const resources = {
 		"tooltip.help.small_component_background_gate":
 			"推定した背景モデルの確からしさが足りないときは、「小さな要素の整理」も見送ります。",
 		"tooltip.help.watermark_sampling_compat":
-			"透かしを消したあと、末尾の行が欠けるのを防ぐために互換の中央値サンプラーへ切り替えます。\n\nこれまで Auto でしか働きませんでした。「常に有効」にすると、処理方法が「ドットを整える」でも Auto と同じ結果を再現できます。",
+			"透かしを消したあと、末尾の行が欠けるのを防ぐために互換の中央値サンプラーへ切り替えます。",
 		"tooltip.help.trim_alpha_threshold":
 			"トリミング範囲を求めるときに、内容とみなすために必要な最低限のアルファ値です。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.force_width":
@@ -632,25 +645,30 @@ const resources = {
 		"setting.preset": "预设",
 		"setting.quick_finish": "效果",
 		"setting.quick_pixel_detail": "像素细节",
-		"setting.quick_colors": "色彩",
+		"setting.quick_colors": "减色",
 		"setting.quick_background": "背景",
 		"setting.quick_gradient": "渐变纹理",
 		"setting.processing_mode": "处理方式",
 		"setting.size": "尺寸",
 		"setting.detail": "细节",
+		"setting.convert_output_size": "输出尺寸",
+		"setting.convert_output_width": "输出宽度",
+		"setting.convert_output_height": "输出高度",
 		"setting.background": "背景透明",
 		"setting.dithering": "抖动",
 		"preset.auto": "智能推荐",
 		"preset.crisp_sprite": "清晰像素",
 		"preset.keep_fine_details": "保留更多细节",
-		"preset.transparent_icon": "带描边的透明图标",
+		"preset.transparent_icon": "透明图标",
 		"preset.limited_colors": "16色复古风格",
 		"preset.photo_to_pixel": "保留明暗层次的像素画",
 		"option.quick_processing_auto": "智能推荐",
 		"option.quick_processing_refine": "清晰轮廓",
 		"option.quick_processing_convert": "保留细节的像素画",
 		"option.quick_processing_preserve": "原尺寸优化",
-		"option.processing_auto": "Auto",
+		"option.processing_auto": "自动选择",
+		"notice.processing_mode_forced_size":
+			"完全像素指定优先，因此不会使用处理方式。",
 		"option.processing_refine": "优化像素",
 		"option.processing_convert": "转换为像素画",
 		"option.processing_preserve": "保持原尺寸",
@@ -659,12 +677,17 @@ const resources = {
 		"option.size_slightly_small": "稍粗",
 		"option.size_standard": "标准",
 		"option.size_large": "精细",
+		"option.size_custom_width": "指定宽度",
+		"option.size_custom_height": "指定高度",
+		"option.size_custom_both": "指定宽度和高度",
 		"option.detail_coarse": "粗略",
 		"option.detail_balanced": "平衡",
 		"option.detail_detailed": "精细",
 		"option.colors_8": "8色",
 		"option.colors_16": "16色",
+		"option.colors_24": "24色",
 		"option.colors_32": "32色",
+		"option.quick_colors_auto": "智能推荐",
 		"option.quick_colors_original": "保留原色",
 		"option.background_keep": "保留背景",
 		"option.background_auto": "自动移除背景",
@@ -722,7 +745,6 @@ const resources = {
 		"option.cell_sampling_hard": "硬 Alpha（默认）",
 		"option.cell_sampling_alpha_aware": "保留半透明",
 		"option.cell_sampling_legacy": "兼容（中值）",
-		"option.auto_behavior_auto": "Auto（跟随处理方式）",
 		"option.auto_behavior_on": "始终启用",
 		"option.auto_behavior_off": "始终禁用",
 		"setting.force_width": "强制宽度 (px)",
@@ -762,10 +784,14 @@ const resources = {
 			"根据目标效果，一次设置尺寸、色彩和背景等项目。",
 		"tooltip.help.quick_processing_mode":
 			"选择目标效果。\n\n智能推荐：自动选择适合图像的效果。\n清晰轮廓：去除模糊，并按像素统一颜色和透明度。\n保留细节的像素画：在保留明暗层次和细线的同时降低分辨率。\n原尺寸优化：不缩小图像，只调整背景和色彩。",
+		"tooltip.help.convert_output_size":
+			"选择五档细节级别，或指定 Convert 重采样使用的宽度、高度或两者。仅指定一个尺寸时，另一个尺寸将按图像纵横比计算。",
+		"tooltip.help.convert_output_dimension":
+			"指定 Convert 重采样使用的尺寸。背景裁剪、描边和留白可能会改变最终画布尺寸。",
 		"tooltip.help.quick_detail":
 			"为“保留细节的像素画”选择五档像素细节。设置越粗，输出尺寸越小，单个像素看起来越大。“精细”也不会放大到超过原图尺寸，不影响颜色数量等其他设置。\n\n在“智能推荐”中，仅当系统自动选择保留细节的效果时生效。",
 		"tooltip.help.quick_reduction_mode":
-			"选择保留原色、限制颜色数量或使用内置标准调色板。任意颜色数量和导入固定调色板可在高级设置中指定。",
+			"选择减色方式。智能推荐会为“清晰轮廓”和“原尺寸优化”保留原色，并为“保留细节的像素画”选择24色。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
 			"选择保留背景、自动移除背景，或将选定颜色设为透明。保留背景时会保留完整画布；透明化背景时也会自动裁剪透明边距。",
 		"tooltip.help.quick_dithering":
@@ -795,7 +821,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"当更粗的倍率其单元格边界明显更贴合真实边缘时，将采用的网格切换过去。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。\n\n设为「始终关闭」时，Auto 的路径判定也将不再允许小网格，可能改为按原尺寸完成的路径。",
+			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。关闭后，自动选择可能选择保持原尺寸而不是小网格。",
 		"tooltip.help.max_samples_per_cell":
 			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.cell_alpha_threshold":
@@ -833,7 +859,7 @@ const resources = {
 		"tooltip.help.small_component_background_gate":
 			"当推定的背景模型可信度不足时，同样跳过「细小元素整理」。",
 		"tooltip.help.watermark_sampling_compat":
-			"移除水印后切换到兼容的中值采样器，以避免末行缺失。\n\n以往仅在 Auto 下生效。设为「始终启用」后，在「整理点阵」模式下也能重现 Auto 的结果。",
+			"移除水印后切换到兼容的中值采样器，以避免末行缺失。",
 		"tooltip.help.trim_alpha_threshold":
 			"计算裁剪范围时，像素被视为内容所需的最低 Alpha 值。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.force_width":
@@ -1174,25 +1200,30 @@ const resources = {
 		"setting.preset": "Preset",
 		"setting.quick_finish": "Finish",
 		"setting.quick_pixel_detail": "Pixel Detail",
-		"setting.quick_colors": "Colors",
+		"setting.quick_colors": "Color Reduction",
 		"setting.quick_background": "Background",
 		"setting.quick_gradient": "Gradient Texture",
 		"setting.processing_mode": "Processing",
 		"setting.size": "Size",
 		"setting.detail": "Detail",
+		"setting.convert_output_size": "Output Size",
+		"setting.convert_output_width": "Output Width",
+		"setting.convert_output_height": "Output Height",
 		"setting.background": "Background Transparency",
 		"setting.dithering": "Dithering",
 		"preset.auto": "Best Match",
 		"preset.crisp_sprite": "Crisp Pixels",
 		"preset.keep_fine_details": "Keep More Detail",
-		"preset.transparent_icon": "Outlined Transparent Icon",
+		"preset.transparent_icon": "Transparent Icon",
 		"preset.limited_colors": "16-Color Retro",
 		"preset.photo_to_pixel": "Pixel Art with Shading",
 		"option.quick_processing_auto": "Best Match",
 		"option.quick_processing_refine": "Crisp Edges",
 		"option.quick_processing_convert": "Detailed Pixel Art",
 		"option.quick_processing_preserve": "Original Size Cleanup",
-		"option.processing_auto": "Auto",
+		"option.processing_auto": "Automatic Selection",
+		"notice.processing_mode_forced_size":
+			"Pixel Only takes priority, so Processing is not used.",
 		"option.processing_refine": "Refine Pixels",
 		"option.processing_convert": "Convert to Pixel Art",
 		"option.processing_preserve": "Preserve Original Size",
@@ -1201,12 +1232,17 @@ const resources = {
 		"option.size_slightly_small": "Slightly coarse",
 		"option.size_standard": "Balanced",
 		"option.size_large": "Fine",
+		"option.size_custom_width": "Specify width",
+		"option.size_custom_height": "Specify height",
+		"option.size_custom_both": "Specify width and height",
 		"option.detail_coarse": "Coarse",
 		"option.detail_balanced": "Balanced",
 		"option.detail_detailed": "Detailed",
 		"option.colors_8": "8 colors",
 		"option.colors_16": "16 colors",
+		"option.colors_24": "24 colors",
 		"option.colors_32": "32 colors",
+		"option.quick_colors_auto": "Best Match",
 		"option.quick_colors_original": "Keep original colors",
 		"option.background_keep": "Keep background",
 		"option.background_auto": "Remove automatically",
@@ -1264,7 +1300,6 @@ const resources = {
 		"option.cell_sampling_hard": "Hard Alpha (Default)",
 		"option.cell_sampling_alpha_aware": "Alpha Aware",
 		"option.cell_sampling_legacy": "Compatible (Median)",
-		"option.auto_behavior_auto": "Auto (Follow Processing Mode)",
 		"option.auto_behavior_on": "Always On",
 		"option.auto_behavior_off": "Always Off",
 		"setting.force_width": "Force Width (px)",
@@ -1305,10 +1340,14 @@ const resources = {
 			"Sets the size, colors, background, and related options together for the finish you want.",
 		"tooltip.help.quick_processing_mode":
 			"Chooses the intended finish.\n\nBest Match: Selects a suitable finish for the image.\nCrisp Edges: Removes blur and aligns color and transparency to the pixel grid.\nDetailed Pixel Art: Reduces resolution while keeping gradients and thin lines.\nOriginal Size Cleanup: Adjusts the background and colors without downscaling.",
+		"tooltip.help.convert_output_size":
+			"Choose one of five detail levels, or specify the Convert resampling width, height, or both. When only one dimension is specified, the other follows the image aspect ratio.",
+		"tooltip.help.convert_output_dimension":
+			"Sets the resampling dimension used by Convert. Background trimming, outlines, and padding can change the final canvas size.",
 		"tooltip.help.quick_detail":
 			"Chooses from five pixel-detail levels for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image and does not change the color count or other settings.\n\nIn Best Match, this applies only when a detailed finish is selected automatically.",
 		"tooltip.help.quick_reduction_mode":
-			"Chooses whether to keep the original colors, limit the color count, or use a built-in standard palette. Custom color counts and imported palettes are available in Advanced Settings.",
+			"Chooses color reduction. Best Match keeps original colors for Crisp Edges and Original Size Cleanup, and selects 24 colors for Detailed Pixel Art. Custom color counts and imported palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":
 			"Chooses whether to keep the background, remove it automatically, or make a selected color transparent. Keeping the background preserves the full canvas; removing it also trims transparent margins.",
 		"tooltip.help.quick_dithering":
@@ -1338,7 +1377,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges.",
 		"tooltip.help.small_aspect_grid_alignment":
-			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.\n\nWith Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route.",
+			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area. Turning this off may cause Automatic Selection to select Preserve Original Size instead of a small grid.",
 		"tooltip.help.max_samples_per_cell":
 			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.cell_alpha_threshold":
@@ -1376,7 +1415,7 @@ const resources = {
 		"tooltip.help.small_component_background_gate":
 			"Skips the small-detail cleanup when the estimated background model is not confident enough.",
 		"tooltip.help.watermark_sampling_compat":
-			"Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.\n\nThis used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.",
+			"Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.",
 		"tooltip.help.trim_alpha_threshold":
 			"Minimum alpha for a pixel to count as content when computing the trimming bounds.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.force_width":

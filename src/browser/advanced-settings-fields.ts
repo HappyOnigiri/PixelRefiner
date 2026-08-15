@@ -46,7 +46,9 @@ export const advancedModeControls = (
 	els: Elements,
 ): Array<HTMLInputElement | HTMLSelectElement> => [
 	els.advancedProcessingModeSelect,
-	els.advancedDetailLevelSelect,
+	els.advancedConvertSizeModeSelect,
+	els.advancedConvertWidthInput,
+	els.advancedConvertHeightInput,
 	els.quantStepInput,
 	els.quantStepSlider,
 	els.forcePixelsWInput,
@@ -183,9 +185,13 @@ export const applyAdvancedSettingDefaults = (
 /**
  * UI 追加前に保存されたプリセットを、新しい設定項目の既定値で補う。
  *
- * [Policy] 既定値はいずれも従来の挙動と同じなので、古いプリセットを読み込んでも
- * 出力は変わらない。旧 boolean の "alpha-aware-medoid" だけは、同じ意味を保つよう
- * 3 択のセルサンプリングへ読み替える。
+ * [Policy] 未設定の項目は既定値で補い、旧 boolean の "alpha-aware-medoid" は
+ * 同じ意味を保つよう 3 択のセルサンプリングへ読み替える。
+ *
+ * [Policy] 補助処理の旧値 "auto" は "on" と同義として扱うため、処理方法を
+ * refine / preserve に固定して保存された古いプリセットは、読み込むと出力が変わる。
+ * 経路で有効状態が変わると Auto が選んだ経路を手動で再現できなくなるため、
+ * 再現性を優先して経路依存をなくした。
  */
 export const migrateAdvancedSettings = (
 	state: Record<string, string | number | boolean>,
@@ -196,10 +202,35 @@ export const migrateAdvancedSettings = (
 				? "alpha-aware-medoid"
 				: PROCESS_DEFAULTS.cellSamplingMode;
 	}
-	state["small-aspect-grid-alignment"] ??=
-		PROCESS_DEFAULTS.smallAspectGridAlignment;
-	state["watermark-sampling-compat"] ??=
-		PROCESS_DEFAULTS.watermarkSamplingCompat;
+	if (
+		state["small-aspect-grid-alignment"] === undefined ||
+		state["small-aspect-grid-alignment"] === "auto"
+	) {
+		state["small-aspect-grid-alignment"] =
+			PROCESS_DEFAULTS.smallAspectGridAlignment;
+	}
+	if (
+		state["watermark-sampling-compat"] === undefined ||
+		state["watermark-sampling-compat"] === "auto"
+	) {
+		state["watermark-sampling-compat"] =
+			PROCESS_DEFAULTS.watermarkSamplingCompat;
+	}
+	const hasConvertWidth =
+		state["advanced-convert-width"] !== undefined &&
+		state["advanced-convert-width"] !== "";
+	const hasConvertHeight =
+		state["advanced-convert-height"] !== undefined &&
+		state["advanced-convert-height"] !== "";
+	state["advanced-convert-size-mode"] ??= hasConvertWidth
+		? hasConvertHeight
+			? "custom-both"
+			: "custom-width"
+		: hasConvertHeight
+			? "custom-height"
+			: PROCESS_DEFAULTS.detailLevel;
+	state["advanced-convert-width"] ??= "";
+	state["advanced-convert-height"] ??= "";
 
 	state["preserve-thin-features"] ??= PROCESS_DEFAULTS.preserveThinFeatures;
 	state["auto-grid-from-trimmed"] ??= PROCESS_DEFAULTS.autoGridFromTrimmed;

@@ -9,8 +9,8 @@ import { resizeRawImageNearest } from "./image-operations";
 import { processImage } from "./processor";
 import {
 	expectSameImageExcept,
-	readPngAsRawImage,
 	RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+	readPngAsRawImage,
 } from "./processor-test-helpers";
 
 const analysis = (
@@ -246,11 +246,21 @@ describe("candidate previews", () => {
 		const selection = selectCandidatePlans(value)[0];
 		expect(selection.processingMode).toBe("auto");
 		expect(
-			candidateProcessOptions({ hintPixelsW: 10, hintPixelsH: 12 }, selection),
+			candidateProcessOptions(
+				{
+					hintPixelsW: 10,
+					hintPixelsH: 12,
+					convertPixelsW: 24,
+					convertPixelsH: 20,
+				},
+				selection,
+			),
 		).toMatchObject({
 			processingMode: "auto",
 			hintPixelsW: 10,
 			hintPixelsH: 12,
+			convertPixelsW: 24,
+			convertPixelsH: 20,
 			forcePixelsW: undefined,
 			forcePixelsH: undefined,
 		});

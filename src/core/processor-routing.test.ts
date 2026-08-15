@@ -21,9 +21,7 @@ const createNativePixelArt = (width = 8, height = 8): RawImage => {
 	return { width, height, data };
 };
 
-const createContinuousImage = (): RawImage => {
-	const width = 32;
-	const height = 32;
+const createContinuousImage = (width = 32, height = 32): RawImage => {
 	const data = new Uint8ClampedArray(width * height * 4);
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
@@ -209,6 +207,55 @@ describe("processing router", () => {
 				results[i].result.height,
 			);
 		}
+	});
+
+	it("uses explicit Convert dimensions without entering the forced-grid route", () => {
+		const processed = processImage(createContinuousImage(), {
+			...safeOptions,
+			processingMode: "convert",
+			convertPixelsW: 19,
+			convertPixelsH: 11,
+		});
+
+		expect(processed.result.width).toBe(19);
+		expect(processed.result.height).toBe(11);
+		expect(processed.analysis.route).toBe("convert");
+		expect(processed.analysis.gridCandidates[0]).toMatchObject({
+			outW: 19,
+			outH: 11,
+			method: "convert-explicit-size",
+		});
+	});
+
+	it.each([
+		["width", { convertPixelsW: 20 }, 20, 10],
+		["height", { convertPixelsH: 12 }, 24, 12],
+	] as const)(
+		"derives the Convert %s counterpart from the processed aspect ratio",
+		(_, dimensions, expectedWidth, expectedHeight) => {
+			const processed = processImage(createContinuousImage(40, 20), {
+				...safeOptions,
+				processingMode: "convert",
+				...dimensions,
+			});
+
+			expect(processed.result.width).toBe(expectedWidth);
+			expect(processed.result.height).toBe(expectedHeight);
+		},
+	);
+
+	it("keeps the forced-grid dimensions ahead of Processing and Convert dimensions", () => {
+		const processed = processImage(createContinuousImage(), {
+			...safeOptions,
+			processingMode: "convert",
+			convertPixelsW: 19,
+			convertPixelsH: 11,
+			forcePixelsW: 8,
+			forcePixelsH: 6,
+		});
+
+		expect(processed.result.width).toBe(8);
+		expect(processed.result.height).toBe(6);
 	});
 
 	it.each([
