@@ -521,7 +521,7 @@ const resources = {
 		"guide.recipe4.output_alt": "レシピ4の変換結果（差し替え予定のサンプル）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
-			"ドット絵風に生成できないモデルや画風でも問題ない、という救済例です。フラットな塗りと太い輪郭線が変換に強く効きます。",
+			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。フラットな塗りと太い輪郭線が変換に強く効きます。",
 		"guide.recipe5.settings":
 			"「かんたん設定」の「処理方法」を「ドット絵へ変換」にして、「サイズ」と「減色モード」を好みに調整します。",
 		"guide.recipe5.input_alt": "レシピ5の生成画像（差し替え予定のサンプル）",
@@ -1046,7 +1046,7 @@ const resources = {
 		"guide.recipe4.output_alt": "配方 4 的转换结果（待替换的示例）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
-			"即使模型或画风无法直接生成像素画也没关系的补救例。平涂的上色和粗轮廓线对转换特别有利。",
+			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。平涂的上色和粗轮廓线对转换特别有利。",
 		"guide.recipe5.settings":
 			"在“快速设置”中把“处理方式”设为“转换为像素画”，再按喜好调整“尺寸”和“减色模式”。",
 		"guide.recipe5.input_alt": "配方 5 的生成图片（待替换的示例）",
@@ -1605,7 +1605,7 @@ const resources = {
 		"guide.recipe5.heading":
 			"Recipe 5: Turn a normal illustration into pixel art",
 		"guide.recipe5.goal":
-			"A rescue case for models or styles that cannot generate pixel art directly. Flat coloring and thick outlines survive the conversion well.",
+			"Even with models or styles that cannot generate pixel art directly, an ordinary illustration can be converted into pixel art. Flat coloring and thick outlines survive the conversion well.",
 		"guide.recipe5.settings":
 			"In Quick Settings, set Processing to “Convert to Pixel Art”, then tune Size and Reduction Mode to taste.",
 		"guide.recipe5.input_alt":
