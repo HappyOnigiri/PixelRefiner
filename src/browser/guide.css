@@ -205,10 +205,11 @@
    透過が結果になる変換後の画像にだけ敷く。生成画像は不透明で、
    敷いても意味を持たない。
    変換結果は小さなドット絵なので、拡大時もドットの角を保つ。 */
+/* [Intended] 表示倍率は CSS で固定せず、各画像の width/height 属性で与える。
+   変換結果は等倍で出力しており、整数倍にそろえないとドットの幅が不揃いになる。 */
 .guide-figure-output img {
   image-rendering: pixelated;
-  width: 256px;
-  background-color: var(--thumbnail-bg);
+  background-color: var(--bg-checkered-base);
   background-image: linear-gradient(
       45deg,
       var(--bg-checkered-color) 25%,
@@ -219,6 +220,28 @@
     linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+/* [Intended] 同じ画像を縮尺違いで並べる枠。生成画像は縮小と部分拡大で
+   ドットの縁のぼけを、変換結果は等倍と拡大で出力の小ささを見せる。
+   下端をそろえると、大きさの違う 2 枚を同じ足場で見比べられる。 */
+.guide-figure-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.guide-figure-view {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.guide-figure-scale {
+  font-size: 0.72rem;
+  color: var(--text-dim);
 }
 
 .guide-figure figcaption {

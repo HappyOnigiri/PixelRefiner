@@ -466,14 +466,20 @@ const resources = {
 		"guide.recipes.goal_label": "ねらい",
 		"guide.recipes.settings_label": "Pixel Refiner の設定",
 		"guide.recipes.caption_input": "生成画像（サンプル）",
+		"guide.recipes.scale_actual": "等倍",
+		"guide.recipes.scale_zoomed": "4倍表示",
 		"guide.recipes.caption_output": "変換結果（サンプル）",
 		"guide.recipe1.heading": "レシピ1: ゲームキャラクターのスプライト",
 		"guide.recipe1.goal":
 			"透過素材の基本形。背景色の選び方（暖色のキャラ × マゼンタ背景）と、見切れ防止の余白がテーマです。",
 		"guide.recipe1.settings":
 			"「プリセット」を「Auto」のままにします（背景は自動で透過されます）。",
-		"guide.recipe1.input_alt": "レシピ1の生成画像（差し替え予定のサンプル）",
-		"guide.recipe1.output_alt": "レシピ1の変換結果（差し替え予定のサンプル）",
+		"guide.recipe1.input_alt":
+			"レシピ1の生成画像。マゼンタ背景に、剣と盾を持つ騎士のドット絵",
+		"guide.recipe1.output_alt":
+			"レシピ1の変換結果。背景が透過した騎士のドット絵",
+		"guide.recipe1.caption_input": "生成画像（2048×2048px・縮小表示）",
+		"guide.recipe1.caption_output": "変換結果（Auto・60×85px の等倍出力）",
 		"guide.recipe2.heading": "レシピ2: アイテムアイコン",
 		"guide.recipe2.goal":
 			"UI 用の単一オブジェクト。赤い被写体には緑背景、という補色ルールの実例です。縁取りは生成時ではなく、プリセットに含まれるアウトラインで後付けします。",
@@ -971,13 +977,18 @@ const resources = {
 		"guide.recipes.goal_label": "目标",
 		"guide.recipes.settings_label": "Pixel Refiner 设置",
 		"guide.recipes.caption_input": "生成图片（示例）",
+		"guide.recipes.scale_actual": "原尺寸",
+		"guide.recipes.scale_zoomed": "4 倍显示",
 		"guide.recipes.caption_output": "转换结果（示例）",
 		"guide.recipe1.heading": "配方 1：游戏角色精灵",
 		"guide.recipe1.goal":
 			"透明素材的基本形态。重点是背景色的选法（暖色角色配品红背景），以及留出空白避免出框。",
 		"guide.recipe1.settings": "把“预设”保持为“Auto”（背景会自动透明化）。",
-		"guide.recipe1.input_alt": "配方 1 的生成图片（待替换的示例）",
-		"guide.recipe1.output_alt": "配方 1 的转换结果（待替换的示例）",
+		"guide.recipe1.input_alt":
+			"配方 1 的生成图片：品红背景上手持剑与盾的骑士像素画",
+		"guide.recipe1.output_alt": "配方 1 的转换结果：背景已透明的骑士像素画",
+		"guide.recipe1.caption_input": "生成图片（2048×2048px，缩小显示）",
+		"guide.recipe1.caption_output": "转换结果（Auto，60×85px 的原尺寸输出）",
 		"guide.recipe2.heading": "配方 2：道具图标",
 		"guide.recipe2.goal":
 			"用于 UI 的单一物件，是互补色规则的实例：红色主体配绿色背景。描边不在生成时要求，而是交给预设自带的描边功能。",
@@ -1496,6 +1507,8 @@ const resources = {
 		"guide.recipes.goal_label": "Goal",
 		"guide.recipes.settings_label": "Pixel Refiner settings",
 		"guide.recipes.caption_input": "Generated image (sample)",
+		"guide.recipes.scale_actual": "Actual size (1×)",
+		"guide.recipes.scale_zoomed": "Enlarged (4×)",
 		"guide.recipes.caption_output": "Converted result (sample)",
 		"guide.recipe1.heading": "Recipe 1: Game character sprite",
 		"guide.recipe1.goal":
@@ -1503,9 +1516,12 @@ const resources = {
 		"guide.recipe1.settings":
 			"Leave Preset on “Auto” (the background is made transparent automatically).",
 		"guide.recipe1.input_alt":
-			"Generated image for recipe 1 (placeholder sample)",
+			"Generated image for recipe 1: a knight sprite with a sword and shield on a magenta background",
 		"guide.recipe1.output_alt":
-			"Converted result for recipe 1 (placeholder sample)",
+			"Converted result for recipe 1: the knight sprite with a transparent background",
+		"guide.recipe1.caption_input":
+			"Generated image (2048×2048 px, shown scaled down)",
+		"guide.recipe1.caption_output": "Converted result (Auto, 60×85 px output)",
 		"guide.recipe2.heading": "Recipe 2: Item icon",
 		"guide.recipe2.goal":
 			"A single object for UI use, and a worked example of the complementary-color rule: a green background for a red subject. The outline is not requested at generation time; it comes from the preset instead.",
