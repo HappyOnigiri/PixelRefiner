@@ -160,8 +160,11 @@ describe("quality manifest", () => {
 		{
 			name: "case options on quick settings cases",
 			mutate: (draft: QualityImageCase[]) => {
-				const quick = draft.find((item) => item.quickSettings !== undefined);
-				if (!quick) throw new Error("Quick settings case not found");
+				// [Intended] 登録済みケースの種類に依存せず、この否定テスト内で Quick Settings ケースを作る。
+				const quick = draft.find((item) => item.presetId !== undefined);
+				if (!quick) throw new Error("Preset case not found");
+				delete quick.presetId;
+				quick.quickSettings = { reductionMode: "mono" };
 				quick.options.trimToContent = false;
 			},
 			error: "quick settings cases must not define case options",

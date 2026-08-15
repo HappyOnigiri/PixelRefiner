@@ -528,19 +528,18 @@ const resources = {
 		"guide.recipe3.goal":
 			"生成の段階から階調を絞っておき、パレット変換で選んだ機種の4階調へ正確に置き換えます。生成時の色そのものは残らないので、背景は仕上がりの色ではなく消しやすい色（緑の被写体に赤）で指定します。",
 		"guide.recipe3.settings":
-			"「かんたん設定」の「色数・配色」で「ゲームボーイ (ポケット)」を選びます。ほかはそのままで、背景は自動で透過されます。",
+			"「プリセット」で「レトロゲーム風」を選びます。背景は自動で透過されます。",
 		"guide.recipe3.input_alt":
 			"レシピ3の生成画像。赤い背景に緑のドラゴンのドット絵",
 		"guide.recipe3.output_alt":
 			"レシピ3の変換結果。背景が透過し、4階調のグレーになったドラゴンのドット絵",
 		"guide.recipe3.caption_input": "生成画像（2816×1536px・縮小表示）",
 		"guide.recipe3.caption_output":
-			"変換結果（ゲームボーイ (ポケット)・44×47px の等倍出力）",
+			"変換結果（レトロゲーム風・44×47px の等倍出力）",
 		"guide.recipe4.heading": "レシピ4: 背景用の一枚絵",
 		"guide.recipe4.goal":
 			"透過しないケース。キャラクターや小物を置かない風景を、そのまま背景として使えるドット絵に変換します。要素を減らして1ドットを大きく描かせる指示がポイントです。",
-		"guide.recipe4.settings":
-			"「かんたん設定」の「背景」を「背景を残す」にします（「仕上がり」は「おまかせ」のままで構いません）。",
+		"guide.recipe4.settings": "「プリセット」で「背景用の一枚絵」を選びます。",
 		"guide.recipe4.input_alt":
 			"レシピ4の生成画像。明るい空の下に緑の平原と青い山並みを描いたドット絵",
 		"guide.recipe4.output_alt":
@@ -554,19 +553,19 @@ const resources = {
 		"guide.recipe4.caption_input":
 			"生成画像（2752×1536px・全体と山頂境界の10倍表示）",
 		"guide.recipe4.caption_output":
-			"変換結果（おまかせ＋背景を残す・256×144px・全体と同じ山頂境界の10倍表示）",
+			"変換結果（背景用の一枚絵・256×144px・全体と同じ山頂境界の10倍表示）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
 			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。ドット絵を頼む代わりに、変換に強く効くフラットな塗りと太い輪郭線を指示します。",
 		"guide.recipe5.settings":
-			"「かんたん設定」の「仕上がり」を「細部を残してドット化」、「色数・配色」を「32色」にします。ドットの粗さを変えたいときは「ドットの細かさ」で調整します。",
+			"「プリセット」で「イラストをドット絵に変換」を選びます。ドットの粗さを変えたいときは、その後「かんたん設定」の「ドットの細かさ」で調整します。",
 		"guide.recipe5.input_alt":
 			"レシピ5の生成画像。青い背景に、フラットな塗りのデフォルメキャラクターのイラスト",
 		"guide.recipe5.output_alt":
 			"レシピ5の変換結果。背景が透過し、ドット絵になったデフォルメキャラクター",
 		"guide.recipe5.caption_input": "生成画像（2816×1536px・縮小表示）",
 		"guide.recipe5.caption_output":
-			"変換結果（細部を残してドット化＋32色・60×81px の等倍出力）",
+			"変換結果（イラストをドット絵に変換・60×81px の等倍出力）",
 		"guide.troubleshooting.heading": "うまくいかないときは",
 		"guide.troubleshooting.col_symptom": "症状",
 		"guide.troubleshooting.col_cause": "原因",
@@ -1093,18 +1092,17 @@ const resources = {
 		"guide.recipe3.goal":
 			"在生成阶段就把层次压少，再用调色板转换精确替换成所选机型的 4 个色阶。生成时的颜色本身不会保留，所以背景色不按成品的颜色来指定，而按容易去除来指定（绿色主体配红色背景）。",
 		"guide.recipe3.settings":
-			"在“快速设置”的“色彩”中选择“Game Boy (Pocket)”。其余保持不变，背景会自动透明化。",
+			"在“预设”中选择“复古游戏风格”。背景会自动透明化。",
 		"guide.recipe3.input_alt": "配方 3 的生成图片：红色背景上的绿色小龙像素画",
 		"guide.recipe3.output_alt":
 			"配方 3 的转换结果：背景已透明、变成 4 个灰色色阶的小龙像素画",
 		"guide.recipe3.caption_input": "生成图片（2816×1536px，缩小显示）",
 		"guide.recipe3.caption_output":
-			"转换结果（Game Boy (Pocket)，44×47px 的原尺寸输出）",
+			"转换结果（复古游戏风格，44×47px 的原尺寸输出）",
 		"guide.recipe4.heading": "配方 4：用作背景的整幅插画",
 		"guide.recipe4.goal":
 			"不做透明化的情况。把没有角色和小物件的风景，转换成可以直接当作背景使用的像素画。关键是要求减少元素、把每个像素画得更大。",
-		"guide.recipe4.settings":
-			"在“快速设置”中把“背景”设为“保留背景”（“效果”保持“智能推荐”即可）。",
+		"guide.recipe4.settings": "在“预设”中选择“背景插画”。",
 		"guide.recipe4.input_alt":
 			"配方 4 的生成图片：明亮天空下的绿色原野与蓝色群山像素画",
 		"guide.recipe4.output_alt":
@@ -1118,19 +1116,19 @@ const resources = {
 		"guide.recipe4.caption_input":
 			"生成图片（2752×1536px，整体与山峰边界的 10 倍显示）",
 		"guide.recipe4.caption_output":
-			"转换结果（智能推荐＋保留背景，256×144px，整体与同一山峰边界的 10 倍显示）",
+			"转换结果（背景插画，256×144px，整体与同一山峰边界的 10 倍显示）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
 			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。与其要求生成像素画，不如要求对转换特别有利的平涂上色和粗轮廓线。",
 		"guide.recipe5.settings":
-			"在“快速设置”中把“效果”设为“保留细节的像素画”，把“色彩”设为“32色”。想改变像素的粗细时，用“像素细节”调整。",
+			"在“预设”中选择“将插画转换为像素画”。想改变像素的粗细时，再用“快速设置”中的“像素细节”调整。",
 		"guide.recipe5.input_alt":
 			"配方 5 的生成图片：蓝色背景上、平涂上色的Q版角色插画",
 		"guide.recipe5.output_alt":
 			"配方 5 的转换结果：背景已透明、变成像素画的Q版角色",
 		"guide.recipe5.caption_input": "生成图片（2816×1536px，缩小显示）",
 		"guide.recipe5.caption_output":
-			"转换结果（保留细节的像素画＋32色，60×81px 的原尺寸输出）",
+			"转换结果（将插画转换为像素画，60×81px 的原尺寸输出）",
 		"guide.troubleshooting.heading": "效果不理想时",
 		"guide.troubleshooting.col_symptom": "现象",
 		"guide.troubleshooting.col_cause": "原因",
@@ -1686,7 +1684,7 @@ const resources = {
 		"guide.recipe3.goal":
 			"Ask for few tones at the generation stage, then let palette conversion map them exactly onto the four tones of the console you choose. The generated colors themselves do not survive, so the background is specified for easy removal — red against a green subject — rather than for the finished look.",
 		"guide.recipe3.settings":
-			"In Quick Settings, set Colors to “Game Boy (Pocket)”. Leave the rest as they are; the background is made transparent automatically.",
+			"Choose the “Retro Game Style” preset. The background is made transparent automatically.",
 		"guide.recipe3.input_alt":
 			"Generated image for recipe 3: a green dragon on a red background",
 		"guide.recipe3.output_alt":
@@ -1694,12 +1692,11 @@ const resources = {
 		"guide.recipe3.caption_input":
 			"Generated image (2816×1536 px, shown scaled down)",
 		"guide.recipe3.caption_output":
-			"Converted result (Game Boy (Pocket), 44×47 px output)",
+			"Converted result (Retro Game Style, 44×47 px output)",
 		"guide.recipe4.heading": "Recipe 4: Scenery for a background",
 		"guide.recipe4.goal":
 			"A case without transparency. A landscape with no characters or props is turned into pixel art you can use as a background as it is. The key is asking for few elements and large pixels.",
-		"guide.recipe4.settings":
-			"In Quick Settings, set Background to “Keep background” (Finish can stay on “Best Match”).",
+		"guide.recipe4.settings": "Choose the “Background Artwork” preset.",
 		"guide.recipe4.input_alt":
 			"Generated image for recipe 4: green fields and blue mountains beneath a bright sky",
 		"guide.recipe4.output_alt":
@@ -1713,13 +1710,13 @@ const resources = {
 		"guide.recipe4.caption_input":
 			"Generated image (2752×1536 px; whole image and peak edge at 10×)",
 		"guide.recipe4.caption_output":
-			"Converted result (Best Match + Keep background, 256×144 px; whole image and the same peak edge at 10×)",
+			"Converted result (Background Artwork, 256×144 px; whole image and the same peak edge at 10×)",
 		"guide.recipe5.heading":
 			"Recipe 5: Turn a normal illustration into pixel art",
 		"guide.recipe5.goal":
 			"Even with models or styles that cannot generate pixel art directly, an ordinary illustration can be converted into pixel art. Flat coloring and thick outlines survive the conversion well, so ask for them instead of asking for pixel art.",
 		"guide.recipe5.settings":
-			"In Quick Settings, set Finish to “Detailed Pixel Art” and Colors to “32 colors”. Use Pixel Detail to make the pixels coarser or finer.",
+			"Choose the “Convert Illustration to Pixel Art” preset. To make the pixels coarser or finer, adjust Pixel Detail in Quick Settings afterward.",
 		"guide.recipe5.input_alt":
 			"Generated image for recipe 5: a chibi character in flat colors on a blue background",
 		"guide.recipe5.output_alt":
@@ -1727,7 +1724,7 @@ const resources = {
 		"guide.recipe5.caption_input":
 			"Generated image (2816×1536 px, shown scaled down)",
 		"guide.recipe5.caption_output":
-			"Converted result (Detailed Pixel Art + 32 colors, 60×81 px output)",
+			"Converted result (Convert Illustration to Pixel Art, 60×81 px output)",
 		"guide.troubleshooting.heading": "When It Does Not Work",
 		"guide.troubleshooting.col_symptom": "Symptom",
 		"guide.troubleshooting.col_cause": "Cause",
