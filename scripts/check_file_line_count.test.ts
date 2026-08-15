@@ -158,6 +158,13 @@ describe("check_file_line_count.py", () => {
 		);
 	});
 
+	it("keeps the neighbours of an excluded file under the limits", () => {
+		const result = runChecker({ "test/quality/report/render.ts": 1001 });
+
+		expect(result.status).toBe(1);
+		expect(result.stdout).toContain("ERROR: test/quality/report/render.ts");
+	});
+
 	it("rejects unsupported arguments", () => {
 		const result = spawnSync("python3", [CHECKER_PATH, "--unknown"], {
 			encoding: "utf8",

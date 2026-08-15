@@ -8,14 +8,16 @@ TAB_WIDTH = 4
 
 # [Policy] 翻訳リソースには意図的に分割していないローカライズ文字列を含める。
 # 分割すると文章が分かりにくくなり、翻訳レビューも困難になる。
-# 品質レポートは訳文と描画コードが同じディレクトリに同居するため、まとめて対象外にする。
-EXCLUDED_DIRECTORIES = {
-    Path("src/browser/i18n/messages"),
-    Path("test/quality/report"),
-}
+EXCLUDED_DIRECTORIES = {Path("src/browser/i18n/messages")}
+
+# [Policy] 品質レポートの訳文も同じ理由で対象外にする。同じディレクトリにある描画
+# コードは行長を抑える対象のままにしたいので、ファイル単位で指定する。
+EXCLUDED_FILES = {Path("test/quality/report/translations.ts")}
 
 
 def is_excluded(path: Path) -> bool:
+    if path in EXCLUDED_FILES:
+        return True
     return any(directory in path.parents for directory in EXCLUDED_DIRECTORIES)
 
 
