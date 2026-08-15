@@ -1,16 +1,14 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
-import type {
-	DetailLevel,
-	ProcessingMode,
-	ProcessingRoute,
-} from "../shared/types";
+import type { DetailLevel, ProcessingMode } from "../shared/types";
 
 export type QuickReductionMode =
+	| "auto"
 	| "none"
 	| "8"
 	| "16"
+	| "24"
 	| "32"
 	| "mono"
 	| "gb_legacy"
@@ -39,13 +37,13 @@ export type QuickSettingsState = {
 export type BuiltInPreset = {
 	id: string;
 	labelKey: string;
-	options: ProcessOptions;
+	quickSettings: QuickSettingsState;
 };
 
 export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	processingMode: PROCESS_DEFAULTS.processingMode,
 	detailLevel: PROCESS_DEFAULTS.detailLevel,
-	reductionMode: "none",
+	reductionMode: "auto",
 	background: "auto",
 	dithering: "off",
 };
@@ -60,6 +58,7 @@ export const createQuickProcessOptions = (
 	const fixedColorCount =
 		quick.reductionMode === "8" ||
 		quick.reductionMode === "16" ||
+		quick.reductionMode === "24" ||
 		quick.reductionMode === "32"
 			? Number(quick.reductionMode)
 			: undefined;
@@ -71,12 +70,20 @@ export const createQuickProcessOptions = (
 		// [Policy] 背景を残す出力はキャンバス全体を維持し、背景を透過する出力だけを内容範囲へ詰める。
 		trimToContent: quick.background !== "keep",
 		preserveProcessingScale: true,
-		reduceColors: quick.reductionMode !== "none",
-		reduceColorMode:
-			fixedColorCount === undefined ? quick.reductionMode : "auto",
-		colorCount: fixedColorCount ?? PROCESS_DEFAULTS.colorCount,
 		fixedPalette: undefined,
 	};
+	if (quick.reductionMode === "auto") {
+		// [Policy] 仕上がりが Convert なら公開選択肢の「24色」、それ以外なら
+		// 「元の色を維持」を選ぶ。core の経路既定へ委ねるため指定自体を外す。
+		delete options.reduceColors;
+		delete options.reduceColorMode;
+		delete options.colorCount;
+	} else {
+		options.reduceColors = quick.reductionMode !== "none";
+		options.reduceColorMode =
+			fixedColorCount === undefined ? quick.reductionMode : "auto";
+		options.colorCount = fixedColorCount ?? PROCESS_DEFAULTS.colorCount;
+	}
 
 	if (quick.background === "keep") {
 		options.bgExtractionMethod = "none";
@@ -106,86 +113,43 @@ export const createQuickProcessOptions = (
 	return options;
 };
 
-const presetOptions = (
+const presetQuickSettings = (
 	quick: Partial<QuickSettingsState>,
-	overrides: ProcessOptions = {},
-): ProcessOptions => ({
-	...createQuickProcessOptions({ ...QUICK_SETTINGS_DEFAULTS, ...quick }),
-	...overrides,
-});
-
-/**
- * 減色の指定を取り除き、処理経路の既定に委ねる。
- *
- * [Intended] かんたん設定の減色モード「なし」は減色しないという明示的な指定なので、
- * そのまま渡すと経路任せの Auto と結果が変わる。経路へ委ねるには指定自体を落とす必要がある。
- */
-const withRouteManagedReduction = (options: ProcessOptions): ProcessOptions => {
-	const next = { ...options };
-	delete next.reduceColors;
-	delete next.reduceColorMode;
-	delete next.colorCount;
-	return next;
-};
-
-const AUTO_PRESET_OPTIONS = withRouteManagedReduction(presetOptions({}));
-
-/**
- * おまかせが選ぶ各経路を、同じ共通設定のまま手動で再現する。
- *
- * [Intended] Auto のときだけ有効になる補助判定は、経路を固定すると既定の "auto" では
- * 無効になる。プリセットでは明示的に有効化し、経路選択後の処理条件を揃える。
- */
-const autoRoutePresetOptions = (
-	processingMode: ProcessingRoute,
-): ProcessOptions => ({
-	...AUTO_PRESET_OPTIONS,
-	processingMode,
-	smallAspectGridAlignment: "on",
-	watermarkSamplingCompat: "on",
-});
+): QuickSettingsState => ({ ...QUICK_SETTINGS_DEFAULTS, ...quick });
 
 export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	{
 		id: "auto",
 		labelKey: "preset.auto",
-		options: AUTO_PRESET_OPTIONS,
+		quickSettings: presetQuickSettings({}),
 	},
 	{
 		id: "crisp-sprite",
 		labelKey: "preset.crisp_sprite",
-		options: autoRoutePresetOptions("refine"),
+		quickSettings: presetQuickSettings({ processingMode: "refine" }),
 	},
 	{
 		id: "keep-fine-details",
 		labelKey: "preset.keep_fine_details",
-		options: autoRoutePresetOptions("preserve"),
+		quickSettings: presetQuickSettings({ processingMode: "preserve" }),
 	},
 	{
 		id: "transparent-icon",
 		labelKey: "preset.transparent_icon",
-		options: presetOptions(
-			{},
-			{
-				reduceColors: true,
-				reduceColorMode: "auto",
-				colorCount: 32,
-				outlineStyle: "rounded",
-			},
-		),
+		quickSettings: presetQuickSettings({ reductionMode: "32" }),
 	},
 	{
 		id: "limited-colors",
 		labelKey: "preset.limited_colors",
-		options: presetOptions(
-			{ dithering: "subtle" },
-			{ reduceColors: true, reduceColorMode: "auto", colorCount: 16 },
-		),
+		quickSettings: presetQuickSettings({
+			reductionMode: "16",
+			dithering: "subtle",
+		}),
 	},
 	{
 		id: "photo-to-pixel",
 		labelKey: "preset.photo_to_pixel",
-		options: autoRoutePresetOptions("convert"),
+		quickSettings: presetQuickSettings({ processingMode: "convert" }),
 	},
 ] as const;
 
@@ -193,7 +157,9 @@ export const createBuiltInPresetOptions = (
 	presetId: string,
 ): ProcessOptions => {
 	const preset = BUILT_IN_PRESETS.find((entry) => entry.id === presetId);
-	return { ...(preset ?? BUILT_IN_PRESETS[0]).options };
+	return createQuickProcessOptions(
+		(preset ?? BUILT_IN_PRESETS[0]).quickSettings,
+	);
 };
 
 /** UI 初期状態と品質テストで共有するAutoプリセット。 */

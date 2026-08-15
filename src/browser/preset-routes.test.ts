@@ -2,7 +2,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { processImage } from "../core/processor";
 import { readPngAsRawImage } from "../core/processor-test-helpers";
-import { createBuiltInPresetOptions } from "./quick-settings";
+import {
+	createBuiltInPresetOptions,
+	createQuickProcessOptions,
+	QUICK_SETTINGS_DEFAULTS,
+} from "./quick-settings";
 
 describe("built-in preset routes", () => {
 	it.each([
@@ -22,11 +26,23 @@ describe("built-in preset routes", () => {
 				image,
 				createBuiltInPresetOptions(presetId),
 			);
+			const explicitChoices = processImage(
+				image,
+				createQuickProcessOptions({
+					...QUICK_SETTINGS_DEFAULTS,
+					processingMode: route,
+					reductionMode: route === "convert" ? "24" : "none",
+				}),
+			);
 
 			expect(automatic.analysis.route).toBe(route);
 			expect(fixedRoute.analysis.route).toBe(route);
 			expect(fixedRoute.result).toEqual(automatic.result);
 			expect(fixedRoute.extractedPalette).toEqual(automatic.extractedPalette);
+			expect(explicitChoices.result).toEqual(automatic.result);
+			expect(explicitChoices.extractedPalette).toEqual(
+				automatic.extractedPalette,
+			);
 		},
 	);
 });

@@ -678,15 +678,23 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.quick_colors">Colors</span>
+                        <span data-i18n="setting.quick_colors"
+                          >Color Reduction</span
+                        >
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_reduction_mode"
-                          data-tooltip="Chooses whether to keep the original colors, limit the color count, or use a built-in palette. Custom color counts and imported palettes are available in Advanced Settings."
+                          data-tooltip="Chooses color reduction. Best Match keeps original colors for Crisp Edges and Original Size Cleanup, and selects 24 colors for Detailed Pixel Art. Custom color counts and imported palettes are available in Advanced Settings."
                           >?</span
                         >
                       </span>
                       <select id="quick-reduction-mode">
+                        <option
+                          value="auto"
+                          data-i18n="option.quick_colors_auto"
+                        >
+                          Best Match
+                        </option>
                         <option
                           value="none"
                           data-i18n="option.quick_colors_original"
@@ -698,6 +706,9 @@
                         </option>
                         <option value="16" data-i18n="option.colors_16">
                           16 colors
+                        </option>
+                        <option value="24" data-i18n="option.colors_24">
+                          24 colors
                         </option>
                         <option value="32" data-i18n="option.colors_32">
                           32 colors
@@ -1510,17 +1521,11 @@
                           <span
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.small_aspect_grid_alignment"
-                            data-tooltip="For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area.&#10;&#10;This used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine.&#10;&#10;With Always Off, the Auto route selection also stops allowing small grids and may fall back to the preserve route."
+                            data-tooltip="For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area. Turning this off may cause Automatic Selection to select Preserve Original Size instead of a small grid."
                             >?</span
                           >
                         </span>
                         <select id="small-aspect-grid-alignment">
-                          <option
-                            value="auto"
-                            data-i18n="option.auto_behavior_auto"
-                          >
-                            Auto (Follow Processing Mode)
-                          </option>
                           <option
                             value="on"
                             data-i18n="option.auto_behavior_on"
@@ -2147,17 +2152,11 @@
                           <span
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.watermark_sampling_compat"
-                            data-tooltip="Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped.&#10;&#10;This used to run only in Auto. Set it to Always On to reproduce the Auto result from Refine."
+                            data-tooltip="Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped."
                             >?</span
                           >
                         </span>
                         <select id="watermark-sampling-compat">
-                          <option
-                            value="auto"
-                            data-i18n="option.auto_behavior_auto"
-                          >
-                            Auto (Follow Processing Mode)
-                          </option>
                           <option
                             value="on"
                             data-i18n="option.auto_behavior_on"

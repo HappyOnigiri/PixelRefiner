@@ -307,9 +307,9 @@ export const normalizeProcessOptions = (
 	smallComponentBackgroundGate: boolean;
 	phaseAwareGridSearch: boolean;
 	boundaryContrastOverride: boolean;
-	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	/** 3 択の生値を on/off へ解決した実効値。生値と区別するため名前を分ける。 */
 	smallAspectGridAlignmentEnabled: boolean;
-	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	/** 3 択の生値を on/off へ解決した実効値。生値と区別するため名前を分ける。 */
 	watermarkSamplingCompatEnabled: boolean;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
@@ -428,14 +428,14 @@ export const normalizeProcessOptions = (
 		...GRID_SIGNAL_DEFAULTS,
 		...raw.gridSignals,
 	};
-	// [Intended] "auto" は Auto 経路でだけ有効という従来の条件をそのまま表す。
-	// 明示指定された "on" / "off" は経路に関わらず優先する。
+	// [Policy] 保存済み設定の "auto" は "on" と同じ意味に移行する。
+	// 処理経路で有効状態を変えると、Auto が選んだ経路を手動で再現できなくなる。
 	const resolveAutoBehavior = (
 		setting: AutoBehaviorSetting | undefined,
 		fallback: AutoBehaviorSetting,
 	): boolean => {
 		const value = setting ?? fallback;
-		return value === "auto" ? processingMode === "auto" : value === "on";
+		return value !== "off";
 	};
 	const smallAspectGridAlignmentEnabled = resolveAutoBehavior(
 		raw.smallAspectGridAlignment,

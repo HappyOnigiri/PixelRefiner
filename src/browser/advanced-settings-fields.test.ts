@@ -8,10 +8,10 @@ describe("migrateAdvancedSettings", () => {
 
 		migrateAdvancedSettings(state);
 
-		// [Intended] 既定値は従来の挙動そのままなので、古いプリセットの出力は変わらない。
+		// [Policy] Auto 専用の処理条件を残さず、手動経路でも同じ補助処理を使う。
 		expect(state["cell-sampling-mode"]).toBe(PROCESS_DEFAULTS.cellSamplingMode);
-		expect(state["small-aspect-grid-alignment"]).toBe("auto");
-		expect(state["watermark-sampling-compat"]).toBe("auto");
+		expect(state["small-aspect-grid-alignment"]).toBe("on");
+		expect(state["watermark-sampling-compat"]).toBe("on");
 		expect(state["advanced-convert-size-mode"]).toBe(
 			PROCESS_DEFAULTS.detailLevel,
 		);
@@ -74,5 +74,17 @@ describe("migrateAdvancedSettings", () => {
 		expect(state["cell-sampling-mode"]).toBe("legacy-median");
 		expect(state["background-dehalo"]).toBe(false);
 		expect(state["small-aspect-grid-alignment"]).toBe("on");
+	});
+
+	it("migrates route-dependent auto behavior to always on", () => {
+		const state: Record<string, string | number | boolean> = {
+			"small-aspect-grid-alignment": "auto",
+			"watermark-sampling-compat": "auto",
+		};
+
+		migrateAdvancedSettings(state);
+
+		expect(state["small-aspect-grid-alignment"]).toBe("on");
+		expect(state["watermark-sampling-compat"]).toBe("on");
 	});
 });

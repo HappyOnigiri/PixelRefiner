@@ -859,9 +859,9 @@ export const PROCESS_DEFAULTS = {
 	// 境界コントラストが明確に優る粗い倍音へ採用格子を乗り換える
 	boundaryContrastOverride: true,
 	// 小さな論理解像度の格子で、角シードマスクの境界を基準領域に使う
-	smallAspectGridAlignment: "auto",
+	smallAspectGridAlignment: "on",
 	// 透かし除去が成立したとき、末尾行の欠落を防ぐ互換サンプラーへ切り替える
-	watermarkSamplingCompat: "auto",
+	watermarkSamplingCompat: "on",
 	// 検出前に背景色を推測してマスクする（検出器フォールバック用）
 	backgroundMask: true,
 	// 格子候補の各信号を個別に有効／無効にする

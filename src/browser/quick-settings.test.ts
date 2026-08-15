@@ -13,7 +13,7 @@ describe("quick settings", () => {
 		expect(QUICK_SETTINGS_DEFAULTS).toMatchObject({
 			processingMode: PROCESS_DEFAULTS.processingMode,
 			detailLevel: PROCESS_DEFAULTS.detailLevel,
-			reductionMode: "none",
+			reductionMode: "auto",
 		});
 	});
 
@@ -68,7 +68,7 @@ describe("quick settings", () => {
 		});
 	});
 
-	it.each(["8", "16", "32"] as const)(
+	it.each(["8", "16", "24", "32"] as const)(
 		"maps the %s-color choice to automatic reduction with a fixed count",
 		(reductionMode) => {
 			const options = createQuickProcessOptions({
@@ -147,13 +147,64 @@ describe("quick settings", () => {
 		]);
 		expect(createBuiltInPresetOptions("transparent-icon")).toMatchObject({
 			colorCount: 32,
-			outlineStyle: "rounded",
+			outlineStyle: "none",
 			trimToContent: true,
 		});
 		expect(createBuiltInPresetOptions("photo-to-pixel")).toMatchObject({
 			processingMode: "convert",
 			bgExtractionMethod: "auto",
 			trimToContent: true,
+		});
+	});
+
+	it("defines every built-in preset only as quick settings", () => {
+		const quickSettingsById = Object.fromEntries(
+			BUILT_IN_PRESETS.map((preset) => [preset.id, preset.quickSettings]),
+		);
+
+		expect(quickSettingsById).toEqual({
+			auto: {
+				processingMode: "auto",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+			"crisp-sprite": {
+				processingMode: "refine",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+			"keep-fine-details": {
+				processingMode: "preserve",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+			"transparent-icon": {
+				processingMode: "auto",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "32",
+				background: "auto",
+				dithering: "off",
+			},
+			"limited-colors": {
+				processingMode: "auto",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "16",
+				background: "auto",
+				dithering: "subtle",
+			},
+			"photo-to-pixel": {
+				processingMode: "convert",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
 		});
 	});
 
@@ -167,12 +218,7 @@ describe("quick settings", () => {
 			const auto = createBuiltInPresetOptions("auto");
 			const routePreset = createBuiltInPresetOptions(presetId);
 
-			expect(routePreset).toEqual({
-				...auto,
-				processingMode,
-				smallAspectGridAlignment: "on",
-				watermarkSamplingCompat: "on",
-			});
+			expect(routePreset).toEqual({ ...auto, processingMode });
 			expect(routePreset).not.toHaveProperty("reduceColors");
 			expect(routePreset).not.toHaveProperty("reduceColorMode");
 			expect(routePreset).not.toHaveProperty("colorCount");
