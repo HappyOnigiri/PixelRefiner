@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { BUILT_IN_PRESETS } from "../../src/browser/quick-settings";
 import { buildAutoCases } from "./auto-cases";
 import type { QualityImageCase, QualityParameterMode } from "./types";
 
@@ -10,6 +11,9 @@ export const FIXTURE_ROOT = path.resolve("test/fixtures");
 export const MANIFEST_PATH = path.join(QUALITY_ROOT, "cases.json");
 const CHECKED_IN_BASELINE_ROOT = path.join(QUALITY_ROOT, "baseline");
 const SAFE_CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const BUILT_IN_PRESET_IDS = new Set(
+	BUILT_IN_PRESETS.map((preset) => preset.id),
+);
 
 export const caseParameterMode = (
 	qualityCase: QualityImageCase,
@@ -102,6 +106,23 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 		}
 		if (qualityCase.assertions.length === 0) {
 			errors.push(`${qualityCase.id}: assertions must not be empty`);
+		}
+		if (qualityCase.presetId !== undefined) {
+			if (!BUILT_IN_PRESET_IDS.has(qualityCase.presetId)) {
+				errors.push(
+					`${qualityCase.id}: unknown preset ${qualityCase.presetId}`,
+				);
+			}
+			if (caseParameterMode(qualityCase) === "auto") {
+				errors.push(`${qualityCase.id}: auto cases must not define presetId`);
+			}
+			// [Intended] プリセット指定のケースは出荷される値をそのまま使う。オプションを
+			// 併記できるようにすると、掲載どおりの操作からずれた設定で測れてしまう。
+			if (Object.keys(qualityCase.options).length > 0) {
+				errors.push(
+					`${qualityCase.id}: preset cases must not define case options`,
+				);
+			}
 		}
 		const expectation = qualityCase.expectation;
 		if (caseParameterMode(qualityCase) === "auto") {

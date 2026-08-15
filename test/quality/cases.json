@@ -2536,5 +2536,97 @@
         "acquiredOrGeneratedAt": "2026-08-04"
       }
     ]
+  },
+  {
+    "id": "guide-recipe1-knight-sprite",
+    "featureIds": ["guide-recipes", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "presetId": "auto",
+    "options": {},
+    "input": "test/fixtures/guide_recipe1_knight_sprite.png",
+    "expected": "public/guide/recipe1-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 60,
+      "expectedHeight": 85
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/guide_recipe1_knight_sprite.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art sprite of a knight character, full body, front view, standing pose,\n16-bit retro game style, chunky pixels, limited color palette, flat shading,\ncentered with margin around the character,\nfull frame edge-to-edge solid magenta background (#FF00FF), no drop shadow, no outer glow, no gradient",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe1-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/guide_recipe1_knight_sprite.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
+  },
+  {
+    "id": "guide-recipe2-potion-icon",
+    "featureIds": ["guide-recipes", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "presetId": "transparent-icon",
+    "options": {},
+    "input": "test/fixtures/guide_recipe2_potion_icon.png",
+    "expected": "public/guide/recipe2-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 18,
+      "expectedHeight": 25
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/guide_recipe2_potion_icon.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art of a red potion bottle, single centered object, low resolution,\nflat colors, limited palette, full frame edge-to-edge solid bright green background (#00FF00),\nchroma key background fills entire canvas, completely green from edge to edge,\nno borders, no margins, no frame, no white background, no shadow, no reflection",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe2-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/guide_recipe2_potion_icon.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
   }
 ]

@@ -553,6 +553,28 @@
       "catastrophicFailure": false
     },
     {
+      "id": "guide-recipe1-knight-sprite",
+      "status": "passed",
+      "outputWidth": 60,
+      "outputHeight": 85,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "guide-recipe2-potion-icon",
+      "status": "passed",
+      "outputWidth": 18,
+      "outputHeight": 25,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "auto-auto-grid-detection",
       "status": "passed",
       "outputWidth": 88,

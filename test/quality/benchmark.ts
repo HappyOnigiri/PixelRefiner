@@ -1,6 +1,7 @@
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
+import { createBuiltInPresetOptions } from "../../src/browser/quick-settings";
 import { processBatchImages } from "../../src/core/batch";
 import { evaluateCandidateModalDecision } from "../../src/core/candidate-modal-decision";
 import {
@@ -59,6 +60,11 @@ const effectiveCaseOptions = (
 	// 混ぜないのは、UI を触らずに 1 枚渡した場合の判定精度を測るのが目的だから。
 	if (caseParameterMode(qualityCase) === "auto")
 		return { ...AUTO_CASE_OPTIONS };
+	// [Intended] プリセット指定のケースは fixture 用の背景抽出指定も混ぜず、出荷される
+	// プリセットの値だけで処理する。ガイドの手順どおりに操作した結果を再現するのが目的で、
+	// テスト都合の指定が 1 つでも入ると、掲載画像との一致が手順の裏付けにならなくなる。
+	if (qualityCase.presetId !== undefined)
+		return createBuiltInPresetOptions(qualityCase.presetId);
 	return {
 		...QUALITY_FIXTURE_OPTIONS,
 		processingMode: PROCESS_DEFAULTS.processingMode,

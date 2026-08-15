@@ -66,6 +66,8 @@ describe("quality manifest", () => {
 			"auto-quality-prf400-ui-low-confidence",
 			"auto-quality-rgb-noise",
 			"auto-quality-transparent-rgb-padding",
+			"auto-guide-recipe1-knight-sprite",
+			"auto-guide-recipe2-potion-icon",
 		]) {
 			expect(ids.has(id), id).toBe(false);
 		}
@@ -124,6 +126,24 @@ describe("quality manifest", () => {
 				delete lossy.expectation.minEdgeF1;
 			},
 			error: "non-exact case requires minEdgeF1",
+		},
+		{
+			name: "unknown presets",
+			mutate: (draft: QualityImageCase[]) => {
+				const preset = draft.find((item) => item.presetId !== undefined);
+				if (!preset) throw new Error("Preset case not found");
+				preset.presetId = "no-such-preset";
+			},
+			error: "unknown preset no-such-preset",
+		},
+		{
+			name: "case options on preset cases",
+			mutate: (draft: QualityImageCase[]) => {
+				const preset = draft.find((item) => item.presetId !== undefined);
+				if (!preset) throw new Error("Preset case not found");
+				preset.options.trimToContent = false;
+			},
+			error: "preset cases must not define case options",
 		},
 		{
 			name: "missing asset provenance",

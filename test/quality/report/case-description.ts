@@ -19,6 +19,33 @@ export const describeCase = (
 				"あわせて、固定した目標画像までの残りの差を目標との比較で測ります。",
 		};
 	}
+	if (result.id === "guide-recipe1-knight-sprite") {
+		return {
+			en:
+				"Process the 2048 x 2048 AI-generated knight published in the recipes guide, whose " +
+				"cell boundaries are antialiased over a magenta background, with the Auto preset the " +
+				"page tells the reader to select, and reproduce the published 60 x 85 result pixel " +
+				"for pixel. A mismatch means the published image no longer follows from the published steps.",
+			ja:
+				"レシピ集ページが掲載しているマゼンタ背景・2048×2048の生成AI製の騎士（セル境界はアンチエイリアス）を、" +
+				"ページが案内するとおり「Auto」プリセットのまま処理し、掲載している60×85の変換結果と1画素も違わないことを確認します。" +
+				"一致しなくなった場合は、掲載画像が掲載手順の結果ではなくなっています。",
+		};
+	}
+	if (result.id === "guide-recipe2-potion-icon") {
+		return {
+			en:
+				"Process the 2752 x 1536 AI-generated potion bottle published in the recipes guide, " +
+				"drawn over a chroma-key green background, with the Transparent Icon preset the page " +
+				"tells the reader to select, and reproduce the published 18 x 25 result pixel for pixel, " +
+				"including the transparent background and the white rounded outline the preset adds.",
+			ja:
+				"レシピ集ページが掲載している緑背景・2752×1536の生成AI製のポーション瓶を、" +
+				"ページが案内するとおり「透過アイコン」プリセットのまま処理し、" +
+				"プリセットが付ける背景の透過と白い丸みアウトラインを含めて、" +
+				"掲載している18×25の変換結果と1画素も違わないことを確認します。",
+		};
+	}
 	if (result.id === "restore-thin-features-and-alpha-coverage") {
 		return {
 			en:
