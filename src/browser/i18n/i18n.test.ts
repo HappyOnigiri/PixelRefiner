@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { I18nManager } from "./i18n";
+import { I18nManager } from "./index";
+import { guideMessages } from "./messages/guide";
 
 // localStorage をモック
 const localStorageMock = (() => {
@@ -285,6 +286,9 @@ describe("I18nManager", () => {
 
 	it("registers guide page copy in every language", () => {
 		const i18n = new I18nManager();
+		// guide.* は guide.html のエントリからだけ登録される
+		expect(i18n.t("guide.page_title")).toBe("guide.page_title");
+		i18n.registerMessages(guideMessages);
 		for (const language of ["ja", "en", "zh-CN"] as const) {
 			i18n.setLanguage(language);
 			for (const key of [

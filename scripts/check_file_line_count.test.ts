@@ -136,15 +136,17 @@ describe("check_file_line_count.py", () => {
 
 	it("excludes policy-approved TypeScript files from warning and hard limits", () => {
 		const warningResult = runChecker(
-			{ "src/browser/i18n.ts": 601 },
+			{ "src/browser/i18n/messages/guide.ts": 601 },
 			{ allWarnings: true },
 		);
-		const hardResult = runChecker({ "src/browser/i18n.ts": 1001 });
+		const hardResult = runChecker({
+			"src/browser/i18n/messages/guide.ts": 1001,
+		});
 
 		expect(warningResult.status).toBe(0);
-		expect(warningResult.stdout).not.toContain("i18n.ts has");
+		expect(warningResult.stdout).not.toContain("guide.ts has");
 		expect(hardResult.status).toBe(0);
-		expect(hardResult.stdout).not.toContain("i18n.ts has");
+		expect(hardResult.stdout).not.toContain("guide.ts has");
 		expect(hardResult.stdout).toContain(
 			"0 warning(s), 0 line-count error(s), 0 read error(s)",
 		);

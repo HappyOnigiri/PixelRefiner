@@ -8,7 +8,11 @@ TAB_WIDTH = 4
 
 # [Policy] 翻訳リソースには意図的に分割していないローカライズ文字列を含める。
 # 分割すると文章が分かりにくくなり、翻訳レビューも困難になる。
-EXCLUDED_FILES = {Path("src/browser/i18n.ts")}
+EXCLUDED_DIRECTORIES = {Path("src/browser/i18n/messages")}
+
+
+def is_excluded(path: Path) -> bool:
+    return any(directory in path.parents for directory in EXCLUDED_DIRECTORIES)
 
 
 def find_typescript_files() -> list[Path]:
@@ -52,7 +56,7 @@ def check_file(path: Path) -> list[str]:
 def main() -> int:
     errors = []
     for path in find_typescript_files():
-        if path in EXCLUDED_FILES:
+        if is_excluded(path):
             continue
         # [Intended] コミット前の削除済みファイルはindexに残っていても検査対象にしない。
         if not path.is_file():
