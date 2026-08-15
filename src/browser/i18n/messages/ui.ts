@@ -51,11 +51,6 @@ export const uiMessages = defineMessages({
 		en: "Images",
 		"zh-CN": "图片列表",
 	},
-	"ui.auto_process": {
-		ja: "自動",
-		en: "Auto",
-		"zh-CN": "自动",
-	},
 	"ui.download_btn": {
 		ja: "ダウンロード",
 		en: "Download",
@@ -120,11 +115,6 @@ export const uiMessages = defineMessages({
 		ja: "サイズ",
 		en: "Size",
 		"zh-CN": "尺寸",
-	},
-	"ui.view_single": {
-		ja: "単体",
-		en: "Single",
-		"zh-CN": "单图",
 	},
 	"ui.view_compare": {
 		ja: "比較",

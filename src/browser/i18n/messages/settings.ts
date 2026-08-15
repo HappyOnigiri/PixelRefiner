@@ -47,16 +47,6 @@ export const settingMessages = defineMessages({
 		en: "Finish",
 		"zh-CN": "效果",
 	},
-	"setting.size": {
-		ja: "サイズ",
-		en: "Size",
-		"zh-CN": "尺寸",
-	},
-	"setting.detail": {
-		ja: "細かさ",
-		en: "Detail",
-		"zh-CN": "细节",
-	},
 	"setting.convert_output_size": {
 		ja: "ドットの細かさ",
 		en: "Pixel Detail",
@@ -71,16 +61,6 @@ export const settingMessages = defineMessages({
 		ja: "出力高さ",
 		en: "Output Height",
 		"zh-CN": "输出高度",
-	},
-	"setting.background": {
-		ja: "背景透過",
-		en: "Background Transparency",
-		"zh-CN": "背景透明",
-	},
-	"setting.dithering": {
-		ja: "ディザリング",
-		en: "Dithering",
-		"zh-CN": "抖动",
 	},
 	"setting.color_reduction": {
 		ja: "減色",

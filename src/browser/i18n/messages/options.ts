@@ -82,21 +82,6 @@ export const optionMessages = defineMessages({
 		en: "Specify width and height",
 		"zh-CN": "指定宽度和高度",
 	},
-	"option.detail_coarse": {
-		ja: "粗め",
-		en: "Coarse",
-		"zh-CN": "粗略",
-	},
-	"option.detail_balanced": {
-		ja: "バランス",
-		en: "Balanced",
-		"zh-CN": "平衡",
-	},
-	"option.detail_detailed": {
-		ja: "細かめ",
-		en: "Detailed",
-		"zh-CN": "精细",
-	},
 	"option.colors_8": {
 		ja: "8色",
 		en: "8 colors",
