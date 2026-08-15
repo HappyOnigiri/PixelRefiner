@@ -170,7 +170,17 @@ describe("I18nManager", () => {
 			i18n.setLanguage(lang);
 			expect(i18n.t("preset.photo_to_pixel")).not.toBe("preset.photo_to_pixel");
 			for (const key of [
-				"setting.size",
+				"setting.quick_finish",
+				"setting.quick_pixel_detail",
+				"setting.quick_colors",
+				"setting.quick_background",
+				"setting.quick_gradient",
+				"setting.quick_canvas",
+				"option.quick_processing_auto",
+				"option.quick_processing_refine",
+				"option.quick_processing_convert",
+				"option.quick_processing_preserve",
+				"option.quick_colors_original",
 				"tooltip.help.quick_preset",
 				"tooltip.help.quick_processing_mode",
 				"tooltip.help.quick_detail",
@@ -199,6 +209,16 @@ describe("I18nManager", () => {
 				}),
 			).toContain("80");
 		}
+
+		i18n.setLanguage("ja");
+		expect(i18n.t("option.quick_processing_refine")).toBe("輪郭をくっきり");
+		expect(i18n.t("option.quick_processing_convert")).toBe(
+			"細部を残してドット化",
+		);
+		expect(i18n.t("option.quick_processing_refine")).not.toBe(
+			i18n.t("option.processing_refine"),
+		);
+		expect(i18n.t("preset.limited_colors")).toBe("16色レトロ");
 	});
 
 	it("registers small-component controls in every language", () => {
