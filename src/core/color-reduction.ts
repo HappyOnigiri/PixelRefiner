@@ -1,6 +1,7 @@
 import { RETRO_PALETTES } from "../shared/config";
 import type { DitherMode, PixelData, RawImage, RGB } from "../shared/types";
 import { OklabKMeans, PaletteQuantizer } from "./quantizer";
+import { alignPixelsToToneRamp } from "./tone-ramp-mapping";
 
 export const applyColorReduction = (
 	img: RawImage,
@@ -39,7 +40,7 @@ export const applyColorReduction = (
 	if (customPalette) {
 		const quantizer = new PaletteQuantizer(customPalette);
 		reducedPixels = quantizer.applyDithering(
-			workingPixelData,
+			alignPixelsToToneRamp(workingPixelData, customPalette),
 			img.width,
 			img.height,
 			ditherMode,
@@ -69,7 +70,7 @@ export const applyColorReduction = (
 			});
 			const quantizer = new PaletteQuantizer(colors);
 			reducedPixels = quantizer.applyDithering(
-				workingPixelData,
+				alignPixelsToToneRamp(workingPixelData, colors),
 				img.width,
 				img.height,
 				ditherMode,

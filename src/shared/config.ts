@@ -753,6 +753,54 @@ export const RETRO_PALETTES: Record<
 	},
 };
 
+/**
+ * モノトーン系パレット（単一色相の階調ランプ）での階調順マッピングの条件。
+ *
+ * [Intended] Oklab 距離の最近傍だけでは、入力の最暗色がパレットの最暗色へ届かず
+ * 判定境界の直上に密集して量子化が不安定になる。ゲームボーイ系のように階調が
+ * 一列に並ぶパレットに限り、入力の階調を順序どおりパレットへ対応させる。
+ */
+export const TONE_RAMP_MAPPING = {
+	/** 順序対応の対象にするパレットの最大色数。これを超える多色パレットは対象外。 */
+	maxPaletteColors: 8,
+	/** 色相の判定から除外する彩度の上限（Oklab クロマ）。 */
+	achromaticChroma: 0.02,
+	/**
+	 * 有彩色どうしで許容する色相のずれ（度）。
+	 *
+	 * [Policy] 実測では単一ランプの gb_legacy が 11.2 度、gb_light が 5.1 度に対し、
+	 * 多色相の pico8 や nes は 130 度以上になる。両者を余裕をもって分ける値にする。
+	 */
+	maxHueDeviationDeg: 30,
+	/** 別階調として区別するために必要なパレット L の最小間隔。 */
+	minPaletteLevelGap: 0.01,
+	/** 階調推定に使う不透明画素の、パレット 1 階調あたりの最小数。 */
+	minSamplesPerLevel: 4,
+	/**
+	 * 階調推定に使う画素の上限。これを超える入力は等間隔に間引く。
+	 *
+	 * [Policy] 階調の中心を求めるだけなので全画素を見る必要はない。原寸のまま
+	 * 減色する経路で反復回数と画素数の積が膨らむのを防ぐ。
+	 */
+	maxGradeSamples: 65_536,
+	/** 階調推定に使う 1 次元 k-means の反復回数。 */
+	kmeansIterations: 30,
+	/**
+	 * 階調が分かれていると認めるために必要な、クラスタで説明できる L 分散の割合。
+	 *
+	 * [Policy] 階調が離散的なドット絵は実測で 0.998 に達する一方、連続階調の
+	 * イラストや写真は 0.78〜0.94 にとどまる。順序対応は前者にだけ効かせ、
+	 * 後者では従来どおり最近傍量子化に任せる。
+	 */
+	minGradeSeparation: 0.98,
+	/** 両端合わせへ退避するときに外れ値を落とす分位。 */
+	fallbackPercentile: 0.005,
+	/** 写像を行うために必要な入力 L のレンジ幅。これ未満は平坦とみなす。 */
+	minSourceRange: 0.02,
+	/** 階調推定と写像で不透明とみなす alpha の下限。 */
+	alphaThreshold: 16,
+} as const;
+
 export const PROCESS_DEFAULTS = {
 	processingMode: "auto",
 	detailLevel: CONVERT_DEFAULTS.detailLevel,
