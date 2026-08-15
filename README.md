@@ -58,7 +58,7 @@ AI-generated pixel art often comes with blurry edges (anti-aliasing artifacts), 
 4. Hit **"Process"** (or enable **"Auto"**) to generate optimized pixel art sprites.
 5. Start with a purpose preset or adjust **Processing**, **Detail**, **Colors**, **Background**, **Dithering**, **Outline**, and **Auto Trim**.
 6. Open **Advanced Settings** only when you need exact grid, palette, tolerance, connectivity, or forced-size controls.
-7. Check the detected image type, selected route, and confidence beside the result size. A result chooser opens only when grid confidence is low.
+7. Check the detected image type, selected route, and confidence beside the result size. Alternative pixel sizes are listed below the result only when grid confidence is low.
 8. Use the **"Compare"** view to check the difference between the original and processed image with a slider.
 9. When you're happy with the result, click **"Download"** (use the ▼ dropdown to choose a scale factor).
 10. For multiple images, use **"Download All (ZIP)"** to export all processed sprites at once.
