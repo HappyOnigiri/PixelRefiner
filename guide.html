@@ -759,17 +759,42 @@ low resolution, chunky pixels, full frame edge-to-edge solid red background (#FF
               </button>
             </div>
             <figure class="guide-figure">
-              <img
-                src="/guide/recipe4-input.jpg"
-                alt="Generated image for recipe 4: green fields and blue mountains beneath a bright sky"
-                data-i18n-attr="alt:guide.recipe4.input_alt"
-                width="256"
-                height="143"
-                loading="lazy"
-                decoding="async"
-              />
+              <div class="guide-figure-views">
+                <div class="guide-figure-view">
+                  <img
+                    src="/guide/recipe4-input.jpg"
+                    alt="Generated image for recipe 4: green fields and blue mountains beneath a bright sky"
+                    data-i18n-attr="alt:guide.recipe4.input_alt"
+                    width="256"
+                    height="143"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span
+                    class="guide-figure-scale"
+                    data-i18n="guide.recipe4.view_whole"
+                    >Whole image</span
+                  >
+                </div>
+                <div class="guide-figure-view">
+                  <img
+                    src="/guide/recipe4-input-zoom.jpg"
+                    alt="Close-up of the left-hand mountains before conversion"
+                    data-i18n-attr="alt:guide.recipe4.input_zoom_alt"
+                    width="320"
+                    height="254"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span
+                    class="guide-figure-scale"
+                    data-i18n="guide.recipe4.view_detail"
+                    >Mountain detail</span
+                  >
+                </div>
+              </div>
               <figcaption data-i18n="guide.recipe4.caption_input">
-                Generated image (2752×1536 px, shown scaled down)
+                Generated image (2752×1536 px; whole image and mountain detail)
               </figcaption>
             </figure>
             <p class="guide-meta">
@@ -783,18 +808,43 @@ low resolution, chunky pixels, full frame edge-to-edge solid red background (#FF
               >
             </p>
             <figure class="guide-figure guide-figure-output">
-              <img
-                src="/guide/recipe4-output.png"
-                alt="Converted result for recipe 4: the mountain landscape kept as a full-frame background"
-                data-i18n-attr="alt:guide.recipe4.output_alt"
-                width="256"
-                height="144"
-                loading="lazy"
-                decoding="async"
-              />
+              <div class="guide-figure-views">
+                <div class="guide-figure-view">
+                  <img
+                    src="/guide/recipe4-output.png"
+                    alt="Converted result for recipe 4: the mountain landscape kept as a full-frame background"
+                    data-i18n-attr="alt:guide.recipe4.output_alt"
+                    width="256"
+                    height="144"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span
+                    class="guide-figure-scale"
+                    data-i18n="guide.recipe4.view_whole"
+                    >Whole image</span
+                  >
+                </div>
+                <div class="guide-figure-view">
+                  <img
+                    src="/guide/recipe4-output-zoom.png"
+                    alt="Close-up of the same mountains after conversion, with colors and edges aligned to the pixel grid"
+                    data-i18n-attr="alt:guide.recipe4.output_zoom_alt"
+                    width="320"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span
+                    class="guide-figure-scale"
+                    data-i18n="guide.recipe4.view_detail"
+                    >Mountain detail</span
+                  >
+                </div>
+              </div>
               <figcaption data-i18n="guide.recipe4.caption_output">
-                Converted result (Best Match + Keep background, 256×144 px
-                output)
+                Converted result (Best Match + Keep background, 256×144 px;
+                whole image and the same mountain detail)
               </figcaption>
             </figure>
           </article>
