@@ -1,6 +1,12 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { BUILT_IN_PRESETS } from "../../src/browser/quick-settings";
+import {
+	BUILT_IN_PRESETS,
+	type QuickBackground,
+	type QuickDithering,
+	type QuickReductionMode,
+} from "../../src/browser/quick-settings";
+import type { DetailLevel, ProcessingMode } from "../../src/shared/types";
 import { buildAutoCases } from "./auto-cases";
 import type { QualityImageCase, QualityParameterMode } from "./types";
 
@@ -14,6 +20,96 @@ const SAFE_CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BUILT_IN_PRESET_IDS = new Set(
 	BUILT_IN_PRESETS.map((preset) => preset.id),
 );
+
+// [Intended] cases.json は型検査を経ずに読み込むので、かんたん設定の項目名と値は
+// 実行時に確かめる。Record で全選択肢を並べているのは、UI 側に選択肢が増えたときに
+// この表の更新漏れを型エラーとして検出するため。
+const QUICK_SETTING_VALUES = {
+	processingMode: {
+		auto: true,
+		refine: true,
+		convert: true,
+		preserve: true,
+	} satisfies Record<ProcessingMode, true>,
+	detailLevel: {
+		smallest: true,
+		small: true,
+		coarse: true,
+		balanced: true,
+		detailed: true,
+	} satisfies Record<DetailLevel, true>,
+	reductionMode: {
+		auto: true,
+		none: true,
+		"8": true,
+		"16": true,
+		"24": true,
+		"32": true,
+		mono: true,
+		gb_legacy: true,
+		gb_pocket: true,
+		gb_light: true,
+		pico8: true,
+		nes: true,
+		pc98: true,
+		msx: true,
+		c64: true,
+		arne16: true,
+		sfc_sprite: true,
+		sfc_bg: true,
+	} satisfies Record<QuickReductionMode, true>,
+	background: {
+		keep: true,
+		auto: true,
+		pick: true,
+	} satisfies Record<QuickBackground, true>,
+	dithering: {
+		off: true,
+		subtle: true,
+		strong: true,
+	} satisfies Record<QuickDithering, true>,
+} as const;
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+const hasOwn = (target: object, key: string): boolean =>
+	Object.prototype.hasOwnProperty.call(target, key);
+
+const validateQuickSettings = (qualityCase: QualityImageCase): string[] => {
+	const quick = qualityCase.quickSettings;
+	if (quick === undefined) return [];
+	if (typeof quick !== "object" || quick === null || Array.isArray(quick)) {
+		return [`${qualityCase.id}: quickSettings must be an object`];
+	}
+	const errors: string[] = [];
+	for (const [key, value] of Object.entries(quick)) {
+		if (key === "backgroundColor") {
+			if (typeof value !== "string" || !HEX_COLOR.test(value)) {
+				errors.push(
+					`${qualityCase.id}: backgroundColor must be a #rrggbb color`,
+				);
+			}
+			continue;
+		}
+		if (!hasOwn(QUICK_SETTING_VALUES, key)) {
+			errors.push(`${qualityCase.id}: unknown quick setting ${key}`);
+			continue;
+		}
+		const allowed =
+			QUICK_SETTING_VALUES[key as keyof typeof QUICK_SETTING_VALUES];
+		if (typeof value !== "string" || !hasOwn(allowed, value)) {
+			errors.push(`${qualityCase.id}: invalid ${key} ${String(value)}`);
+		}
+	}
+	// [Intended] 背景色を選ぶ操作は色の指定とセットでしか案内されないので、
+	// 片方だけのケースは掲載手順を再現しない。
+	if (quick.background === "pick" && quick.backgroundColor === undefined) {
+		errors.push(
+			`${qualityCase.id}: background pick requires backgroundColor`,
+		);
+	}
+	return errors;
+};
 
 export const caseParameterMode = (
 	qualityCase: QualityImageCase,
@@ -130,6 +226,7 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 			}
 		}
 		if (qualityCase.quickSettings !== undefined) {
+			errors.push(...validateQuickSettings(qualityCase));
 			if (caseParameterMode(qualityCase) === "auto") {
 				errors.push(
 					`${qualityCase.id}: auto cases must not define quickSettings`,

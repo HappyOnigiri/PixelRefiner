@@ -11,6 +11,14 @@ import type { QualityImageCase } from "./types";
 const cases = loadCases();
 const cloneCases = (): QualityImageCase[] => structuredClone(cases);
 
+// [Intended] 登録済みケースの種類に依存せず、否定テスト内で Quick Settings ケースを作る。
+const asQuickSettingsCase = (draft: QualityImageCase[]): QualityImageCase => {
+	const quick = draft.find((item) => item.presetId !== undefined);
+	if (!quick) throw new Error("Preset case not found");
+	delete quick.presetId;
+	return quick;
+};
+
 afterEach(() => {
 	vi.unstubAllEnvs();
 });
@@ -160,14 +168,50 @@ describe("quality manifest", () => {
 		{
 			name: "case options on quick settings cases",
 			mutate: (draft: QualityImageCase[]) => {
-				// [Intended] 登録済みケースの種類に依存せず、この否定テスト内で Quick Settings ケースを作る。
-				const quick = draft.find((item) => item.presetId !== undefined);
-				if (!quick) throw new Error("Preset case not found");
-				delete quick.presetId;
+				const quick = asQuickSettingsCase(draft);
 				quick.quickSettings = { reductionMode: "mono" };
 				quick.options.trimToContent = false;
 			},
 			error: "quick settings cases must not define case options",
+		},
+		{
+			name: "unknown quick setting keys",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = {
+					colours: "mono",
+				} as unknown as QualityImageCase["quickSettings"];
+			},
+			error: "unknown quick setting colours",
+		},
+		{
+			name: "quick setting values outside the UI choices",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = {
+					reductionMode: "gameboy",
+				} as unknown as QualityImageCase["quickSettings"];
+			},
+			error: "invalid reductionMode gameboy",
+		},
+		{
+			name: "background pick without a color",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = { background: "pick" };
+			},
+			error: "background pick requires backgroundColor",
+		},
+		{
+			name: "malformed background colors",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = {
+					background: "pick",
+					backgroundColor: "magenta",
+				};
+			},
+			error: "backgroundColor must be a #rrggbb color",
 		},
 		{
 			name: "missing asset provenance",
