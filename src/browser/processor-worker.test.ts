@@ -1,0 +1,75 @@
+import { describe, expect, it, vi } from "vitest";
+import type { ProcessOptions } from "../core/processor";
+import type { RawImage } from "../shared/types";
+import {
+	createCancellableProcessor,
+	ProcessingCancelledError,
+	type ProcessorClient,
+	type ProcessorEndpoint,
+} from "./processor-worker";
+
+const image = { width: 1, height: 1, data: new Uint8ClampedArray(4) };
+const options = {} as ProcessOptions;
+
+const deferred = <Value>() => {
+	let resolve!: (value: Value) => void;
+	const promise = new Promise<Value>((complete) => {
+		resolve = complete;
+	});
+	return { promise, resolve };
+};
+
+const endpoint = (
+	process: ProcessorClient["process"],
+): ProcessorEndpoint & { terminate: ReturnType<typeof vi.fn> } => {
+	const terminate = vi.fn();
+	return {
+		terminate,
+		worker: { terminate },
+		processor: {
+			process,
+			processBatch: vi.fn(),
+			previewCandidates: vi.fn(),
+			processCandidate: vi.fn(),
+		},
+	};
+};
+
+describe("cancellable processor", () => {
+	it("terminates the running worker and uses a new worker for the latest request", async () => {
+		const firstResult = deferred<never>();
+		const secondResult = deferred<never>();
+		const firstEndpoint = endpoint(() => firstResult.promise);
+		const secondEndpoint = endpoint(() => secondResult.promise);
+		const createEndpoint = vi
+			.fn<() => ProcessorEndpoint>()
+			.mockReturnValueOnce(firstEndpoint)
+			.mockReturnValueOnce(secondEndpoint);
+		const processor = createCancellableProcessor(createEndpoint);
+
+		const first = processor.process(image as RawImage, options);
+		const cancelled = expect(first).rejects.toBeInstanceOf(
+			ProcessingCancelledError,
+		);
+		processor.cancelActive();
+
+		await cancelled;
+		expect(firstEndpoint.terminate).toHaveBeenCalledOnce();
+		expect(createEndpoint).toHaveBeenCalledTimes(2);
+
+		const second = processor.process(image as RawImage, options);
+		secondResult.resolve(undefined as never);
+		await expect(second).resolves.toBeUndefined();
+	});
+
+	it("keeps an idle worker instead of recreating it", () => {
+		const firstEndpoint = endpoint(vi.fn());
+		const createEndpoint = vi.fn(() => firstEndpoint);
+		const processor = createCancellableProcessor(createEndpoint);
+
+		processor.cancelActive();
+
+		expect(firstEndpoint.terminate).not.toHaveBeenCalled();
+		expect(createEndpoint).toHaveBeenCalledOnce();
+	});
+});

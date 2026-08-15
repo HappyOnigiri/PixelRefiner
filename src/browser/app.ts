@@ -241,7 +241,7 @@ export const initApp = (): void => {
 		}
 	};
 
-	const runProcessing = createRunProcessing({
+	const processingController = createRunProcessing({
 		els,
 		processingState,
 		imageSession,
@@ -253,6 +253,7 @@ export const initApp = (): void => {
 		updateBgColorFromMethod: () => updateBgColorFromMethod(),
 		candidateChooser,
 	});
+	const { runProcessing } = processingController;
 	const processPendingImages = createProcessPendingImages({
 		els,
 		processingState,
@@ -274,6 +275,7 @@ export const initApp = (): void => {
 		processingState,
 		imageSession,
 		runProcessing,
+		onAutoProcessScheduledChange: processingController.setAutoProcessScheduled,
 		saveSettings,
 		onLanguageChange: () =>
 			updateProcessingAnalysis(imageSession.getActiveImage()),

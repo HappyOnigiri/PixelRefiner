@@ -16,7 +16,7 @@ import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { createLoadingOverlay } from "./loading-overlay";
 import { showError, showWarning } from "./notifications";
-import { processor } from "./processing-controller";
+import { processor } from "./processor-worker";
 import type { ImageSession } from "./session";
 import { createProcessOptions } from "./settings-options";
 
