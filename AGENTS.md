@@ -15,9 +15,11 @@
 
 ## Localization
 
-When adding or changing `data-i18n` or `data-i18n-attr` attributes in the app UI (`index.html` and `src/browser`), register their keys in the `ja`, `en`, and `zh-CN` resources in `src/browser/i18n.ts`.
+Keys for `data-i18n` and `data-i18n-attr` in the app UI (`index.html` and `src/browser`) live in `src/browser/i18n/messages/`, one module per key prefix, with the three languages written together in a single entry per key. `src/browser/i18n/messages.test.ts` checks the prefix-to-module mapping, keys referenced from HTML but never defined, and keys that nothing references anymore.
 
-The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in the `en`, `ja`, and `zh-CN` resources in `test/quality/report/translations.ts` instead. Do not add report-only keys to `src/browser/i18n.ts`.
+`guide.*` belongs to `messages/guide.ts` and is deliberately left out of `appMessages`, so the recipe copy stays out of the app bundle; `src/browser/guide.ts` registers it with `i18n.registerMessages()`.
+
+The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in the `en`, `ja`, and `zh-CN` resources in `test/quality/report/translations.ts` instead. Do not add report-only keys to `src/browser/i18n/`.
 
 ## Guide Page
 
