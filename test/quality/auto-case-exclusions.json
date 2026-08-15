@@ -46,6 +46,7 @@
 		"auto-quality-transparent-rgb-padding": "透明画素の RGB パディング処理を明示オプションで検証する専用ケース。",
 		"auto-guide-recipe1-knight-sprite": "ガイドが案内する「Auto」プリセットで掲載画像を再現する専用ケース。同じ入力を同じオプションで二重に処理しない。",
 		"auto-guide-recipe2-potion-icon": "ガイドが案内する「透過アイコン」プリセットで掲載画像を再現する専用ケース。",
-		"auto-guide-recipe3-dragon-sprite": "ガイドが案内するかんたん設定の「ゲームボーイ (ポケット)」で掲載画像を再現する専用ケース。"
+		"auto-guide-recipe3-dragon-sprite": "ガイドが案内するかんたん設定の「ゲームボーイ (ポケット)」で掲載画像を再現する専用ケース。",
+		"auto-guide-recipe5-chibi-character": "ガイドが案内するかんたん設定の「細部を残してドット化」と「32色」で掲載画像を再現する専用ケース。"
 	}
 }

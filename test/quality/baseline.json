@@ -586,6 +586,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "guide-recipe5-chibi-character",
+      "status": "passed",
+      "outputWidth": 60,
+      "outputHeight": 81,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "auto-auto-grid-detection",
       "status": "passed",
       "outputWidth": 88,

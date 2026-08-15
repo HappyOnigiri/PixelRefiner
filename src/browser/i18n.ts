@@ -538,11 +538,16 @@ const resources = {
 		"guide.recipe4.output_alt": "レシピ4の変換結果（差し替え予定のサンプル）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
-			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。フラットな塗りと太い輪郭線が変換に強く効きます。",
+			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。ドット絵を頼む代わりに、変換に強く効くフラットな塗りと太い輪郭線を指示します。",
 		"guide.recipe5.settings":
-			"「かんたん設定」の「仕上がり」を「細部を残してドット化」にして、「ドットの細かさ」と「色数・配色」を好みに調整します。",
-		"guide.recipe5.input_alt": "レシピ5の生成画像（差し替え予定のサンプル）",
-		"guide.recipe5.output_alt": "レシピ5の変換結果（差し替え予定のサンプル）",
+			"「かんたん設定」の「仕上がり」を「細部を残してドット化」、「色数・配色」を「32色」にします。ドットの粗さを変えたいときは「ドットの細かさ」で調整します。",
+		"guide.recipe5.input_alt":
+			"レシピ5の生成画像。青い背景に、フラットな塗りのデフォルメキャラクターのイラスト",
+		"guide.recipe5.output_alt":
+			"レシピ5の変換結果。背景が透過し、ドット絵になったデフォルメキャラクター",
+		"guide.recipe5.caption_input": "生成画像（2816×1536px・縮小表示）",
+		"guide.recipe5.caption_output":
+			"変換結果（細部を残してドット化＋32色・60×81px の等倍出力）",
 		"guide.troubleshooting.heading": "うまくいかないときは",
 		"guide.troubleshooting.col_symptom": "症状",
 		"guide.troubleshooting.col_cause": "原因",
@@ -1079,11 +1084,16 @@ const resources = {
 		"guide.recipe4.output_alt": "配方 4 的转换结果（待替换的示例）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
-			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。平涂的上色和粗轮廓线对转换特别有利。",
+			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。与其要求生成像素画，不如要求对转换特别有利的平涂上色和粗轮廓线。",
 		"guide.recipe5.settings":
-			"在“快速设置”中把“效果”设为“保留细节的像素画”，再按喜好调整“像素细节”和“色彩”。",
-		"guide.recipe5.input_alt": "配方 5 的生成图片（待替换的示例）",
-		"guide.recipe5.output_alt": "配方 5 的转换结果（待替换的示例）",
+			"在“快速设置”中把“效果”设为“保留细节的像素画”，把“色彩”设为“32色”。想改变像素的粗细时，用“像素细节”调整。",
+		"guide.recipe5.input_alt":
+			"配方 5 的生成图片：蓝色背景上、平涂上色的Q版角色插画",
+		"guide.recipe5.output_alt":
+			"配方 5 的转换结果：背景已透明、变成像素画的Q版角色",
+		"guide.recipe5.caption_input": "生成图片（2816×1536px，缩小显示）",
+		"guide.recipe5.caption_output":
+			"转换结果（保留细节的像素画＋32色，60×81px 的原尺寸输出）",
 		"guide.troubleshooting.heading": "效果不理想时",
 		"guide.troubleshooting.col_symptom": "现象",
 		"guide.troubleshooting.col_cause": "原因",
@@ -1653,13 +1663,17 @@ const resources = {
 		"guide.recipe5.heading":
 			"Recipe 5: Turn a normal illustration into pixel art",
 		"guide.recipe5.goal":
-			"Even with models or styles that cannot generate pixel art directly, an ordinary illustration can be converted into pixel art. Flat coloring and thick outlines survive the conversion well.",
+			"Even with models or styles that cannot generate pixel art directly, an ordinary illustration can be converted into pixel art. Flat coloring and thick outlines survive the conversion well, so ask for them instead of asking for pixel art.",
 		"guide.recipe5.settings":
-			"In Quick Settings, set Finish to “Detailed Pixel Art”, then tune Pixel Detail and Colors to taste.",
+			"In Quick Settings, set Finish to “Detailed Pixel Art” and Colors to “32 colors”. Use Pixel Detail to make the pixels coarser or finer.",
 		"guide.recipe5.input_alt":
-			"Generated image for recipe 5 (placeholder sample)",
+			"Generated image for recipe 5: a chibi character in flat colors on a blue background",
 		"guide.recipe5.output_alt":
-			"Converted result for recipe 5 (placeholder sample)",
+			"Converted result for recipe 5: the chibi character redrawn as pixel art with a transparent background",
+		"guide.recipe5.caption_input":
+			"Generated image (2816×1536 px, shown scaled down)",
+		"guide.recipe5.caption_output":
+			"Converted result (Detailed Pixel Art + 32 colors, 60×81 px output)",
 		"guide.troubleshooting.heading": "When It Does Not Work",
 		"guide.troubleshooting.col_symptom": "Symptom",
 		"guide.troubleshooting.col_cause": "Cause",

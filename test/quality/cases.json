@@ -2674,5 +2674,51 @@
         "termsCheckedAt": "2026-08-15"
       }
     ]
+  },
+  {
+    "id": "guide-recipe5-chibi-character",
+    "featureIds": ["guide-recipes", "PRF-310", "PRF-400"],
+    "profile": "full",
+    "inputKind": "continuous-illustration",
+    "degradationPatterns": [],
+    "quickSettings": { "processingMode": "convert", "reductionMode": "32" },
+    "options": {},
+    "input": "test/fixtures/guide_recipe5_chibi_character.png",
+    "expected": "public/guide/recipe5-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 60,
+      "expectedHeight": 81
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/guide_recipe5_chibi_character.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Cute chibi character illustration, cel shading, flat colors, thick outlines,\nfull frame edge-to-edge solid blue background, no gradients, no drop shadow",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe5-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/guide_recipe5_chibi_character.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
   }
 ]

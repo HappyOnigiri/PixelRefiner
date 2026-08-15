@@ -69,6 +69,7 @@ describe("quality manifest", () => {
 			"auto-guide-recipe1-knight-sprite",
 			"auto-guide-recipe2-potion-icon",
 			"auto-guide-recipe3-dragon-sprite",
+			"auto-guide-recipe5-chibi-character",
 		]) {
 			expect(ids.has(id), id).toBe(false);
 		}

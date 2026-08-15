@@ -60,6 +60,23 @@ export const describeCase = (
 				"掲載している44×47の変換結果と1画素も違わないことを確認します。",
 		};
 	}
+	if (result.id === "guide-recipe5-chibi-character") {
+		return {
+			en:
+				"Process the 2816 x 1536 AI-generated chibi character published in the recipes guide, " +
+				"an ordinary flat-colored illustration rather than pixel art, with Finish set to " +
+				"Detailed Pixel Art and Colors set to 32 colors in Quick Settings as the page tells the " +
+				"reader, and reproduce the published 60 x 81 result pixel for pixel, including the " +
+				"transparent background and the thick outlines carried over from the illustration.",
+			ja:
+				"レシピ集ページが掲載している青背景・2816×1536の生成AI製のデフォルメキャラクターを、" +
+				"ドット絵ではないフラットな塗りのイラストのまま、" +
+				"ページが案内するとおりかんたん設定の「仕上がり」を「細部を残してドット化」、" +
+				"「色数・配色」を「32色」にして処理し、" +
+				"背景の透過とイラストから引き継いだ太い輪郭線を含めて、" +
+				"掲載している60×81の変換結果と1画素も違わないことを確認します。",
+		};
+	}
 	if (result.id === "restore-thin-features-and-alpha-coverage") {
 		return {
 			en:

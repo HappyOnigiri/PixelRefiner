@@ -818,11 +818,10 @@ consistent pixel grid throughout the entire image</code></pre>
                 >Even with models or styles that cannot generate pixel art
                 directly, an ordinary illustration can be converted into pixel
                 art. Flat coloring and thick outlines survive the conversion
-                well.</span
+                well, so ask for them instead of asking for pixel art.</span
               >
             </p>
             <div class="prompt-block" data-prompt-block>
-              <!-- REPLACE: レシピ5 のプロンプト（実際に使用したものへ差し替え） -->
               <pre
                 class="prompt-code"
               ><code>Cute chibi character illustration, cel shading, flat colors, thick outlines,
@@ -837,18 +836,17 @@ full frame edge-to-edge solid blue background, no gradients, no drop shadow</cod
               </button>
             </div>
             <figure class="guide-figure">
-              <!-- REPLACE: public/guide/recipe5-input.png を実画像へ差し替え -->
               <img
-                src="/guide/recipe5-input.png"
-                alt="Generated image for recipe 5 (placeholder sample)"
+                src="/guide/recipe5-input.jpg"
+                alt="Generated image for recipe 5: a chibi character in flat colors on a blue background"
                 data-i18n-attr="alt:guide.recipe5.input_alt"
                 width="256"
-                height="256"
+                height="140"
                 loading="lazy"
                 decoding="async"
               />
-              <figcaption data-i18n="guide.recipes.caption_input">
-                Generated image (sample)
+              <figcaption data-i18n="guide.recipe5.caption_input">
+                Generated image (2816×1536 px, shown scaled down)
               </figcaption>
             </figure>
             <p class="guide-meta">
@@ -857,23 +855,49 @@ full frame edge-to-edge solid blue background, no gradients, no drop shadow</cod
                 data-i18n="guide.recipes.settings_label"
                 >Pixel Refiner settings</span
               ><span data-i18n="guide.recipe5.settings"
-                >In Quick Settings, set Finish to “Detailed Pixel Art”, then
-                tune Pixel Detail and Colors to taste.</span
+                >In Quick Settings, set Finish to “Detailed Pixel Art” and
+                Colors to “32 colors”. Use Pixel Detail to make the pixels
+                coarser or finer.</span
               >
             </p>
             <figure class="guide-figure guide-figure-output">
-              <!-- REPLACE: public/guide/recipe5-output.png を実画像へ差し替え -->
-              <img
-                src="/guide/recipe5-output.png"
-                alt="Converted result for recipe 5 (placeholder sample)"
-                data-i18n-attr="alt:guide.recipe5.output_alt"
-                width="256"
-                height="256"
-                loading="lazy"
-                decoding="async"
-              />
-              <figcaption data-i18n="guide.recipes.caption_output">
-                Converted result (sample)
+              <div class="guide-figure-views">
+                <div class="guide-figure-view">
+                  <img
+                    src="/guide/recipe5-output.png"
+                    alt="Converted result for recipe 5: the chibi character redrawn as pixel art with a transparent background"
+                    data-i18n-attr="alt:guide.recipe5.output_alt"
+                    width="240"
+                    height="324"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span
+                    class="guide-figure-scale"
+                    data-i18n="guide.recipes.scale_zoomed"
+                    >Enlarged (4×)</span
+                  >
+                </div>
+                <div class="guide-figure-view">
+                  <img
+                    src="/guide/recipe5-output.png"
+                    alt=""
+                    aria-hidden="true"
+                    width="60"
+                    height="81"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span
+                    class="guide-figure-scale"
+                    data-i18n="guide.recipes.scale_actual"
+                    >Actual size (1×)</span
+                  >
+                </div>
+              </div>
+              <figcaption data-i18n="guide.recipe5.caption_output">
+                Converted result (Detailed Pixel Art + 32 colors, 60×81 px
+                output)
               </figcaption>
             </figure>
           </article>
