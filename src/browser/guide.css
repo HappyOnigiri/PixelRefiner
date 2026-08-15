@@ -33,15 +33,24 @@
   gap: 4px 12px;
 }
 
+/* [Intended] ページ名は製品名より一段下の情報。枠や地色で強調せず、
+   書体・字送り・色だけでドット絵ロゴと区別する。 */
 .guide-page-name {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--accent);
-  padding: 2px 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+/* [Intended] 読み物のセクションは押せないので、本体アプリのパネルが持つ
+   影とホバー時の枠色変化を打ち消し、面ではなく区切りとして見せる。 */
+.guide-section {
+  box-shadow: none;
+}
+
+.guide-section:hover {
+  border-color: var(--border-color);
 }
 
 .guide-section p {
@@ -86,13 +95,15 @@
 .guide-card {
   background: var(--bg-input);
   border: 1px solid var(--border-color);
-  border-left: 3px solid var(--primary);
   border-radius: var(--radius-md);
   padding: 16px;
 }
 
-.guide-card-caution {
-  border-left-color: var(--accent);
+/* [Intended] 生成時に防ぐ必要がある側だけ見出しを accent にする。
+   2枚を色分けするだけの左端バーは意味を持たないため置かない。
+   どちらの内容かは見出しの文言が示すので、色には依存させない。 */
+.guide-card-caution h3 {
+  color: var(--accent);
 }
 
 .guide-card ul {
@@ -120,25 +131,29 @@
   margin: 0 0 16px;
 }
 
+/* [Intended] チップにせず、字送りと色だけで項目名と分ける。 */
 .guide-meta-label {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--text-dim);
-  background: var(--surface-hover);
-  border-radius: var(--radius-sm);
-  padding: 1px 6px;
-  margin-right: 8px;
+  margin-right: 10px;
 }
 
 /* プロンプト */
+/* [Intended] コピーボタンはコード面に重ねず下に置く。重ねると 1 行の
+   プロンプトでも下端に余白を確保する必要があり、空白が装飾に見える。 */
 .prompt-block {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   margin: 0 0 16px;
 }
 
 .prompt-code {
+  align-self: stretch;
   font-family: var(--font-mono);
   font-size: 0.82rem;
   line-height: 1.7;
@@ -147,22 +162,21 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   margin: 0;
-  padding: 16px 16px 44px;
+  padding: 14px 16px;
   overflow-x: auto;
   white-space: pre;
 }
 
+/* [Policy] 押せる部品は本体アプリのボタンと同じ見え方に揃える。 */
 .prompt-copy {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 3px 10px;
+  box-shadow: var(--shadow-sm);
+  padding: 4px 10px;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
@@ -174,9 +188,10 @@
 }
 
 /* 作例画像 */
+/* [Intended] 本文と同じ左端に揃える。中央寄せは作例を見せ場に変えてしまい、
+   手順を追う読み順から外れる。 */
 .guide-figure {
   margin: 0 0 16px;
-  text-align: center;
 }
 
 .guide-figure img {
@@ -184,6 +199,15 @@
   height: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
+}
+
+/* [Intended] 市松模様は透過しているかを確かめるための表示なので、
+   透過が結果になる変換後の画像にだけ敷く。生成画像は不透明で、
+   敷いても意味を持たない。
+   変換結果は小さなドット絵なので、拡大時もドットの角を保つ。 */
+.guide-figure-output img {
+  image-rendering: pixelated;
+  width: 256px;
   background-color: var(--thumbnail-bg);
   background-image: linear-gradient(
       45deg,
@@ -195,12 +219,6 @@
     linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-}
-
-/* [Intended] 変換結果は小さなドット絵なので、拡大時もドットの角を保つ。 */
-.guide-figure-output img {
-  image-rendering: pixelated;
-  width: 256px;
 }
 
 .guide-figure figcaption {
@@ -239,6 +257,24 @@
 
 .guide-table td {
   color: var(--text-muted);
+}
+
+/* 注記 */
+/* [Intended] 本文ではなく出典の断り書きなので、他のセクションと同じ枠付きの
+   面には入れず、罫線一本の脚注として最後に置く。 */
+.guide-note {
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+/* [Intended] セクション見出しの accent マーカーは外す。他の 4 セクションと
+   同じ強さで出ると、脚注が本文と同格に見える。 */
+.guide-note h2::before {
+  display: none;
+}
+
+.guide-note p {
+  font-size: 0.88rem;
 }
 
 @media (max-width: 640px) {

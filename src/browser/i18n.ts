@@ -510,7 +510,7 @@ const resources = {
 		"guide.troubleshooting.r1_symptom": "キャラクターの白目などに穴が開く",
 		"guide.troubleshooting.r1_cause": "背景色が被写体の中にも使われている",
 		"guide.troubleshooting.r1_fix":
-			"背景を被写体に含まれない原色に変える（例: <code>solid magenta background</code>）",
+			"背景を被写体に含まれない原色に変える（例: <code>full frame edge-to-edge solid magenta background</code>）",
 		"guide.troubleshooting.r2_symptom":
 			"輪郭の周りに背景色のフチが残る・にじむ",
 		"guide.troubleshooting.r2_cause": "影やグローが被写体の周囲にある",
@@ -1012,7 +1012,7 @@ const resources = {
 		"guide.troubleshooting.r1_symptom": "角色的眼白等部位出现空洞",
 		"guide.troubleshooting.r1_cause": "背景色也出现在主体内部",
 		"guide.troubleshooting.r1_fix":
-			"把背景换成主体中不存在的纯色（例如 <code>solid magenta background</code>）",
+			"把背景换成主体中不存在的纯色（例如 <code>full frame edge-to-edge solid magenta background</code>）",
 		"guide.troubleshooting.r2_symptom": "轮廓周围残留背景色的边缘或发生渗色",
 		"guide.troubleshooting.r2_cause": "主体周围存在阴影或辉光",
 		"guide.troubleshooting.r2_fix":
@@ -1553,7 +1553,7 @@ const resources = {
 		"guide.troubleshooting.r1_cause":
 			"The background color also appears inside the subject",
 		"guide.troubleshooting.r1_fix":
-			"Switch the background to a saturated color that never appears in the subject (for example <code>solid magenta background</code>)",
+			"Switch the background to a saturated color that never appears in the subject (for example <code>full frame edge-to-edge solid magenta background</code>)",
 		"guide.troubleshooting.r2_symptom":
 			"A fringe of background color remains or bleeds around the outline",
 		"guide.troubleshooting.r2_cause": "A shadow or glow surrounds the subject",
