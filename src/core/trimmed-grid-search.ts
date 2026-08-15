@@ -16,6 +16,10 @@ import {
 	findSkippedEvidencePeaks,
 	scanBoundaryEvidence,
 } from "./grid-signals/boundary-evidence";
+import {
+	findAxisPhase,
+	findPhaseConfirmedSize,
+} from "./grid-signals/grid-phase";
 import { downsample } from "./image-operations";
 
 type GridEstimateFromTrimmed = {
@@ -88,37 +92,6 @@ const harmonicOutHeights = (outH: number): number[] => {
 		heights.push(outH * factors[index]);
 	}
 	return heights;
-};
-
-/**
- * 採用したセル寸法のまま、境界がもっとも揃う位相を 1px 刻みで探す。
- * 位相はコンテンツ BBox の左上を 0 とした画素数で返し、証拠が薄い軸は null を返す。
- *
- * [Intended] セル寸法はコンテンツ BBox の幅・高さから割り出すのに、投影は
- * キャンバス左上を起点にしていたため、BBox 開始位置の端数だけ格子がずれていた。
- * ずれた格子ではどのセルも隣のドットを食うので、代表色が混色へ寄る（実測:
- * 20x18 が正解の 1254x1254 生成画像で x が 1/6 セルずれ、輪郭とハイライトが
- * にじんだ）。倍率を選んだ根拠である境界コントラストは BBox 起点で測っているので、
- * 位相もその指標で決めて投影と食い違わないようにする。
- */
-const findAxisPhase = (
-	contrast: (cell: number, phase?: number) => number,
-	cell: number,
-): number | null => {
-	if (cell < BOUNDARY_CONTRAST_LIMITS.minPhaseCellPixels) return null;
-	let bestPhase = 0;
-	let bestContrast = contrast(cell, 0);
-	// 位相 0 とセル幅ちょうどは同じ格子なので、走査は 1 〜 ceil(cell)-1 で足りる。
-	for (let phase = 1; phase < Math.ceil(cell); phase += 1) {
-		const value = contrast(cell, phase);
-		if (value > bestContrast) {
-			bestContrast = value;
-			bestPhase = phase;
-		}
-	}
-	return bestContrast >= BOUNDARY_CONTRAST_LIMITS.minPhaseEvidence
-		? bestPhase
-		: null;
 };
 
 /**
@@ -245,6 +218,15 @@ const outputWidthsForHeight = (outH: number, ratio: number): number[] => {
 		? [rounded]
 		: [rounded, roundedUp];
 };
+
+/** 再構成誤差に、セル数へ比例する複雑度ペナルティを足した採用スコア。 */
+const gridSizeScore = (
+	reconstructionError: number,
+	outW: number,
+	outH: number,
+): number =>
+	reconstructionError +
+	TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty * Math.sqrt(outW * outH);
 
 /**
  * 候補サイズをある程度「分散」させるため、outH の範囲をバケットに分け、各バケットから最良候補を選ぶ。
@@ -410,10 +392,7 @@ export class FastGridSearchFromTrimmed
 
 				// 再構成誤差は過分割で単調に下がりやすいため、セル数に比例するペナルティを加える。
 				// 低解像度（少ないセル）と高解像度（多いセル）のバランスを取るため、平方根オーダーを使用する。
-				const complexityPenalty =
-					TRIMMED_GRID_SEARCH_WEIGHTS.complexityPenalty *
-					Math.sqrt(outW * outH);
-				const score = reconErr + complexityPenalty;
+				const score = gridSizeScore(reconErr, outW, outH);
 				allResults.push({ outH, outW, score });
 			}
 		}
@@ -630,6 +609,84 @@ export class FastGridSearchFromTrimmed
 				) {
 					best = atPeak.est;
 				}
+			}
+		}
+		const reconstructionErrorAtPhase = (
+			cellW: number,
+			cellH: number,
+			phaseX: number,
+			phaseY: number,
+		): { score: number; outW: number; outH: number } | null => {
+			const grid = gridForPhase(
+				cropped.width,
+				cropped.height,
+				cellW,
+				cellH,
+				phaseX,
+				phaseY,
+			);
+			const error = measureReconstructionError(
+				cropped,
+				mask,
+				grid,
+				sampleWindow,
+				finePixelStride,
+			);
+			if (error === null) return null;
+			const outW = grid.outW ?? 1;
+			const outH = grid.outH ?? 1;
+			return { score: gridSizeScore(error, outW, outH), outW, outH };
+		};
+		// [Intended] ここまでの走査は、どの倍率も位相 0 の再構成誤差だけで比べている。
+		// 格子がキャンバスの縁から半端な位置で始まる入力では、正解の倍率こそセルが
+		// 隣のドットを食い、誤差が最悪の部類になって選ばれない（実測: 2752x1536 の
+		// 生成画像でセル 10.75px・位相 6 が正解だが、位相 0 の誤差 35.7 は隣の倍率
+		// 25.0 より悪く、採用は 3 倍粗い 93x52 まで流れた）。位相を読み取れた倍率
+		// だけを拾い直し、同じ位相込みの尺度で採否を決める。
+		// [Policy] 乗り換えを切った経路では働かせない。境界コントラストを根拠に倍率を
+		// 動かす点は、粗い倍音への乗り換えや山の再走査と同じ性質の判断になる。
+		const phaseConfirmed = boundaryContrastOverride
+			? findPhaseConfirmedSize(
+					cropped.width,
+					cropped.height,
+					outHMin,
+					outHMax,
+					(outH) => outputWidthsForHeight(outH, ratio),
+					axisContrast,
+				)
+			: null;
+		if (phaseConfirmed) {
+			// [Policy] 比較条件を揃えるため、採用格子も位相込みで測り直す。位相 0 の
+			// スコアと比べると、位相を測った倍率が一方的に有利になる。
+			const bestPhased = reconstructionErrorAtPhase(
+				best.cellW,
+				best.cellH,
+				findAxisPhase(axisContrast.x, best.cellW) ?? 0,
+				findAxisPhase(axisContrast.y, best.cellH) ?? 0,
+			);
+			const bestScore = Math.min(
+				best.score ?? Number.POSITIVE_INFINITY,
+				bestPhased?.score ?? Number.POSITIVE_INFINITY,
+			);
+			const scored = reconstructionErrorAtPhase(
+				phaseConfirmed.cellW,
+				phaseConfirmed.cellH,
+				phaseConfirmed.phaseX,
+				phaseConfirmed.phaseY,
+			);
+			// [Policy] 採否は再構成誤差に決めさせる。境界コントラストは走査から漏れた
+			// 倍率を教えるだけで、そこまでの最良より誤差が下がらなければ乗り換えない。
+			if (scored && scored.score < bestScore) {
+				best = {
+					outW: phaseConfirmed.outW,
+					outH: phaseConfirmed.outH,
+					cellW: phaseConfirmed.cellW,
+					cellH: phaseConfirmed.cellH,
+					offsetX: phaseConfirmed.phaseX,
+					offsetY: phaseConfirmed.phaseY,
+					score: scored.score,
+					phaseMeasured: true,
+				};
 			}
 		}
 		// [Intended] 採用した倍率と、境界がもっとも揃う倍率が食い違っているなら、
