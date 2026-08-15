@@ -336,8 +336,13 @@ export const setupSettingsControls = ({
 			autoProcessTimeout = undefined;
 			// [Intended] 設定調整のたびに候補モーダルが開くと、入力からフォーカスが奪われ調整を続けられない。
 			// 候補の提示は明示的な処理実行に限る。
-			runProcessing({ showCandidates: false });
-			onAutoProcessScheduledChange(false);
+			void runProcessing({ showCandidates: false }).finally(() => {
+				// [Intended] 予約の解除は変換の完了時に行う。呼び出し直後に解除すると、
+				// runProcessing が最初の await までに変換の開始を記録することへ暗黙に依存する。
+				// 待機中に次の予約が入っていた場合は、その予約の完了時の解除に任せる。
+				if (autoProcessTimeout === undefined)
+					onAutoProcessScheduledChange(false);
+			});
 		}, 300);
 	};
 
