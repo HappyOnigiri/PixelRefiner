@@ -113,7 +113,7 @@ export const createQuickProcessOptions = (
 	return options;
 };
 
-const presetOptions = (
+const presetQuickSettings = (
 	quick: Partial<QuickSettingsState>,
 ): QuickSettingsState => ({ ...QUICK_SETTINGS_DEFAULTS, ...quick });
 
@@ -121,27 +121,27 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	{
 		id: "auto",
 		labelKey: "preset.auto",
-		quickSettings: presetOptions({}),
+		quickSettings: presetQuickSettings({}),
 	},
 	{
 		id: "crisp-sprite",
 		labelKey: "preset.crisp_sprite",
-		quickSettings: presetOptions({ processingMode: "refine" }),
+		quickSettings: presetQuickSettings({ processingMode: "refine" }),
 	},
 	{
 		id: "keep-fine-details",
 		labelKey: "preset.keep_fine_details",
-		quickSettings: presetOptions({ processingMode: "preserve" }),
+		quickSettings: presetQuickSettings({ processingMode: "preserve" }),
 	},
 	{
 		id: "transparent-icon",
 		labelKey: "preset.transparent_icon",
-		quickSettings: presetOptions({ reductionMode: "32" }),
+		quickSettings: presetQuickSettings({ reductionMode: "32" }),
 	},
 	{
 		id: "limited-colors",
 		labelKey: "preset.limited_colors",
-		quickSettings: presetOptions({
+		quickSettings: presetQuickSettings({
 			reductionMode: "16",
 			dithering: "subtle",
 		}),
@@ -149,7 +149,7 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	{
 		id: "photo-to-pixel",
 		labelKey: "preset.photo_to_pixel",
-		quickSettings: presetOptions({ processingMode: "convert" }),
+		quickSettings: presetQuickSettings({ processingMode: "convert" }),
 	},
 ] as const;
 
