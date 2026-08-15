@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Elements } from "./app-elements";
 import { createProcessingState } from "./app-state";
-import { createProcessOptions } from "./settings-options";
+import {
+	createAdvancedProcessOptions,
+	createProcessOptions,
+} from "./settings-options";
 
 const select = (value: string) => ({ value }) as HTMLSelectElement;
 const input = (value: string, checked = false) =>
@@ -15,8 +18,38 @@ const quickElements = (): Elements =>
 		quickBackgroundSelect: select("keep"),
 		quickBackgroundColorInput: input("#abcdef"),
 		quickDitheringSelect: select("strong"),
-		quickAutoTrimSelect: select("auto"),
 	}) as Elements;
+
+const advancedElements = (
+	background: "none" | "auto",
+	preRemove: boolean,
+	postRemove: boolean,
+): Elements => {
+	const fallback = input("0");
+	const values: Partial<Elements> = {
+		bgExtractionMethod: select(background),
+		preRemoveCheck: input("", preRemove),
+		postRemoveCheck: input("", postRemove),
+		advancedProcessingModeSelect: select("auto"),
+		advancedDetailLevelSelect: select("balanced"),
+		advancedBgRemovalScopeSelect: select("auto"),
+		bgConnectivitySelect: select("4"),
+		cellSamplingModeSelect: select("hard-alpha-medoid"),
+		smallAspectGridAlignmentSelect: select("auto"),
+		watermarkSamplingCompatSelect: select("auto"),
+		gridDetectionModeSelect: select("auto"),
+		reduceColorModeSelect: select("none"),
+		ditherModeSelect: select("none"),
+		outlineStyleSelect: select("none"),
+		outlineColorInput: input("#ffffff"),
+		smallComponentModeSelect: select("auto"),
+		geminiWatermarkRemovalSelect: select("auto"),
+		bgRgbInput: input("#ffffff"),
+	};
+	return new Proxy(values, {
+		get: (target, property: keyof Elements) => target[property] ?? fallback,
+	}) as Elements;
+};
 
 describe("settings mode options", () => {
 	it("ignores Quick and Advanced values in Preset mode", () => {
@@ -46,10 +79,28 @@ describe("settings mode options", () => {
 			detailLevel: "detailed",
 			reduceColorMode: "pico8",
 			bgExtractionMethod: "none",
-			trimToContent: true,
+			trimToContent: false,
 			preserveProcessingScale: true,
 			ditherMode: "floyd-steinberg",
 		});
 		expect(options.fixedPalette).toBeUndefined();
 	});
+
+	it.each([
+		["none", true, true, false],
+		["auto", false, false, false],
+		["auto", true, false, true],
+		["auto", false, true, true],
+	] as const)(
+		"derives Advanced trimming from background %s with pre=%s and post=%s",
+		(background, preRemove, postRemove, trimToContent) => {
+			const state = createProcessingState();
+			const options = createAdvancedProcessOptions(
+				advancedElements(background, preRemove, postRemove),
+				state,
+			);
+
+			expect(options.trimToContent).toBe(trimToContent);
+		},
+	);
 });

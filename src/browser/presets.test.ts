@@ -56,6 +56,7 @@ describe("PresetManager", () => {
 				"advanced-bg-removal-scope": "auto",
 			},
 		});
+		expect(preset.data).not.toHaveProperty("trim-to-content");
 		expect(preset.data.unknown).toBeUndefined();
 	});
 
@@ -105,6 +106,26 @@ describe("PresetManager", () => {
 
 		expect(PresetManager.loadPresets()).toHaveLength(1);
 		expect(PresetManager.loadPresets()[0].id).toBe("valid");
+	});
+
+	it("drops the retired trim setting from current presets", () => {
+		store.set(
+			"pixel-refiner-presets",
+			JSON.stringify([
+				{
+					version: 3,
+					id: "current",
+					name: "Current",
+					timestamp: 30,
+					data: { "trim-to-content": false },
+				},
+			]),
+		);
+
+		const [preset] = PresetManager.loadPresets();
+
+		expect(preset.data).not.toHaveProperty("trim-to-content");
+		expect(localStorage.setItem).toHaveBeenCalled();
 	});
 
 	it("returns an empty list for malformed storage", () => {

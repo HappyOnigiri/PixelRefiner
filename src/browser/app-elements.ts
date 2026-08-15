@@ -47,7 +47,6 @@ export type Elements = {
 	preRemoveCheck: HTMLInputElement;
 	postRemoveCheck: HTMLInputElement;
 	bgConnectivitySelect: HTMLSelectElement;
-	trimToContentCheck: HTMLInputElement;
 	fastAutoGridFromTrimmedCheck: HTMLInputElement;
 	makeSquareCheck: HTMLInputElement;
 	keepAspectRatioCheck: HTMLInputElement;
@@ -93,7 +92,6 @@ export type Elements = {
 	quickBackgroundColorInput: HTMLInputElement;
 	quickEyedropperButton: HTMLButtonElement;
 	quickDitheringSelect: HTMLSelectElement;
-	quickAutoTrimSelect: HTMLSelectElement;
 	advancedProcessingModeSelect: HTMLSelectElement;
 	advancedDetailLevelSelect: HTMLSelectElement;
 	advancedBgRemovalScopeSelect: HTMLSelectElement;
@@ -233,7 +231,6 @@ export const getElements = (): Elements => {
 		preRemoveCheck: get<HTMLInputElement>("pre-remove"),
 		postRemoveCheck: get<HTMLInputElement>("post-remove"),
 		bgConnectivitySelect: get<HTMLSelectElement>("bg-connectivity"),
-		trimToContentCheck: get<HTMLInputElement>("trim-to-content"),
 		fastAutoGridFromTrimmedCheck: get<HTMLInputElement>(
 			"fast-auto-grid-from-trimmed",
 		),
@@ -284,7 +281,6 @@ export const getElements = (): Elements => {
 		quickBackgroundColorInput: get<HTMLInputElement>("quick-background-color"),
 		quickEyedropperButton: get<HTMLButtonElement>("quick-eyedropper-button"),
 		quickDitheringSelect: get<HTMLSelectElement>("quick-dithering"),
-		quickAutoTrimSelect: get<HTMLSelectElement>("quick-auto-trim"),
 		advancedProcessingModeSelect: get<HTMLSelectElement>(
 			"advanced-processing-mode",
 		),

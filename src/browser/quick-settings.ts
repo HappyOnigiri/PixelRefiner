@@ -29,7 +29,6 @@ export type QuickSettingsState = {
 	reductionMode: QuickReductionMode;
 	background: QuickBackground;
 	dithering: QuickDithering;
-	trimToContent: boolean;
 	backgroundColor?: string;
 };
 
@@ -45,7 +44,6 @@ export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	reductionMode: "none",
 	background: "auto",
 	dithering: "off",
-	trimToContent: PROCESS_DEFAULTS.trimToContent,
 };
 
 /**
@@ -66,7 +64,8 @@ export const createQuickProcessOptions = (
 		processingMode: quick.processingMode,
 		detailLevel: quick.detailLevel,
 		outlineStyle: PROCESS_DEFAULTS.outlineStyle,
-		trimToContent: quick.trimToContent,
+		// [Policy] 背景を残す出力はキャンバス全体を維持し、背景を透過する出力だけを内容範囲へ詰める。
+		trimToContent: quick.background !== "keep",
 		preserveProcessingScale: true,
 		reduceColors: quick.reductionMode !== "none",
 		reduceColorMode:
