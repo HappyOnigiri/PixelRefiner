@@ -109,6 +109,41 @@ parameterized by the quality test and rendered in full by the HTML report. Auto
 case exclusions therefore happen while building the manifest rather than only
 hiding report entries; their explicit cases remain in the report.
 
+## Guide page examples
+
+The recipes guide (`guide.html`) publishes a generated image together with the
+result of converting it using a named built-in preset. Every published example
+has one case here, so the report keeps answering whether that published result
+is still reproducible by following the published steps.
+
+Those cases set `presetId` instead of `options`. The benchmark resolves the
+options from `BUILT_IN_PRESETS` when the case runs, so changing a preset reaches
+the case instead of leaving a stale copy of its values in `cases.json`, and the
+fixture-only background-extraction default is not mixed in either: the case has
+to run exactly what a reader running the same steps would get. `expected` points
+at the published PNG under `public/guide/` rather than a copy of it, so the
+target the report measures against is the file the page actually serves. The
+expectation is an exact match, which fails as soon as the published image stops
+following from the published steps. Fix that by regenerating the guide image,
+not by loosening the case.
+
+Adding an example:
+
+1. Save the image as it was generated — the full-resolution original, not the
+   downscaled copy the page displays — as a PNG under `test/fixtures/`, and
+   record the prompt in the case's provenance.
+2. Add the case to [`cases.json`](./cases.json) with `presetId`, `expected`
+   pointing at the published output, and `expectedWidth` / `expectedHeight`
+   matching the caption on the page.
+3. Register the fixture's Auto twin in
+   [`auto-case-exclusions.json`](./auto-case-exclusions.json) and in the
+   exclusion list in [`manifest.test.ts`](./manifest.test.ts). The guide case
+   already pins the preset, so the same input does not need a second run.
+4. Describe the case in `describeCase` in
+   [`report/case-description.ts`](./report/case-description.ts).
+5. Run `pnpm test:quality:update` to register the baseline, then
+   `pnpm test:quality:full`.
+
 ## Target images
 
 Two separate references exist for every case, and they answer different
