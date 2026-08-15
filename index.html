@@ -602,47 +602,50 @@
                   <div class="quick-settings-grid">
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.processing_mode"
-                          >Processing</span
-                        >
+                        <span data-i18n="setting.quick_finish">Finish</span>
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_processing_mode"
-                          data-tooltip="Chooses how the image is processed. Auto analyzes the image and selects a route. Refine restores enlarged pixel art, Convert turns a regular image into pixel art, and Preserve avoids downscaling."
+                          data-tooltip="Chooses the intended finish. Best Match selects a suitable result automatically. Crisp Edges removes blur, Detailed Pixel Art keeps gradients and thin lines, and Original Size Cleanup avoids downscaling."
                           >?</span
                         >
                       </span>
                       <select id="quick-processing-mode">
-                        <option value="auto" data-i18n="option.processing_auto">
-                          Auto
+                        <option
+                          value="auto"
+                          data-i18n="option.quick_processing_auto"
+                        >
+                          Best Match
                         </option>
                         <option
                           value="refine"
-                          data-i18n="option.processing_refine"
+                          data-i18n="option.quick_processing_refine"
                         >
-                          Refine
+                          Crisp Edges
                         </option>
                         <option
                           value="convert"
-                          data-i18n="option.processing_convert"
+                          data-i18n="option.quick_processing_convert"
                         >
-                          Convert
+                          Detailed Pixel Art
                         </option>
                         <option
                           value="preserve"
-                          data-i18n="option.processing_preserve"
+                          data-i18n="option.quick_processing_preserve"
                         >
-                          Preserve
+                          Original Size Cleanup
                         </option>
                       </select>
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.size">Size</span>
+                        <span data-i18n="setting.quick_pixel_detail"
+                          >Pixel Detail</span
+                        >
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
-                          data-tooltip="Chooses from five output sizes on the Convert route. Standard uses the automatically calculated reference size, and Large never upscales beyond the original image. It does not change color count or other settings. In Auto, it applies only when Convert is selected."
+                          data-tooltip="Chooses how coarse or fine the pixels look for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image. In Best Match, this applies only when Detailed Pixel Art is selected automatically."
                           >?</span
                         >
                       </span>
@@ -651,43 +654,44 @@
                           value="smallest"
                           data-i18n="option.size_very_small"
                         >
-                          Very small
+                          Very coarse
                         </option>
                         <option value="small" data-i18n="option.size_small">
-                          Small
+                          Coarse
                         </option>
                         <option
                           value="coarse"
                           data-i18n="option.size_slightly_small"
                         >
-                          Slightly small
+                          Slightly coarse
                         </option>
                         <option
                           value="balanced"
                           data-i18n="option.size_standard"
                         >
-                          Standard
+                          Balanced
                         </option>
                         <option value="detailed" data-i18n="option.size_large">
-                          Large
+                          Fine
                         </option>
                       </select>
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.color_mode"
-                          >Reduction Mode</span
-                        >
+                        <span data-i18n="setting.quick_colors">Colors</span>
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_reduction_mode"
-                          data-tooltip="Selects no reduction, a fixed color count, or a built-in palette. Arbitrary color counts and imported palettes are available in Advanced Settings."
+                          data-tooltip="Chooses whether to keep the original colors, limit the color count, or use a built-in palette. Custom color counts and imported palettes are available in Advanced Settings."
                           >?</span
                         >
                       </span>
                       <select id="quick-reduction-mode">
-                        <option value="none" data-i18n="option.none">
-                          None
+                        <option
+                          value="none"
+                          data-i18n="option.quick_colors_original"
+                        >
+                          Keep original colors
                         </option>
                         <option value="8" data-i18n="option.colors_8">
                           8 colors
@@ -737,25 +741,25 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.background"
-                          >Background Transparency</span
+                        <span data-i18n="setting.quick_background"
+                          >Background</span
                         >
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_background"
-                          data-tooltip="Chooses whether to leave the background unchanged, detect it automatically and make it transparent, or make a selected color transparent."
+                          data-tooltip="Chooses whether to keep the background, remove it automatically, or remove a selected color."
                           >?</span
                         >
                       </span>
                       <select id="quick-background">
                         <option value="keep" data-i18n="option.background_keep">
-                          None
+                          Keep background
                         </option>
                         <option value="auto" data-i18n="option.background_auto">
-                          Auto
+                          Remove automatically
                         </option>
                         <option value="pick" data-i18n="option.background_pick">
-                          Pick color
+                          Remove selected color
                         </option>
                       </select>
                       <div
@@ -780,17 +784,19 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.dithering">Dithering</span>
+                        <span data-i18n="setting.quick_gradient"
+                          >Gradient Texture</span
+                        >
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_dithering"
-                          data-tooltip="Mixes neighboring colors into a pattern during color reduction to represent intermediate tones. Stronger settings preserve gradients but add more texture."
+                          data-tooltip="Adds a pixel pattern during color reduction to preserve gradients. Stronger settings retain more tonal variation but make the texture more visible."
                           >?</span
                         >
                       </span>
                       <select id="quick-dithering">
                         <option value="off" data-i18n="option.dithering_off">
-                          Off
+                          None
                         </option>
                         <option
                           value="subtle"
@@ -808,11 +814,11 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
-                        <span data-i18n="setting.auto_trim">Auto Trim</span>
+                        <span data-i18n="setting.quick_canvas">Canvas</span>
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_auto_trim"
-                          data-tooltip="Automatically trims the output to the detected content bounds without changing its scale. Available even when the background remains opaque."
+                          data-tooltip="Chooses whether to trim empty margins around the subject or keep the full canvas. Trimming does not change the subject scale and also works when the background is kept."
                           >?</span
                         >
                       </span>
@@ -822,10 +828,10 @@
                           data-i18n="option.auto_trim_auto"
                           selected
                         >
-                          Auto
+                          Trim empty margins
                         </option>
                         <option value="none" data-i18n="option.auto_trim_none">
-                          None
+                          Keep full canvas
                         </option>
                       </select>
                     </label>
