@@ -49,12 +49,12 @@ export const describeCase = (
 		return {
 			en:
 				"Process the 2816 x 1536 AI-generated green dragon published in the recipes guide, " +
-				"drawn over a red background, with Colors set to Game Boy (Pocket) in Quick Settings as " +
-				"the page tells the reader, and reproduce the published 44 x 47 result pixel for pixel, " +
+				"drawn over a red background, with the Retro Game Style preset the page tells the reader " +
+				"to select, and reproduce the published 44 x 47 result pixel for pixel, " +
 				"including the four-tone palette the conversion replaces the generated colors with.",
 			ja:
 				"レシピ集ページが掲載している赤背景・2816×1536の生成AI製の緑のドラゴンを、" +
-				"ページが案内するとおりかんたん設定の「色」を「ゲームボーイ (ポケット)」にして処理し、" +
+				"ページが案内するとおり「レトロゲーム風」プリセットで処理し、" +
 				"生成時の色を置き換えた4階調のパレットを含めて、" +
 				"掲載している44×47の変換結果と1画素も違わないことを確認します。",
 		};
@@ -63,12 +63,12 @@ export const describeCase = (
 		return {
 			en:
 				"Process the 2752 x 1536 AI-generated mountain landscape published in the recipes guide, " +
-				"whose pixel cells are softened by generation, with Background set to Keep background in " +
-				"Quick Settings as the page tells the reader, and reproduce the published 256 x 144 result " +
+				"whose pixel cells are softened by generation, with the Background Artwork preset the page " +
+				"tells the reader to select, and reproduce the published 256 x 144 result " +
 				"pixel for pixel without making any part of the full-frame scenery transparent.",
 			ja:
 				"レシピ集ページが掲載している2752×1536の生成AI製の山岳風景（生成時にセル境界がぼけたドット絵）を、" +
-				"ページが案内するとおりかんたん設定の「背景」を「背景を残す」にして処理し、" +
+				"ページが案内するとおり「背景用の一枚絵」プリセットで処理し、" +
 				"風景のどの部分も透過せず、掲載している256×144の変換結果と1画素も違わないことを確認します。",
 		};
 	}
@@ -76,15 +76,14 @@ export const describeCase = (
 		return {
 			en:
 				"Process the 2816 x 1536 AI-generated chibi character published in the recipes guide, " +
-				"an ordinary flat-colored illustration rather than pixel art, with Finish set to " +
-				"Detailed Pixel Art and Colors set to 32 colors in Quick Settings as the page tells the " +
-				"reader, and reproduce the published 60 x 81 result pixel for pixel, including the " +
+				"an ordinary flat-colored illustration rather than pixel art, with the Convert Illustration " +
+				"to Pixel Art preset the page tells the reader to select, and reproduce the published " +
+				"60 x 81 result pixel for pixel, including the " +
 				"transparent background and the thick outlines carried over from the illustration.",
 			ja:
 				"レシピ集ページが掲載している青背景・2816×1536の生成AI製のデフォルメキャラクターを、" +
 				"ドット絵ではないフラットな塗りのイラストのまま、" +
-				"ページが案内するとおりかんたん設定の「仕上がり」を「細部を残してドット化」、" +
-				"「色数・配色」を「32色」にして処理し、" +
+				"ページが案内するとおり「イラストをドット絵に変換」プリセットで処理し、" +
 				"背景の透過とイラストから引き継いだ太い輪郭線を含めて、" +
 				"掲載している60×81の変換結果と1画素も違わないことを確認します。",
 		};
