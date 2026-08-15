@@ -2596,8 +2596,8 @@
     "assertions": ["exact image", "output size", "determinism"],
     "expectation": {
       "exact": true,
-      "expectedWidth": 18,
-      "expectedHeight": 25
+      "expectedWidth": 16,
+      "expectedHeight": 23
     },
     "assets": [
       {

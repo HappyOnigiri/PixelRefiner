@@ -36,14 +36,14 @@ export const describeCase = (
 		return {
 			en:
 				"Process the 2752 x 1536 AI-generated potion bottle published in the recipes guide, " +
-				"drawn over a chroma-key green background, with the Outlined Transparent Icon preset the " +
-				"page tells the reader to select, and reproduce the published 18 x 25 result pixel for pixel, " +
-				"including the transparent background and the white rounded outline the preset adds.",
+				"drawn over a chroma-key green background, with the Transparent Icon preset the page tells " +
+				"the reader to select, and reproduce the published 16 x 23 result pixel for pixel, including " +
+				"the transparent background without an added decorative outline.",
 			ja:
 				"レシピ集ページが掲載している緑背景・2752×1536の生成AI製のポーション瓶を、" +
-				"ページが案内するとおり「縁取り透過アイコン」プリセットのまま処理し、" +
-				"プリセットが付ける背景の透過と白い丸みアウトラインを含めて、" +
-				"掲載している18×25の変換結果と1画素も違わないことを確認します。",
+				"ページが案内するとおり「透過アイコン」プリセットのまま処理し、" +
+				"装飾的なアウトラインを追加せずに背景を透過した、" +
+				"掲載中の16×23の変換結果と1画素も違わないことを確認します。",
 		};
 	}
 	if (result.id === "guide-recipe3-dragon-sprite") {

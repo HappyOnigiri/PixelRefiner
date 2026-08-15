@@ -566,8 +566,8 @@
     {
       "id": "guide-recipe2-potion-icon",
       "status": "passed",
-      "outputWidth": 18,
-      "outputHeight": 25,
+      "outputWidth": 16,
+      "outputHeight": 23,
       "meanRgbaError": 0,
       "edgeF1": 1,
       "backgroundMaskIou": 1,

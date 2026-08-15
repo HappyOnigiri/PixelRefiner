@@ -511,16 +511,16 @@ const resources = {
 			"変換結果（おまかせ仕上げ・60×85px の等倍出力）",
 		"guide.recipe2.heading": "レシピ2: アイテムアイコン",
 		"guide.recipe2.goal":
-			"UI 用の単一オブジェクト。赤い被写体には緑背景、という補色ルールの実例です。縁取りは生成時ではなく、プリセットに含まれるアウトラインで後付けします。",
+			"UI 用の単一オブジェクト。赤い被写体には緑背景、という補色ルールの実例です。プリセットは装飾的なアウトラインを追加せずに背景を透過するので、被写体自身のドットの輪郭がそのまま残ります。",
 		"guide.recipe2.settings":
-			"「プリセット」で「縁取り透過アイコン」を選びます（アウトラインまで含まれます）。アウトラインの色は初期値が白なので、下の作例のように明るい背景に重ねるとほとんど見えません。「アウトライン」の「色」で変更できます。",
+			"「プリセット」で「透過アイコン」を選びます。アウトラインは追加せず、背景を透過して32色へ減色します。アウトラインが必要な場合は「アウトライン」で別途設定します。",
 		"guide.recipe2.input_alt":
 			"レシピ2の生成画像。緑背景に、赤いポーション瓶のドット絵",
 		"guide.recipe2.output_alt":
-			"レシピ2の変換結果。背景が透過し、白いアウトラインが付いたポーション瓶のドット絵",
+			"レシピ2の変換結果。背景が透過したポーション瓶のドット絵",
 		"guide.recipe2.caption_input": "生成画像（2752×1536px・縮小表示）",
 		"guide.recipe2.caption_output":
-			"変換結果（縁取り透過アイコン・18×25px の等倍出力）",
+			"変換結果（透過アイコン・16×23px の等倍出力）",
 		"guide.recipe3.heading":
 			"レシピ3: レトロ携帯ゲーム機風（Game Boy パレット）",
 		"guide.recipe3.goal":
@@ -1069,16 +1069,15 @@ const resources = {
 			"转换结果（智能推荐，60×85px 的原尺寸输出）",
 		"guide.recipe2.heading": "配方 2：道具图标",
 		"guide.recipe2.goal":
-			"用于 UI 的单一物件，是互补色规则的实例：红色主体配绿色背景。描边不在生成时要求，而是交给预设自带的描边功能。",
+			"用于 UI 的单一物件，是互补色规则的实例：红色主体配绿色背景。预设会去除背景而不添加装饰性描边，因此会原样保留主体本身的像素轮廓。",
 		"guide.recipe2.settings":
-			"在“预设”中选择“带描边的透明图标”（其中已包含描边）。描边颜色的默认值是白色，因此像下面的示例那样叠在明亮背景上时几乎看不见。可以在“描边”的“颜色”中更改。",
+			"在“预设”中选择“透明图标”。它不会添加描边，而是去除背景并减至 32 色。需要描边时，请另外在“描边”中设置。",
 		"guide.recipe2.input_alt":
 			"配方 2 的生成图片：绿色背景上的红色药水瓶像素画",
-		"guide.recipe2.output_alt":
-			"配方 2 的转换结果：背景已透明并加上白色描边的药水瓶像素画",
+		"guide.recipe2.output_alt": "配方 2 的转换结果：背景已透明的药水瓶像素画",
 		"guide.recipe2.caption_input": "生成图片（2752×1536px，缩小显示）",
 		"guide.recipe2.caption_output":
-			"转换结果（带描边的透明图标，18×25px 的原尺寸输出）",
+			"转换结果（透明图标，16×23px 的原尺寸输出）",
 		"guide.recipe3.heading": "配方 3：复古掌机风格（Game Boy 调色板）",
 		"guide.recipe3.goal":
 			"在生成阶段就把层次压少，再用调色板转换精确替换成所选机型的 4 个色阶。生成时的颜色本身不会保留，所以背景色不按成品的颜色来指定，而按容易去除来指定（绿色主体配红色背景）。",
@@ -1652,17 +1651,17 @@ const resources = {
 			"Converted result (Best Match, 60×85 px output)",
 		"guide.recipe2.heading": "Recipe 2: Item icon",
 		"guide.recipe2.goal":
-			"A single object for UI use, and a worked example of the complementary-color rule: a green background for a red subject. The outline is not requested at generation time; it comes from the preset instead.",
+			"A single object for UI use, and a worked example of the complementary-color rule: a green background for a red subject. The preset removes the background without adding a decorative outline, so the subject's own pixel outline remains as-is.",
 		"guide.recipe2.settings":
-			"Choose the “Outlined Transparent Icon” preset (it already includes the outline). The outline color defaults to white, so it is almost invisible over a light background, as in the example below. You can change it under Outline → Color.",
+			"Choose the “Transparent Icon” preset. It removes the background and reduces the image to 32 colors without adding an outline. If you need one, configure it separately under Outline.",
 		"guide.recipe2.input_alt":
 			"Generated image for recipe 2: a red potion bottle on a bright green background",
 		"guide.recipe2.output_alt":
-			"Converted result for recipe 2: the potion bottle with a transparent background and a white outline",
+			"Converted result for recipe 2: the potion bottle with a transparent background",
 		"guide.recipe2.caption_input":
 			"Generated image (2752×1536 px, shown scaled down)",
 		"guide.recipe2.caption_output":
-			"Converted result (Outlined Transparent Icon, 18×25 px output)",
+			"Converted result (Transparent Icon, 16×23 px output)",
 		"guide.recipe3.heading": "Recipe 3: Retro handheld look (Game Boy palette)",
 		"guide.recipe3.goal":
 			"Ask for few tones at the generation stage, then let palette conversion map them exactly onto the four tones of the console you choose. The generated colors themselves do not survive, so the background is specified for easy removal — red against a green subject — rather than for the finished look.",

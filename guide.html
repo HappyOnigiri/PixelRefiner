@@ -548,8 +548,8 @@ full frame edge-to-edge solid magenta background (#FF00FF), no drop shadow, no o
               ><span data-i18n="guide.recipe2.goal"
                 >A single object for UI use, and a worked example of the
                 complementary-color rule: a green background for a red subject.
-                The outline is not requested at generation time; it comes from
-                the preset instead.</span
+                The preset removes the background without adding a decorative
+                outline, so the subject's own pixel outline remains as-is.</span
               >
             </p>
             <div class="prompt-block" data-prompt-block>
@@ -588,10 +588,9 @@ no borders, no margins, no frame, no white background, no shadow, no reflection<
                 data-i18n="guide.recipes.settings_label"
                 >Pixel Refiner settings</span
               ><span data-i18n="guide.recipe2.settings"
-                >Choose the “Outlined Transparent Icon” preset (it already
-                includes the outline). The outline color defaults to white, so
-                it is almost invisible over a light background, as in the
-                example below. You can change it under Outline → Color.</span
+                >Choose the “Transparent Icon” preset. It removes the background
+                and reduces the image to 32 colors without adding an outline. If
+                you need one, configure it separately under Outline.</span
               >
             </p>
             <figure class="guide-figure guide-figure-output">
@@ -599,10 +598,10 @@ no borders, no margins, no frame, no white background, no shadow, no reflection<
                 <div class="guide-figure-view">
                   <img
                     src="/guide/recipe2-output.png"
-                    alt="Converted result for recipe 2: the potion bottle with a transparent background and a white outline"
+                    alt="Converted result for recipe 2: the potion bottle with a transparent background"
                     data-i18n-attr="alt:guide.recipe2.output_alt"
-                    width="72"
-                    height="100"
+                    width="64"
+                    height="92"
                     loading="lazy"
                     decoding="async"
                   />
@@ -617,8 +616,8 @@ no borders, no margins, no frame, no white background, no shadow, no reflection<
                     src="/guide/recipe2-output.png"
                     alt=""
                     aria-hidden="true"
-                    width="18"
-                    height="25"
+                    width="16"
+                    height="23"
                     loading="lazy"
                     decoding="async"
                   />
@@ -630,7 +629,7 @@ no borders, no margins, no frame, no white background, no shadow, no reflection<
                 </div>
               </div>
               <figcaption data-i18n="guide.recipe2.caption_output">
-                Converted result (Outlined Transparent Icon, 18×25 px output)
+                Converted result (Transparent Icon, 16×23 px output)
               </figcaption>
             </figure>
           </article>
