@@ -119,6 +119,47 @@ describe("fast grid search from trimmed", () => {
 		expect(estimate?.outH).toBe(11);
 	});
 
+	it("倍音が複数条件を満たすときは、境界がもっとも揃う倍音へ乗り換える", () => {
+		// [Intended] 正解セル 24px（出力 16x16）に 8px の濃淡を敷いた 384x384。
+		// 再構成は 3 倍細かい格子を選ぶので、粗い側の倍音を順に見ると 6 倍音の窓が
+		// 先に条件を満たす。そこには正解の 1 オクターブ下が入っているため、粗い側から
+		// 順に確定すると正解を半分に読む。条件を満たした倍音を最後まで比べて、
+		// 証拠が最も強いものを採る必要がある。
+		const octaveTrap = createNestedBlockImage(384, 24, 8, 30);
+		const estimate = strategy.search(octaveTrap, octaveTrap, 3);
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outW).toBe(16);
+		expect(estimate?.outH).toBe(16);
+	});
+
+	it("粗い刻みが素通りした境界コントラストの山を再走査して拾う", () => {
+		// [Intended] 310x310・セル 10px（出力 31x31）。再構成の走査は outHMin=9 から
+		// 3 刻みなので 31 をまたぐ。正解の谷は 1 行ぶんしか無く、隣の 30 や 33 では
+		// 位相がずれて手掛かりが残らないため、粗い走査だけでは 75x75 を選ぶ。
+		// 乗り換え先も倍音関係に無いので、境界コントラストの山を再走査するしかない。
+		const skippedPeak = createShiftedGridImage(310, 10, 0);
+		const estimate = strategy.search(skippedPeak, skippedPeak, 3);
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outW).toBe(31);
+		expect(estimate?.outH).toBe(31);
+	});
+
+	it("境界コントラストの乗り換えを切ると、素通りした山も拾わない", () => {
+		// [Intended] 山の再走査も境界コントラストを根拠にした乗り換えなので、
+		// 乗り換えを切った経路では働かせない。再構成だけの結果が返る。
+		const skippedPeak = createShiftedGridImage(310, 10, 0);
+		const estimate = strategy.search(
+			skippedPeak,
+			skippedPeak,
+			3,
+			undefined,
+			undefined,
+			false,
+		);
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outH).toBe(75);
+	});
+
 	it("格子が BBox の縁で合っている入力では、位相 0 を実測済みとして返す", () => {
 		// [Intended] 位相 0 は「ずれていない」という実測結果なので、投影は BBox 起点へ
 		// 寄せたままにする。位相未測定と同じ扱いにするとキャンバス起点へ戻ってしまう。
