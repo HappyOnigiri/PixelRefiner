@@ -2,6 +2,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import type {
+	CandidateKind,
+	InputClassification,
+	ProcessingRoute,
+} from "../../shared/types";
+import type { ImageItem } from "../session";
 import { LANGUAGES } from "./language";
 import { appMessageCatalogs, appMessages } from "./messages";
 import { guideMessages } from "./messages/guide";
@@ -54,17 +60,52 @@ const collectSourceText = (): string => {
 	return chunks.join("\n");
 };
 
+// 型の値集合をそのまま列挙する。値の増減が型エラーになるので取りこぼさない。
+const valuesOf = <T extends string>(values: Record<T, true>): string[] =>
+	Object.keys(values);
+
+const CANDIDATE_KINDS: Record<CandidateKind, true> = {
+	recommended: true,
+	"auto-result": true,
+	finer: true,
+	coarser: true,
+	preserve: true,
+	convert: true,
+};
+
 /**
- * [Intended] キーを実行時に組み立てている参照。
- * 静的な文字列としてはソースに現れないので、未使用判定から外す。
+ * [Intended] キーを実行時に組み立てている参照と、その名前空間が取りうる値。
+ * 静的な文字列としてはソースに現れないので、未使用判定の代わりに
+ * 型の値集合との一致で過不足を検出する。
  */
-const DYNAMIC_KEY_PREFIXES = [
-	"batch.status.",
-	"candidate.label.",
-	"candidate.description.",
-	"classification.",
-	"route.",
-];
+const DYNAMIC_KEY_VALUES: Record<string, string[]> = {
+	"batch.status.": valuesOf<ImageItem["status"]>({
+		pending: true,
+		processing: true,
+		done: true,
+		error: true,
+	}),
+	"candidate.label.": valuesOf(CANDIDATE_KINDS),
+	"candidate.description.": valuesOf(CANDIDATE_KINDS),
+	"classification.": [
+		...valuesOf<InputClassification>({
+			"native-pixel": true,
+			"scaled-pixel": true,
+			"soft-pixel": true,
+			continuous: true,
+			uncertain: true,
+		}),
+		// [Intended] 自動判定を経ていない場合に使う、型に対応しないキー。
+		"manual",
+	],
+	"route.": valuesOf<ProcessingRoute>({
+		refine: true,
+		convert: true,
+		preserve: true,
+	}),
+};
+
+const DYNAMIC_KEY_PREFIXES = Object.keys(DYNAMIC_KEY_VALUES);
 
 describe("i18n messages", () => {
 	it("モジュール間でキーが重複しない", () => {
@@ -177,6 +218,26 @@ describe("i18n messages", () => {
 		expect(source).toContain(
 			'import type { guideMessages } from "./messages/guide"',
 		);
+	});
+
+	it("実行時に組み立てるキーが型の値集合と過不足なく対応している", () => {
+		const mismatched: string[] = [];
+		for (const [prefix, values] of Object.entries(DYNAMIC_KEY_VALUES)) {
+			const defined = Object.keys(allMessages)
+				.filter((key) => key.startsWith(prefix))
+				.map((key) => key.slice(prefix.length))
+				.sort();
+			const expected = [...values].sort();
+			for (const value of expected) {
+				if (!defined.includes(value))
+					mismatched.push(`${prefix}${value}: 訳文なし`);
+			}
+			for (const value of defined) {
+				if (!expected.includes(value))
+					mismatched.push(`${prefix}${value}: 参照なし`);
+			}
+		}
+		expect(mismatched).toEqual([]);
 	});
 
 	it("使われていないキーが残っていない", () => {
