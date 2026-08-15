@@ -439,6 +439,7 @@ const resources = {
 		"guide.back_to_app": "Pixel Refiner に戻る",
 		"guide.copy_prompt": "プロンプトをコピー",
 		"guide.copied": "コピーしました",
+		"guide.copy_failed": "コピーできません。テキストを選択してください",
 		"guide.intro.heading": "はじめに — 考え方",
 		"guide.intro.body1":
 			"Pixel Refiner は「ドットのぼやけ」「グリッドのずれ」「多すぎる色」を自動で直せます。一方で、生成画像そのものに起因する問題は、変換の段階では直せません。",
@@ -1011,6 +1012,7 @@ const resources = {
 		"guide.back_to_app": "返回 Pixel Refiner",
 		"guide.copy_prompt": "复制提示词",
 		"guide.copied": "已复制",
+		"guide.copy_failed": "无法复制，请手动选择文本",
 		"guide.intro.heading": "开始之前 — 基本思路",
 		"guide.intro.body1":
 			"Pixel Refiner 能自动修正“像素模糊”“网格错位”“颜色过多”。但源自生成图片本身的问题，在转换阶段无法解决。",
@@ -1586,6 +1588,7 @@ const resources = {
 		"guide.back_to_app": "Back to Pixel Refiner",
 		"guide.copy_prompt": "Copy prompt",
 		"guide.copied": "Copied",
+		"guide.copy_failed": "Can’t copy. Select the text instead",
 		"guide.intro.heading": "Before You Start: The Idea",
 		"guide.intro.body1":
 			"Pixel Refiner can automatically fix blurred pixels, misaligned grids, and too many colors. Problems that come from the generated image itself, however, cannot be fixed at the conversion stage.",

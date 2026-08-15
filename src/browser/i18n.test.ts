@@ -295,6 +295,7 @@ describe("I18nManager", () => {
 				"guide.back_to_app",
 				"guide.copy_prompt",
 				"guide.copied",
+				"guide.copy_failed",
 				"guide.intro.heading",
 				"guide.intro.body2",
 				"guide.intro.fixable_1",
