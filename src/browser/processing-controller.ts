@@ -325,10 +325,16 @@ export const createProcessingController = ({
 				options.keepLoadingOverlay === true,
 			);
 			if (finishDecision === "hide-loading") hideLoading();
-			if (finishDecision === "keep-loading" && options.keepLoadingOverlay) {
-				els.outputPanel.classList.remove("is-processing");
-				els.outputPanel.removeAttribute("aria-busy");
-				els.processButton.disabled = false;
+			if (finishDecision === "keep-loading") {
+				// [Intended] 結果の表示更新が同じオーバーレイを閉じるため、維持する場合は開き直す。
+				// 開き直さないと、次の変換が始まるまで処理中表示が一度消えて点滅する。
+				mainResultViewer.setLoading(true);
+				els.loadingOverlay.style.display = "flex";
+				if (options.keepLoadingOverlay) {
+					els.outputPanel.classList.remove("is-processing");
+					els.outputPanel.removeAttribute("aria-busy");
+					els.processButton.disabled = false;
+				}
 			}
 		}
 	};
