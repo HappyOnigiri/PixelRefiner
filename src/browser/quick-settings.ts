@@ -134,22 +134,32 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 		quickSettings: presetQuickSettings({ processingMode: "preserve" }),
 	},
 	{
+		id: "photo-to-pixel",
+		labelKey: "preset.photo_to_pixel",
+		quickSettings: presetQuickSettings({ processingMode: "convert" }),
+	},
+	{
 		id: "transparent-icon",
 		labelKey: "preset.transparent_icon",
 		quickSettings: presetQuickSettings({ reductionMode: "32" }),
 	},
 	{
-		id: "limited-colors",
-		labelKey: "preset.limited_colors",
-		quickSettings: presetQuickSettings({
-			reductionMode: "16",
-			dithering: "subtle",
-		}),
+		id: "retro-game",
+		labelKey: "preset.retro_game",
+		quickSettings: presetQuickSettings({ reductionMode: "gb_pocket" }),
 	},
 	{
-		id: "photo-to-pixel",
-		labelKey: "preset.photo_to_pixel",
-		quickSettings: presetQuickSettings({ processingMode: "convert" }),
+		id: "background-art",
+		labelKey: "preset.background_art",
+		quickSettings: presetQuickSettings({ background: "keep" }),
+	},
+	{
+		id: "illustration-to-pixel-art",
+		labelKey: "preset.illustration_to_pixel_art",
+		quickSettings: presetQuickSettings({
+			processingMode: "convert",
+			reductionMode: "32",
+		}),
 	},
 ] as const;
 
