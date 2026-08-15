@@ -79,6 +79,18 @@ describe("default process options", () => {
 			debug: PROCESS_DEFAULTS.debug,
 		});
 	});
+
+	it("normalizes explicit Convert dimensions independently of forced dimensions", () => {
+		const options = normalizeProcessOptions({
+			convertPixelsW: 2048,
+			convertPixelsH: 0,
+		});
+
+		expect(options.convertPixelsW).toBe(PROCESS_RANGES.convertPixelsW.max);
+		expect(options.convertPixelsH).toBe(PROCESS_RANGES.convertPixelsH.min);
+		expect(options.forcePixelsW).toBeUndefined();
+		expect(options.forcePixelsH).toBeUndefined();
+	});
 });
 
 describe("small-component options", () => {

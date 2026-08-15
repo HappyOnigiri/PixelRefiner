@@ -12,6 +12,11 @@ describe("migrateAdvancedSettings", () => {
 		expect(state["cell-sampling-mode"]).toBe(PROCESS_DEFAULTS.cellSamplingMode);
 		expect(state["small-aspect-grid-alignment"]).toBe("auto");
 		expect(state["watermark-sampling-compat"]).toBe("auto");
+		expect(state["advanced-convert-size-mode"]).toBe(
+			PROCESS_DEFAULTS.detailLevel,
+		);
+		expect(state["advanced-convert-width"]).toBe("");
+		expect(state["advanced-convert-height"]).toBe("");
 		expect(state["background-dehalo"]).toBe(true);
 		expect(state["background-edge-cleanup"]).toBe(true);
 		expect(state["background-confidence-gate"]).toBe(true);
@@ -22,6 +27,22 @@ describe("migrateAdvancedSettings", () => {
 			PROCESS_RANGES.trimAlphaThreshold.default,
 		);
 		expect(state["auto-max-cells-w"]).toBe(PROCESS_RANGES.autoMaxCells.default);
+	});
+
+	it("migrates saved Convert dimensions to the matching custom mode", () => {
+		const widthOnly: Record<string, string | number | boolean> = {
+			"advanced-convert-width": 24,
+		};
+		const both: Record<string, string | number | boolean> = {
+			"advanced-convert-width": 24,
+			"advanced-convert-height": 18,
+		};
+
+		migrateAdvancedSettings(widthOnly);
+		migrateAdvancedSettings(both);
+
+		expect(widthOnly["advanced-convert-size-mode"]).toBe("custom-width");
+		expect(both["advanced-convert-size-mode"]).toBe("custom-both");
 	});
 
 	it("carries the old semi-transparent-edge toggle into the sampling mode", () => {

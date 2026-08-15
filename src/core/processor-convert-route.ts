@@ -1,3 +1,4 @@
+import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
 	ConvertCandidate,
 	DetailLevel,
@@ -82,6 +83,29 @@ const candidateReports = (
 		};
 	});
 
+/** Convert の片軸指定は、実際にリサンプリングする領域の縦横比で補完する。 */
+const explicitConvertCandidate = (
+	image: RawImage,
+	detailLevel: DetailLevel,
+	width: number | undefined,
+	height: number | undefined,
+): ConvertCandidate | undefined => {
+	if (width === undefined && height === undefined) return undefined;
+	const outW =
+		width ??
+		clampInt(
+			Math.round(((height as number) * image.width) / image.height),
+			PROCESS_RANGES.convertPixelsW,
+		);
+	const outH =
+		height ??
+		clampInt(
+			Math.round((outW * image.height) / image.width),
+			PROCESS_RANGES.convertPixelsH,
+		);
+	return { label: detailLevel, outW, outH };
+};
+
 export const processConvertRoute = (
 	context: SimpleRouteContext,
 ): ProcessResult => {
@@ -145,15 +169,49 @@ export const processConvertRoute = (
 	}
 
 	const candidates = createConvertCandidates(source);
-	const selected = selectConvertCandidate(candidates, o.detailLevel);
-	const selectedCandidateIndex = candidates.indexOf(selected);
-	const reports = candidateReports(
+	const explicitCandidate = explicitConvertCandidate(
+		source,
+		o.detailLevel,
+		o.convertPixelsW,
+		o.convertPixelsH,
+	);
+	const hasExplicitSize = explicitCandidate !== undefined;
+	const selected = explicitCandidate
+		? explicitCandidate
+		: selectConvertCandidate(candidates, o.detailLevel);
+	let selectedCandidateIndex = candidates.indexOf(selected);
+	let reports = candidateReports(
 		source,
 		candidates,
 		o.detailLevel,
 		sourceX,
 		sourceY,
 	);
+	if (hasExplicitSize) {
+		const explicitGrid = gridForCandidate(
+			source,
+			selected,
+			o.detailLevel,
+			sourceX,
+			sourceY,
+		);
+		reports = [
+			{
+				grid: explicitGrid,
+				outW: selected.outW,
+				outH: selected.outH,
+				cropX: sourceX,
+				cropY: sourceY,
+				cropW: source.width,
+				cropH: source.height,
+				method: "convert-explicit-size",
+				totalScore: 1,
+				confidence: 1,
+			},
+			...reports,
+		];
+		selectedCandidateIndex = 0;
+	}
 	let grid = gridForCandidate(
 		source,
 		selected,
@@ -361,7 +419,7 @@ export const processConvertRoute = (
 		compareBeforeSanitized,
 		grid,
 		"convert",
-		`convert-${selected.label}`,
+		hasExplicitSize ? "convert-explicit-size" : `convert-${selected.label}`,
 		trimAlphaThreshold,
 		reports,
 		backgroundDiagnostic,
