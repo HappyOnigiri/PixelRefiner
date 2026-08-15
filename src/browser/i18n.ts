@@ -256,7 +256,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"セル境界が実際のエッジに明確によく乗る粗い倍率が見つかったとき、採用する格子をそちらへ乗り換えます。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。無効にすると、「おまかせ」が小さな格子ではなく「サイズを変えず補正」を選ぶ場合があります。",
+			"論理解像度が小さいとき、角から求めたマスクの範囲を格子の基準に使います。無効にすると、「自動選択」が小さな格子ではなく「原寸を維持」を選ぶ場合があります。",
 		"tooltip.help.max_samples_per_cell":
 			"1 つのセルの色を決めるときに読み取る画素数の上限です。大きいほど安定しますが遅くなります。\n\n設定範囲: {min}〜{max} (デフォルト: {default})",
 		"tooltip.help.cell_alpha_threshold":
@@ -666,7 +666,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"当更粗的倍率其单元格边界明显更贴合真实边缘时，将采用的网格切换过去。",
 		"tooltip.help.small_aspect_grid_alignment":
-			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。关闭后，智能推荐可能选择原尺寸优化而不是小网格。",
+			"当逻辑分辨率较小时，使用从角落求得的遮罩范围作为网格基准。关闭后，自动选择可能选择保持原尺寸而不是小网格。",
 		"tooltip.help.max_samples_per_cell":
 			"决定单个单元格颜色时读取的像素数上限。数值越大越稳定，但速度更慢。\n\n范围：{min} 到 {max} (默认：{default})",
 		"tooltip.help.cell_alpha_threshold":
@@ -1077,7 +1077,7 @@ const resources = {
 		"tooltip.help.boundary_contrast_override":
 			"Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges.",
 		"tooltip.help.small_aspect_grid_alignment":
-			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area. Turning this off may cause Best Match to select Original Size Cleanup instead of a small grid.",
+			"For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area. Turning this off may cause Automatic Selection to select Preserve Original Size instead of a small grid.",
 		"tooltip.help.max_samples_per_cell":
 			"Upper bound on the pixels sampled from one cell when picking its colour. Higher is more stable but slower.\n\nRange: {min} to {max} (Default: {default})",
 		"tooltip.help.cell_alpha_threshold":
