@@ -82,4 +82,19 @@ describe("cancellable processor", () => {
 
 		expect(createEndpoint).not.toHaveBeenCalled();
 	});
+
+	it("clears the cancellation entry when the worker call throws synchronously", async () => {
+		const failingEndpoint = endpoint(() => {
+			throw new Error("boom");
+		});
+		const createEndpoint = vi.fn(() => failingEndpoint);
+		const processor = createCancellableProcessor(createEndpoint);
+
+		await expect(processor.process(image as RawImage, options)).rejects.toThrow(
+			"boom",
+		);
+		processor.cancelActive();
+
+		expect(failingEndpoint.terminate).not.toHaveBeenCalled();
+	});
 });

@@ -58,31 +58,30 @@ export const createCancellableProcessor = (
 		const activeProcessor = endpoint.processor;
 		return new Promise<Result>((resolve, reject) => {
 			let settled = false;
-			const settle = (
-				callback: (value: Result | PromiseLike<Result>) => void,
-				value: Result | PromiseLike<Result>,
-			) => {
-				if (settled) return;
+			// 決着済みなら false を返す。中断の登録を必ず 1 箇所で取り消すためにまとめる。
+			const finalize = (): boolean => {
+				if (settled) return false;
 				settled = true;
 				pendingCancellations.delete(cancel);
-				callback(value);
+				return true;
 			};
 			const cancel = (error: Error) => {
-				if (settled) return;
-				settled = true;
-				pendingCancellations.delete(cancel);
-				reject(error);
+				if (finalize()) reject(error);
 			};
 			pendingCancellations.add(cancel);
-			void operation(activeProcessor).then(
-				(result) => settle(resolve, result),
-				(error: unknown) => {
-					if (settled) return;
-					settled = true;
-					pendingCancellations.delete(cancel);
-					reject(error);
-				},
-			);
+			// [Intended] operation が同期的に投げた例外も reject 経路へ流す。
+			// executor の例外として抜けると中断の登録が集合に残り、
+			// 実行中の処理がなくても cancelActive が Worker を終了し続けてしまう。
+			void Promise.resolve()
+				.then(() => operation(activeProcessor))
+				.then(
+					(result) => {
+						if (finalize()) resolve(result);
+					},
+					(error: unknown) => {
+						if (finalize()) reject(error);
+					},
+				);
 		});
 	};
 
