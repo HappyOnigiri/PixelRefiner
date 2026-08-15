@@ -88,6 +88,27 @@ describe("cellScale", () => {
 		}
 	});
 
+	it("小さい入力でも粗い倍率の指定が auto の縮退ガードで巻き戻らない", async () => {
+		// [Intended] 縮退ガードは検出格子の誤りを拾うためのもの。利用者が選んだ
+		// 「ドットの大きさ」まで縮退とみなすと、公開している選択肢が auto 経路だけ
+		// 効かなくなる。ガードの対象は 32px 以下の入力なので、この寸法で確かめる。
+		const image = await readPngAsRawImage(
+			"test/fixtures/quality_nearest_2x.png",
+		);
+		expect(Math.max(image.width, image.height)).toBeLessThanOrEqual(32);
+
+		const sizes = (["same", "double", "quadruple"] as const).map(
+			(cellScale) => {
+				const scaled = processImage(image, { debug: false, cellScale });
+				expect(scaled.analysis.warnings).not.toContain("FALLBACK_TO_PRESERVE");
+				return `${scaled.result.width}x${scaled.result.height}`;
+			},
+		);
+
+		// 検出セルは 2px。倍率どおりに 8x8 → 4x4 → 2x2 と粗くなる。
+		expect(sizes).toEqual(["8x8", "4x4", "2x2"]);
+	});
+
 	it("原寸維持と Convert の経路では無視する", async () => {
 		const image = await loadFixture();
 

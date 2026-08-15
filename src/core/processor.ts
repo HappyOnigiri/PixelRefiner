@@ -599,11 +599,16 @@ const processImageCore = (
 	// 判定はトリミング後の実サイズで行う。検出時点の outW/outH は妥当に見えても、
 	// コンテンツ BBox で切り詰めた結果 1x1 まで潰れることがあるため。
 	if (o.processingMode === "auto") {
+		// [Intended] 判定するのは検出格子が誤っていないかであって、利用者が「ドットの
+		// 大きさ」で粗くした分ではない。倍率の分まで縮退とみなすと、公開している選択肢が
+		// auto 経路でだけ原寸維持へ巻き戻る。倍率を割り戻した寸法と拡縮前の格子で判定する。
+		const cellScaleFactor =
+			baseGrid.cellW > 0 ? grid.cellW / baseGrid.cellW : 1;
 		const degeneracy = evaluateAutoGridDegeneracy(
 			working,
-			trimmed.width,
-			trimmed.height,
-			grid,
+			Math.max(1, Math.round(trimmed.width * cellScaleFactor)),
+			Math.max(1, Math.round(trimmed.height * cellScaleFactor)),
+			baseGrid,
 		);
 		if (degeneracy.degenerate) {
 			log("Degenerate auto grid detected; falling back to native scale", {
