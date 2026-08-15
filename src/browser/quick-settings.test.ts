@@ -14,9 +14,24 @@ describe("quick settings", () => {
 			processingMode: PROCESS_DEFAULTS.processingMode,
 			detailLevel: PROCESS_DEFAULTS.detailLevel,
 			reductionMode: "none",
-			trimToContent: PROCESS_DEFAULTS.trimToContent,
 		});
 	});
+
+	it.each([
+		["keep", false],
+		["auto", true],
+		["pick", true],
+	] as const)(
+		"derives trimming from the %s background mode",
+		(background, trimToContent) => {
+			const options = createQuickProcessOptions({
+				...QUICK_SETTINGS_DEFAULTS,
+				background,
+			});
+
+			expect(options.trimToContent).toBe(trimToContent);
+		},
+	);
 
 	it("leaves color reduction to the processing route for the default Auto preset", () => {
 		const options = createUiInitialProcessOptions();
@@ -133,11 +148,13 @@ describe("quick settings", () => {
 		expect(createBuiltInPresetOptions("transparent-icon")).toMatchObject({
 			colorCount: 32,
 			outlineStyle: "rounded",
+			trimToContent: true,
 		});
 		expect(createBuiltInPresetOptions("photo-to-pixel")).toMatchObject({
 			processingMode: "convert",
 			colorCount: 32,
 			bgExtractionMethod: "none",
+			trimToContent: false,
 		});
 	});
 });

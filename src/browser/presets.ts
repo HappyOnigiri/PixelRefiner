@@ -34,6 +34,8 @@ const migratePreset = (value: unknown): Preset | null => {
 			data[key] = entry;
 		}
 	}
+	// [Policy] 自動トリムは背景透過の有無から決まるため、旧プリセットの個別指定は引き継がない。
+	delete data["trim-to-content"];
 	if (value.version !== 3) {
 		// [Policy] 旧プリセットで処理に使われていた公開設定を、独立した詳細設定へ移す。
 		data["advanced-processing-mode"] ??=

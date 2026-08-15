@@ -40,6 +40,8 @@ export const createAdvancedProcessOptions = (
 	const method = els.bgExtractionMethod
 		.value as ProcessOptions["bgExtractionMethod"];
 	const bgEnabled = method !== "none";
+	const preRemoveBackground = bgEnabled && els.preRemoveCheck.checked;
+	const postRemoveBackground = bgEnabled && els.postRemoveCheck.checked;
 	const reduceColorMode = els.reduceColorModeSelect.value;
 	const outlineHex = els.outlineColorInput.value;
 
@@ -58,8 +60,8 @@ export const createAdvancedProcessOptions = (
 		forcePixelsH: gridMode === "force" && usePixels ? pixelsH : undefined,
 		hintPixelsW: gridMode === "hint" && usePixels ? pixelsW : undefined,
 		hintPixelsH: gridMode === "hint" && usePixels ? pixelsH : undefined,
-		preRemoveBackground: bgEnabled && els.preRemoveCheck.checked,
-		postRemoveBackground: bgEnabled && els.postRemoveCheck.checked,
+		preRemoveBackground,
+		postRemoveBackground,
 		bgRemovalScope: bgEnabled
 			? (els.advancedBgRemovalScopeSelect
 					.value as ProcessOptions["bgRemovalScope"])
@@ -124,8 +126,9 @@ export const createAdvancedProcessOptions = (
 		alphaBorderBackgroundGuard: els.alphaBorderBackgroundGuardCheck.checked,
 		backgroundConfidenceGate: els.backgroundConfidenceGateCheck.checked,
 		smallComponentBackgroundGate: els.smallComponentBackgroundGateCheck.checked,
-		trimToContent: els.trimToContentCheck.checked,
-		// [Policy] ブラウザUIでは背景透過・トリム設定にかかわらず処理倍率を維持する。
+		// [Policy] 詳細設定でも背景透過とトリムを一体にし、透過しない画像の全キャンバスを保つ。
+		trimToContent: preRemoveBackground || postRemoveBackground,
+		// [Policy] ブラウザUIでは背景透過の有無にかかわらず処理倍率を維持する。
 		preserveProcessingScale: true,
 		fastAutoGridFromTrimmed: els.fastAutoGridFromTrimmedCheck.checked,
 		makeSquare: els.makeSquareCheck.checked,

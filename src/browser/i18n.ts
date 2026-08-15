@@ -83,7 +83,6 @@ const resources = {
 		"setting.quick_colors": "色数・配色",
 		"setting.quick_background": "背景",
 		"setting.quick_gradient": "グラデーション表現",
-		"setting.quick_canvas": "余白",
 		"setting.processing_mode": "処理方法",
 		"setting.size": "サイズ",
 		"setting.detail": "細かさ",
@@ -118,8 +117,6 @@ const resources = {
 		"option.background_keep": "背景を残す",
 		"option.background_auto": "自動で透過",
 		"option.background_pick": "選んだ色を透過",
-		"option.auto_trim_auto": "自動で切り詰める",
-		"option.auto_trim_none": "そのまま",
 		"option.dithering_off": "使わない",
 		"option.dithering_subtle": "控えめ",
 		"option.dithering_strong": "強め",
@@ -193,7 +190,6 @@ const resources = {
 
 		"setting.small_component_mode": "小さな要素の整理",
 		"setting.trimming": "トリミング",
-		"setting.auto_trim": "自動トリム",
 		"setting.outline": "アウトライン",
 		"setting.outline_style": "スタイル",
 		"setting.outline_color": "色",
@@ -220,9 +216,7 @@ const resources = {
 		"tooltip.help.quick_reduction_mode":
 			"元の色を残すか、色数を制限するか、標準パレットに揃えるかを選びます。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
-			"背景を残すか、自動判定で透過するか、選んだ色を透過するかを選びます。",
-		"tooltip.help.quick_auto_trim":
-			"被写体の周りにある余白を自動で切り詰めるか、元のキャンバスを残すかを選びます。切り詰めても被写体の大きさは変わりません。背景を残す場合も使用できます。",
+			"背景を残すか、自動判定で透過するか、選んだ色を透過するかを選びます。背景を残す場合はキャンバス全体を維持し、透過する場合は透明な余白も自動で切り詰めます。",
 		"tooltip.help.quick_dithering":
 			"減色時にドット模様を加えてグラデーションを表現します。強くするほど階調を残しやすくなりますが、模様も目立ちます。",
 
@@ -302,7 +296,7 @@ const resources = {
 		"tooltip.help.include_diagnostics":
 			"一括ダウンロード (ZIP) に diagnostics.json を追加します。\n\n画像ごとの入出力ファイル名、判定した入力の種類、処理方式、信頼度、警告コードを記録した JSON です。\n大量の画像を処理したあとで、確認が必要な画像を絞り込むときに使います。",
 		"tooltip.help.bg_method":
-			"背景色をどこから抽出するか選択します。\n\n自動: 外周全体から背景を推定します。\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
+			"背景色をどこから抽出するか選択します。背景透過を有効にすると透明な余白も自動で切り詰め、透過しない場合はキャンバス全体を維持します。\n\n自動: 外周全体から背景を推定します。\n透過しない: 背景透過を行いません。\n各四隅: 指定した角のピクセルを背景色とします。\nRGB指定: 指定した色を背景色とします。",
 		"tooltip.help.bg_rgb":
 			"背景色として扱う色を16進数(例: #ffffff)で指定します。\n四隅指定時は自動で色がセットされます。スポイトボタンで画像から色を選択することもできます。",
 		"tooltip.help.bg_tolerance":
@@ -319,8 +313,6 @@ const resources = {
 			"背景透過後、右下に明るいひし形として単独で浮いているGeminiの透かしだけを自動で除去します。主体と接している場合は除去しません。",
 		"tooltip.help.small_component_mode":
 			"復元後の論理ピクセルを基準に孤立ノイズを整理します。近接・反復・対称・輪郭の延長・強いエッジ・高い不透明度を持つ細部は保護します。背景判定が不確かな場合は自動削除しません。",
-		"tooltip.help.auto_trim":
-			"処理後に、検出した内容の範囲まで出力を自動でトリミングします。被写体の大きさとディテール設定は変わりません。",
 		"tooltip.help.make_square":
 			"画像全体が正方形になるように、足りない部分を透過ピクセルで埋め合わせます。\n\n元の画像は中心に配置されます。",
 		"tooltip.help.keep_aspect_ratio":
@@ -643,7 +635,6 @@ const resources = {
 		"setting.quick_colors": "色彩",
 		"setting.quick_background": "背景",
 		"setting.quick_gradient": "渐变纹理",
-		"setting.quick_canvas": "画布",
 		"setting.processing_mode": "处理方式",
 		"setting.size": "尺寸",
 		"setting.detail": "细节",
@@ -678,8 +669,6 @@ const resources = {
 		"option.background_keep": "保留背景",
 		"option.background_auto": "自动移除背景",
 		"option.background_pick": "移除所选颜色",
-		"option.auto_trim_auto": "自动裁剪空白",
-		"option.auto_trim_none": "保留完整画布",
 		"option.dithering_off": "不使用",
 		"option.dithering_subtle": "轻微",
 		"option.dithering_strong": "强烈",
@@ -753,7 +742,6 @@ const resources = {
 
 		"setting.small_component_mode": "小组件清理",
 		"setting.trimming": "裁剪",
-		"setting.auto_trim": "自动裁剪",
 		"setting.outline": "描边",
 		"setting.outline_style": "样式",
 		"setting.outline_color": "颜色",
@@ -779,9 +767,7 @@ const resources = {
 		"tooltip.help.quick_reduction_mode":
 			"选择保留原色、限制颜色数量或使用内置标准调色板。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
-			"选择保留背景、自动移除背景，或将选定颜色设为透明。",
-		"tooltip.help.quick_auto_trim":
-			"选择自动裁剪主体周围的空白，或保留完整画布。裁剪不会改变主体大小，保留背景时也可使用。",
+			"选择保留背景、自动移除背景，或将选定颜色设为透明。保留背景时会保留完整画布；透明化背景时也会自动裁剪透明边距。",
 		"tooltip.help.quick_dithering":
 			"减色时加入像素纹理来表现渐变。强度越高越能保留明暗层次，但纹理也会更明显。",
 
@@ -861,7 +847,7 @@ const resources = {
 		"tooltip.help.include_diagnostics":
 			"在全部下载 (ZIP) 中追加 diagnostics.json。\n\n该 JSON 记录每张图片的输入输出文件名、判定的输入类型、处理方式、置信度和警告代码。\n便于在批量处理后筛选需要确认的图片。",
 		"tooltip.help.bg_method":
-			"选择从哪里提取背景色。\n\n自动：从整个图像边缘估算背景。\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
+			"选择从哪里提取背景色。启用背景透明化时也会自动裁剪透明边距；不透明化背景时会保留完整画布。\n\n自动：从整个图像边缘估算背景。\n无：不移除背景。\n四角：使用指定角落的像素作为背景色。\nRGB：使用指定颜色作为背景色。",
 		"tooltip.help.bg_rgb":
 			"用十六进制格式指定要视为背景的颜色（例如 #ffffff）。\n选择四角时会自动填入颜色。也可以用吸管按钮从图片中取色。",
 		"tooltip.help.bg_tolerance":
@@ -878,8 +864,6 @@ const resources = {
 			"背景透明化后，仅自动移除位于右下角、以明亮菱形独立悬浮的 Gemini 水印。水印与主体接触时不会移除。",
 		"tooltip.help.small_component_mode":
 			"根据恢复后的逻辑像素清理孤立噪点。会保护邻近、重复、对称、位于轮廓延长线、边缘清晰或高不透明度的细节。背景判断不确定时不会自动删除。",
-		"tooltip.help.auto_trim":
-			"处理完成后，自动裁剪到检测到的内容范围。主体大小和细节设置保持不变。",
 		"tooltip.help.make_square":
 			"用透明像素填充不足的边，使整张图片变为正方形。\n\n原内容会居中放置。",
 		"tooltip.help.keep_aspect_ratio":
@@ -1193,7 +1177,6 @@ const resources = {
 		"setting.quick_colors": "Colors",
 		"setting.quick_background": "Background",
 		"setting.quick_gradient": "Gradient Texture",
-		"setting.quick_canvas": "Canvas",
 		"setting.processing_mode": "Processing",
 		"setting.size": "Size",
 		"setting.detail": "Detail",
@@ -1228,8 +1211,6 @@ const resources = {
 		"option.background_keep": "Keep background",
 		"option.background_auto": "Remove automatically",
 		"option.background_pick": "Remove selected color",
-		"option.auto_trim_auto": "Trim empty margins",
-		"option.auto_trim_none": "Keep full canvas",
 		"option.dithering_off": "None",
 		"option.dithering_subtle": "Subtle",
 		"option.dithering_strong": "Strong",
@@ -1303,7 +1284,6 @@ const resources = {
 
 		"setting.small_component_mode": "Small Detail Cleanup",
 		"setting.trimming": "Trimming",
-		"setting.auto_trim": "Auto Trim",
 		"setting.outline": "Outline",
 		"setting.outline_style": "Style",
 		"setting.outline_color": "Color",
@@ -1330,9 +1310,7 @@ const resources = {
 		"tooltip.help.quick_reduction_mode":
 			"Chooses whether to keep the original colors, limit the color count, or use a built-in standard palette. Custom color counts and imported palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":
-			"Chooses whether to keep the background, remove it automatically, or make a selected color transparent.",
-		"tooltip.help.quick_auto_trim":
-			"Chooses whether to trim empty margins around the subject or keep the full canvas. Trimming does not change the subject scale and also works when the background is kept.",
+			"Chooses whether to keep the background, remove it automatically, or make a selected color transparent. Keeping the background preserves the full canvas; removing it also trims transparent margins.",
 		"tooltip.help.quick_dithering":
 			"Adds a pixel pattern during color reduction to preserve gradients. Stronger settings retain more tonal variation but make the texture more visible.",
 
@@ -1412,7 +1390,7 @@ const resources = {
 		"tooltip.help.include_diagnostics":
 			"Adds diagnostics.json to the ZIP download.\n\nIt records the input and output filenames, detected input type, processing route, confidence, and warning codes for each image.\nUseful for narrowing down images that need a second look after a large batch.",
 		"tooltip.help.bg_method":
-			"Select where to extract the background color from.\n\nAuto: Estimates the background from the full image border.\nNone: No background removal.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
+			"Select where to extract the background color from. When background transparency is enabled, transparent margins are also trimmed automatically; None preserves the full canvas.\n\nAuto: Estimates the background from the full image border.\nNone: No background removal.\nCorners: Uses the pixel at the specified corner as the background color.\nRGB: Uses the specified color as the background color.",
 		"tooltip.help.bg_rgb":
 			"Specify the color to be treated as the background in hex format (e.g., #ffffff).\nWhen a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button.",
 		"tooltip.help.bg_tolerance":
@@ -1429,8 +1407,6 @@ const resources = {
 			"After background transparency, automatically removes only an isolated bright Gemini diamond in the bottom-right corner. A mark touching the subject is kept.",
 		"tooltip.help.small_component_mode":
 			"Cleans isolated noise using restored logical pixels. Nearby, repeated, symmetric, outline-aligned, strongly edged, and highly opaque details are protected. Automatic removal is skipped when the background estimate is uncertain.",
-		"tooltip.help.auto_trim":
-			"Automatically trims the output to the detected content bounds after processing. The content scale and detail level stay unchanged.",
 		"tooltip.help.make_square":
 			"Pads the image with transparent pixels to make it perfectly square.\n\nThe original content is placed in the center.",
 		"tooltip.help.keep_aspect_ratio":
