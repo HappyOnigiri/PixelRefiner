@@ -179,7 +179,9 @@ describe("I18nManager", () => {
 				"option.quick_processing_refine",
 				"option.quick_processing_convert",
 				"option.quick_processing_preserve",
+				"option.quick_colors_auto",
 				"option.quick_colors_original",
+				"option.colors_24",
 				"tooltip.help.quick_preset",
 				"tooltip.help.quick_processing_mode",
 				"tooltip.help.quick_detail",
@@ -208,6 +210,8 @@ describe("I18nManager", () => {
 
 		i18n.setLanguage("ja");
 		expect(i18n.t("preset.auto")).toBe("おまかせ");
+		expect(i18n.t("setting.quick_colors")).toBe("減色");
+		expect(i18n.t("preset.transparent_icon")).toBe("透過アイコン");
 		expect(i18n.t("option.quick_processing_refine")).toBe("輪郭をくっきり");
 		expect(i18n.t("option.quick_processing_convert")).toBe(
 			"細部を残してドット化",

@@ -40,7 +40,7 @@ const createElements = () => {
 	};
 	controls.quickProcessingModeSelect.value = "auto";
 	controls.quickDetailLevelSelect.value = "balanced";
-	controls.quickReductionModeSelect.value = "none";
+	controls.quickReductionModeSelect.value = "auto";
 	controls.quickBackgroundSelect.value = "auto";
 	controls.quickDitheringSelect.value = "off";
 	return controls;
@@ -156,5 +156,15 @@ describe("quick settings controls", () => {
 		updateQuickSettingsDisabledStates(els as unknown as Elements);
 		expect(els.quickDitheringSelect.disabled).toBe(false);
 		expect(els.quickBackgroundPicker.style.display).toBe("flex");
+	});
+
+	it("follows the selected finish when automatic reduction controls dithering", () => {
+		const els = createElements();
+
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "refine");
+		expect(els.quickDitheringSelect.disabled).toBe(true);
+
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
+		expect(els.quickDitheringSelect.disabled).toBe(false);
 	});
 });

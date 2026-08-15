@@ -196,10 +196,20 @@ export const migrateAdvancedSettings = (
 				? "alpha-aware-medoid"
 				: PROCESS_DEFAULTS.cellSamplingMode;
 	}
-	state["small-aspect-grid-alignment"] ??=
-		PROCESS_DEFAULTS.smallAspectGridAlignment;
-	state["watermark-sampling-compat"] ??=
-		PROCESS_DEFAULTS.watermarkSamplingCompat;
+	if (
+		state["small-aspect-grid-alignment"] === undefined ||
+		state["small-aspect-grid-alignment"] === "auto"
+	) {
+		state["small-aspect-grid-alignment"] =
+			PROCESS_DEFAULTS.smallAspectGridAlignment;
+	}
+	if (
+		state["watermark-sampling-compat"] === undefined ||
+		state["watermark-sampling-compat"] === "auto"
+	) {
+		state["watermark-sampling-compat"] =
+			PROCESS_DEFAULTS.watermarkSamplingCompat;
+	}
 
 	state["preserve-thin-features"] ??= PROCESS_DEFAULTS.preserveThinFeatures;
 	state["auto-grid-from-trimmed"] ??= PROCESS_DEFAULTS.autoGridFromTrimmed;

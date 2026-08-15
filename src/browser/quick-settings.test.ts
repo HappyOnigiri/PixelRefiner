@@ -13,7 +13,7 @@ describe("quick settings", () => {
 		expect(QUICK_SETTINGS_DEFAULTS).toMatchObject({
 			processingMode: PROCESS_DEFAULTS.processingMode,
 			detailLevel: PROCESS_DEFAULTS.detailLevel,
-			reductionMode: "none",
+			reductionMode: "auto",
 		});
 	});
 
@@ -68,7 +68,7 @@ describe("quick settings", () => {
 		});
 	});
 
-	it.each(["8", "16", "32"] as const)(
+	it.each(["8", "16", "24", "32"] as const)(
 		"maps the %s-color choice to automatic reduction with a fixed count",
 		(reductionMode) => {
 			const options = createQuickProcessOptions({
@@ -147,7 +147,7 @@ describe("quick settings", () => {
 		]);
 		expect(createBuiltInPresetOptions("transparent-icon")).toMatchObject({
 			colorCount: 32,
-			outlineStyle: "rounded",
+			outlineStyle: "none",
 			trimToContent: true,
 		});
 		expect(createBuiltInPresetOptions("photo-to-pixel")).toMatchObject({
@@ -155,6 +155,14 @@ describe("quick settings", () => {
 			bgExtractionMethod: "auto",
 			trimToContent: true,
 		});
+	});
+
+	it("defines every built-in preset only as quick settings", () => {
+		for (const preset of BUILT_IN_PRESETS) {
+			expect(createBuiltInPresetOptions(preset.id)).toEqual(
+				createQuickProcessOptions(preset.quickSettings),
+			);
+		}
 	});
 
 	it.each([
@@ -167,12 +175,7 @@ describe("quick settings", () => {
 			const auto = createBuiltInPresetOptions("auto");
 			const routePreset = createBuiltInPresetOptions(presetId);
 
-			expect(routePreset).toEqual({
-				...auto,
-				processingMode,
-				smallAspectGridAlignment: "on",
-				watermarkSamplingCompat: "on",
-			});
+			expect(routePreset).toEqual({ ...auto, processingMode });
 			expect(routePreset).not.toHaveProperty("reduceColors");
 			expect(routePreset).not.toHaveProperty("reduceColorMode");
 			expect(routePreset).not.toHaveProperty("colorCount");

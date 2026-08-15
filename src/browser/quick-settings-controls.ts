@@ -65,7 +65,12 @@ export const updateQuickSettingsDisabledStates = (
 
 	const reductionMode = els.quickReductionModeSelect
 		.value as QuickReductionMode;
-	setQuickControlDisabled(els.quickDitheringSelect, reductionMode === "none");
+	const reductionDisabled =
+		reductionMode === "none" ||
+		(reductionMode === "auto" &&
+			effectiveRoute !== undefined &&
+			effectiveRoute !== "convert");
+	setQuickControlDisabled(els.quickDitheringSelect, reductionDisabled);
 };
 
 /**
