@@ -19,7 +19,7 @@ Keys for `data-i18n` and `data-i18n-attr` in the app UI (`index.html` and `src/b
 
 `guide.*` belongs to `messages/guide.ts` and is deliberately left out of `appMessages`, so the recipe copy stays out of the app bundle; `src/browser/guide.ts` registers it with `i18n.registerMessages()`.
 
-The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in `test/quality/report/translations.ts` instead, writing the three languages together in a single entry per key as the app messages do. Do not add report-only keys to `src/browser/i18n/`.
+The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in `test/quality/report/translations.ts` instead, writing the three languages together in a single entry per key as the app messages do. Do not add report-only keys to `src/browser/i18n/`. `test/quality/report/translations.test.ts` checks the same things for the report, but the report builds its markup in TypeScript, so keys it assembles at run time cannot be found by reading the source: when you add one, register where its value comes from in `GROUP_VALUES` (for `<group>.<value>` keys) or `DYNAMIC_FLAT_KEYS` (for flat keys) in that test, preferring a type or a constant the report already exports over a hand-written list.
 
 ## Guide Page
 

@@ -1,9 +1,13 @@
 import type { QualityReportKind } from "../types";
 
 // [Policy] レポートは本体アプリから独立した成果物なので、言語も訳文もここで完結させる。
-type ReportLanguage = "en" | "ja" | "zh-CN";
+export type ReportLanguage = "en" | "ja" | "zh-CN";
 
-const REPORT_LANGUAGES: readonly ReportLanguage[] = ["en", "ja", "zh-CN"];
+export const REPORT_LANGUAGES: readonly ReportLanguage[] = [
+	"en",
+	"ja",
+	"zh-CN",
+];
 
 // 1 つのキーに対する全言語の訳文
 type ReportMessageEntry = Record<ReportLanguage, string>;
@@ -58,7 +62,7 @@ const byLanguage = <T extends ReportMessageTree>(
 	) as Record<ReportLanguage, ByLanguage<T>>;
 };
 
-const REPORT_MESSAGES = defineReportMessages({
+export const REPORT_MESSAGES = defineReportMessages({
 	title: {
 		ja: "品質レポート",
 		en: "PixelRefiner quality report",
@@ -128,11 +132,6 @@ const REPORT_MESSAGES = defineReportMessages({
 		ja: "処理ルート",
 		en: "Route",
 		"zh-CN": "处理路径",
-	},
-	confidence: {
-		ja: "信頼度（診断値）",
-		en: "Confidence (diagnostic)",
-		"zh-CN": "置信度（诊断值）",
 	},
 	classificationConfidence: {
 		ja: "自動分類信頼度",
@@ -306,16 +305,6 @@ const REPORT_MESSAGES = defineReportMessages({
 		en: "expectation unmet",
 		"zh-CN": "未达标准",
 	},
-	targetMatch: {
-		ja: "目標との比較",
-		en: "Target comparison",
-		"zh-CN": "与目标的比较",
-	},
-	allTargets: {
-		ja: "すべて",
-		en: "All",
-		"zh-CN": "全部",
-	},
 	targetMet: {
 		ja: "目標達成",
 		en: "target met",
@@ -341,6 +330,11 @@ const REPORT_MESSAGES = defineReportMessages({
 		en: "refine",
 		"zh-CN": "优化",
 	},
+	convert: {
+		ja: "変換",
+		en: "convert",
+		"zh-CN": "转换",
+	},
 	workflow: {
 		ja: "実行ログ",
 		en: "workflow",
@@ -360,11 +354,6 @@ const REPORT_MESSAGES = defineReportMessages({
 		ja: "新規追加",
 		en: "new case",
 		"zh-CN": "新增用例",
-	},
-	changedCases: {
-		ja: "差分あり",
-		en: "Cases with differences",
-		"zh-CN": "有差异的用例",
 	},
 	allChanges: {
 		ja: "すべて",
@@ -536,11 +525,6 @@ const REPORT_MESSAGES = defineReportMessages({
 		en: "Mean RGBA error",
 		"zh-CN": "RGBA 平均误差",
 	},
-	meanRgbaErrorShort: {
-		ja: "誤差",
-		en: "Error",
-		"zh-CN": "误差",
-	},
 	processingTime: {
 		ja: "時間",
 		en: "Time",
@@ -550,11 +534,6 @@ const REPORT_MESSAGES = defineReportMessages({
 		ja: "完全一致",
 		en: "Exact match",
 		"zh-CN": "完全匹配",
-	},
-	exactMatchShort: {
-		ja: "一致",
-		en: "Exact",
-		"zh-CN": "匹配",
 	},
 	yes: {
 		ja: "はい",
@@ -595,16 +574,6 @@ const REPORT_MESSAGES = defineReportMessages({
 		ja: "レポートに戻る",
 		en: "Back to report",
 		"zh-CN": "返回报告",
-	},
-	noRegression: {
-		ja: "新たな品質悪化はありません",
-		en: "No new quality regression",
-		"zh-CN": "未发现新的质量下降",
-	},
-	hasRegression: {
-		ja: "品質の悪化を検出しました",
-		en: "Quality regression detected",
-		"zh-CN": "检测到质量下降",
 	},
 	assertions: {
 		"exact-image-match": {
@@ -799,6 +768,11 @@ const REPORT_MESSAGES = defineReportMessages({
 			ja: "推奨候補",
 			en: "Recommended",
 			"zh-CN": "推荐方案",
+		},
+		"auto-result": {
+			ja: "Auto実結果",
+			en: "Auto result",
+			"zh-CN": "Auto 结果",
 		},
 		finer: {
 			ja: "細かめ",

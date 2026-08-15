@@ -6,13 +6,16 @@ import type {
 import type { QualityCandidateOption, QualityCaseResult } from "../types";
 import { escapeHtml, formatConfidence, formatImageSize } from "./format";
 
-const CANDIDATE_MODAL_DECISION_KEYS: Record<CandidateModalDecision, string> = {
+export const CANDIDATE_MODAL_DECISION_KEYS: Record<
+	CandidateModalDecision,
+	string
+> = {
 	"would-show": "candidateModalWouldShow",
 	"would-not-show": "candidateModalWouldNotShow",
 	"not-applicable": "candidateModalNotApplicable",
 };
 
-const WARNING_PRESENTATION_KEYS: Record<WarningPresentation, string> = {
+export const WARNING_PRESENTATION_KEYS: Record<WarningPresentation, string> = {
 	"candidate-modal": "warningPresentationCandidateModal",
 	indicator: "warningPresentationIndicator",
 	none: "warningPresentationNone",
