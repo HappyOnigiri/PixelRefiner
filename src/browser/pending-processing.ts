@@ -6,7 +6,7 @@ import { createLoadingOverlay } from "./loading-overlay";
 import { showWarning } from "./notifications";
 import { createPendingImageQueue } from "./pending-queue";
 import type { RunProcessingOptions } from "./processing-controller";
-import { processor } from "./processing-controller";
+import { processor } from "./processor-worker";
 import type { ImageSession } from "./session";
 import { createProcessOptions } from "./settings-options";
 
@@ -47,7 +47,7 @@ export const createProcessPendingImages = ({
 	const processInactiveImage = async (id: string) => {
 		const item = imageSession.getImages().find((image) => image.id === id);
 		if (!item) return;
-		imageSession.setImageStatus(id, "processing");
+		const processingToken = imageSession.beginProcessing(id);
 		showProgress();
 		try {
 			// [Intended] 候補プレビューで確定済みの方針は、一括変換でも画像ごとに引き継ぐ。
@@ -56,6 +56,8 @@ export const createProcessPendingImages = ({
 				item.candidateSelection,
 			);
 			const processResult = await processor.process(item.original, options);
+			// [Intended] 待機中にこの画像が個別処理などで変換し直されていたら、古い結果で上書きしない。
+			if (!imageSession.isProcessingCurrent(id, processingToken)) return;
 			imageSession.updateImageResult(
 				id,
 				processResult,
@@ -68,6 +70,7 @@ export const createProcessPendingImages = ({
 		} catch (error) {
 			// [Intended] 失敗した画像は一覧でエラーとして示し、残りの画像の変換は続ける。
 			// 通知は一巡の完了時にまとめる（トーストは重ねて表示できない）。
+			if (!imageSession.isProcessingCurrent(id, processingToken)) return;
 			const message = `${i18n.t("error.process_failed")}: ${(error as Error).message}`;
 			imageSession.setImageStatus(id, "error", message);
 		}

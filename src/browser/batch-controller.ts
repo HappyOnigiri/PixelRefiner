@@ -16,7 +16,7 @@ import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { createLoadingOverlay } from "./loading-overlay";
 import { showError, showWarning } from "./notifications";
-import { processor } from "./processing-controller";
+import { processor } from "./processor-worker";
 import type { ImageSession } from "./session";
 import { createProcessOptions } from "./settings-options";
 
@@ -91,8 +91,10 @@ export const setupBatchController = ({
 		loadingOverlay.showProgress(0, images.length);
 
 		try {
+			const processingTokens = new Map<string, number>();
 			for (let index = 0; index < images.length; index += 1) {
-				imageSession.setImageStatus(images[index].id, "processing");
+				const id = images[index].id;
+				processingTokens.set(id, imageSession.beginProcessing(id));
 			}
 			const colorCount = clampInt(
 				Number(els.batchColorCountInput.value),
@@ -120,6 +122,14 @@ export const setupBatchController = ({
 
 			for (let index = 0; index < batchResult.items.length; index += 1) {
 				const item = batchResult.items[index];
+				// [Intended] 一括変換の待機中に同じ画像を個別処理していたら、古い結果で上書きしない。
+				const token = processingTokens.get(item.id);
+				if (
+					token === undefined ||
+					!imageSession.isProcessingCurrent(item.id, token)
+				) {
+					continue;
+				}
 				if (item.status === "done") {
 					imageSession.updateImageResult(
 						item.id,

@@ -33,6 +33,7 @@ type SettingsControlsOptions = {
 	processingState: ProcessingState;
 	imageSession: ImageSession;
 	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
+	onAutoProcessScheduledChange: (scheduled: boolean) => void;
 	saveSettings: () => void;
 	onLanguageChange: () => void;
 };
@@ -56,6 +57,7 @@ export const setupSettingsControls = ({
 	processingState,
 	imageSession,
 	runProcessing,
+	onAutoProcessScheduledChange,
 	saveSettings,
 	onLanguageChange,
 }: SettingsControlsOptions): SettingsControls => {
@@ -340,11 +342,19 @@ export const setupSettingsControls = ({
 		if (autoProcessTimeout) {
 			window.clearTimeout(autoProcessTimeout);
 		}
+		onAutoProcessScheduledChange(true);
 
 		autoProcessTimeout = window.setTimeout(() => {
+			autoProcessTimeout = undefined;
 			// [Intended] 設定調整のたびに候補モーダルが開くと、入力からフォーカスが奪われ調整を続けられない。
 			// 候補の提示は明示的な処理実行に限る。
-			runProcessing({ showCandidates: false });
+			void runProcessing({ showCandidates: false }).finally(() => {
+				// [Intended] 予約の解除は変換の完了時に行う。呼び出し直後に解除すると、
+				// runProcessing が最初の await までに変換の開始を記録することへ暗黙に依存する。
+				// 待機中に次の予約が入っていた場合は、その予約の完了時の解除に任せる。
+				if (autoProcessTimeout === undefined)
+					onAutoProcessScheduledChange(false);
+			});
 		}, 300);
 	};
 
@@ -652,6 +662,11 @@ export const setupSettingsControls = ({
 	// 自動処理トグルの変更時に処理ボタンの表示を切り替え
 	els.autoProcessToggle.addEventListener("change", () => {
 		updateProcessButtonVisibility();
+		if (!els.autoProcessToggle.checked && autoProcessTimeout) {
+			window.clearTimeout(autoProcessTimeout);
+			autoProcessTimeout = undefined;
+			onAutoProcessScheduledChange(false);
+		}
 	});
 
 	// 設定変更時に自動処理を開始するイベントリスナーを追加
