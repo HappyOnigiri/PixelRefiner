@@ -52,7 +52,7 @@ export type ProcessingController = {
 	setAutoProcessScheduled: (scheduled: boolean) => void;
 };
 
-export const createRunProcessing = ({
+export const createProcessingController = ({
 	els,
 	processingState,
 	imageSession,

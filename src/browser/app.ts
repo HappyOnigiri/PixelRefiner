@@ -24,7 +24,7 @@ import { showError } from "./notifications";
 import { createProcessPendingImages } from "./pending-processing";
 import { setupPresetControls } from "./preset-controls";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
-import { createRunProcessing } from "./processing-controller";
+import { createProcessingController } from "./processing-controller";
 import { translateProcessingWarnings } from "./processing-warnings";
 import { updateQuickSettingsDisabledStates } from "./quick-settings-controls";
 import { setupResultActions } from "./result-actions";
@@ -241,7 +241,7 @@ export const initApp = (): void => {
 		}
 	};
 
-	const processingController = createRunProcessing({
+	const processingController = createProcessingController({
 		els,
 		processingState,
 		imageSession,
