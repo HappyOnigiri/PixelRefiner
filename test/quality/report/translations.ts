@@ -389,7 +389,7 @@ export const REPORT_TRANSLATIONS = {
 		hasCandidateSelection: "有候选选择",
 		warningDetails: "WARNING 详情",
 		warningTrigger: "判定条件",
-		candidateDiagnostics: "Auto 候选模态诊断",
+		candidateDiagnostics: "Auto 候选列表诊断",
 		candidateSuggestion: "候选列表",
 		candidateSuggestionWouldShow: "预计显示",
 		candidateSuggestionWouldNotShow: "预计不显示",
