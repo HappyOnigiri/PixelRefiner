@@ -136,7 +136,7 @@ describe("quick settings", () => {
 		expect(options.outlineStyle).toBe(PROCESS_DEFAULTS.outlineStyle);
 	});
 
-	it("defines six self-contained built-in presets", () => {
+	it("defines six built-in presets", () => {
 		expect(BUILT_IN_PRESETS.map((preset) => preset.id)).toEqual([
 			"auto",
 			"crisp-sprite",
@@ -152,9 +152,30 @@ describe("quick settings", () => {
 		});
 		expect(createBuiltInPresetOptions("photo-to-pixel")).toMatchObject({
 			processingMode: "convert",
-			colorCount: 32,
-			bgExtractionMethod: "none",
-			trimToContent: false,
+			bgExtractionMethod: "auto",
+			trimToContent: true,
 		});
 	});
+
+	it.each([
+		["crisp-sprite", "refine"],
+		["keep-fine-details", "preserve"],
+		["photo-to-pixel", "convert"],
+	] as const)(
+		"aligns the %s preset with the Auto-selected %s route",
+		(presetId, processingMode) => {
+			const auto = createBuiltInPresetOptions("auto");
+			const routePreset = createBuiltInPresetOptions(presetId);
+
+			expect(routePreset).toEqual({
+				...auto,
+				processingMode,
+				smallAspectGridAlignment: "on",
+				watermarkSamplingCompat: "on",
+			});
+			expect(routePreset).not.toHaveProperty("reduceColors");
+			expect(routePreset).not.toHaveProperty("reduceColorMode");
+			expect(routePreset).not.toHaveProperty("colorCount");
+		},
+	);
 });

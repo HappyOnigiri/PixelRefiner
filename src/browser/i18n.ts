@@ -88,7 +88,7 @@ const resources = {
 		"setting.detail": "細かさ",
 		"setting.background": "背景透過",
 		"setting.dithering": "ディザリング",
-		"preset.auto": "おまかせ仕上げ",
+		"preset.auto": "おまかせ",
 		"preset.crisp_sprite": "くっきりドット",
 		"preset.keep_fine_details": "細部を残す",
 		"preset.transparent_icon": "縁取り透過アイコン",

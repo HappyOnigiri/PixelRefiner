@@ -160,6 +160,36 @@ describe("fast grid search from trimmed", () => {
 		expect(estimate?.outH).toBe(75);
 	});
 
+	it("位相がずれて誤差では谷にならない倍率を、境界コントラストから拾う", () => {
+		// [Intended] 310x310・セル 10px を 4px ずらした入力（出力 31x31）。サイズ走査は
+		// どの倍率も位相 0 で誤差を測るため、正解の倍率こそ各セルが隣のドットを食って
+		// 誤差が悪くなり、山の再走査でも拾えない。位相を読み取れた倍率として指名し、
+		// 位相込みの誤差で測り直してはじめて選べる。
+		const shiftedGrid = createShiftedGridImage(310, 10, 4);
+		const estimate = strategy.search(shiftedGrid, shiftedGrid, 3);
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outW).toBe(31);
+		expect(estimate?.outH).toBe(31);
+		expect(estimate?.offsetX).toBe(4);
+		expect(estimate?.offsetY).toBe(4);
+	});
+
+	it("境界コントラストの乗り換えを切ると、位相込みの拾い直しもしない", () => {
+		// [Intended] 位相を根拠に倍率を動かすのも境界コントラストによる乗り換えなので、
+		// 乗り換えを切った経路では働かせない。再構成だけの過分割が返る。
+		const shiftedGrid = createShiftedGridImage(310, 10, 4);
+		const estimate = strategy.search(
+			shiftedGrid,
+			shiftedGrid,
+			3,
+			undefined,
+			undefined,
+			false,
+		);
+		expect(estimate).not.toBeNull();
+		expect(estimate?.outH).toBe(76);
+	});
+
 	it("格子が BBox の縁で合っている入力では、位相 0 を実測済みとして返す", () => {
 		// [Intended] 位相 0 は「ずれていない」という実測結果なので、投影は BBox 起点へ
 		// 寄せたままにする。位相未測定と同じ扱いにするとキャンバス起点へ戻ってしまう。

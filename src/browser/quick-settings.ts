@@ -1,7 +1,11 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
-import type { DetailLevel, ProcessingMode } from "../shared/types";
+import type {
+	DetailLevel,
+	ProcessingMode,
+	ProcessingRoute,
+} from "../shared/types";
 
 export type QuickReductionMode =
 	| "none"
@@ -124,21 +128,38 @@ const withRouteManagedReduction = (options: ProcessOptions): ProcessOptions => {
 	return next;
 };
 
+const AUTO_PRESET_OPTIONS = withRouteManagedReduction(presetOptions({}));
+
+/**
+ * おまかせが選ぶ各経路を、同じ共通設定のまま手動で再現する。
+ *
+ * [Intended] Auto のときだけ有効になる補助判定は、経路を固定すると既定の "auto" では
+ * 無効になる。プリセットでは明示的に有効化し、経路選択後の処理条件を揃える。
+ */
+const autoRoutePresetOptions = (
+	processingMode: ProcessingRoute,
+): ProcessOptions => ({
+	...AUTO_PRESET_OPTIONS,
+	processingMode,
+	smallAspectGridAlignment: "on",
+	watermarkSamplingCompat: "on",
+});
+
 export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	{
 		id: "auto",
 		labelKey: "preset.auto",
-		options: withRouteManagedReduction(presetOptions({})),
+		options: AUTO_PRESET_OPTIONS,
 	},
 	{
 		id: "crisp-sprite",
 		labelKey: "preset.crisp_sprite",
-		options: presetOptions({ processingMode: "refine" }),
+		options: autoRoutePresetOptions("refine"),
 	},
 	{
 		id: "keep-fine-details",
 		labelKey: "preset.keep_fine_details",
-		options: presetOptions({ detailLevel: "detailed" }),
+		options: autoRoutePresetOptions("preserve"),
 	},
 	{
 		id: "transparent-icon",
@@ -164,14 +185,7 @@ export const BUILT_IN_PRESETS: readonly BuiltInPreset[] = [
 	{
 		id: "photo-to-pixel",
 		labelKey: "preset.photo_to_pixel",
-		options: presetOptions(
-			{
-				processingMode: "convert",
-				background: "keep",
-				dithering: "subtle",
-			},
-			{ reduceColors: true, reduceColorMode: "auto", colorCount: 32 },
-		),
+		options: autoRoutePresetOptions("convert"),
 	},
 ] as const;
 
