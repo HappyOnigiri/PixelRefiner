@@ -90,7 +90,9 @@ const QUICK_SETTING_VALUES = {
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 const hasOwn = (target: object, key: string): boolean =>
-	Object.hasOwn(target, key);
+	// [Workaround] tsconfig の lib が ES2020 のため Object.hasOwn を型が認識しない。
+	// biome-ignore lint/suspicious/noPrototypeBuiltins: 同上。lib を上げたら置き換える。
+	Object.prototype.hasOwnProperty.call(target, key);
 
 const validateQuickSettings = (qualityCase: QualityImageCase): string[] => {
 	const quick = qualityCase.quickSettings;
