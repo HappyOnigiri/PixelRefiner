@@ -548,11 +548,11 @@ const resources = {
 		"guide.recipe4.output_zoom_alt":
 			"レシピ4の変換結果で、同じドット境界を部分拡大したもの。色と輪郭がドット単位で揃っている",
 		"guide.recipe4.view_whole": "全体",
-		"guide.recipe4.view_detail": "山頂の境界（10倍表示）",
+		"guide.recipe4.view_detail": "山頂の境界",
 		"guide.recipe4.caption_input":
-			"生成画像（2752×1536px・全体と山頂境界の10倍表示）",
+			"生成画像（2752×1536px・全体と、変換結果と同じ範囲を切り出した山頂境界）",
 		"guide.recipe4.caption_output":
-			"変換結果（背景用の一枚絵・256×144px・全体と同じ山頂境界の10倍表示）",
+			"変換結果（背景用の一枚絵・256×144px・全体と、同じ山頂境界を1ドット10px相当で拡大したもの）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
 			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。ドット絵を頼む代わりに、変換に強く効くフラットな塗りと太い輪郭線を指示します。",
@@ -1110,11 +1110,11 @@ const resources = {
 		"guide.recipe4.output_zoom_alt":
 			"配方 4 转换结果中同一像素边界的局部放大图，颜色和轮廓已对齐像素网格",
 		"guide.recipe4.view_whole": "整体",
-		"guide.recipe4.view_detail": "山峰边界（10 倍显示）",
+		"guide.recipe4.view_detail": "山峰边界",
 		"guide.recipe4.caption_input":
-			"生成图片（2752×1536px，整体与山峰边界的 10 倍显示）",
+			"生成图片（2752×1536px，整体与截取自同一范围的山峰边界）",
 		"guide.recipe4.caption_output":
-			"转换结果（背景插画，256×144px，整体与同一山峰边界的 10 倍显示）",
+			"转换结果（背景插画，256×144px，整体与同一山峰边界，每个像素放大到 10px）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
 			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。与其要求生成像素画，不如要求对转换特别有利的平涂上色和粗轮廓线。",
@@ -1703,11 +1703,11 @@ const resources = {
 		"guide.recipe4.output_zoom_alt":
 			"Close-up of the same pixel boundary after conversion, with colors and edges aligned to the pixel grid",
 		"guide.recipe4.view_whole": "Whole image",
-		"guide.recipe4.view_detail": "Peak edge (10×)",
+		"guide.recipe4.view_detail": "Peak edge",
 		"guide.recipe4.caption_input":
-			"Generated image (2752×1536 px; whole image and peak edge at 10×)",
+			"Generated image (2752×1536 px; whole image and the peak edge cropped to the same area)",
 		"guide.recipe4.caption_output":
-			"Converted result (Background Artwork, 256×144 px; whole image and the same peak edge at 10×)",
+			"Converted result (Background Artwork, 256×144 px; whole image and the same peak edge, one dot enlarged to 10 px)",
 		"guide.recipe5.heading":
 			"Recipe 5: Turn a normal illustration into pixel art",
 		"guide.recipe5.goal":
