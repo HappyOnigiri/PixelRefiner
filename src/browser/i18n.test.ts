@@ -216,10 +216,43 @@ describe("I18nManager", () => {
 		expect(i18n.t("option.quick_processing_convert")).toBe(
 			"細部を残してドット化",
 		);
-		expect(i18n.t("option.quick_processing_refine")).not.toBe(
-			i18n.t("option.processing_refine"),
-		);
 		expect(i18n.t("preset.limited_colors")).toBe("16色レトロ");
+	});
+
+	it("keeps equivalent preset, quick, and advanced labels consistent", () => {
+		const i18n = new I18nManager();
+		const processingLabels = [
+			["preset.auto", "option.quick_processing_auto", "option.processing_auto"],
+			[
+				"preset.crisp_sprite",
+				"option.quick_processing_refine",
+				"option.processing_refine",
+			],
+			[
+				"preset.photo_to_pixel",
+				"option.quick_processing_convert",
+				"option.processing_convert",
+			],
+			[
+				"preset.keep_fine_details",
+				"option.quick_processing_preserve",
+				"option.processing_preserve",
+			],
+		] as const;
+
+		for (const language of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(language);
+			expect(i18n.t("setting.processing_mode")).toBe(
+				i18n.t("setting.quick_finish"),
+			);
+			expect(i18n.t("setting.convert_output_size")).toBe(
+				i18n.t("setting.quick_pixel_detail"),
+			);
+			for (const [preset, quick, advanced] of processingLabels) {
+				expect(i18n.t(preset)).toBe(i18n.t(quick));
+				expect(i18n.t(advanced)).toBe(i18n.t(quick));
+			}
+		}
 	});
 
 	it("registers small-component controls in every language", () => {
