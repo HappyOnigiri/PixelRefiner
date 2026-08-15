@@ -148,6 +148,13 @@ Adding an example:
 5. Run `pnpm test:quality:update` to register the baseline, then
    `pnpm test:quality:full`.
 
+Only the recipes carry examples, so only they are pinned here. The five
+principles earlier on the page quote prompt fragments that illustrate the wording
+rather than a run that produced a published image, and no case backs them.
+Replacing one of those fragments with the prompt of an actual run means the page
+now publishes an example, so give it a recipe and a case by the steps above
+instead of leaving the fragment unbacked.
+
 ## Target images
 
 Two separate references exist for every case, and they answer different
