@@ -31,7 +31,7 @@ const collectHtmlKeys = (html: string): string[] => {
 
 const readHtml = (name: string) => readFileSync(join(REPO_ROOT, name), "utf8");
 
-// メッセージ定義そのものを除く全 TS ソースを、キーの参照検索用に連結する
+// メッセージ定義とテストを除く全 TS ソースを、キーの参照検索用に連結する
 const collectSourceText = (): string => {
 	const chunks: string[] = [];
 	const walk = (dir: string) => {
@@ -44,6 +44,9 @@ const collectSourceText = (): string => {
 				continue;
 			}
 			if (!entry.name.endsWith(".ts")) continue;
+			// [Intended] テストの参照は使用実績に数えない。キー名を列挙している
+			// テストがあるため、数えると未参照キーの検出がすり抜ける。
+			if (entry.name.endsWith(".test.ts")) continue;
 			chunks.push(readFileSync(path, "utf8"));
 		}
 	};
