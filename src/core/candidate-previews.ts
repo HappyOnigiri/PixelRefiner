@@ -1,4 +1,8 @@
-import { CANDIDATE_PREVIEW_LIMITS, CELL_SCALE_FACTORS } from "../shared/config";
+import {
+	CANDIDATE_PREVIEW_LIMITS,
+	CELL_SCALE_FACTORS,
+	PROCESS_DEFAULTS,
+} from "../shared/config";
 import type {
 	CandidatePreview,
 	CandidateSelection,
@@ -11,13 +15,11 @@ import type {
 import { resizeRawImageNearest } from "./image-operations";
 import type { DetectedGridHandoff, ProcessOptions } from "./processor-options";
 
-/**
- * 候補として提示するセル倍率。細かい側から並べる。
- * [Intended] 「検出したまま」(same) は Auto 結果そのものなので候補には含めない。
- */
+/** 候補として提示するセル倍率。細かい側から並べる。 */
 const CANDIDATE_CELL_SCALES: readonly CellScale[] = [
 	"quarter",
 	"half",
+	"same",
 	"double",
 	"quadruple",
 ];
@@ -33,17 +35,24 @@ const isNearPreserve = (scaledArea: number, preserveArea: number): boolean =>
 	scaledArea >=
 	preserveArea * CANDIDATE_PREVIEW_LIMITS.preserveSimilarAreaRatio;
 
-/** 倍率を掛けたセルで、この画像から何ドット取れるかの見積もり。 */
+/**
+ * 倍率を掛けたセルで、この画像から何ドット取れるかの見積もり。
+ * [Policy] 呼び出し前にセル寸法が 1px を下回る段階を除いてあるので、ここでは下限を見ない。
+ */
 const scaledOutputSize = (
 	candidate: GridCandidateReport,
 	cellScale: CellScale,
 ): { outW: number; outH: number } => {
 	const factor = CELL_SCALE_FACTORS[cellScale];
-	const cellW = Math.max(1, candidate.grid.cellW * factor);
-	const cellH = Math.max(1, candidate.grid.cellH * factor);
 	return {
-		outW: Math.max(1, Math.floor(candidate.cropW / cellW)),
-		outH: Math.max(1, Math.floor(candidate.cropH / cellH)),
+		outW: Math.max(
+			1,
+			Math.floor(candidate.cropW / (candidate.grid.cellW * factor)),
+		),
+		outH: Math.max(
+			1,
+			Math.floor(candidate.cropH / (candidate.grid.cellH * factor)),
+		),
 	};
 };
 
@@ -57,6 +66,8 @@ const MIN_CANDIDATE_OUTPUT_DIMENSION = 2;
 export const selectCandidatePlans = (
 	analysis: ProcessingAnalysis,
 	classification: InputClassification | undefined = analysis.classification,
+	/** 現在の設定で選ばれているセル倍率。Auto 結果と同じ段階は候補にしない。 */
+	baseCellScale: CellScale = PROCESS_DEFAULTS.cellScale,
 ): CandidateSelection[] => {
 	const autoResultCandidate =
 		analysis.autoResultCandidateIndex !== undefined
@@ -100,10 +111,12 @@ export const selectCandidatePlans = (
 		const takenSizes = new Set<string>();
 		for (const cellScale of CANDIDATE_CELL_SCALES) {
 			const factor = CELL_SCALE_FACTORS[cellScale];
-			// [Intended] Auto が原寸維持を採用した画像はセルが 1px 相当まで細かい。
-			// そこからさらに細かくしても原寸維持と同じ絵にしかならないので出さない。
-			if (autoResultIsPreserve && factor < 1) continue;
-			// セル寸法が 1px を下回る倍率は、クランプされて隣の段階と同じ出力になる。
+			// [Intended] Auto 結果と同じ段階は候補にしない。候補は「ドットの大きさだけを
+			// 差し替えたもの」なので、いま出ている結果と同じ指定を並べても選択肢にならない。
+			// 原寸維持へ退避した場合はセル倍率が効いていないため、全段階が別の結果になる。
+			if (!autoResultIsPreserve && cellScale === baseCellScale) continue;
+			// [Policy] セル寸法が 1px を下回る段階は候補にしない。処理側は縦横比を保つために
+			// 倍率ごと下限へ引き上げるので、出しても見出しの倍率と実際の倍率が食い違う。
 			if (anchor.grid.cellW * factor < 1 || anchor.grid.cellH * factor < 1)
 				continue;
 			const { outW, outH } = scaledOutputSize(anchor, cellScale);
@@ -168,19 +181,17 @@ export const candidateProcessOptions = (
 		// 分割するため、候補が使うと入力の縦横比が壊れる。出力サイズを変える手段は cellScale。
 		forcePixelsW: undefined,
 		forcePixelsH: undefined,
-		hintPixelsW: undefined,
-		hintPixelsH: undefined,
 		convertPixelsW: undefined,
 		convertPixelsH: undefined,
 		cellScale: undefined,
 		detectedGrid,
+		// [Intended] グリッド検出の検索開始点となるヒントは候補でも消さない。消すと候補だけ
+		// 別の格子を検出し、提示したプレビューと選択後の結果が食い違う。ヒントは「どの倍率で
+		// 復元するか」ではなく「どの格子を探すか」の指定なので、段階を変えても持ち回してよい。
+		hintPixelsW: base.hintPixelsW,
+		hintPixelsH: base.hintPixelsH,
 	};
-	// [Intended] Auto 実結果の再現は初回と同じ入力で Auto を再実行することが前提なので、
-	// グリッド検出の検索開始点となるヒントは消さない。消すと検出結果が変わり、
-	// 候補として提示した実結果を再現できない。
 	if (selection.processingMode === "auto") {
-		options.hintPixelsW = base.hintPixelsW;
-		options.hintPixelsH = base.hintPixelsH;
 		options.convertPixelsW = base.convertPixelsW;
 		options.convertPixelsH = base.convertPixelsH;
 		options.cellScale = base.cellScale;

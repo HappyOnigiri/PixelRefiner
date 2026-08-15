@@ -181,7 +181,26 @@ describe("candidate previews", () => {
 		// 勝手に使うと内容 BBox の軸独立分割で縦横比が壊れる。
 		expect(options.forcePixelsW).toBeUndefined();
 		expect(options.forcePixelsH).toBeUndefined();
-		expect(options.hintPixelsW).toBeUndefined();
+		// 検出の開始点は候補でも同じにする。変えると提示した絵と選択後の結果がずれる。
+		expect(options.hintPixelsW).toBe(10);
+		expect(options.hintPixelsH).toBe(10);
+	});
+
+	it("現在選んでいるドットの大きさは候補に出さない", () => {
+		const plans = selectCandidatePlans(
+			analysis("scaled-pixel"),
+			"scaled-pixel",
+			"double",
+		);
+
+		expect(plans.map((plan) => plan.cellScale)).toEqual([
+			undefined,
+			"quarter",
+			"half",
+			"same",
+			"quadruple",
+			undefined,
+		]);
 	});
 
 	it("原寸維持とConvertの候補はセル倍率を持ち込まない", () => {
@@ -328,28 +347,29 @@ describe("candidate previews", () => {
 		});
 	});
 
-	it("Autoが原寸維持を採用したときは細かい側のセル倍率を出さない", () => {
+	it("Autoが原寸維持へ退避したときは検出格子を基準に全段階を出す", () => {
 		const value = analysis("scaled-pixel");
 		value.gridCandidates = [...value.gridCandidates, preserveReport];
 		value.autoResultCandidateIndex = 3;
 
 		const plans = selectCandidatePlans(value);
 
-		expect(plans.map((plan) => plan.kind)).toEqual([
-			"auto-result",
-			"cell-scale",
-			"cell-scale",
-		]);
 		expect(plans[0]).toMatchObject({
+			kind: "auto-result",
 			recommended: true,
 			processingMode: "auto",
 		});
-		// 原寸維持のセルは 1px 相当なので、細かくする側は同じ絵にしかならない。
+		// [Intended] 退避の理由は信頼度の低さで、検出セルが 1px という意味ではない。
+		// 検出格子で復元した結果（same）も含めて選べるようにする。
 		expect(plans.map((plan) => plan.cellScale)).toEqual([
 			undefined,
+			"half",
+			"same",
 			"double",
 			"quadruple",
 		]);
+		// 原寸維持カードは Auto 結果カードが兼ねる。
+		expect(plans.some((plan) => plan.kind === "preserve")).toBe(false);
 	});
 
 	it("resize_with_trimmingのAuto結果を候補計画へ含める", async () => {

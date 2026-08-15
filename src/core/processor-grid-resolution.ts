@@ -72,17 +72,22 @@ export const expandContentGridToCanvas = (
  * 両軸へ同じ倍率が掛かるため、出力の縦横比は倍率によらず元の格子と同じになる
  * （軸ごとに独立して分割する forcePixelsW/H とはここが決定的に違う）。
  * [Policy] セル寸法は 1px 未満にしない。元画像を超える拡大は作らない方針に揃える。
+ * 下限に当てるのは軸ごとの寸法ではなく倍率そのものにする。軸ごとに丸めると
+ * 短い辺だけが先に止まって両軸の倍率が食い違い、縦横比が崩れる
+ * （縦横でセル寸法が違う格子ほど、細かい側の段階で目に見えて歪む）。
  */
 export const scaleGridCells = (
 	grid: PixelGrid,
 	source: Pick<RawImage, "width" | "height">,
 	cellScale: CellScale,
 ): PixelGrid => {
-	const factor = CELL_SCALE_FACTORS[cellScale];
+	const shortestCell = Math.min(grid.cellW, grid.cellH);
+	// すでに 1px を下回るセルは、拡大方向の倍率だけを受け付ける。
+	const minFactor = Math.min(1, 1 / shortestCell);
+	const factor = Math.max(CELL_SCALE_FACTORS[cellScale], minFactor);
 	if (factor === 1) return grid;
-	const cellW = Math.max(1, grid.cellW * factor);
-	const cellH = Math.max(1, grid.cellH * factor);
-	if (cellW === grid.cellW && cellH === grid.cellH) return grid;
+	const cellW = grid.cellW * factor;
+	const cellH = grid.cellH * factor;
 	const cropX = grid.cropX ?? grid.offsetX;
 	const cropY = grid.cropY ?? grid.offsetY;
 	const spanW = grid.cropW ?? source.width - cropX;

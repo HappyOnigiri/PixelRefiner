@@ -78,8 +78,8 @@ pnpm test    # Run tests
 
 Auto is the default processing pipeline. It classifies each image and selects
 grid refinement, continuous-tone conversion, or safe preservation when the
-result is uncertain. Low-confidence grid results open the candidate chooser
-instead of forcing an extreme reduction.
+result is uncertain. Low-confidence grid results list alternative pixel sizes
+below the output instead of forcing an extreme reduction.
 
 Run `make report` to compare the current output with the base
 baseline. Pull requests publish the quality-gate result and the comparison

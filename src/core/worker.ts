@@ -96,7 +96,11 @@ const worker: ProcessorWorker = {
 		const classification =
 			analysis.classification ??
 			classifyInput(img, analysis.gridCandidates).classification;
-		const plans = selectCandidatePlans(analysis, classification);
+		const plans = selectCandidatePlans(
+			analysis,
+			classification,
+			options.cellScale,
+		);
 		const detectedGrid = detectionCache.get(cacheKey);
 		const previews: CandidatePreview[] = [];
 		for (let index = 0; index < plans.length; index += 1) {

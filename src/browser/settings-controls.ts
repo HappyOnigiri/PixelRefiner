@@ -675,6 +675,7 @@ export const setupSettingsControls = ({
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
+		els.advancedCellScaleSelect,
 		...advancedSettingControls(els),
 		els.preRemoveCheck,
 		els.postRemoveCheck,

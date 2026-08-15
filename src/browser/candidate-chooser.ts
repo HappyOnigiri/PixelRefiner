@@ -45,10 +45,6 @@ export class CandidateChooser {
 		return element as T;
 	}
 
-	public isVisible(): boolean {
-		return !this.section.hidden;
-	}
-
 	/** 表示中の候補が、どの画像に対する提案か。 */
 	public getSourceImageId(): string | null {
 		return this.sourceImageId;
@@ -88,17 +84,8 @@ export class CandidateChooser {
 		}
 	}
 
-	/** ユーザー操作で閉じる。 */
-	public hide(): void {
-		this.close();
-	}
-
 	/** 処理の開始やアクティブ画像の切替で閉じる。 */
 	public dismiss(): void {
-		this.close();
-	}
-
-	private close(): void {
 		if (this.section.hidden) return;
 		this.section.hidden = true;
 		this.list.replaceChildren();
