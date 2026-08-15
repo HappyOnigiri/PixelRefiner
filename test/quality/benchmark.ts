@@ -1,7 +1,11 @@
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
-import { createBuiltInPresetOptions } from "../../src/browser/quick-settings";
+import {
+	createBuiltInPresetOptions,
+	createQuickProcessOptions,
+	QUICK_SETTINGS_DEFAULTS,
+} from "../../src/browser/quick-settings";
 import { processBatchImages } from "../../src/core/batch";
 import { evaluateCandidateModalDecision } from "../../src/core/candidate-modal-decision";
 import {
@@ -65,6 +69,13 @@ const effectiveCaseOptions = (
 	// テスト都合の指定が 1 つでも入ると、掲載画像との一致が手順の裏付けにならなくなる。
 	if (qualityCase.presetId !== undefined)
 		return createBuiltInPresetOptions(qualityCase.presetId);
+	// [Intended] かんたん設定のケースもプリセットと同じく fixture 用の背景抽出指定を混ぜず、
+	// 案内された操作だけから作ったオプションで処理する。
+	if (qualityCase.quickSettings !== undefined)
+		return createQuickProcessOptions({
+			...QUICK_SETTINGS_DEFAULTS,
+			...qualityCase.quickSettings,
+		});
 	return {
 		...QUALITY_FIXTURE_OPTIONS,
 		processingMode: PROCESS_DEFAULTS.processingMode,

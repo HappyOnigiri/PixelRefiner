@@ -575,6 +575,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "guide-recipe3-dragon-sprite",
+      "status": "passed",
+      "outputWidth": 44,
+      "outputHeight": 47,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "auto-auto-grid-detection",
       "status": "passed",
       "outputWidth": 88,

@@ -68,6 +68,7 @@ describe("quality manifest", () => {
 			"auto-quality-transparent-rgb-padding",
 			"auto-guide-recipe1-knight-sprite",
 			"auto-guide-recipe2-potion-icon",
+			"auto-guide-recipe3-dragon-sprite",
 		]) {
 			expect(ids.has(id), id).toBe(false);
 		}
@@ -144,6 +145,24 @@ describe("quality manifest", () => {
 				preset.options.trimToContent = false;
 			},
 			error: "preset cases must not define case options",
+		},
+		{
+			name: "quick settings on preset cases",
+			mutate: (draft: QualityImageCase[]) => {
+				const preset = draft.find((item) => item.presetId !== undefined);
+				if (!preset) throw new Error("Preset case not found");
+				preset.quickSettings = { reductionMode: "mono" };
+			},
+			error: "preset cases must not define quickSettings",
+		},
+		{
+			name: "case options on quick settings cases",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = draft.find((item) => item.quickSettings !== undefined);
+				if (!quick) throw new Error("Quick settings case not found");
+				quick.options.trimToContent = false;
+			},
+			error: "quick settings cases must not define case options",
 		},
 		{
 			name: "missing asset provenance",

@@ -519,11 +519,16 @@ const resources = {
 		"guide.recipe3.heading":
 			"レシピ3: レトロ携帯ゲーム機風（Game Boy パレット）",
 		"guide.recipe3.goal":
-			"生成の段階から少ない階調に寄せておき、パレット変換とディザリングで仕上げます。",
+			"生成の段階から階調を絞っておき、パレット変換で選んだ機種の4階調へ正確に置き換えます。生成時の色そのものは残らないので、背景は仕上がりの色ではなく消しやすい色（緑の被写体に赤）で指定します。",
 		"guide.recipe3.settings":
-			"「かんたん設定」の「色数・配色」で「ゲームボーイ (初代)」を選び、「グラデーション表現」を調整します。",
-		"guide.recipe3.input_alt": "レシピ3の生成画像（差し替え予定のサンプル）",
-		"guide.recipe3.output_alt": "レシピ3の変換結果（差し替え予定のサンプル）",
+			"「かんたん設定」の「色数・配色」で「ゲームボーイ (ポケット)」を選びます。ほかはそのままで、背景は自動で透過されます。",
+		"guide.recipe3.input_alt":
+			"レシピ3の生成画像。赤い背景に緑のドラゴンのドット絵",
+		"guide.recipe3.output_alt":
+			"レシピ3の変換結果。背景が透過し、4階調のグレーになったドラゴンのドット絵",
+		"guide.recipe3.caption_input": "生成画像（2816×1536px・縮小表示）",
+		"guide.recipe3.caption_output":
+			"変換結果（ゲームボーイ (ポケット)・44×47px の等倍出力）",
 		"guide.recipe4.heading": "レシピ4: 背景用の一枚絵",
 		"guide.recipe4.goal":
 			"透過しないケース。キャラクターや小物を置かない風景を、そのまま背景として使えるドット絵に変換します。要素を減らして1ドットを大きく描かせる指示がポイントです。",
@@ -1056,11 +1061,15 @@ const resources = {
 			"转换结果（带描边的透明图标，18×25px 的原尺寸输出）",
 		"guide.recipe3.heading": "配方 3：复古掌机风格（Game Boy 调色板）",
 		"guide.recipe3.goal":
-			"从生成阶段就把画面压到较少的层次，再用调色板转换和抖动完成收尾。",
+			"在生成阶段就把层次压少，再用调色板转换精确替换成所选机型的 4 个色阶。生成时的颜色本身不会保留，所以背景色不按成品的颜色来指定，而按容易去除来指定（绿色主体配红色背景）。",
 		"guide.recipe3.settings":
-			"在“快速设置”的“色彩”中选择“Game Boy (初代)”，并调整“渐变纹理”。",
-		"guide.recipe3.input_alt": "配方 3 的生成图片（待替换的示例）",
-		"guide.recipe3.output_alt": "配方 3 的转换结果（待替换的示例）",
+			"在“快速设置”的“色彩”中选择“Game Boy (Pocket)”。其余保持不变，背景会自动透明化。",
+		"guide.recipe3.input_alt": "配方 3 的生成图片：红色背景上的绿色小龙像素画",
+		"guide.recipe3.output_alt":
+			"配方 3 的转换结果：背景已透明、变成 4 个灰色色阶的小龙像素画",
+		"guide.recipe3.caption_input": "生成图片（2816×1536px，缩小显示）",
+		"guide.recipe3.caption_output":
+			"转换结果（Game Boy (Pocket)，44×47px 的原尺寸输出）",
 		"guide.recipe4.heading": "配方 4：用作背景的整幅插画",
 		"guide.recipe4.goal":
 			"不做透明化的情况。把没有角色和小物件的风景，转换成可以直接当作背景使用的像素画。关键是要求减少元素、把每个像素画得更大。",
@@ -1621,13 +1630,17 @@ const resources = {
 			"Converted result (Outlined Transparent Icon, 18×25 px output)",
 		"guide.recipe3.heading": "Recipe 3: Retro handheld look (Game Boy palette)",
 		"guide.recipe3.goal":
-			"Push the image toward a few tones from the generation stage, then finish it with palette conversion and dithering.",
+			"Ask for few tones at the generation stage, then let palette conversion map them exactly onto the four tones of the console you choose. The generated colors themselves do not survive, so the background is specified for easy removal — red against a green subject — rather than for the finished look.",
 		"guide.recipe3.settings":
-			"In Quick Settings, set Colors to “Game Boy (Original)” and adjust Gradient Texture.",
+			"In Quick Settings, set Colors to “Game Boy (Pocket)”. Leave the rest as they are; the background is made transparent automatically.",
 		"guide.recipe3.input_alt":
-			"Generated image for recipe 3 (placeholder sample)",
+			"Generated image for recipe 3: a green dragon on a red background",
 		"guide.recipe3.output_alt":
-			"Converted result for recipe 3 (placeholder sample)",
+			"Converted result for recipe 3: the dragon in four shades of gray with a transparent background",
+		"guide.recipe3.caption_input":
+			"Generated image (2816×1536 px, shown scaled down)",
+		"guide.recipe3.caption_output":
+			"Converted result (Game Boy (Pocket), 44×47 px output)",
 		"guide.recipe4.heading": "Recipe 4: Scenery for a background",
 		"guide.recipe4.goal":
 			"A case without transparency. A landscape with no characters or props is turned into pixel art you can use as a background as it is. The key is asking for few elements and large pixels.",

@@ -14,7 +14,7 @@ The quality report generated under `test/quality/report` is a standalone artifac
 
 ## Guide Page
 
-When `guide.html` publishes a converted example, add one quality case for it so the report keeps proving that the published result is reproducible: register the generated source image under `test/fixtures/`, and add a case to `test/quality/cases.json` whose `presetId` is the preset the page tells the reader to select and whose `expected` is the published output image. See [Guide page examples](test/quality/README.md#guide-page-examples).
+When `guide.html` publishes a converted example, add one quality case for it so the report keeps proving that the published result is reproducible: register the generated source image under `test/fixtures/`, and add a case to `test/quality/cases.json` whose `presetId` is the preset the page tells the reader to select — or whose `quickSettings` holds the Quick Settings changes when the page names those instead — and whose `expected` is the published output image. See [Guide page examples](test/quality/README.md#guide-page-examples).
 
 ## Intent Comments
 

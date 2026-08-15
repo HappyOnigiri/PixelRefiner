@@ -2628,5 +2628,51 @@
         "termsCheckedAt": "2026-08-15"
       }
     ]
+  },
+  {
+    "id": "guide-recipe3-dragon-sprite",
+    "featureIds": ["guide-recipes", "palette-conversion", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "quickSettings": { "reductionMode": "gb_pocket" },
+    "options": {},
+    "input": "test/fixtures/guide_recipe3_dragon_sprite.png",
+    "expected": "public/guide/recipe3-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 44,
+      "expectedHeight": 47
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/guide_recipe3_dragon_sprite.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art sprite of a small dragon, Game Boy style, 4-color monochrome green palette,\nlow resolution, chunky pixels, full frame edge-to-edge solid red background (#FF0000)",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe3-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/guide_recipe3_dragon_sprite.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
   }
 ]

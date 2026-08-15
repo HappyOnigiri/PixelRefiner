@@ -123,6 +123,24 @@ export const validateManifest = (cases: QualityImageCase[]): string[] => {
 					`${qualityCase.id}: preset cases must not define case options`,
 				);
 			}
+			if (qualityCase.quickSettings !== undefined) {
+				errors.push(
+					`${qualityCase.id}: preset cases must not define quickSettings`,
+				);
+			}
+		}
+		if (qualityCase.quickSettings !== undefined) {
+			if (caseParameterMode(qualityCase) === "auto") {
+				errors.push(
+					`${qualityCase.id}: auto cases must not define quickSettings`,
+				);
+			}
+			// [Intended] プリセットと同じ理由で、かんたん設定のケースも案内された操作だけで測る。
+			if (Object.keys(qualityCase.options).length > 0) {
+				errors.push(
+					`${qualityCase.id}: quick settings cases must not define case options`,
+				);
+			}
 		}
 		const expectation = qualityCase.expectation;
 		if (caseParameterMode(qualityCase) === "auto") {

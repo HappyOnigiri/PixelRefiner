@@ -46,6 +46,20 @@ export const describeCase = (
 				"掲載している18×25の変換結果と1画素も違わないことを確認します。",
 		};
 	}
+	if (result.id === "guide-recipe3-dragon-sprite") {
+		return {
+			en:
+				"Process the 2816 x 1536 AI-generated green dragon published in the recipes guide, " +
+				"drawn over a red background, with Colors set to Game Boy (Pocket) in Quick Settings as " +
+				"the page tells the reader, and reproduce the published 44 x 47 result pixel for pixel, " +
+				"including the four-tone palette the conversion replaces the generated colors with.",
+			ja:
+				"レシピ集ページが掲載している赤背景・2816×1536の生成AI製の緑のドラゴンを、" +
+				"ページが案内するとおりかんたん設定の「色」を「ゲームボーイ (ポケット)」にして処理し、" +
+				"生成時の色を置き換えた4階調のパレットを含めて、" +
+				"掲載している44×47の変換結果と1画素も違わないことを確認します。",
+		};
+	}
 	if (result.id === "restore-thin-features-and-alpha-coverage") {
 		return {
 			en:

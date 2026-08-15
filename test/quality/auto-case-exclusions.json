@@ -45,6 +45,7 @@
 		"auto-quality-rgb-noise": "透明画素の RGB ノイズを含む入力の復元を明示オプションで検証する専用ケース。",
 		"auto-quality-transparent-rgb-padding": "透明画素の RGB パディング処理を明示オプションで検証する専用ケース。",
 		"auto-guide-recipe1-knight-sprite": "ガイドが案内する「Auto」プリセットで掲載画像を再現する専用ケース。同じ入力を同じオプションで二重に処理しない。",
-		"auto-guide-recipe2-potion-icon": "ガイドが案内する「透過アイコン」プリセットで掲載画像を再現する専用ケース。"
+		"auto-guide-recipe2-potion-icon": "ガイドが案内する「透過アイコン」プリセットで掲載画像を再現する専用ケース。",
+		"auto-guide-recipe3-dragon-sprite": "ガイドが案内するかんたん設定の「ゲームボーイ (ポケット)」で掲載画像を再現する専用ケース。"
 	}
 }

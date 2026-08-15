@@ -112,12 +112,15 @@ hiding report entries; their explicit cases remain in the report.
 ## Guide page examples
 
 The recipes guide (`guide.html`) publishes a generated image together with the
-result of converting it using a named built-in preset. Every published example
-has one case here, so the report keeps answering whether that published result
-is still reproducible by following the published steps.
+result of converting it by following named steps — selecting a built-in preset,
+or changing a Quick Settings item. Every published example has one case here, so
+the report keeps answering whether that published result is still reproducible
+by following the published steps.
 
-Those cases set `presetId` instead of `options`. The benchmark resolves the
-options from `BUILT_IN_PRESETS` when the case runs, so changing a preset reaches
+Those cases set `presetId`, or `quickSettings` when the page names Quick
+Settings instead of a preset, and no `options`. The benchmark resolves the
+options from `BUILT_IN_PRESETS` or from `createQuickProcessOptions` when the
+case runs, so changing a preset or the meaning of a Quick Settings item reaches
 the case instead of leaving a stale copy of its values in `cases.json`, and the
 fixture-only background-extraction default is not mixed in either: the case has
 to run exactly what a reader running the same steps would get. `expected` points
@@ -132,13 +135,14 @@ Adding an example:
 1. Save the image as it was generated — the full-resolution original, not the
    downscaled copy the page displays — as a PNG under `test/fixtures/`, and
    record the prompt in the case's provenance.
-2. Add the case to [`cases.json`](./cases.json) with `presetId`, `expected`
-   pointing at the published output, and `expectedWidth` / `expectedHeight`
-   matching the caption on the page.
+2. Add the case to [`cases.json`](./cases.json) with `presetId` or
+   `quickSettings`, `expected` pointing at the published output, and
+   `expectedWidth` / `expectedHeight` matching the caption on the page.
 3. Register the fixture's Auto twin in
    [`auto-case-exclusions.json`](./auto-case-exclusions.json) and in the
    exclusion list in [`manifest.test.ts`](./manifest.test.ts). The guide case
-   already pins the preset, so the same input does not need a second run.
+   already pins the published steps, so the same input does not need a second
+   run.
 4. Describe the case in `describeCase` in
    [`report/case-description.ts`](./report/case-description.ts).
 5. Run `pnpm test:quality:update` to register the baseline, then
