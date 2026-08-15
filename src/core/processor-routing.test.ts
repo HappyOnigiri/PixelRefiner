@@ -211,6 +211,38 @@ describe("processing router", () => {
 		}
 	});
 
+	it("uses explicit Convert dimensions without entering the forced-grid route", () => {
+		const processed = processImage(createContinuousImage(), {
+			...safeOptions,
+			processingMode: "convert",
+			convertPixelsW: 19,
+			convertPixelsH: 11,
+		});
+
+		expect(processed.result.width).toBe(19);
+		expect(processed.result.height).toBe(11);
+		expect(processed.analysis.route).toBe("convert");
+		expect(processed.analysis.gridCandidates[0]).toMatchObject({
+			outW: 19,
+			outH: 11,
+			method: "convert-explicit-size",
+		});
+	});
+
+	it("keeps the forced-grid dimensions ahead of Processing and Convert dimensions", () => {
+		const processed = processImage(createContinuousImage(), {
+			...safeOptions,
+			processingMode: "convert",
+			convertPixelsW: 19,
+			convertPixelsH: 11,
+			forcePixelsW: 8,
+			forcePixelsH: 6,
+		});
+
+		expect(processed.result.width).toBe(8);
+		expect(processed.result.height).toBe(6);
+	});
+
 	it.each([
 		["transparent", 0],
 		["single-color", 255],

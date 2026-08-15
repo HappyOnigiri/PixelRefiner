@@ -31,7 +31,8 @@ const advancedElements = (
 		preRemoveCheck: input("", preRemove),
 		postRemoveCheck: input("", postRemove),
 		advancedProcessingModeSelect: select("auto"),
-		advancedDetailLevelSelect: select("balanced"),
+		advancedConvertWidthInput: input("24"),
+		advancedConvertHeightInput: input("18"),
 		advancedBgRemovalScopeSelect: select("auto"),
 		bgConnectivitySelect: select("4"),
 		cellSamplingModeSelect: select("hard-alpha-medoid"),
@@ -103,4 +104,21 @@ describe("settings mode options", () => {
 			expect(options.trimToContent).toBe(trimToContent);
 		},
 	);
+
+	it("passes Advanced Convert output dimensions independently of forced grid dimensions", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedProcessingModeSelect.value = "convert";
+		els.gridDetectionModeSelect.value = "auto";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options).toMatchObject({
+			processingMode: "convert",
+			convertPixelsW: 24,
+			convertPixelsH: 18,
+		});
+		expect(options.forcePixelsW).toBeUndefined();
+		expect(options.forcePixelsH).toBeUndefined();
+	});
 });

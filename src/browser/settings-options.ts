@@ -35,6 +35,16 @@ export const createAdvancedProcessOptions = (
 		PROCESS_RANGES.forcePixelsH,
 	);
 	const usePixels = pixelsW !== undefined && pixelsH !== undefined;
+	const convertPixelsW = parseOptionalInt(
+		els.advancedConvertWidthInput,
+		PROCESS_RANGES.convertPixelsW,
+	);
+	const convertPixelsH = parseOptionalInt(
+		els.advancedConvertHeightInput,
+		PROCESS_RANGES.convertPixelsH,
+	);
+	const useConvertPixels =
+		convertPixelsW !== undefined && convertPixelsH !== undefined;
 	type GridDetectionMode = "auto" | "hint" | "force" | "off";
 	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
 	const method = els.bgExtractionMethod
@@ -50,8 +60,8 @@ export const createAdvancedProcessOptions = (
 		debug: BROWSER_RUNTIME_CONFIG.debug,
 		processingMode: els.advancedProcessingModeSelect
 			.value as ProcessOptions["processingMode"],
-		detailLevel: els.advancedDetailLevelSelect
-			.value as ProcessOptions["detailLevel"],
+		convertPixelsW: useConvertPixels ? convertPixelsW : undefined,
+		convertPixelsH: useConvertPixels ? convertPixelsH : undefined,
 		detectionQuantStep: clampInt(
 			Number(els.quantStepInput.value),
 			PROCESS_RANGES.detectionQuantStep,

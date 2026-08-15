@@ -150,6 +150,8 @@ export const candidateProcessOptions = (
 		forcePixelsH: undefined,
 		hintPixelsW: undefined,
 		hintPixelsH: undefined,
+		convertPixelsW: undefined,
+		convertPixelsH: undefined,
 	};
 	// [Intended] Auto 実結果の再現は初回と同じ入力で Auto を再実行することが前提なので、
 	// グリッド検出の検索開始点となるヒントは消さない。消すと検出結果が変わり、
@@ -157,6 +159,8 @@ export const candidateProcessOptions = (
 	if (selection.processingMode === "auto") {
 		options.hintPixelsW = base.hintPixelsW;
 		options.hintPixelsH = base.hintPixelsH;
+		options.convertPixelsW = base.convertPixelsW;
+		options.convertPixelsH = base.convertPixelsH;
 		return options;
 	}
 	if (selection.processingMode === "refine") {
@@ -165,6 +169,8 @@ export const candidateProcessOptions = (
 	}
 	if (selection.processingMode === "convert") {
 		options.detailLevel = selection.detailLevel;
+		options.convertPixelsW = selection.outW;
+		options.convertPixelsH = selection.outH;
 	}
 	return options;
 };

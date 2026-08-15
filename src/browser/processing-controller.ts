@@ -1,7 +1,7 @@
 import { wrap } from "comlink";
 import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
 import type { ProcessorWorker } from "../core/worker";
-import type { CandidateSelection } from "../shared/types";
+import type { CandidateSelection, ProcessingRoute } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -33,6 +33,7 @@ type ProcessingControllerOptions = {
 	updatePaletteDisplay: () => void;
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
+	updateAdvancedProcessingControls: (activeRoute?: ProcessingRoute) => void;
 	candidateChooser: CandidateChooser;
 };
 
@@ -60,6 +61,7 @@ export const createRunProcessing = ({
 	updatePaletteDisplay,
 	updateGrid,
 	updateBgColorFromMethod,
+	updateAdvancedProcessingControls,
 	candidateChooser,
 }: ProcessingControllerOptions): ((
 	options?: RunProcessingOptions,
@@ -159,6 +161,20 @@ export const createRunProcessing = ({
 			updateQuickSettingsDisabledStates(
 				els,
 				processingState.settingsMode === "quick" ? analysis.route : undefined,
+			);
+			// [Intended] Convert 候補を選んだ場合は、画像単位の上書きを非表示にせず
+			// 詳細設定の具体的な出力寸法として表示する。
+			if (
+				processingState.settingsMode === "advanced" &&
+				effectiveSelection?.processingMode === "convert"
+			) {
+				els.advancedConvertWidthInput.value = String(effectiveSelection.outW);
+				els.advancedConvertHeightInput.value = String(effectiveSelection.outH);
+			}
+			updateAdvancedProcessingControls(
+				processingState.settingsMode === "advanced"
+					? analysis.route
+					: undefined,
 			);
 
 			mainResultViewer.updateImage(resultImage);

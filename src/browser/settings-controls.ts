@@ -1,6 +1,13 @@
 import { rgbToHex } from "../core/colorUtils";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
+import type { ProcessingRoute } from "../shared/types";
+import {
+	applyAdvancedConvertOutputRanges,
+	hasCompleteConvertOutputSize,
+	populateAdvancedConvertOutputSize,
+	updateAdvancedProcessingControls,
+} from "./advanced-processing-controls";
 import {
 	advancedSettingControls,
 	applyAdvancedSettingDefaults,
@@ -35,7 +42,9 @@ export type SettingsControls = {
 	updateProcessButtonVisibility: () => void;
 	triggerAutoProcess: () => void;
 	updateDisabledStates: () => void;
-	updateAdvancedProcessingDisabledStates: () => void;
+	updateAdvancedProcessingDisabledStates: (
+		activeRoute?: ProcessingRoute,
+	) => void;
 	updatePaletteButtonVisibility: () => void;
 	updateReduceColorsDisabledStates: () => void;
 	updateBgDisabledStates: () => void;
@@ -266,6 +275,7 @@ export const setupSettingsControls = ({
 		els.forcePixelsWInput.max = String(PROCESS_RANGES.forcePixelsW.max);
 		els.forcePixelsHInput.min = String(PROCESS_RANGES.forcePixelsH.min);
 		els.forcePixelsHInput.max = String(PROCESS_RANGES.forcePixelsH.max);
+		applyAdvancedConvertOutputRanges(els);
 
 		els.preRemoveCheck.checked = defaults.preRemoveBackground;
 		els.postRemoveCheck.checked = defaults.postRemoveBackground;
@@ -285,7 +295,8 @@ export const setupSettingsControls = ({
 
 		els.bgExtractionMethod.value = defaults.bgExtractionMethod;
 		els.advancedProcessingModeSelect.value = defaults.processingMode;
-		els.advancedDetailLevelSelect.value = defaults.detailLevel;
+		els.advancedConvertWidthInput.value = "";
+		els.advancedConvertHeightInput.value = "";
 		els.quickProcessingModeSelect.value =
 			QUICK_SETTINGS_DEFAULTS.processingMode;
 		els.quickDetailLevelSelect.value = QUICK_SETTINGS_DEFAULTS.detailLevel;
@@ -347,7 +358,8 @@ export const setupSettingsControls = ({
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
 		els.advancedProcessingModeSelect,
-		els.advancedDetailLevelSelect,
+		els.advancedConvertWidthInput,
+		els.advancedConvertHeightInput,
 		...gridDetectionAdvancedControls(els),
 	].forEach((el) => {
 		el.addEventListener("change", clearCandidateSelections);
@@ -408,19 +420,47 @@ export const setupSettingsControls = ({
 			setDisabledClass(el, !isAutoOrHint);
 		});
 	};
-	const updateAdvancedProcessingDisabledStates = () => {
+	const updateAdvancedProcessingDisabledStates = (
+		activeRoute?: ProcessingRoute,
+	) => {
 		const mode = els.advancedProcessingModeSelect.value;
-		const disabled = mode !== "auto" && mode !== "convert";
-		els.advancedDetailLevelSelect.disabled = disabled;
-		els.advancedDetailLevelSelect
-			.closest(".setting-item")
-			?.classList.toggle("disabled", disabled);
+		if (mode === "convert" || (mode === "auto" && activeRoute === "convert")) {
+			populateAdvancedConvertOutputSize(
+				els,
+				imageSession.getActiveImage()?.original,
+			);
+		}
+		updateAdvancedProcessingControls(els, activeRoute);
 	};
 
-	els.gridDetectionModeSelect.addEventListener("change", updateDisabledStates);
-	els.advancedProcessingModeSelect.addEventListener(
-		"change",
-		updateAdvancedProcessingDisabledStates,
+	els.gridDetectionModeSelect.addEventListener("change", () => {
+		updateDisabledStates();
+		updateAdvancedProcessingDisabledStates();
+	});
+	els.advancedProcessingModeSelect.addEventListener("change", () => {
+		updateAdvancedProcessingDisabledStates();
+	});
+	[els.forcePixelsWInput, els.forcePixelsHInput].forEach((input) => {
+		input.addEventListener("input", () => {
+			updateAdvancedProcessingDisabledStates();
+		});
+		input.addEventListener("change", () => {
+			updateAdvancedProcessingDisabledStates();
+		});
+	});
+	[els.advancedConvertWidthInput, els.advancedConvertHeightInput].forEach(
+		(input) => {
+			input.addEventListener("input", () => {
+				if (hasCompleteConvertOutputSize(els)) triggerAutoProcess();
+			});
+			input.addEventListener("change", () => {
+				populateAdvancedConvertOutputSize(
+					els,
+					imageSession.getActiveImage()?.original,
+				);
+				if (hasCompleteConvertOutputSize(els)) triggerAutoProcess();
+			});
+		},
 	);
 
 	// 減色設定の UI 制御
@@ -613,7 +653,6 @@ export const setupSettingsControls = ({
 		els.reduceColorModeSelect,
 		els.ditherModeSelect,
 		els.advancedProcessingModeSelect,
-		els.advancedDetailLevelSelect,
 		els.advancedBgRemovalScopeSelect,
 
 		els.bgExtractionMethod,

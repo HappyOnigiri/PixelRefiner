@@ -12,6 +12,8 @@ describe("migrateAdvancedSettings", () => {
 		expect(state["cell-sampling-mode"]).toBe(PROCESS_DEFAULTS.cellSamplingMode);
 		expect(state["small-aspect-grid-alignment"]).toBe("auto");
 		expect(state["watermark-sampling-compat"]).toBe("auto");
+		expect(state["advanced-convert-width"]).toBe("");
+		expect(state["advanced-convert-height"]).toBe("");
 		expect(state["background-dehalo"]).toBe(true);
 		expect(state["background-edge-cleanup"]).toBe(true);
 		expect(state["background-confidence-gate"]).toBe(true);

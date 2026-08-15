@@ -832,18 +832,24 @@
                       Processing
                     </h3>
                     <div class="grid-settings">
-                      <label class="setting-item">
+                      <label
+                        id="advanced-processing-mode-setting"
+                        class="setting-item"
+                      >
                         <span
                           class="label-text"
                           data-i18n="setting.processing_mode"
                           >Processing</span
                         >
-                        <select id="advanced-processing-mode">
+                        <select
+                          id="advanced-processing-mode"
+                          aria-describedby="advanced-processing-mode-notice"
+                        >
                           <option
                             value="auto"
                             data-i18n="option.processing_auto"
                           >
-                            Auto
+                            Automatic Selection
                           </option>
                           <option
                             value="refine"
@@ -865,30 +871,64 @@
                           </option>
                         </select>
                       </label>
-                      <label class="setting-item">
-                        <span class="label-text" data-i18n="setting.detail"
-                          >Detail</span
-                        >
-                        <select id="advanced-detail-level">
-                          <option
-                            value="coarse"
-                            data-i18n="option.detail_coarse"
+                      <p
+                        id="advanced-processing-mode-notice"
+                        class="processing-mode-notice"
+                        role="status"
+                        data-i18n="notice.processing_mode_forced_size"
+                        hidden
+                      >
+                        Pixel Only takes priority, so Processing is not used.
+                      </p>
+                      <label
+                        id="advanced-convert-width-setting"
+                        class="setting-item"
+                        hidden
+                      >
+                        <span class="label-text">
+                          <span data-i18n="setting.convert_output_width"
+                            >Output Width</span
                           >
-                            Coarse
-                          </option>
-                          <option
-                            value="balanced"
-                            data-i18n="option.detail_balanced"
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_size"
+                            data-tooltip="Sets the resampling width used by Convert. Trimming, outlines, and padding can change the final canvas size."
+                            >?</span
                           >
-                            Balanced
-                          </option>
-                          <option
-                            value="detailed"
-                            data-i18n="option.detail_detailed"
+                        </span>
+                        <div class="input-unit-wrapper">
+                          <input
+                            id="advanced-convert-width"
+                            type="number"
+                            required
+                          />
+                          <span class="unit-text">px</span>
+                        </div>
+                      </label>
+                      <label
+                        id="advanced-convert-height-setting"
+                        class="setting-item"
+                        hidden
+                      >
+                        <span class="label-text">
+                          <span data-i18n="setting.convert_output_height"
+                            >Output Height</span
                           >
-                            Detailed
-                          </option>
-                        </select>
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_size"
+                            data-tooltip="Sets the resampling height used by Convert. Trimming, outlines, and padding can change the final canvas size."
+                            >?</span
+                          >
+                        </span>
+                        <div class="input-unit-wrapper">
+                          <input
+                            id="advanced-convert-height"
+                            type="number"
+                            required
+                          />
+                          <span class="unit-text">px</span>
+                        </div>
                       </label>
                     </div>
                   </div>

@@ -145,15 +145,48 @@ export const processConvertRoute = (
 	}
 
 	const candidates = createConvertCandidates(source);
-	const selected = selectConvertCandidate(candidates, o.detailLevel);
-	const selectedCandidateIndex = candidates.indexOf(selected);
-	const reports = candidateReports(
+	const hasExplicitSize =
+		o.convertPixelsW !== undefined && o.convertPixelsH !== undefined;
+	const selected = hasExplicitSize
+		? {
+				label: o.detailLevel,
+				outW: o.convertPixelsW as number,
+				outH: o.convertPixelsH as number,
+			}
+		: selectConvertCandidate(candidates, o.detailLevel);
+	let selectedCandidateIndex = candidates.indexOf(selected);
+	let reports = candidateReports(
 		source,
 		candidates,
 		o.detailLevel,
 		sourceX,
 		sourceY,
 	);
+	if (hasExplicitSize) {
+		const explicitGrid = gridForCandidate(
+			source,
+			selected,
+			o.detailLevel,
+			sourceX,
+			sourceY,
+		);
+		reports = [
+			{
+				grid: explicitGrid,
+				outW: selected.outW,
+				outH: selected.outH,
+				cropX: sourceX,
+				cropY: sourceY,
+				cropW: source.width,
+				cropH: source.height,
+				method: "convert-explicit-size",
+				totalScore: 1,
+				confidence: 1,
+			},
+			...reports,
+		];
+		selectedCandidateIndex = 0;
+	}
 	let grid = gridForCandidate(
 		source,
 		selected,
@@ -361,7 +394,7 @@ export const processConvertRoute = (
 		compareBeforeSanitized,
 		grid,
 		"convert",
-		`convert-${selected.label}`,
+		hasExplicitSize ? "convert-explicit-size" : `convert-${selected.label}`,
 		trimAlphaThreshold,
 		reports,
 		backgroundDiagnostic,

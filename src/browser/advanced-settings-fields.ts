@@ -46,7 +46,8 @@ export const advancedModeControls = (
 	els: Elements,
 ): Array<HTMLInputElement | HTMLSelectElement> => [
 	els.advancedProcessingModeSelect,
-	els.advancedDetailLevelSelect,
+	els.advancedConvertWidthInput,
+	els.advancedConvertHeightInput,
 	els.quantStepInput,
 	els.quantStepSlider,
 	els.forcePixelsWInput,
@@ -200,6 +201,8 @@ export const migrateAdvancedSettings = (
 		PROCESS_DEFAULTS.smallAspectGridAlignment;
 	state["watermark-sampling-compat"] ??=
 		PROCESS_DEFAULTS.watermarkSamplingCompat;
+	state["advanced-convert-width"] ??= "";
+	state["advanced-convert-height"] ??= "";
 
 	state["preserve-thin-features"] ??= PROCESS_DEFAULTS.preserveThinFeatures;
 	state["auto-grid-from-trimmed"] ??= PROCESS_DEFAULTS.autoGridFromTrimmed;
