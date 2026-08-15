@@ -274,7 +274,6 @@ export const setupSettingsControls = ({
 		els.smallComponentModeSelect.value = defaults.smallComponentMode;
 		els.geminiWatermarkRemovalSelect.value = defaults.geminiWatermarkRemoval;
 		applyAdvancedSettingDefaults(els, defaults);
-		els.trimToContentCheck.checked = defaults.trimToContent;
 		els.fastAutoGridFromTrimmedCheck.checked = defaults.fastAutoGridFromTrimmed;
 		els.makeSquareCheck.checked = defaults.makeSquare;
 		els.keepAspectRatioCheck.checked = defaults.keepAspectRatio;
@@ -293,9 +292,6 @@ export const setupSettingsControls = ({
 		els.quickReductionModeSelect.value = QUICK_SETTINGS_DEFAULTS.reductionMode;
 		els.quickBackgroundSelect.value = QUICK_SETTINGS_DEFAULTS.background;
 		els.quickDitheringSelect.value = QUICK_SETTINGS_DEFAULTS.dithering;
-		els.quickAutoTrimSelect.value = QUICK_SETTINGS_DEFAULTS.trimToContent
-			? "auto"
-			: "none";
 		els.builtInPresetSelect.value = "auto";
 
 		// 言語切替ボタンのイベントリスナー
@@ -512,6 +508,7 @@ export const setupSettingsControls = ({
 			els.postRemoveCheck,
 			els.advancedBgRemovalScopeSelect,
 			els.bgConnectivitySelect,
+			els.trimAlphaThresholdInput,
 			els.smallComponentModeSelect,
 			els.geminiWatermarkRemovalSelect,
 			...backgroundDependentAdvancedControls(els),
@@ -609,7 +606,6 @@ export const setupSettingsControls = ({
 		els.bgConnectivitySelect,
 		els.smallComponentModeSelect,
 		els.geminiWatermarkRemovalSelect,
-		els.trimToContentCheck,
 		els.fastAutoGridFromTrimmedCheck,
 		els.makeSquareCheck,
 		els.keepAspectRatioCheck,

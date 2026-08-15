@@ -747,7 +747,7 @@
                         <span
                           class="help"
                           data-i18n-attr="data-tooltip:tooltip.help.quick_background"
-                          data-tooltip="Chooses whether to keep the background, remove it automatically, or remove a selected color."
+                          data-tooltip="Chooses whether to keep the background, remove it automatically, or remove a selected color. Keeping the background preserves the full canvas; removing it also trims transparent margins."
                           >?</span
                         >
                       </span>
@@ -809,29 +809,6 @@
                           data-i18n="option.dithering_strong"
                         >
                           Strong
-                        </option>
-                      </select>
-                    </label>
-                    <label class="setting-item">
-                      <span class="label-text">
-                        <span data-i18n="setting.quick_canvas">Canvas</span>
-                        <span
-                          class="help"
-                          data-i18n-attr="data-tooltip:tooltip.help.quick_auto_trim"
-                          data-tooltip="Chooses whether to trim empty margins around the subject or keep the full canvas. Trimming does not change the subject scale and also works when the background is kept."
-                          >?</span
-                        >
-                      </span>
-                      <select id="quick-auto-trim">
-                        <option
-                          value="auto"
-                          data-i18n="option.auto_trim_auto"
-                          selected
-                        >
-                          Trim empty margins
-                        </option>
-                        <option value="none" data-i18n="option.auto_trim_none">
-                          Keep full canvas
                         </option>
                       </select>
                     </label>
@@ -1655,7 +1632,7 @@
                           <span
                             class="help"
                             data-i18n-attr="data-tooltip:tooltip.help.bg_method"
-                            data-tooltip="Select where to extract the background color from.&#10;&#10;Auto: Estimates the background from the full image border.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
+                            data-tooltip="Select where to extract the background color from. When background transparency is enabled, transparent margins are also trimmed automatically; None preserves the full canvas.&#10;&#10;Auto: Estimates the background from the full image border.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
                             >?</span
                           >
                         </span>
@@ -2102,19 +2079,6 @@
                       Trimming
                     </h3>
                     <div class="grid-settings">
-                      <label class="setting-item">
-                        <span class="label-text">
-                          <span data-i18n="setting.auto_trim">Auto Trim</span>
-                          <span
-                            class="help"
-                            data-i18n-attr="data-tooltip:tooltip.help.auto_trim"
-                            data-tooltip="Automatically trims the output to the detected content bounds after processing. The content scale and detail level stay unchanged."
-                            >?</span
-                          >
-                        </span>
-                        <input id="trim-to-content" type="checkbox" />
-                      </label>
-
                       <label class="setting-item">
                         <span class="label-text">
                           <span data-i18n="setting.trim_alpha_threshold"

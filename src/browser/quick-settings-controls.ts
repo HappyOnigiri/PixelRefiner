@@ -81,7 +81,6 @@ export const readQuickSettings = (els: Elements): QuickSettingsState => ({
 	background: els.quickBackgroundSelect.value as QuickBackground,
 	backgroundColor: els.quickBackgroundColorInput.value,
 	dithering: els.quickDitheringSelect.value as QuickDithering,
-	trimToContent: els.quickAutoTrimSelect.value === "auto",
 });
 
 export const setupQuickSettingsControls = ({
@@ -115,7 +114,6 @@ export const setupQuickSettingsControls = ({
 		els.quickReductionModeSelect,
 		els.quickBackgroundSelect,
 		els.quickDitheringSelect,
-		els.quickAutoTrimSelect,
 	].forEach((control) => {
 		control.addEventListener("change", () => {
 			handleQuickSettingChange(true);

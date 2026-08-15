@@ -60,7 +60,6 @@ export const advancedModeControls = (
 	els.postRemoveCheck,
 	els.advancedBgRemovalScopeSelect,
 	els.bgConnectivitySelect,
-	els.trimToContentCheck,
 	els.fastAutoGridFromTrimmedCheck,
 	els.makeSquareCheck,
 	els.keepAspectRatioCheck,
