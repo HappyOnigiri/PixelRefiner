@@ -207,6 +207,7 @@ describe("I18nManager", () => {
 		}
 
 		i18n.setLanguage("ja");
+		expect(i18n.t("preset.auto")).toBe("おまかせ");
 		expect(i18n.t("option.quick_processing_refine")).toBe("輪郭をくっきり");
 		expect(i18n.t("option.quick_processing_convert")).toBe(
 			"細部を残してドット化",
