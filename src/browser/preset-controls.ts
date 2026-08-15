@@ -56,9 +56,7 @@ export const setupPresetControls = ({
 		const option = document.createElement("option");
 		option.value = preset.id;
 		option.dataset.i18n = preset.labelKey;
-		option.textContent = i18n.t(
-			preset.labelKey as Parameters<typeof i18n.t>[0],
-		);
+		option.textContent = i18n.t(preset.labelKey);
 		els.builtInPresetSelect.appendChild(option);
 	}
 	const getUiState = (): Record<string, string | number | boolean> => {
