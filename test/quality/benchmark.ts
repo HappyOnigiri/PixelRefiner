@@ -57,7 +57,7 @@ const QUALITY_FIXTURE_OPTIONS = {
 
 // [Intended] 省略時に効く既定経路をレポートへ明示的に残すため、既定値も展開して返す。
 // 値は PROCESS_DEFAULTS から取るので、既定が変わればケースの実行経路も追随する。
-const effectiveCaseOptions = (
+export const effectiveCaseOptions = (
 	qualityCase: QualityImageCase,
 ): ProcessOptions => {
 	// [Intended] 自動判定ケースは UI 既定だけで処理する。fixture 用の背景抽出指定すら
