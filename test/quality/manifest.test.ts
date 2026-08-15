@@ -74,11 +74,6 @@ describe("quality manifest", () => {
 			"auto-quality-prf400-ui-low-confidence",
 			"auto-quality-rgb-noise",
 			"auto-quality-transparent-rgb-padding",
-			"auto-guide-recipe1-knight-sprite",
-			"auto-guide-recipe2-potion-icon",
-			"auto-guide-recipe3-dragon-sprite",
-			"auto-guide-recipe4-landscape",
-			"auto-guide-recipe5-chibi-character",
 		]) {
 			expect(ids.has(id), id).toBe(false);
 		}

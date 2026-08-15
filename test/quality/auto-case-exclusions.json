@@ -43,11 +43,6 @@
 		"auto-quality-prf210-uncertain-background": "背景信頼度が低い場合の小要素除去抑制を明示オプションで検証する専用ケース。",
 		"auto-quality-prf400-ui-low-confidence": "UI 既定候補の低信頼度表示を明示オプションで検証する専用ケース。",
 		"auto-quality-rgb-noise": "透明画素の RGB ノイズを含む入力の復元を明示オプションで検証する専用ケース。",
-		"auto-quality-transparent-rgb-padding": "透明画素の RGB パディング処理を明示オプションで検証する専用ケース。",
-		"auto-guide-recipe1-knight-sprite": "ガイドが案内する「おまかせ」プリセットで掲載画像を再現する専用ケース。同じ入力を同じオプションで二重に処理しない。",
-		"auto-guide-recipe2-potion-icon": "ガイドが案内する「透過アイコン」プリセットで掲載画像を再現する専用ケース。",
-		"auto-guide-recipe3-dragon-sprite": "ガイドが案内する「レトロゲーム風」プリセットで掲載画像を再現する専用ケース。",
-		"auto-guide-recipe4-landscape": "ガイドが案内する「背景用の一枚絵」プリセットで掲載画像を再現する専用ケース。",
-		"auto-guide-recipe5-chibi-character": "ガイドが案内する「イラストをドット絵に変換」プリセットで掲載画像を再現する専用ケース。"
+		"auto-quality-transparent-rgb-padding": "透明画素の RGB パディング処理を明示オプションで検証する専用ケース。"
 	}
 }

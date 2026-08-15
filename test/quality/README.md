@@ -123,30 +123,43 @@ options from `BUILT_IN_PRESETS` or from `createQuickProcessOptions` when the
 case runs, so changing a preset or the meaning of a Quick Settings item reaches
 the case instead of leaving a stale copy of its values in `cases.json`, and the
 fixture-only background-extraction default is not mixed in either: the case has
-to run exactly what a reader running the same steps would get. `expected` points
-at the published PNG under `public/guide/` rather than a copy of it, so the
-target the report measures against is the file the page actually serves. The
-expectation is an exact match, which fails as soon as the published image stops
-following from the published steps. Fix that by regenerating the guide image,
-not by loosening the case.
+to run exactly what a reader running the same steps would get.
+
+Both ends of the case are files the page itself serves, not copies of them.
+`input` is the full-size original under `public/guide/`, the same file the page
+offers for download, and `expected` is the published output PNG. That is what
+makes the case answer the reader's question: the image they can download,
+converted by the steps they are told to follow, produces the image they are
+shown. A copy under `test/fixtures/` would only prove that some private file
+reproduces the result. The expectation is an exact match, which fails as soon as
+the published image stops following from the published steps. Fix that by
+regenerating the guide image, not by loosening the case.
+
+The image displayed on the page is a separate, downscaled copy
+(`recipeN-input.jpg`), because the originals run to several megabytes each.
+Downscaling changes the conversion — a smaller input yields a smaller output —
+so the displayed copy reproduces nothing, and the download link is what carries
+the promise.
 
 Adding an example:
 
-1. Save the image as it was generated — the full-resolution original, not the
-   downscaled copy the page displays — as a PNG under `test/fixtures/`, and
-   record the prompt in the case's provenance.
+1. Publish the image as it was generated — the full-resolution original — as
+   `public/guide/recipeN-input-full.png`, and record the prompt in the case's
+   provenance. Add a downscaled `recipeN-input.jpg` for the page to display, and
+   a download link to the original next to it.
 2. Add the case to [`cases.json`](./cases.json) with `presetId` or
-   `quickSettings`, `expected` pointing at the published output, and
-   `expectedWidth` / `expectedHeight` matching the caption on the page.
-3. Register the fixture's Auto twin in
-   [`auto-case-exclusions.json`](./auto-case-exclusions.json) and in the
-   exclusion list in [`manifest.test.ts`](./manifest.test.ts). The guide case
-   already pins the published steps, so the same input does not need a second
-   run.
-4. Describe the case in `describeCase` in
+   `quickSettings`, `input` pointing at the published original, `expected`
+   pointing at the published output, and `expectedWidth` / `expectedHeight`
+   matching the caption on the page.
+3. Describe the case in `describeCase` in
    [`report/case-description.ts`](./report/case-description.ts).
-5. Run `pnpm test:quality:update` to register the baseline, then
+4. Run `pnpm test:quality:update` to register the baseline, then
    `pnpm test:quality:full`.
+
+Guide originals live outside `test/fixtures/`, so they get no automatically
+generated Auto twin and need no entry in
+[`auto-case-exclusions.json`](./auto-case-exclusions.json). The guide case
+already pins the published steps.
 
 Only the recipes carry examples, so only they are pinned here. The five
 principles earlier on the page quote prompt fragments that illustrate the wording
