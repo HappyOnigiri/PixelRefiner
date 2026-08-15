@@ -83,6 +83,17 @@ describe("i18n messages", () => {
 		expect(duplicated).toEqual([]);
 	});
 
+	it("appMessages と appMessageCatalogs が同じモジュールを網羅している", () => {
+		// [Intended] 2 つの列挙は独立しているため、片方だけにモジュールを足すと
+		// 「文言は載るが検査されない」「検査はされるが文言が載らない」が起きる。
+		const fromCatalogs = new Set(
+			Object.values(appMessageCatalogs).flatMap((catalog) =>
+				Object.keys(catalog),
+			),
+		);
+		expect(Object.keys(appMessages).sort()).toEqual([...fromCatalogs].sort());
+	});
+
 	it("すべてのキーが 3 言語そろっていて空でない", () => {
 		const incomplete: string[] = [];
 		for (const [key, entry] of Object.entries(allMessages)) {
