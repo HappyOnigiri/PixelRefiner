@@ -1,5 +1,5 @@
 import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
-import type { CandidateSelection } from "../shared/types";
+import type { CandidateSelection, ProcessingRoute } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -30,6 +30,7 @@ type ProcessingControllerOptions = {
 	updatePaletteDisplay: () => void;
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
+	updateAdvancedProcessingControls: (activeRoute?: ProcessingRoute) => void;
 	candidateChooser: CandidateChooser;
 };
 
@@ -62,6 +63,7 @@ export const createProcessingController = ({
 	updatePaletteDisplay,
 	updateGrid,
 	updateBgColorFromMethod,
+	updateAdvancedProcessingControls,
 	candidateChooser,
 }: ProcessingControllerOptions): ProcessingController => {
 	const compareBeforeCanvas = document.createElement("canvas");
@@ -186,6 +188,30 @@ export const createProcessingController = ({
 			updateQuickSettingsDisabledStates(
 				els,
 				processingState.settingsMode === "quick" ? analysis.route : undefined,
+			);
+			// [Intended] Convert 候補の選択を、詳細設定でも同じサイズ指定として表示する。
+			if (
+				processingState.settingsMode === "advanced" &&
+				effectiveSelection?.processingMode === "convert"
+			) {
+				if (effectiveSelection.detailLevel) {
+					els.advancedConvertSizeModeSelect.value =
+						effectiveSelection.detailLevel;
+				} else if (
+					effectiveSelection.outW !== undefined &&
+					effectiveSelection.outH !== undefined
+				) {
+					els.advancedConvertSizeModeSelect.value = "custom-both";
+					els.advancedConvertWidthInput.value = String(effectiveSelection.outW);
+					els.advancedConvertHeightInput.value = String(
+						effectiveSelection.outH,
+					);
+				}
+			}
+			updateAdvancedProcessingControls(
+				processingState.settingsMode === "advanced"
+					? analysis.route
+					: undefined,
 			);
 
 			mainResultViewer.updateImage(resultImage);

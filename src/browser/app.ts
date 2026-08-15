@@ -113,6 +113,9 @@ export const initApp = (): void => {
 				els,
 				item?.settingsMode === "quick" ? item.analysis?.route : undefined,
 			);
+			updateAdvancedProcessingDisabledStates(
+				item?.settingsMode === "advanced" ? item.analysis?.route : undefined,
+			);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
 				// const displayImage = item.result || item.original; // 未使用
@@ -251,6 +254,8 @@ export const initApp = (): void => {
 		updatePaletteDisplay: () => updatePaletteDisplay(),
 		updateGrid: () => updateGrid(),
 		updateBgColorFromMethod: () => updateBgColorFromMethod(),
+		updateAdvancedProcessingControls: (activeRoute) =>
+			updateAdvancedProcessingDisabledStates(activeRoute),
 		candidateChooser,
 	});
 	const { runProcessing } = processingController;

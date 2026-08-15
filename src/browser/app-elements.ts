@@ -93,7 +93,14 @@ export type Elements = {
 	quickEyedropperButton: HTMLButtonElement;
 	quickDitheringSelect: HTMLSelectElement;
 	advancedProcessingModeSelect: HTMLSelectElement;
-	advancedDetailLevelSelect: HTMLSelectElement;
+	advancedProcessingModeSetting: HTMLElement;
+	advancedProcessingModeNotice: HTMLElement;
+	advancedConvertSizeModeSetting: HTMLElement;
+	advancedConvertSizeModeSelect: HTMLSelectElement;
+	advancedConvertWidthSetting: HTMLElement;
+	advancedConvertHeightSetting: HTMLElement;
+	advancedConvertWidthInput: HTMLInputElement;
+	advancedConvertHeightInput: HTMLInputElement;
 	advancedBgRemovalScopeSelect: HTMLSelectElement;
 
 	// パレット UI
@@ -284,7 +291,28 @@ export const getElements = (): Elements => {
 		advancedProcessingModeSelect: get<HTMLSelectElement>(
 			"advanced-processing-mode",
 		),
-		advancedDetailLevelSelect: get<HTMLSelectElement>("advanced-detail-level"),
+		advancedProcessingModeSetting: get<HTMLElement>(
+			"advanced-processing-mode-setting",
+		),
+		advancedProcessingModeNotice: get<HTMLElement>(
+			"advanced-processing-mode-notice",
+		),
+		advancedConvertSizeModeSetting: get<HTMLElement>(
+			"advanced-convert-size-mode-setting",
+		),
+		advancedConvertSizeModeSelect: get<HTMLSelectElement>(
+			"advanced-convert-size-mode",
+		),
+		advancedConvertWidthSetting: get<HTMLElement>(
+			"advanced-convert-width-setting",
+		),
+		advancedConvertHeightSetting: get<HTMLElement>(
+			"advanced-convert-height-setting",
+		),
+		advancedConvertWidthInput: get<HTMLInputElement>("advanced-convert-width"),
+		advancedConvertHeightInput: get<HTMLInputElement>(
+			"advanced-convert-height",
+		),
 		advancedBgRemovalScopeSelect: get<HTMLSelectElement>(
 			"advanced-bg-removal-scope",
 		),

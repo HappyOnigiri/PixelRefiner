@@ -6,6 +6,8 @@ export type IntRange = {
 	default: number;
 };
 
+const OUTPUT_DIMENSION_RANGE = { min: 1, max: 1024, default: 0 } as const;
+
 export const PROCESS_RANGES = {
 	// 検出器: ポスタライズの段階数
 	detectionQuantStep: { min: 1, max: 128, default: 64 } as const,
@@ -24,8 +26,11 @@ export const PROCESS_RANGES = {
 	// 小さな孤立領域（連結成分）を背景として除去する
 	floatingMaxPixels: { min: 0, max: 1000000, default: 0 } as const,
 	// 出力ピクセルサイズを強制する（境界ボックスのトリミング後）
-	forcePixelsW: { min: 1, max: 1024, default: 0 } as const,
-	forcePixelsH: { min: 1, max: 1024, default: 0 } as const,
+	forcePixelsW: OUTPUT_DIMENSION_RANGE,
+	forcePixelsH: OUTPUT_DIMENSION_RANGE,
+	// Convert 経路のエッジ考慮リサンプリングで使う明示的な出力寸法
+	convertPixelsW: OUTPUT_DIMENSION_RANGE,
+	convertPixelsH: OUTPUT_DIMENSION_RANGE,
 	// 減色
 	colorCount: { min: 2, max: 256, default: 32 } as const,
 	// ディザリング
