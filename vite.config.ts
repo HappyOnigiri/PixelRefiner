@@ -16,7 +16,9 @@ export default defineConfig({
 			},
 		},
 	},
+	// [Policy] dev サーバーの起動でブラウザを自動的に開かない。
+	// 既に開いているタブやヘッドレスでの確認を邪魔しないため。
 	server: {
-		open: true,
+		open: false,
 	},
 });
