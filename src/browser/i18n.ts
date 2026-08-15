@@ -496,10 +496,8 @@ const resources = {
 			"各レシピでは、プロンプト、生成画像、Pixel Refiner の設定、変換結果を順に紹介します。作例は、掲載したプロンプトで生成し、掲載した設定で変換したものです。",
 		"guide.recipes.goal_label": "ねらい",
 		"guide.recipes.settings_label": "Pixel Refiner の設定",
-		"guide.recipes.caption_input": "生成画像（サンプル）",
 		"guide.recipes.scale_actual": "等倍",
 		"guide.recipes.scale_zoomed": "4倍表示",
-		"guide.recipes.caption_output": "変換結果（サンプル）",
 		"guide.recipe1.heading": "レシピ1: ゲームキャラクターのスプライト",
 		"guide.recipe1.goal":
 			"透過素材の基本形。背景色の選び方（暖色のキャラ × マゼンタ背景）と、見切れ防止の余白がテーマです。",
@@ -1065,10 +1063,8 @@ const resources = {
 			"每个配方会依次介绍提示词、生成图片、Pixel Refiner 设置和转换结果。每个示例都使用页面所示的提示词生成，并按页面所示的设置转换。",
 		"guide.recipes.goal_label": "目标",
 		"guide.recipes.settings_label": "Pixel Refiner 设置",
-		"guide.recipes.caption_input": "生成图片（示例）",
 		"guide.recipes.scale_actual": "原尺寸",
 		"guide.recipes.scale_zoomed": "4 倍显示",
-		"guide.recipes.caption_output": "转换结果（示例）",
 		"guide.recipe1.heading": "配方 1：游戏角色精灵",
 		"guide.recipe1.goal":
 			"透明素材的基本形态。重点是背景色的选法（暖色角色配品红背景），以及留出空白避免出框。",
@@ -1653,10 +1649,8 @@ const resources = {
 			"Each recipe shows a prompt, the image it generated, the Pixel Refiner settings, and the converted result. Each example was generated with the shown prompt and converted with the shown settings.",
 		"guide.recipes.goal_label": "Goal",
 		"guide.recipes.settings_label": "Pixel Refiner settings",
-		"guide.recipes.caption_input": "Generated image (sample)",
 		"guide.recipes.scale_actual": "Actual size (1×)",
 		"guide.recipes.scale_zoomed": "Enlarged (4×)",
-		"guide.recipes.caption_output": "Converted result (sample)",
 		"guide.recipe1.heading": "Recipe 1: Game character sprite",
 		"guide.recipe1.goal":
 			"The basic form of a transparent asset. The themes are how to choose the background color (a warm-colored character against a magenta background) and leaving margin so the subject is never cropped.",

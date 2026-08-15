@@ -307,8 +307,6 @@ describe("I18nManager", () => {
 				"guide.recipes.heading",
 				"guide.recipes.goal_label",
 				"guide.recipes.settings_label",
-				"guide.recipes.caption_input",
-				"guide.recipes.caption_output",
 				"guide.recipe1.settings",
 				"guide.recipe3.input_alt",
 				"guide.recipe5.output_alt",
