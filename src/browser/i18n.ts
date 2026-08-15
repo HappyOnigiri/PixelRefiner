@@ -544,15 +544,15 @@ const resources = {
 		"guide.recipe4.output_alt":
 			"レシピ4の変換結果。山岳風景を背景ごと残したドット絵",
 		"guide.recipe4.input_zoom_alt":
-			"レシピ4の生成画像で、左側の山並みを部分拡大したもの",
+			"レシピ4の生成画像で、左側の山頂にあるドット境界を部分拡大したもの",
 		"guide.recipe4.output_zoom_alt":
-			"レシピ4の変換結果で、同じ山並みを部分拡大したもの。色と輪郭がドット単位で揃っている",
+			"レシピ4の変換結果で、同じドット境界を部分拡大したもの。色と輪郭がドット単位で揃っている",
 		"guide.recipe4.view_whole": "全体",
-		"guide.recipe4.view_detail": "山並みの部分拡大",
+		"guide.recipe4.view_detail": "山頂の境界（10倍表示）",
 		"guide.recipe4.caption_input":
-			"生成画像（2752×1536px・全体と山並みの部分拡大）",
+			"生成画像（2752×1536px・全体と山頂境界の10倍表示）",
 		"guide.recipe4.caption_output":
-			"変換結果（おまかせ＋背景を残す・256×144px・全体と同じ山並みの部分拡大）",
+			"変換結果（おまかせ＋背景を残す・256×144px・全体と同じ山頂境界の10倍表示）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
 			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。ドット絵を頼む代わりに、変換に強く効くフラットな塗りと太い輪郭線を指示します。",
@@ -1105,15 +1105,16 @@ const resources = {
 			"配方 4 的生成图片：明亮天空下的绿色原野与蓝色群山像素画",
 		"guide.recipe4.output_alt":
 			"配方 4 的转换结果：保留完整背景的山野风景像素画",
-		"guide.recipe4.input_zoom_alt": "配方 4 生成图片中左侧山脉的局部放大图",
+		"guide.recipe4.input_zoom_alt":
+			"配方 4 生成图片中左侧山峰像素边界的局部放大图",
 		"guide.recipe4.output_zoom_alt":
-			"配方 4 转换结果中同一片山脉的局部放大图，颜色和轮廓已对齐像素网格",
+			"配方 4 转换结果中同一像素边界的局部放大图，颜色和轮廓已对齐像素网格",
 		"guide.recipe4.view_whole": "整体",
-		"guide.recipe4.view_detail": "山脉局部放大",
+		"guide.recipe4.view_detail": "山峰边界（10 倍显示）",
 		"guide.recipe4.caption_input":
-			"生成图片（2752×1536px，整体与山脉局部放大）",
+			"生成图片（2752×1536px，整体与山峰边界的 10 倍显示）",
 		"guide.recipe4.caption_output":
-			"转换结果（智能推荐＋保留背景，256×144px，整体与同一片山脉的局部放大）",
+			"转换结果（智能推荐＋保留背景，256×144px，整体与同一山峰边界的 10 倍显示）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
 			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。与其要求生成像素画，不如要求对转换特别有利的平涂上色和粗轮廓线。",
@@ -1698,15 +1699,15 @@ const resources = {
 		"guide.recipe4.output_alt":
 			"Converted result for recipe 4: the mountain landscape kept as a full-frame background",
 		"guide.recipe4.input_zoom_alt":
-			"Close-up of the left-hand mountains before conversion",
+			"Close-up of the pixel boundary along the left-hand mountain peak before conversion",
 		"guide.recipe4.output_zoom_alt":
-			"Close-up of the same mountains after conversion, with colors and edges aligned to the pixel grid",
+			"Close-up of the same pixel boundary after conversion, with colors and edges aligned to the pixel grid",
 		"guide.recipe4.view_whole": "Whole image",
-		"guide.recipe4.view_detail": "Mountain detail",
+		"guide.recipe4.view_detail": "Peak edge (10×)",
 		"guide.recipe4.caption_input":
-			"Generated image (2752×1536 px; whole image and mountain detail)",
+			"Generated image (2752×1536 px; whole image and peak edge at 10×)",
 		"guide.recipe4.caption_output":
-			"Converted result (Best Match + Keep background, 256×144 px; whole image and the same mountain detail)",
+			"Converted result (Best Match + Keep background, 256×144 px; whole image and the same peak edge at 10×)",
 		"guide.recipe5.heading":
 			"Recipe 5: Turn a normal illustration into pixel art",
 		"guide.recipe5.goal":
