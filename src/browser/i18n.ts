@@ -496,45 +496,46 @@ const resources = {
 		"guide.recipe1.goal":
 			"透過素材の基本形。背景色の選び方（暖色のキャラ × マゼンタ背景）と、見切れ防止の余白がテーマです。",
 		"guide.recipe1.settings":
-			"「プリセット」を「Auto」のままにします（背景は自動で透過されます）。",
+			"「プリセット」を「おまかせ仕上げ」のままにします（背景は自動で透過されます）。",
 		"guide.recipe1.input_alt":
 			"レシピ1の生成画像。マゼンタ背景に、剣と盾を持つ騎士のドット絵",
 		"guide.recipe1.output_alt":
 			"レシピ1の変換結果。背景が透過した騎士のドット絵",
 		"guide.recipe1.caption_input": "生成画像（2048×2048px・縮小表示）",
-		"guide.recipe1.caption_output": "変換結果（Auto・60×85px の等倍出力）",
+		"guide.recipe1.caption_output":
+			"変換結果（おまかせ仕上げ・60×85px の等倍出力）",
 		"guide.recipe2.heading": "レシピ2: アイテムアイコン",
 		"guide.recipe2.goal":
 			"UI 用の単一オブジェクト。赤い被写体には緑背景、という補色ルールの実例です。縁取りは生成時ではなく、プリセットに含まれるアウトラインで後付けします。",
 		"guide.recipe2.settings":
-			"「プリセット」で「透過アイコン」を選びます（アウトラインまで含まれます）。アウトラインの色は初期値が白なので、下の作例のように明るい背景に重ねるとほとんど見えません。「アウトライン」の「色」で変更できます。",
+			"「プリセット」で「縁取り透過アイコン」を選びます（アウトラインまで含まれます）。アウトラインの色は初期値が白なので、下の作例のように明るい背景に重ねるとほとんど見えません。「アウトライン」の「色」で変更できます。",
 		"guide.recipe2.input_alt":
 			"レシピ2の生成画像。緑背景に、赤いポーション瓶のドット絵",
 		"guide.recipe2.output_alt":
 			"レシピ2の変換結果。背景が透過し、白いアウトラインが付いたポーション瓶のドット絵",
 		"guide.recipe2.caption_input": "生成画像（2752×1536px・縮小表示）",
 		"guide.recipe2.caption_output":
-			"変換結果（透過アイコン・18×25px の等倍出力）",
+			"変換結果（縁取り透過アイコン・18×25px の等倍出力）",
 		"guide.recipe3.heading":
 			"レシピ3: レトロ携帯ゲーム機風（Game Boy パレット）",
 		"guide.recipe3.goal":
 			"生成の段階から少ない階調に寄せておき、パレット変換とディザリングで仕上げます。",
 		"guide.recipe3.settings":
-			"「かんたん設定」の「減色モード」で「ゲームボーイ (初代)」を選び、「ディザリング」を調整します。",
+			"「かんたん設定」の「色数・配色」で「ゲームボーイ (初代)」を選び、「グラデーション表現」を調整します。",
 		"guide.recipe3.input_alt": "レシピ3の生成画像（差し替え予定のサンプル）",
 		"guide.recipe3.output_alt": "レシピ3の変換結果（差し替え予定のサンプル）",
-		"guide.recipe4.heading": "レシピ4: 一枚絵イラスト（背景ごと使う）",
+		"guide.recipe4.heading": "レシピ4: 背景用の一枚絵",
 		"guide.recipe4.goal":
-			"透過しないケース。グリッド検出と減色だけを活かします。画面全体でドットの大きさを揃える指示がポイントです。",
+			"透過しないケース。キャラクターや小物を置かない風景を、そのまま背景として使えるドット絵に変換します。要素を減らして1ドットを大きく描かせる指示がポイントです。",
 		"guide.recipe4.settings":
-			"「かんたん設定」の「背景透過」を「なし」にします（「処理方法」は Auto のままで構いません）。",
+			"「かんたん設定」の「背景」を「背景を残す」にします（「仕上がり」は「おまかせ」のままで構いません）。",
 		"guide.recipe4.input_alt": "レシピ4の生成画像（差し替え予定のサンプル）",
 		"guide.recipe4.output_alt": "レシピ4の変換結果（差し替え予定のサンプル）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
 			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。フラットな塗りと太い輪郭線が変換に強く効きます。",
 		"guide.recipe5.settings":
-			"「かんたん設定」の「処理方法」を「ドット絵へ変換」にして、「サイズ」と「減色モード」を好みに調整します。",
+			"「かんたん設定」の「仕上がり」を「細部を残してドット化」にして、「ドットの細かさ」と「色数・配色」を好みに調整します。",
 		"guide.recipe5.input_alt": "レシピ5の生成画像（差し替え予定のサンプル）",
 		"guide.recipe5.output_alt": "レシピ5の変換結果（差し替え予定のサンプル）",
 		"guide.troubleshooting.heading": "うまくいかないときは",
@@ -1034,43 +1035,44 @@ const resources = {
 		"guide.recipe1.heading": "配方 1：游戏角色精灵",
 		"guide.recipe1.goal":
 			"透明素材的基本形态。重点是背景色的选法（暖色角色配品红背景），以及留出空白避免出框。",
-		"guide.recipe1.settings": "把“预设”保持为“Auto”（背景会自动透明化）。",
+		"guide.recipe1.settings": "把“预设”保持为“智能推荐”（背景会自动透明化）。",
 		"guide.recipe1.input_alt":
 			"配方 1 的生成图片：品红背景上手持剑与盾的骑士像素画",
 		"guide.recipe1.output_alt": "配方 1 的转换结果：背景已透明的骑士像素画",
 		"guide.recipe1.caption_input": "生成图片（2048×2048px，缩小显示）",
-		"guide.recipe1.caption_output": "转换结果（Auto，60×85px 的原尺寸输出）",
+		"guide.recipe1.caption_output":
+			"转换结果（智能推荐，60×85px 的原尺寸输出）",
 		"guide.recipe2.heading": "配方 2：道具图标",
 		"guide.recipe2.goal":
 			"用于 UI 的单一物件，是互补色规则的实例：红色主体配绿色背景。描边不在生成时要求，而是交给预设自带的描边功能。",
 		"guide.recipe2.settings":
-			"在“预设”中选择“透明图标”（其中已包含描边）。描边颜色的默认值是白色，因此像下面的示例那样叠在明亮背景上时几乎看不见。可以在“描边”的“颜色”中更改。",
+			"在“预设”中选择“带描边的透明图标”（其中已包含描边）。描边颜色的默认值是白色，因此像下面的示例那样叠在明亮背景上时几乎看不见。可以在“描边”的“颜色”中更改。",
 		"guide.recipe2.input_alt":
 			"配方 2 的生成图片：绿色背景上的红色药水瓶像素画",
 		"guide.recipe2.output_alt":
 			"配方 2 的转换结果：背景已透明并加上白色描边的药水瓶像素画",
 		"guide.recipe2.caption_input": "生成图片（2752×1536px，缩小显示）",
 		"guide.recipe2.caption_output":
-			"转换结果（透明图标，18×25px 的原尺寸输出）",
+			"转换结果（带描边的透明图标，18×25px 的原尺寸输出）",
 		"guide.recipe3.heading": "配方 3：复古掌机风格（Game Boy 调色板）",
 		"guide.recipe3.goal":
 			"从生成阶段就把画面压到较少的层次，再用调色板转换和抖动完成收尾。",
 		"guide.recipe3.settings":
-			"在“快速设置”的“减色模式”中选择“Game Boy (初代)”，并调整“抖动”。",
+			"在“快速设置”的“色彩”中选择“Game Boy (初代)”，并调整“渐变纹理”。",
 		"guide.recipe3.input_alt": "配方 3 的生成图片（待替换的示例）",
 		"guide.recipe3.output_alt": "配方 3 的转换结果（待替换的示例）",
-		"guide.recipe4.heading": "配方 4：整幅插画（连背景一起使用）",
+		"guide.recipe4.heading": "配方 4：用作背景的整幅插画",
 		"guide.recipe4.goal":
-			"不做透明化的情况，只利用网格检测和减色。关键是要求整幅画面的像素大小保持一致。",
+			"不做透明化的情况。把没有角色和小物件的风景，转换成可以直接当作背景使用的像素画。关键是要求减少元素、把每个像素画得更大。",
 		"guide.recipe4.settings":
-			"在“快速设置”中把“背景透明”设为“无”（“处理方式”保持 Auto 即可）。",
+			"在“快速设置”中把“背景”设为“保留背景”（“效果”保持“智能推荐”即可）。",
 		"guide.recipe4.input_alt": "配方 4 的生成图片（待替换的示例）",
 		"guide.recipe4.output_alt": "配方 4 的转换结果（待替换的示例）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
 			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。平涂的上色和粗轮廓线对转换特别有利。",
 		"guide.recipe5.settings":
-			"在“快速设置”中把“处理方式”设为“转换为像素画”，再按喜好调整“尺寸”和“减色模式”。",
+			"在“快速设置”中把“效果”设为“保留细节的像素画”，再按喜好调整“像素细节”和“色彩”。",
 		"guide.recipe5.input_alt": "配方 5 的生成图片（待替换的示例）",
 		"guide.recipe5.output_alt": "配方 5 的转换结果（待替换的示例）",
 		"guide.troubleshooting.heading": "效果不理想时",
@@ -1595,19 +1597,20 @@ const resources = {
 		"guide.recipe1.goal":
 			"The basic form of a transparent asset. The themes are how to choose the background color (a warm-colored character against a magenta background) and leaving margin so the subject is never cropped.",
 		"guide.recipe1.settings":
-			"Leave Preset on “Auto” (the background is made transparent automatically).",
+			"Leave Preset on “Best Match” (the background is made transparent automatically).",
 		"guide.recipe1.input_alt":
 			"Generated image for recipe 1: a knight sprite with a sword and shield on a magenta background",
 		"guide.recipe1.output_alt":
 			"Converted result for recipe 1: the knight sprite with a transparent background",
 		"guide.recipe1.caption_input":
 			"Generated image (2048×2048 px, shown scaled down)",
-		"guide.recipe1.caption_output": "Converted result (Auto, 60×85 px output)",
+		"guide.recipe1.caption_output":
+			"Converted result (Best Match, 60×85 px output)",
 		"guide.recipe2.heading": "Recipe 2: Item icon",
 		"guide.recipe2.goal":
 			"A single object for UI use, and a worked example of the complementary-color rule: a green background for a red subject. The outline is not requested at generation time; it comes from the preset instead.",
 		"guide.recipe2.settings":
-			"Choose the “Transparent Icon” preset (it already includes the outline). The outline color defaults to white, so it is almost invisible over a light background, as in the example below. You can change it under Outline → Color.",
+			"Choose the “Outlined Transparent Icon” preset (it already includes the outline). The outline color defaults to white, so it is almost invisible over a light background, as in the example below. You can change it under Outline → Color.",
 		"guide.recipe2.input_alt":
 			"Generated image for recipe 2: a red potion bottle on a bright green background",
 		"guide.recipe2.output_alt":
@@ -1615,22 +1618,21 @@ const resources = {
 		"guide.recipe2.caption_input":
 			"Generated image (2752×1536 px, shown scaled down)",
 		"guide.recipe2.caption_output":
-			"Converted result (Transparent Icon, 18×25 px output)",
+			"Converted result (Outlined Transparent Icon, 18×25 px output)",
 		"guide.recipe3.heading": "Recipe 3: Retro handheld look (Game Boy palette)",
 		"guide.recipe3.goal":
 			"Push the image toward a few tones from the generation stage, then finish it with palette conversion and dithering.",
 		"guide.recipe3.settings":
-			"In Quick Settings, set Reduction Mode to “Game Boy (Original)” and adjust Dithering.",
+			"In Quick Settings, set Colors to “Game Boy (Original)” and adjust Gradient Texture.",
 		"guide.recipe3.input_alt":
 			"Generated image for recipe 3 (placeholder sample)",
 		"guide.recipe3.output_alt":
 			"Converted result for recipe 3 (placeholder sample)",
-		"guide.recipe4.heading":
-			"Recipe 4: Full illustration (keep the background)",
+		"guide.recipe4.heading": "Recipe 4: Scenery for a background",
 		"guide.recipe4.goal":
-			"A case without transparency that uses only grid detection and color reduction. The key is asking for a uniform pixel size across the whole picture.",
+			"A case without transparency. A landscape with no characters or props is turned into pixel art you can use as a background as it is. The key is asking for few elements and large pixels.",
 		"guide.recipe4.settings":
-			"In Quick Settings, set Background Transparency to “None” (Processing can stay on Auto).",
+			"In Quick Settings, set Background to “Keep background” (Finish can stay on “Best Match”).",
 		"guide.recipe4.input_alt":
 			"Generated image for recipe 4 (placeholder sample)",
 		"guide.recipe4.output_alt":
@@ -1640,7 +1642,7 @@ const resources = {
 		"guide.recipe5.goal":
 			"Even with models or styles that cannot generate pixel art directly, an ordinary illustration can be converted into pixel art. Flat coloring and thick outlines survive the conversion well.",
 		"guide.recipe5.settings":
-			"In Quick Settings, set Processing to “Convert to Pixel Art”, then tune Size and Reduction Mode to taste.",
+			"In Quick Settings, set Finish to “Detailed Pixel Art”, then tune Pixel Detail and Colors to taste.",
 		"guide.recipe5.input_alt":
 			"Generated image for recipe 5 (placeholder sample)",
 		"guide.recipe5.output_alt":
