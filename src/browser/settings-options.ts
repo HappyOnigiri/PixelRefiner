@@ -1,7 +1,8 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
-import { clampInt, PROCESS_RANGES } from "../shared/config";
+import { clampInt, PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
 import type { DitherMode, OutlineStyle } from "../shared/types";
+import { isConvertDetailLevel } from "./advanced-processing-controls";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import {
@@ -43,8 +44,15 @@ export const createAdvancedProcessOptions = (
 		els.advancedConvertHeightInput,
 		PROCESS_RANGES.convertPixelsH,
 	);
-	const useConvertPixels =
+	const convertSizeMode = els.advancedConvertSizeModeSelect.value;
+	const hasBothConvertDimensions =
 		convertPixelsW !== undefined && convertPixelsH !== undefined;
+	const useConvertWidth =
+		(convertSizeMode === "custom-width" && convertPixelsW !== undefined) ||
+		(convertSizeMode === "custom-both" && hasBothConvertDimensions);
+	const useConvertHeight =
+		(convertSizeMode === "custom-height" && convertPixelsH !== undefined) ||
+		(convertSizeMode === "custom-both" && hasBothConvertDimensions);
 	type GridDetectionMode = "auto" | "hint" | "force" | "off";
 	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
 	const method = els.bgExtractionMethod
@@ -60,8 +68,11 @@ export const createAdvancedProcessOptions = (
 		debug: BROWSER_RUNTIME_CONFIG.debug,
 		processingMode: els.advancedProcessingModeSelect
 			.value as ProcessOptions["processingMode"],
-		convertPixelsW: useConvertPixels ? convertPixelsW : undefined,
-		convertPixelsH: useConvertPixels ? convertPixelsH : undefined,
+		detailLevel: isConvertDetailLevel(convertSizeMode)
+			? convertSizeMode
+			: PROCESS_DEFAULTS.detailLevel,
+		convertPixelsW: useConvertWidth ? convertPixelsW : undefined,
+		convertPixelsH: useConvertHeight ? convertPixelsH : undefined,
 		detectionQuantStep: clampInt(
 			Number(els.quantStepInput.value),
 			PROCESS_RANGES.detectionQuantStep,

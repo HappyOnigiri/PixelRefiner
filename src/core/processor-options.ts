@@ -30,9 +30,9 @@ export type ProcessOptions = DetectOptions & {
 	processingMode?: ProcessingMode;
 	/** Convert 経路で採用する論理解像度。 */
 	detailLevel?: DetailLevel;
-	/** Convert 経路で使う明示的な出力幅。detailLevel より優先する。 */
+	/** Convert 経路で使う明示的な出力幅。片軸だけなら比率から高さを補完する。 */
 	convertPixelsW?: number;
-	/** Convert 経路で使う明示的な出力高さ。detailLevel より優先する。 */
+	/** Convert 経路で使う明示的な出力高さ。片軸だけなら比率から幅を補完する。 */
 	convertPixelsH?: number;
 	/** グリッド候補の各信号を個別に有効／無効にする。 */
 	gridSignals?: Partial<GridSignalOptions>;

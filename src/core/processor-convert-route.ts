@@ -1,3 +1,4 @@
+import { clampInt, PROCESS_RANGES } from "../shared/config";
 import type {
 	ConvertCandidate,
 	DetailLevel,
@@ -82,6 +83,29 @@ const candidateReports = (
 		};
 	});
 
+/** Convert の片軸指定は、実際にリサンプリングする領域の縦横比で補完する。 */
+const explicitConvertCandidate = (
+	image: RawImage,
+	detailLevel: DetailLevel,
+	width: number | undefined,
+	height: number | undefined,
+): ConvertCandidate | undefined => {
+	if (width === undefined && height === undefined) return undefined;
+	const outW =
+		width ??
+		clampInt(
+			Math.round(((height as number) * image.width) / image.height),
+			PROCESS_RANGES.convertPixelsW,
+		);
+	const outH =
+		height ??
+		clampInt(
+			Math.round((outW * image.height) / image.width),
+			PROCESS_RANGES.convertPixelsH,
+		);
+	return { label: detailLevel, outW, outH };
+};
+
 export const processConvertRoute = (
 	context: SimpleRouteContext,
 ): ProcessResult => {
@@ -145,14 +169,15 @@ export const processConvertRoute = (
 	}
 
 	const candidates = createConvertCandidates(source);
-	const hasExplicitSize =
-		o.convertPixelsW !== undefined && o.convertPixelsH !== undefined;
-	const selected = hasExplicitSize
-		? {
-				label: o.detailLevel,
-				outW: o.convertPixelsW as number,
-				outH: o.convertPixelsH as number,
-			}
+	const explicitCandidate = explicitConvertCandidate(
+		source,
+		o.detailLevel,
+		o.convertPixelsW,
+		o.convertPixelsH,
+	);
+	const hasExplicitSize = explicitCandidate !== undefined;
+	const selected = explicitCandidate
+		? explicitCandidate
 		: selectConvertCandidate(candidates, o.detailLevel);
 	let selectedCandidateIndex = candidates.indexOf(selected);
 	let reports = candidateReports(

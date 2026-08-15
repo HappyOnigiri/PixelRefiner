@@ -881,6 +881,70 @@
                         Pixel Only takes priority, so Processing is not used.
                       </p>
                       <label
+                        id="advanced-convert-size-mode-setting"
+                        class="setting-item"
+                        hidden
+                      >
+                        <span class="label-text">
+                          <span data-i18n="setting.convert_output_size"
+                            >Output Size</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_size"
+                            data-tooltip="Choose one of five detail levels, or specify the Convert resampling width, height, or both. When only one dimension is specified, the other follows the image aspect ratio."
+                            >?</span
+                          >
+                        </span>
+                        <select id="advanced-convert-size-mode">
+                          <option
+                            value="smallest"
+                            data-i18n="option.size_very_small"
+                          >
+                            Very coarse
+                          </option>
+                          <option value="small" data-i18n="option.size_small">
+                            Coarse
+                          </option>
+                          <option
+                            value="coarse"
+                            data-i18n="option.size_slightly_small"
+                          >
+                            Slightly coarse
+                          </option>
+                          <option
+                            value="balanced"
+                            data-i18n="option.size_standard"
+                          >
+                            Balanced
+                          </option>
+                          <option
+                            value="detailed"
+                            data-i18n="option.size_large"
+                          >
+                            Fine
+                          </option>
+                          <option
+                            value="custom-width"
+                            data-i18n="option.size_custom_width"
+                          >
+                            Specify width
+                          </option>
+                          <option
+                            value="custom-height"
+                            data-i18n="option.size_custom_height"
+                          >
+                            Specify height
+                          </option>
+                          <option
+                            value="custom-both"
+                            data-i18n="option.size_custom_both"
+                          >
+                            Specify width and height
+                          </option>
+                        </select>
+                      </label>
+                      <label
                         id="advanced-convert-width-setting"
                         class="setting-item"
                         hidden
@@ -891,7 +955,7 @@
                           >
                           <span
                             class="help"
-                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_size"
+                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_dimension"
                             data-tooltip="Sets the resampling width used by Convert. Trimming, outlines, and padding can change the final canvas size."
                             >?</span
                           >
@@ -916,7 +980,7 @@
                           >
                           <span
                             class="help"
-                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_size"
+                            data-i18n-attr="data-tooltip:tooltip.help.convert_output_dimension"
                             data-tooltip="Sets the resampling height used by Convert. Trimming, outlines, and padding can change the final canvas size."
                             >?</span
                           >

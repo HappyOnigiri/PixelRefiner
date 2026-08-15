@@ -31,6 +31,7 @@ const advancedElements = (
 		preRemoveCheck: input("", preRemove),
 		postRemoveCheck: input("", postRemove),
 		advancedProcessingModeSelect: select("auto"),
+		advancedConvertSizeModeSelect: select("custom-both"),
 		advancedConvertWidthInput: input("24"),
 		advancedConvertHeightInput: input("18"),
 		advancedBgRemovalScopeSelect: select("auto"),
@@ -120,5 +121,39 @@ describe("settings mode options", () => {
 		});
 		expect(options.forcePixelsW).toBeUndefined();
 		expect(options.forcePixelsH).toBeUndefined();
+	});
+
+	it("passes only the selected Convert dimension", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedConvertSizeModeSelect.value = "custom-width";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options.convertPixelsW).toBe(24);
+		expect(options.convertPixelsH).toBeUndefined();
+	});
+
+	it("uses a five-level Convert size without explicit dimensions", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedConvertSizeModeSelect.value = "small";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options.detailLevel).toBe("small");
+		expect(options.convertPixelsW).toBeUndefined();
+		expect(options.convertPixelsH).toBeUndefined();
+	});
+
+	it("does not apply a partially entered two-dimension size", () => {
+		const state = createProcessingState();
+		const els = advancedElements("auto", true, true);
+		els.advancedConvertHeightInput.value = "";
+
+		const options = createAdvancedProcessOptions(els, state);
+
+		expect(options.convertPixelsW).toBeUndefined();
+		expect(options.convertPixelsH).toBeUndefined();
 	});
 });

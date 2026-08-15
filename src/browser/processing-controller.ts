@@ -162,14 +162,24 @@ export const createRunProcessing = ({
 				els,
 				processingState.settingsMode === "quick" ? analysis.route : undefined,
 			);
-			// [Intended] Convert 候補を選んだ場合は、画像単位の上書きを非表示にせず
-			// 詳細設定の具体的な出力寸法として表示する。
+			// [Intended] Convert 候補の選択を、詳細設定でも同じサイズ指定として表示する。
 			if (
 				processingState.settingsMode === "advanced" &&
 				effectiveSelection?.processingMode === "convert"
 			) {
-				els.advancedConvertWidthInput.value = String(effectiveSelection.outW);
-				els.advancedConvertHeightInput.value = String(effectiveSelection.outH);
+				if (effectiveSelection.detailLevel) {
+					els.advancedConvertSizeModeSelect.value =
+						effectiveSelection.detailLevel;
+				} else if (
+					effectiveSelection.outW !== undefined &&
+					effectiveSelection.outH !== undefined
+				) {
+					els.advancedConvertSizeModeSelect.value = "custom-both";
+					els.advancedConvertWidthInput.value = String(effectiveSelection.outW);
+					els.advancedConvertHeightInput.value = String(
+						effectiveSelection.outH,
+					);
+				}
 			}
 			updateAdvancedProcessingControls(
 				processingState.settingsMode === "advanced"

@@ -295,6 +295,7 @@ export const setupSettingsControls = ({
 
 		els.bgExtractionMethod.value = defaults.bgExtractionMethod;
 		els.advancedProcessingModeSelect.value = defaults.processingMode;
+		els.advancedConvertSizeModeSelect.value = defaults.detailLevel;
 		els.advancedConvertWidthInput.value = "";
 		els.advancedConvertHeightInput.value = "";
 		els.quickProcessingModeSelect.value =
@@ -358,6 +359,7 @@ export const setupSettingsControls = ({
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
 		els.advancedProcessingModeSelect,
+		els.advancedConvertSizeModeSelect,
 		els.advancedConvertWidthInput,
 		els.advancedConvertHeightInput,
 		...gridDetectionAdvancedControls(els),
@@ -420,32 +422,48 @@ export const setupSettingsControls = ({
 			setDisabledClass(el, !isAutoOrHint);
 		});
 	};
-	const updateAdvancedProcessingDisabledStates = (
-		activeRoute?: ProcessingRoute,
-	) => {
+	let activeAdvancedRoute: ProcessingRoute | undefined;
+	const refreshAdvancedProcessingControls = () => {
 		const mode = els.advancedProcessingModeSelect.value;
-		if (mode === "convert" || (mode === "auto" && activeRoute === "convert")) {
+		if (
+			mode === "convert" ||
+			(mode === "auto" && activeAdvancedRoute === "convert")
+		) {
 			populateAdvancedConvertOutputSize(
 				els,
 				imageSession.getActiveImage()?.original,
 			);
 		}
-		updateAdvancedProcessingControls(els, activeRoute);
+		updateAdvancedProcessingControls(els, activeAdvancedRoute);
+	};
+	const updateAdvancedProcessingDisabledStates = (
+		activeRoute?: ProcessingRoute,
+	) => {
+		activeAdvancedRoute = activeRoute;
+		refreshAdvancedProcessingControls();
 	};
 
 	els.gridDetectionModeSelect.addEventListener("change", () => {
 		updateDisabledStates();
-		updateAdvancedProcessingDisabledStates();
+		refreshAdvancedProcessingControls();
 	});
 	els.advancedProcessingModeSelect.addEventListener("change", () => {
-		updateAdvancedProcessingDisabledStates();
+		refreshAdvancedProcessingControls();
+	});
+	els.advancedConvertSizeModeSelect.addEventListener("change", () => {
+		populateAdvancedConvertOutputSize(
+			els,
+			imageSession.getActiveImage()?.original,
+		);
+		refreshAdvancedProcessingControls();
+		if (hasCompleteConvertOutputSize(els)) triggerAutoProcess();
 	});
 	[els.forcePixelsWInput, els.forcePixelsHInput].forEach((input) => {
 		input.addEventListener("input", () => {
-			updateAdvancedProcessingDisabledStates();
+			refreshAdvancedProcessingControls();
 		});
 		input.addEventListener("change", () => {
-			updateAdvancedProcessingDisabledStates();
+			refreshAdvancedProcessingControls();
 		});
 	});
 	[els.advancedConvertWidthInput, els.advancedConvertHeightInput].forEach(

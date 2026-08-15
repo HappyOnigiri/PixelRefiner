@@ -85,6 +85,7 @@ const resources = {
 		"setting.processing_mode": "処理方法",
 		"setting.size": "サイズ",
 		"setting.detail": "細かさ",
+		"setting.convert_output_size": "出力サイズ",
 		"setting.convert_output_width": "出力幅",
 		"setting.convert_output_height": "出力高さ",
 		"setting.background": "背景透過",
@@ -110,6 +111,9 @@ const resources = {
 		"option.size_slightly_small": "やや粗い",
 		"option.size_standard": "標準",
 		"option.size_large": "細かい",
+		"option.size_custom_width": "幅を指定",
+		"option.size_custom_height": "高さを指定",
+		"option.size_custom_both": "幅と高さを指定",
 		"option.detail_coarse": "粗め",
 		"option.detail_balanced": "バランス",
 		"option.detail_detailed": "細かめ",
@@ -215,7 +219,9 @@ const resources = {
 		"tooltip.help.quick_processing_mode":
 			"目指す仕上がりを選びます。\n\nおまかせ: 画像に合う仕上がりを自動で選びます。\n輪郭をくっきり: ぼかしを除き、色と透明度をドット単位で揃えます。\n細部を残してドット化: 階調や細い線を残しながら低解像度化します。\nサイズを変えず補正: 縮小せず、背景や色だけを補正します。",
 		"tooltip.help.convert_output_size":
-			"Convertでリサンプリングする幅または高さを指定します。背景トリム、アウトライン、余白追加によって最終キャンバスの寸法は変わる場合があります。",
+			"5段階の細かさから選ぶか、Convertでリサンプリングする幅、高さ、または両方を指定します。片方だけ指定した場合、もう片方は画像の縦横比に合わせます。",
+		"tooltip.help.convert_output_dimension":
+			"Convertでリサンプリングする寸法を指定します。背景トリム、アウトライン、余白追加によって最終キャンバスの寸法は変わる場合があります。",
 		"tooltip.help.quick_detail":
 			"「細部を残してドット化」で使うドットの細かさを5段階から選びます。粗くするほど出力が小さくなり、1ドットが大きく見えます。「細かい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\n「おまかせ」では、細部を残す仕上がりが自動で選ばれた画像にだけ適用されます。",
 		"tooltip.help.quick_reduction_mode":
@@ -489,6 +495,7 @@ const resources = {
 		"setting.processing_mode": "处理方式",
 		"setting.size": "尺寸",
 		"setting.detail": "细节",
+		"setting.convert_output_size": "输出尺寸",
 		"setting.convert_output_width": "输出宽度",
 		"setting.convert_output_height": "输出高度",
 		"setting.background": "背景透明",
@@ -514,6 +521,9 @@ const resources = {
 		"option.size_slightly_small": "稍粗",
 		"option.size_standard": "标准",
 		"option.size_large": "精细",
+		"option.size_custom_width": "指定宽度",
+		"option.size_custom_height": "指定高度",
+		"option.size_custom_both": "指定宽度和高度",
 		"option.detail_coarse": "粗略",
 		"option.detail_balanced": "平衡",
 		"option.detail_detailed": "精细",
@@ -618,7 +628,9 @@ const resources = {
 		"tooltip.help.quick_processing_mode":
 			"选择目标效果。\n\n智能推荐：自动选择适合图像的效果。\n清晰轮廓：去除模糊，并按像素统一颜色和透明度。\n保留细节的像素画：在保留明暗层次和细线的同时降低分辨率。\n原尺寸优化：不缩小图像，只调整背景和色彩。",
 		"tooltip.help.convert_output_size":
-			"指定 Convert 重采样使用的宽度或高度。背景裁剪、描边和留白可能会改变最终画布尺寸。",
+			"选择五档细节级别，或指定 Convert 重采样使用的宽度、高度或两者。仅指定一个尺寸时，另一个尺寸将按图像纵横比计算。",
+		"tooltip.help.convert_output_dimension":
+			"指定 Convert 重采样使用的尺寸。背景裁剪、描边和留白可能会改变最终画布尺寸。",
 		"tooltip.help.quick_detail":
 			"为“保留细节的像素画”选择五档像素细节。设置越粗，输出尺寸越小，单个像素看起来越大。“精细”也不会放大到超过原图尺寸，不影响颜色数量等其他设置。\n\n在“智能推荐”中，仅当系统自动选择保留细节的效果时生效。",
 		"tooltip.help.quick_reduction_mode":
@@ -892,6 +904,7 @@ const resources = {
 		"setting.processing_mode": "Processing",
 		"setting.size": "Size",
 		"setting.detail": "Detail",
+		"setting.convert_output_size": "Output Size",
 		"setting.convert_output_width": "Output Width",
 		"setting.convert_output_height": "Output Height",
 		"setting.background": "Background Transparency",
@@ -917,6 +930,9 @@ const resources = {
 		"option.size_slightly_small": "Slightly coarse",
 		"option.size_standard": "Balanced",
 		"option.size_large": "Fine",
+		"option.size_custom_width": "Specify width",
+		"option.size_custom_height": "Specify height",
+		"option.size_custom_both": "Specify width and height",
 		"option.detail_coarse": "Coarse",
 		"option.detail_balanced": "Balanced",
 		"option.detail_detailed": "Detailed",
@@ -1022,7 +1038,9 @@ const resources = {
 		"tooltip.help.quick_processing_mode":
 			"Chooses the intended finish.\n\nBest Match: Selects a suitable finish for the image.\nCrisp Edges: Removes blur and aligns color and transparency to the pixel grid.\nDetailed Pixel Art: Reduces resolution while keeping gradients and thin lines.\nOriginal Size Cleanup: Adjusts the background and colors without downscaling.",
 		"tooltip.help.convert_output_size":
-			"Sets the width or height used for Convert resampling. Background trimming, outlines, and padding can change the final canvas dimensions.",
+			"Choose one of five detail levels, or specify the Convert resampling width, height, or both. When only one dimension is specified, the other follows the image aspect ratio.",
+		"tooltip.help.convert_output_dimension":
+			"Sets the resampling dimension used by Convert. Background trimming, outlines, and padding can change the final canvas size.",
 		"tooltip.help.quick_detail":
 			"Chooses from five pixel-detail levels for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image and does not change the color count or other settings.\n\nIn Best Match, this applies only when a detailed finish is selected automatically.",
 		"tooltip.help.quick_reduction_mode":

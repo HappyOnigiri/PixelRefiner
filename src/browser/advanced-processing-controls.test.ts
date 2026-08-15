@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
 import {
+	hasCompleteConvertOutputSize,
 	hasCompleteForcedSize,
 	populateAdvancedConvertOutputSize,
 	updateAdvancedProcessingControls,
@@ -32,11 +33,13 @@ class MockControl extends MockElement {
 	disabled = false;
 }
 
-const createElements = (): Elements =>
-	({
+const createElements = (): Elements => {
+	const els = {
 		advancedProcessingModeSelect: new MockControl(),
 		advancedProcessingModeSetting: new MockElement(),
 		advancedProcessingModeNotice: new MockElement(),
+		advancedConvertSizeModeSetting: new MockElement(),
+		advancedConvertSizeModeSelect: new MockControl(),
 		advancedConvertWidthSetting: new MockElement(),
 		advancedConvertHeightSetting: new MockElement(),
 		advancedConvertWidthInput: new MockControl(),
@@ -44,7 +47,10 @@ const createElements = (): Elements =>
 		gridDetectionModeSelect: new MockControl(),
 		forcePixelsWInput: new MockControl(),
 		forcePixelsHInput: new MockControl(),
-	}) as unknown as Elements;
+	} as unknown as Elements;
+	els.advancedConvertSizeModeSelect.value = "balanced";
+	return els;
+};
 
 const image = (): RawImage => ({
 	width: 64,
@@ -58,20 +64,26 @@ describe("advanced processing controls", () => {
 		els.advancedProcessingModeSelect.value = "auto";
 
 		updateAdvancedProcessingControls(els, "refine");
+		expect(els.advancedConvertSizeModeSetting.hidden).toBe(true);
 		expect(els.advancedConvertWidthSetting.hidden).toBe(true);
 		expect(els.advancedConvertHeightSetting.hidden).toBe(true);
 
 		updateAdvancedProcessingControls(els, "convert");
-		expect(els.advancedConvertWidthSetting.hidden).toBe(false);
-		expect(els.advancedConvertHeightSetting.hidden).toBe(false);
+		expect(els.advancedConvertSizeModeSetting.hidden).toBe(false);
+		expect(els.advancedConvertWidthSetting.hidden).toBe(true);
+		expect(els.advancedConvertHeightSetting.hidden).toBe(true);
 
 		els.advancedProcessingModeSelect.value = "convert";
+		els.advancedConvertSizeModeSelect.value = "custom-width";
 		updateAdvancedProcessingControls(els);
+		expect(els.advancedConvertSizeModeSetting.hidden).toBe(false);
 		expect(els.advancedConvertWidthSetting.hidden).toBe(false);
+		expect(els.advancedConvertHeightSetting.hidden).toBe(true);
 	});
 
-	it("expands the balanced Convert candidate into concrete dimensions", () => {
+	it("fills both custom dimensions from the balanced Convert candidate", () => {
 		const els = createElements();
+		els.advancedConvertSizeModeSelect.value = "custom-both";
 
 		populateAdvancedConvertOutputSize(els, image());
 
@@ -79,14 +91,29 @@ describe("advanced processing controls", () => {
 		expect(Number(els.advancedConvertHeightInput.value)).toBeGreaterThan(0);
 	});
 
-	it("preserves one entered dimension and derives the other from the image ratio", () => {
+	it("fills only the dimension selected by the user", () => {
 		const els = createElements();
-		els.advancedConvertWidthInput.value = "20";
+		els.advancedConvertSizeModeSelect.value = "custom-width";
 
 		populateAdvancedConvertOutputSize(els, image());
 
-		expect(els.advancedConvertWidthInput.value).toBe("20");
-		expect(els.advancedConvertHeightInput.value).toBe("10");
+		expect(Number(els.advancedConvertWidthInput.value)).toBeGreaterThan(0);
+		expect(els.advancedConvertHeightInput.value).toBe("");
+	});
+
+	it("requires only the inputs selected by the output-size mode", () => {
+		const els = createElements();
+		expect(hasCompleteConvertOutputSize(els)).toBe(true);
+
+		els.advancedConvertSizeModeSelect.value = "custom-height";
+		expect(hasCompleteConvertOutputSize(els)).toBe(false);
+		els.advancedConvertHeightInput.value = "12";
+		expect(hasCompleteConvertOutputSize(els)).toBe(true);
+
+		els.advancedConvertSizeModeSelect.value = "custom-both";
+		expect(hasCompleteConvertOutputSize(els)).toBe(false);
+		els.advancedConvertWidthInput.value = "20";
+		expect(hasCompleteConvertOutputSize(els)).toBe(true);
 	});
 
 	it("disables Processing and explains why when a complete forced size wins", () => {
@@ -101,6 +128,7 @@ describe("advanced processing controls", () => {
 
 		expect(els.advancedProcessingModeSelect.disabled).toBe(true);
 		expect(els.advancedProcessingModeNotice.hidden).toBe(false);
+		expect(els.advancedConvertSizeModeSetting.hidden).toBe(true);
 		expect(els.advancedConvertWidthSetting.hidden).toBe(true);
 		expect(
 			els.advancedProcessingModeSetting.classList.contains(

@@ -95,6 +95,8 @@ export type Elements = {
 	advancedProcessingModeSelect: HTMLSelectElement;
 	advancedProcessingModeSetting: HTMLElement;
 	advancedProcessingModeNotice: HTMLElement;
+	advancedConvertSizeModeSetting: HTMLElement;
+	advancedConvertSizeModeSelect: HTMLSelectElement;
 	advancedConvertWidthSetting: HTMLElement;
 	advancedConvertHeightSetting: HTMLElement;
 	advancedConvertWidthInput: HTMLInputElement;
@@ -294,6 +296,12 @@ export const getElements = (): Elements => {
 		),
 		advancedProcessingModeNotice: get<HTMLElement>(
 			"advanced-processing-mode-notice",
+		),
+		advancedConvertSizeModeSetting: get<HTMLElement>(
+			"advanced-convert-size-mode-setting",
+		),
+		advancedConvertSizeModeSelect: get<HTMLSelectElement>(
+			"advanced-convert-size-mode",
 		),
 		advancedConvertWidthSetting: get<HTMLElement>(
 			"advanced-convert-width-setting",
