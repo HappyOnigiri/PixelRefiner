@@ -490,7 +490,7 @@ const resources = {
 			"アンチエイリアスを完全に消すことや、正確に 32×32 ピクセルで生成することは、生成側で頑張る必要はありません。<code>32x32 pixel art</code> のような指定はそのまま守られなくても、ドットを大きく均一にする方向に働くので有効です。",
 		"guide.recipes.heading": "レシピ集",
 		"guide.recipes.intro":
-			"各レシピは「ねらい → プロンプト → 生成画像 → Pixel Refiner の設定 → 変換結果」のセットです。作例のプロンプトと画像はサンプルです（実物に差し替え予定）。",
+			"各レシピでは、プロンプト、生成画像、Pixel Refiner の設定、変換結果を順に紹介します。作例は、掲載したプロンプトで生成し、掲載した設定で変換したものです。",
 		"guide.recipes.goal_label": "ねらい",
 		"guide.recipes.settings_label": "Pixel Refiner の設定",
 		"guide.recipes.caption_input": "生成画像（サンプル）",
@@ -511,9 +511,9 @@ const resources = {
 			"変換結果（おまかせ仕上げ・60×85px の等倍出力）",
 		"guide.recipe2.heading": "レシピ2: アイテムアイコン",
 		"guide.recipe2.goal":
-			"UI 用の単一オブジェクト。赤い被写体には緑背景、という補色ルールの実例です。プリセットは装飾的なアウトラインを追加せずに背景を透過するので、被写体自身のドットの輪郭がそのまま残ります。",
+			"UI 用の単一オブジェクト。赤い被写体に緑の背景を組み合わせると、背景と被写体を区別しやすく、きれいに透過できます。",
 		"guide.recipe2.settings":
-			"「プリセット」で「透過アイコン」を選びます。アウトラインは追加せず、背景を透過して32色へ減色します。アウトラインが必要な場合は「アウトライン」で別途設定します。",
+			"「プリセット」で「透過アイコン」を選びます。背景を透過し、32色に減色します。",
 		"guide.recipe2.input_alt":
 			"レシピ2の生成画像。緑背景に、赤いポーション瓶のドット絵",
 		"guide.recipe2.output_alt":
@@ -1050,7 +1050,7 @@ const resources = {
 			"在生成阶段不必完全消除抗锯齿，也不必精确输出 32×32 像素。<code>32x32 pixel art</code> 这类指定即使没有被严格遵守，也会促使模型输出更大、更均匀的像素，因此仍然值得写上。",
 		"guide.recipes.heading": "配方集",
 		"guide.recipes.intro":
-			"每个配方都是一组“目标 → 提示词 → 生成图片 → Pixel Refiner 设置 → 转换结果”。此处的提示词与图片为示例，之后会替换为实际内容。",
+			"每个配方会依次介绍提示词、生成图片、Pixel Refiner 设置和转换结果。每个示例都使用页面所示的提示词生成，并按页面所示的设置转换。",
 		"guide.recipes.goal_label": "目标",
 		"guide.recipes.settings_label": "Pixel Refiner 设置",
 		"guide.recipes.caption_input": "生成图片（示例）",
@@ -1069,9 +1069,9 @@ const resources = {
 			"转换结果（智能推荐，60×85px 的原尺寸输出）",
 		"guide.recipe2.heading": "配方 2：道具图标",
 		"guide.recipe2.goal":
-			"用于 UI 的单一物件，是互补色规则的实例：红色主体配绿色背景。预设会去除背景而不添加装饰性描边，因此会原样保留主体本身的像素轮廓。",
+			"用于 UI 的单一物件。红色主体搭配绿色背景后，背景与主体更容易区分，透明化效果也会更干净。",
 		"guide.recipe2.settings":
-			"在“预设”中选择“透明图标”。它不会添加描边，而是去除背景并减至 32 色。需要描边时，请另外在“描边”中设置。",
+			"在“预设”中选择“透明图标”。背景会被透明化，颜色会减至 32 色。",
 		"guide.recipe2.input_alt":
 			"配方 2 的生成图片：绿色背景上的红色药水瓶像素画",
 		"guide.recipe2.output_alt": "配方 2 的转换结果：背景已透明的药水瓶像素画",
@@ -1629,7 +1629,7 @@ const resources = {
 			"You do not need to remove anti-aliasing completely, or to land on exactly 32×32 pixels, at the generation stage. Even when an instruction such as <code>32x32 pixel art</code> is not followed literally, it still pushes the model toward larger, more uniform pixels, so it is worth including.",
 		"guide.recipes.heading": "Recipes",
 		"guide.recipes.intro":
-			"Each recipe is one set: goal, prompt, generated image, Pixel Refiner settings, and converted result. The prompts and images shown here are samples and will be replaced with real ones.",
+			"Each recipe shows a prompt, the image it generated, the Pixel Refiner settings, and the converted result. Each example was generated with the shown prompt and converted with the shown settings.",
 		"guide.recipes.goal_label": "Goal",
 		"guide.recipes.settings_label": "Pixel Refiner settings",
 		"guide.recipes.caption_input": "Generated image (sample)",
@@ -1651,9 +1651,9 @@ const resources = {
 			"Converted result (Best Match, 60×85 px output)",
 		"guide.recipe2.heading": "Recipe 2: Item icon",
 		"guide.recipe2.goal":
-			"A single object for UI use, and a worked example of the complementary-color rule: a green background for a red subject. The preset removes the background without adding a decorative outline, so the subject's own pixel outline remains as-is.",
+			"A single object for UI use. Pairing a red subject with a green background makes the two easy to separate for clean background removal.",
 		"guide.recipe2.settings":
-			"Choose the “Transparent Icon” preset. It removes the background and reduces the image to 32 colors without adding an outline. If you need one, configure it separately under Outline.",
+			"Choose the “Transparent Icon” preset. It removes the background and reduces the image to 32 colors.",
 		"guide.recipe2.input_alt":
 			"Generated image for recipe 2: a red potion bottle on a bright green background",
 		"guide.recipe2.output_alt":
