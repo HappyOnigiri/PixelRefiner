@@ -14,6 +14,7 @@ const quickElements = (): Elements =>
 	({
 		quickProcessingModeSelect: select("convert"),
 		quickDetailLevelSelect: select("detailed"),
+		quickCellScaleSelect: select("same"),
 		quickReductionModeSelect: select("pico8"),
 		quickBackgroundSelect: select("keep"),
 		quickBackgroundColorInput: input("#abcdef"),
@@ -40,6 +41,7 @@ const advancedElements = (
 		smallAspectGridAlignmentSelect: select("on"),
 		watermarkSamplingCompatSelect: select("on"),
 		gridDetectionModeSelect: select("auto"),
+		advancedCellScaleSelect: select("same"),
 		reduceColorModeSelect: select("none"),
 		ditherModeSelect: select("none"),
 		outlineStyleSelect: select("none"),

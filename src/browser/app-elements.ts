@@ -51,6 +51,7 @@ export type Elements = {
 	makeSquareCheck: HTMLInputElement;
 	keepAspectRatioCheck: HTMLInputElement;
 	gridDetectionModeSelect: HTMLSelectElement;
+	advancedCellScaleSelect: HTMLSelectElement;
 	reduceColorModeSelect: HTMLSelectElement;
 	ditherModeSelect: HTMLSelectElement;
 	colorCountInput: HTMLInputElement;
@@ -86,6 +87,7 @@ export type Elements = {
 	advancedSettingsPanel: HTMLElement;
 	quickProcessingModeSelect: HTMLSelectElement;
 	quickDetailLevelSelect: HTMLSelectElement;
+	quickCellScaleSelect: HTMLSelectElement;
 	quickReductionModeSelect: HTMLSelectElement;
 	quickBackgroundSelect: HTMLSelectElement;
 	quickBackgroundPicker: HTMLElement;
@@ -118,7 +120,9 @@ export type Elements = {
 	// 結果モーダル
 	resultModal: HTMLElement;
 	closeResultModal: HTMLButtonElement;
-	candidateModal: HTMLElement;
+
+	// 結果パネル内の候補リスト
+	candidateStrip: HTMLElement;
 
 	// 比較モーダル
 	compareModal: HTMLElement;
@@ -244,6 +248,7 @@ export const getElements = (): Elements => {
 		makeSquareCheck: get<HTMLInputElement>("make-square"),
 		keepAspectRatioCheck: get<HTMLInputElement>("keep-aspect-ratio"),
 		gridDetectionModeSelect: get<HTMLSelectElement>("grid-detection-mode"),
+		advancedCellScaleSelect: get<HTMLSelectElement>("advanced-cell-scale"),
 		reduceColorModeSelect: get<HTMLSelectElement>("reduce-color-mode"),
 		ditherModeSelect: get<HTMLSelectElement>("dither-mode"),
 		colorCountInput: get<HTMLInputElement>("color-count"),
@@ -282,6 +287,7 @@ export const getElements = (): Elements => {
 		advancedSettingsPanel: get<HTMLElement>("advanced-settings-panel"),
 		quickProcessingModeSelect: get<HTMLSelectElement>("quick-processing-mode"),
 		quickDetailLevelSelect: get<HTMLSelectElement>("quick-detail-level"),
+		quickCellScaleSelect: get<HTMLSelectElement>("quick-cell-scale"),
 		quickReductionModeSelect: get<HTMLSelectElement>("quick-reduction-mode"),
 		quickBackgroundSelect: get<HTMLSelectElement>("quick-background"),
 		quickBackgroundPicker: get<HTMLElement>("quick-background-picker"),
@@ -332,7 +338,7 @@ export const getElements = (): Elements => {
 		closeResultModal: get<HTMLElement>("result-modal").querySelector(
 			".js-close-result-modal",
 		) as HTMLButtonElement,
-		candidateModal: get<HTMLElement>("candidate-modal"),
+		candidateStrip: get<HTMLElement>("candidate-strip"),
 
 		compareModal: get<HTMLElement>("compare-modal"),
 		closeCompareModal: get<HTMLButtonElement>("close-compare-modal"),

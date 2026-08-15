@@ -1,53 +1,58 @@
-import { CANDIDATE_PREVIEW_LIMITS } from "../shared/config";
+import { CANDIDATE_PREVIEW_LIMITS, CELL_SCALE_FACTORS } from "../shared/config";
 import type {
 	CandidatePreview,
 	CandidateSelection,
+	CellScale,
 	GridCandidateReport,
 	InputClassification,
 	ProcessingAnalysis,
-	ProcessingMode,
 	RawImage,
 } from "../shared/types";
 import { resizeRawImageNearest } from "./image-operations";
-import type { ProcessOptions } from "./processor-options";
-
-const area = (candidate: GridCandidateReport): number =>
-	candidate.outW * candidate.outH;
+import type { DetectedGridHandoff, ProcessOptions } from "./processor-options";
 
 /**
- * 出力サイズとセルサイズがともに近い候補は、サムネイルでも見分けが付かず選択の助けにならない。
- * 判定式は削除されたサイズ候補メニューの近似判定を引き継いでいる。
+ * 候補として提示するセル倍率。細かい側から並べる。
+ * [Intended] 「検出したまま」(same) は Auto 結果そのものなので候補には含めない。
  */
-const isSimilar = (
-	left: GridCandidateReport,
-	right: GridCandidateReport,
-): boolean => {
-	const leftArea = area(left);
-	const rightArea = area(right);
-	const areaThreshold = Math.max(
-		CANDIDATE_PREVIEW_LIMITS.minSimilarAreaDiff,
-		Math.max(leftArea, rightArea) * CANDIDATE_PREVIEW_LIMITS.similarAreaRatio,
-	);
-	if (Math.abs(leftArea - rightArea) > areaThreshold) return false;
-	return (
-		Math.abs(left.grid.cellW - right.grid.cellW) <
-		CANDIDATE_PREVIEW_LIMITS.similarCellDelta
-	);
+const CANDIDATE_CELL_SCALES: readonly CellScale[] = [
+	"quarter",
+	"half",
+	"double",
+	"quadruple",
+];
+
+const area = (width: number, height: number): number => width * height;
+
+/**
+ * 原寸維持と見分けが付かないほど大きいか。
+ * [Intended] 原寸維持より大きくはならない（セルは 1px 未満へ縮めない）ので、
+ * 面積比が下限を超えたかどうかだけを見る。
+ */
+const isNearPreserve = (scaledArea: number, preserveArea: number): boolean =>
+	scaledArea >=
+	preserveArea * CANDIDATE_PREVIEW_LIMITS.preserveSimilarAreaRatio;
+
+/** 倍率を掛けたセルで、この画像から何ドット取れるかの見積もり。 */
+const scaledOutputSize = (
+	candidate: GridCandidateReport,
+	cellScale: CellScale,
+): { outW: number; outH: number } => {
+	const factor = CELL_SCALE_FACTORS[cellScale];
+	const cellW = Math.max(1, candidate.grid.cellW * factor);
+	const cellH = Math.max(1, candidate.grid.cellH * factor);
+	return {
+		outW: Math.max(1, Math.floor(candidate.cropW / cellW)),
+		outH: Math.max(1, Math.floor(candidate.cropH / cellH)),
+	};
 };
 
-const selectionForGrid = (
-	candidate: GridCandidateReport,
-	kind: CandidateSelection["kind"],
-	recommended = false,
-	processingMode: ProcessingMode = "refine",
-): CandidateSelection => ({
-	id: `${kind}:${candidate.outW}x${candidate.outH}`,
-	kind,
-	recommended,
-	processingMode,
-	outW: candidate.outW,
-	outH: candidate.outH,
-});
+/**
+ * 候補として意味のある出力の下限。
+ * [Policy] 1 ドットしか無い出力は絵として比べようがなく、粗い側の倍率がすべて
+ * 同じ 1x1 に潰れて並ぶ。見て選べない候補は最初から出さない。
+ */
+const MIN_CANDIDATE_OUTPUT_DIMENSION = 2;
 
 export const selectCandidatePlans = (
 	analysis: ProcessingAnalysis,
@@ -57,61 +62,73 @@ export const selectCandidatePlans = (
 		analysis.autoResultCandidateIndex !== undefined
 			? analysis.gridCandidates[analysis.autoResultCandidateIndex]
 			: undefined;
-	// [Intended] Auto が原寸維持を採用した場合、その実結果は原寸維持カードそのものである。
-	// 専用の Auto結果カードを別に立てると同じ画像が二重に並び、さらに面積が最大の原寸維持が
-	// 相対ラベルの基準になるため細かめが一度も選ばれなくなる。
+	// [Intended] Auto が原寸維持を採用した場合でも、格子検出そのものは行われている。
+	// セル倍率の基準にはその検出格子を使い、原寸維持カードは Auto 結果カードが兼ねる。
 	const autoResultIsPreserve = autoResultCandidate?.method === "preserve";
-	const gridAutoResult = autoResultIsPreserve ? undefined : autoResultCandidate;
 	const grids = analysis.gridCandidates.filter(
 		(candidate) => candidate.method !== "preserve",
 	);
+	const anchor = autoResultIsPreserve
+		? grids[0]
+		: (autoResultCandidate ?? grids[0]);
 	const plans: CandidateSelection[] = [];
-	// 細かめ・粗めの基準となる候補。Auto 実結果が検出候補ならそれ自身、原寸維持なら
-	// 検出上位の候補に据える（原寸維持を基準にすると面積が最大で細かめが選べない）。
-	const anchor = gridAutoResult ?? grids[0];
-	// [Intended] Auto 実結果が基準のときは面積もレポート値ではなく実出力から取る。
-	// レポート値は検出後のトリミングで実出力とずれることがあり、そのままだと
-	// 細かめ・粗めのラベルと実サイズの大小関係が逆転する。
-	const anchorArea =
-		gridAutoResult &&
-		analysis.autoResultOutW !== undefined &&
-		analysis.autoResultOutH !== undefined
-			? analysis.autoResultOutW * analysis.autoResultOutH
-			: anchor
-				? area(anchor)
-				: 0;
-	if (autoResultIsPreserve) {
+
+	if (autoResultCandidate) {
 		plans.push({
-			id: "auto-result:preserve",
+			id: autoResultIsPreserve
+				? "auto-result:preserve"
+				: `auto-result:${autoResultCandidate.outW}x${autoResultCandidate.outH}`,
 			kind: "auto-result",
 			recommended: true,
 			processingMode: "auto",
+			...(autoResultIsPreserve
+				? {}
+				: { outW: autoResultCandidate.outW, outH: autoResultCandidate.outH }),
 		});
-	} else if (gridAutoResult) {
-		plans.push(selectionForGrid(gridAutoResult, "auto-result", true, "auto"));
 	}
+
+	// 原寸維持の実出力は必ず入力サイズそのもの。細かい側の候補がこれに並ぶほど
+	// 大きくなった場合は、原寸維持を残して候補側を落とす。
+	const preserveCandidate = analysis.gridCandidates.find(
+		(candidate) => candidate.method === "preserve",
+	);
+	const preserveArea = preserveCandidate
+		? area(preserveCandidate.outW, preserveCandidate.outH)
+		: undefined;
+
 	if (anchor) {
-		// Auto 実結果が検出候補そのものの場合は、同じ候補を推奨カードとして重ねない。
-		if (!gridAutoResult) {
-			plans.push(
-				selectionForGrid(anchor, "recommended", !autoResultIsPreserve),
-			);
+		const takenSizes = new Set<string>();
+		for (const cellScale of CANDIDATE_CELL_SCALES) {
+			const factor = CELL_SCALE_FACTORS[cellScale];
+			// [Intended] Auto が原寸維持を採用した画像はセルが 1px 相当まで細かい。
+			// そこからさらに細かくしても原寸維持と同じ絵にしかならないので出さない。
+			if (autoResultIsPreserve && factor < 1) continue;
+			// セル寸法が 1px を下回る倍率は、クランプされて隣の段階と同じ出力になる。
+			if (anchor.grid.cellW * factor < 1 || anchor.grid.cellH * factor < 1)
+				continue;
+			const { outW, outH } = scaledOutputSize(anchor, cellScale);
+			if (
+				outW < MIN_CANDIDATE_OUTPUT_DIMENSION ||
+				outH < MIN_CANDIDATE_OUTPUT_DIMENSION
+			)
+				continue;
+			// 粗い側は端数の切り捨てで隣の段階と同じ寸法に落ち着くことがある。
+			const sizeKey = `${outW}x${outH}`;
+			if (takenSizes.has(sizeKey)) continue;
+			if (
+				preserveArea !== undefined &&
+				isNearPreserve(area(outW, outH), preserveArea)
+			)
+				continue;
+			takenSizes.add(sizeKey);
+			plans.push({
+				id: `cell-scale:${cellScale}`,
+				kind: "cell-scale",
+				recommended: false,
+				processingMode: "refine",
+				cellScale,
+			});
 		}
-		const byArea = [...grids].sort((left, right) => area(left) - area(right));
-		const isAlternative = (candidate: GridCandidateReport): boolean =>
-			!plans.some(
-				(plan) => plan.outW === candidate.outW && plan.outH === candidate.outH,
-			) && !isSimilar(candidate, anchor);
-		const coarser = [...byArea]
-			.reverse()
-			.find(
-				(candidate) => area(candidate) < anchorArea && isAlternative(candidate),
-			);
-		const finer = byArea.find(
-			(candidate) => area(candidate) > anchorArea && isAlternative(candidate),
-		);
-		if (finer) plans.push(selectionForGrid(finer, "finer"));
-		if (coarser) plans.push(selectionForGrid(coarser, "coarser"));
 	}
 
 	if (!autoResultIsPreserve) {
@@ -142,16 +159,21 @@ export const selectCandidatePlans = (
 export const candidateProcessOptions = (
 	base: ProcessOptions,
 	selection: CandidateSelection,
+	detectedGrid?: DetectedGridHandoff,
 ): ProcessOptions => {
 	const options: ProcessOptions = {
 		...base,
 		processingMode: selection.processingMode,
+		// [Policy] 候補は forcePixelsW/H を使わない。force は内容 BBox を軸ごとに独立して
+		// 分割するため、候補が使うと入力の縦横比が壊れる。出力サイズを変える手段は cellScale。
 		forcePixelsW: undefined,
 		forcePixelsH: undefined,
 		hintPixelsW: undefined,
 		hintPixelsH: undefined,
 		convertPixelsW: undefined,
 		convertPixelsH: undefined,
+		cellScale: undefined,
+		detectedGrid,
 	};
 	// [Intended] Auto 実結果の再現は初回と同じ入力で Auto を再実行することが前提なので、
 	// グリッド検出の検索開始点となるヒントは消さない。消すと検出結果が変わり、
@@ -161,11 +183,11 @@ export const candidateProcessOptions = (
 		options.hintPixelsH = base.hintPixelsH;
 		options.convertPixelsW = base.convertPixelsW;
 		options.convertPixelsH = base.convertPixelsH;
+		options.cellScale = base.cellScale;
 		return options;
 	}
-	if (selection.processingMode === "refine") {
-		options.forcePixelsW = selection.outW;
-		options.forcePixelsH = selection.outH;
+	if (selection.kind === "cell-scale") {
+		options.cellScale = selection.cellScale;
 	}
 	if (selection.processingMode === "convert") {
 		options.detailLevel = selection.detailLevel;

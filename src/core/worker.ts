@@ -21,9 +21,20 @@ import {
 import { classifyInput } from "./classifier";
 import type { ProcessOptions } from "./processor";
 import { processImage } from "./processor";
+import type { DetectedGridHandoff } from "./processor-options";
+
+/** Auto の実結果。auto-result 候補を再計算せずに提示するために受け取る。 */
+export type AutoResultPreviewInput = {
+	result: RawImage;
+	colorCount: number;
+};
 
 export type ProcessorWorker = {
-	process: (img: RawImage, options: ProcessOptions) => ProcessResult;
+	process: (
+		img: RawImage,
+		options: ProcessOptions,
+		detectionKey?: string,
+	) => ProcessResult;
 	processBatch: (
 		inputs: BatchProcessInput[],
 		options: BatchProcessingOptions,
@@ -33,6 +44,7 @@ export type ProcessorWorker = {
 		options: ProcessOptions,
 		analysis: ProcessingAnalysis,
 		cacheKey: string,
+		autoResult?: AutoResultPreviewInput,
 	) => CandidatePreview[];
 	processCandidate: (
 		img: RawImage,
@@ -42,13 +54,40 @@ export type ProcessorWorker = {
 };
 
 const candidateCache = new Map<string, CandidatePreview[]>();
+/**
+ * 直前の処理で確定した検出結果。候補プレビューがグリッド検出をやり直さないために持つ。
+ * [Policy] 鍵は候補キャッシュと同じ「画像 + 処理オプション」。検出結果は入力と検出
+ * パラメータだけで決まるので、同じ鍵なら検出し直しても同じ格子になる。
+ */
+const detectionCache = new Map<string, DetectedGridHandoff>();
+
+const remember = <Value>(
+	cache: Map<string, Value>,
+	key: string,
+	value: Value,
+) => {
+	if (cache.size >= CANDIDATE_PREVIEW_LIMITS.maxCacheEntries) {
+		const oldestKey = cache.keys().next().value;
+		if (oldestKey !== undefined) cache.delete(oldestKey);
+	}
+	cache.set(key, value);
+};
 
 const worker: ProcessorWorker = {
-	process: (img, options) => {
-		return processImage(img, options);
+	process: (img, options, detectionKey) => {
+		if (detectionKey === undefined) return processImage(img, options);
+		let detected: DetectedGridHandoff | undefined;
+		const result = processImage(img, {
+			...options,
+			onDetectedGrid: (handoff) => {
+				detected = handoff;
+			},
+		});
+		if (detected) remember(detectionCache, detectionKey, detected);
+		return result;
 	},
 	processBatch: (inputs, options) => processBatchImages(inputs, options),
-	previewCandidates: (img, options, analysis, cacheKey) => {
+	previewCandidates: (img, options, analysis, cacheKey, autoResult) => {
 		const cached = candidateCache.get(cacheKey);
 		if (cached) return cached;
 		// [Intended] refine など auto 以外のモードでは processImage が分類を行わないため、
@@ -58,13 +97,27 @@ const worker: ProcessorWorker = {
 			analysis.classification ??
 			classifyInput(img, analysis.gridCandidates).classification;
 		const plans = selectCandidatePlans(analysis, classification);
+		const detectedGrid = detectionCache.get(cacheKey);
 		const previews: CandidatePreview[] = [];
 		for (let index = 0; index < plans.length; index += 1) {
 			const plan = plans[index];
 			try {
+				// [Intended] Auto 結果は呼び出し元がすでに持っている実結果をそのまま使う。
+				// 同じ入力で Auto をもう一度走らせても同じ絵にしかならず、候補の中で
+				// 最も重いグリッド検出をもう 1 回通すだけになる。
+				if (plan.kind === "auto-result" && autoResult) {
+					previews.push(
+						createCandidatePreview(
+							plan,
+							autoResult.result,
+							autoResult.colorCount,
+						),
+					);
+					continue;
+				}
 				const processed = processImage(
 					img,
-					candidateProcessOptions(options, plan),
+					candidateProcessOptions(options, plan, detectedGrid),
 				);
 				previews.push(
 					createCandidatePreview(
@@ -79,11 +132,7 @@ const worker: ProcessorWorker = {
 				console.warn(`Candidate preview failed (${plan.id}):`, error);
 			}
 		}
-		if (candidateCache.size >= CANDIDATE_PREVIEW_LIMITS.maxCacheEntries) {
-			const oldestKey = candidateCache.keys().next().value;
-			if (oldestKey !== undefined) candidateCache.delete(oldestKey);
-		}
-		candidateCache.set(cacheKey, previews);
+		remember(candidateCache, cacheKey, previews);
 		return previews;
 	},
 	processCandidate: (img, options, selection) =>

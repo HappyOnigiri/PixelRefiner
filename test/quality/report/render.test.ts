@@ -29,10 +29,10 @@ const makeCaseResult = (
 	confidence: 0.5,
 	gridConfidence: 0.5,
 	warnings: [],
-	// [Intended] explicit ケースなので候補選択モーダルは対象外になる。
-	// evaluateCandidateModalDecision が isAuto=false に対して返す組み合わせと揃える。
-	candidateModalDecision: "not-applicable",
-	candidateModalReason: "NOT_AUTO",
+	// [Intended] explicit ケースなので候補リストは対象外になる。
+	// evaluateCandidateSuggestion が isAuto=false に対して返す組み合わせと揃える。
+	candidateSuggestionDecision: "not-applicable",
+	candidateSuggestionReason: "NOT_AUTO",
 	warningPresentation: "none",
 	candidatePlanCount: 0,
 	candidateOptions: [],

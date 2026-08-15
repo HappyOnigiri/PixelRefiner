@@ -168,6 +168,7 @@ describe("quick settings", () => {
 			auto: {
 				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "auto",
 				background: "auto",
 				dithering: "off",
@@ -175,6 +176,7 @@ describe("quick settings", () => {
 			"crisp-sprite": {
 				processingMode: "refine",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "auto",
 				background: "auto",
 				dithering: "off",
@@ -182,6 +184,7 @@ describe("quick settings", () => {
 			"keep-fine-details": {
 				processingMode: "preserve",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "auto",
 				background: "auto",
 				dithering: "off",
@@ -189,6 +192,7 @@ describe("quick settings", () => {
 			"photo-to-pixel": {
 				processingMode: "convert",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "auto",
 				background: "auto",
 				dithering: "off",
@@ -196,6 +200,7 @@ describe("quick settings", () => {
 			"transparent-icon": {
 				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "32",
 				background: "auto",
 				dithering: "off",
@@ -203,6 +208,7 @@ describe("quick settings", () => {
 			"retro-game": {
 				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "gb_pocket",
 				background: "auto",
 				dithering: "off",
@@ -210,6 +216,7 @@ describe("quick settings", () => {
 			"background-art": {
 				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "auto",
 				background: "keep",
 				dithering: "off",
@@ -217,6 +224,7 @@ describe("quick settings", () => {
 			"illustration-to-pixel-art": {
 				processingMode: "convert",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				cellScale: PROCESS_DEFAULTS.cellScale,
 				reductionMode: "32",
 				background: "auto",
 				dithering: "off",

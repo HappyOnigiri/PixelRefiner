@@ -1,29 +1,32 @@
 import path from "node:path";
 import type {
-	CandidateModalDecision,
+	CandidateSuggestionDecision,
 	WarningPresentation,
-} from "../../../src/core/candidate-modal-decision";
+} from "../../../src/core/candidate-suggestion-decision";
 import type { QualityCandidateOption, QualityCaseResult } from "../types";
 import { escapeHtml, formatConfidence, formatImageSize } from "./format";
 
-const CANDIDATE_MODAL_DECISION_KEYS: Record<CandidateModalDecision, string> = {
-	"would-show": "candidateModalWouldShow",
-	"would-not-show": "candidateModalWouldNotShow",
-	"not-applicable": "candidateModalNotApplicable",
+const CANDIDATE_SUGGESTION_DECISION_KEYS: Record<
+	CandidateSuggestionDecision,
+	string
+> = {
+	"would-show": "candidateSuggestionWouldShow",
+	"would-not-show": "candidateSuggestionWouldNotShow",
+	"not-applicable": "candidateSuggestionNotApplicable",
 };
 
 const WARNING_PRESENTATION_KEYS: Record<WarningPresentation, string> = {
-	"candidate-modal": "warningPresentationCandidateModal",
+	"candidate-list": "warningPresentationCandidateList",
 	indicator: "warningPresentationIndicator",
 	none: "warningPresentationNone",
 };
 
-/** 候補選択モーダルが出る見込みか。一覧のバッジと詳細の表示条件で同じ判定を使う。 */
+/** 候補リストが出る見込みか。一覧のバッジと詳細の表示条件で同じ判定を使う。 */
 const showsCandidateSelection = (result: QualityCaseResult): boolean =>
-	result.candidateModalDecision === "would-show";
+	result.candidateSuggestionDecision === "would-show";
 
 /**
- * 一覧のバッジ。WARNING の有無と候補選択モーダルの表示見込みだけを示す。
+ * 一覧のバッジ。WARNING の有無と候補リストの表示見込みだけを示す。
  * [Policy] 一覧に診断値を並べない。信頼度、判定理由、選択肢の画像はケース詳細で読む。
  */
 export const renderAutoDiagnosticBadges = (
@@ -57,7 +60,7 @@ const renderWarningItem = (warning: string): string => {
 /**
  * WARNING の詳細。コード、利用者へ出る文言、どの判定で付いたかを 1 件ずつ並べる。
  * [Intended] 一覧はバッジしか出さないので、判定条件を辿れる場所はここだけになる。
- * 表示先も併記して、警告アイコンと候補モーダルのどちらへ出るのかを同じ場所で読めるようにする。
+ * 表示先も併記して、警告アイコンと候補リストのどちらへ出るのかを同じ場所で読めるようにする。
  */
 export const renderWarningDetails = (result: QualityCaseResult): string => {
 	const presentationKey = WARNING_PRESENTATION_KEYS[result.warningPresentation];
@@ -76,12 +79,16 @@ export const renderWarningDetails = (result: QualityCaseResult): string => {
 };
 
 const renderCandidateOption = (option: QualityCandidateOption): string => {
-	const kindKey = `candidateKinds.${option.kind}`;
+	// [Intended] セル倍率の候補は 1 ケースに 4 件並ぶため、種別ではなく段階の名前で見出しを出す。
+	const kindKey =
+		option.cellScale === undefined
+			? `candidateKinds.${option.kind}`
+			: `candidateCellScales.${option.cellScale}`;
 	const recommended = option.recommended
 		? ' <span class="badge candidate-recommended" ' +
 			'data-i18n="candidateRecommended">recommended</span>'
 		: "";
-	// [Intended] 生成に失敗した候補も欠番として残す。モーダルの表示見込みは候補プラン数だけで
+	// [Intended] 生成に失敗した候補も欠番として残す。候補リストの表示見込みは候補プラン数だけで
 	// 決まるため、生成できなかった選択肢はここに出さないとレポートから消えてしまう。
 	const outputSize =
 		option.outputWidth === null || option.outputHeight === null
@@ -108,8 +115,8 @@ const renderCandidateOption = (option: QualityCandidateOption): string => {
 };
 
 /**
- * 候補選択モーダルの診断と、モーダルに並ぶ選択肢そのもの。
- * [Intended] 選択肢は候補選択モーダルが出る見込みのケースだけ生成するので、それ以外は
+ * 候補リストの診断と、そこに並ぶ選択肢そのもの。
+ * [Intended] 選択肢は候補リストが出る見込みのケースだけ生成するので、それ以外は
  * 判定理由だけを出して「なぜ選択肢が無いのか」を読めるようにする。
  */
 export const renderCandidateDiagnostics = (
@@ -117,8 +124,8 @@ export const renderCandidateDiagnostics = (
 ): string => {
 	if (result.options.processingMode !== "auto") return "";
 	const decisionKey =
-		CANDIDATE_MODAL_DECISION_KEYS[result.candidateModalDecision];
-	const reason = escapeHtml(result.candidateModalReason);
+		CANDIDATE_SUGGESTION_DECISION_KEYS[result.candidateSuggestionDecision];
+	const reason = escapeHtml(result.candidateSuggestionReason);
 	const options =
 		result.candidateOptions.length === 0
 			? '<p data-i18n="candidateOptionsUnavailable">No candidate option was generated</p>'
@@ -128,11 +135,11 @@ export const renderCandidateDiagnostics = (
 	return `<section class="candidate-diagnostics">
 		<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>
 		<dl>
-			<dt data-i18n="candidateModal">Candidate modal</dt>
-			<dd><span data-i18n="${decisionKey}">${escapeHtml(result.candidateModalDecision)}</span></dd>
-			<dt data-i18n="candidateModalReason">Decision reason</dt>
+			<dt data-i18n="candidateSuggestion">Candidate list</dt>
+			<dd><span data-i18n="${decisionKey}">${escapeHtml(result.candidateSuggestionDecision)}</span></dd>
+			<dt data-i18n="candidateSuggestionReason">Decision reason</dt>
 			<dd><code>${reason}</code>
-				<span data-i18n="candidateModalReasons.${reason}">${reason}</span></dd>
+				<span data-i18n="candidateSuggestionReasons.${reason}">${reason}</span></dd>
 			<dt data-i18n="classificationConfidence">Classification confidence</dt>
 			<dd>${formatConfidence(result.classificationConfidence)}</dd>
 			<dt data-i18n="gridConfidence">Grid confidence</dt>

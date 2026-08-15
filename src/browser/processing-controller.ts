@@ -1,4 +1,4 @@
-import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
+import { evaluateCandidateSuggestion } from "../core/candidate-suggestion-decision";
 import type {
 	CandidatePreview,
 	CandidateSelection,
@@ -135,6 +135,9 @@ export const createProcessingController = ({
 
 		try {
 			const processOptions = createProcessOptions(els, processingState);
+			// [Intended] 候補プレビューと検出結果のキャッシュ鍵をここで揃える。処理と候補生成が
+			// 同じ鍵を使うことで、候補側はグリッド検出をやり直さずに済む。
+			const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
 
 			const {
 				result,
@@ -149,7 +152,7 @@ export const createProcessingController = ({
 						processOptions,
 						effectiveSelection,
 					)
-				: await processor.process(currentImage, processOptions);
+				: await processor.process(currentImage, processOptions, cacheKey);
 			// [Intended] キャンセル直前に完了通知が届いた旧処理も、結果や画像状態を上書きさせない。
 			// 一括処理など別経路がこの画像を処理し直していた場合は、状態もその経路に委ねる。
 			const superseded = !imageSession.isProcessingCurrent(
@@ -190,8 +193,8 @@ export const createProcessingController = ({
 
 			// [Intended] 候補プレビューは結果を画面へ反映する前に生成する。
 			// 結果の表示更新が読み込みオーバーレイを閉じるため、後から生成すると
-			// 変換が終わったように見えた後で候補モーダルだけが遅れて現れる。
-			const candidateModalInput = {
+			// 変換が終わったように見えた後で候補リストだけが遅れて現れる。
+			const candidateSuggestionInput = {
 				isAuto: processOptions.processingMode === "auto",
 				isInitial: !effectiveSelection,
 				showCandidates,
@@ -200,16 +203,18 @@ export const createProcessingController = ({
 			};
 			let candidatePreviews: CandidatePreview[] = [];
 			if (
-				evaluateCandidateModalDecision(candidateModalInput)
-					.candidateModalEligible
+				evaluateCandidateSuggestion(candidateSuggestionInput)
+					.candidateSuggestionEligible
 			) {
 				try {
-					const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
 					candidatePreviews = await processor.previewCandidates(
 						currentImage,
 						processOptions,
 						analysis,
 						cacheKey,
+						// [Intended] Auto 結果の候補は、いま得た実結果をそのまま使う。
+						// 候補生成のために同じ Auto をもう一度走らせない。
+						{ result, colorCount: extractedPalette.length },
 					);
 				} catch (error) {
 					if (isProcessingCancelledError(error)) throw error;
@@ -326,19 +331,27 @@ export const createProcessingController = ({
 			});
 			els.outputPanel.classList.add("has-image");
 			// [Intended] 生成済みの候補は結果の表示直後に提示する。
-			// 変換結果と候補モーダルが同じタイミングで現れるようにする。
-			const candidateModalAfterPreview = evaluateCandidateModalDecision({
-				...candidateModalInput,
+			// 変換結果と候補リストが同じタイミングで現れるようにする。
+			const candidateSuggestionAfterPreview = evaluateCandidateSuggestion({
+				...candidateSuggestionInput,
 				candidatePreviewCount: candidatePreviews.length,
 			});
 			if (
-				candidateModalAfterPreview.warningPresentation === "candidate-modal"
+				candidateSuggestionAfterPreview.warningPresentation === "candidate-list"
 			) {
 				candidateChooser.show(
 					candidatePreviews,
 					analysis.warnings,
 					currentItem.id,
+					effectiveSelection?.id,
 				);
+			} else if (
+				effectiveSelection &&
+				candidateChooser.getSourceImageId() === currentItem.id
+			) {
+				// [Intended] 候補を選んだ後も一覧は残す。インライン表示では選び直せることに
+				// 意味があるので、選択の反映は強調表示の更新だけで済ませる。
+				candidateChooser.setSelected(effectiveSelection.id);
 			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
 

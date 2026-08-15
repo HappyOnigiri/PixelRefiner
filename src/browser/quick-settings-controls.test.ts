@@ -32,6 +32,7 @@ const createElements = () => {
 	const controls = {
 		quickProcessingModeSelect: new MockControl(),
 		quickDetailLevelSelect: new MockControl(),
+		quickCellScaleSelect: new MockControl(),
 		quickReductionModeSelect: new MockControl(),
 		quickBackgroundSelect: new MockControl(),
 		quickBackgroundPicker: new MockControl(),
@@ -40,6 +41,7 @@ const createElements = () => {
 	};
 	controls.quickProcessingModeSelect.value = "auto";
 	controls.quickDetailLevelSelect.value = "balanced";
+	controls.quickCellScaleSelect.value = "same";
 	controls.quickReductionModeSelect.value = "auto";
 	controls.quickBackgroundSelect.value = "auto";
 	controls.quickDitheringSelect.value = "off";
@@ -69,6 +71,16 @@ describe("quick settings controls", () => {
 		expect(els.quickDetailLevelSelect.disabled).toBe(true);
 		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
 		expect(els.quickDetailLevelSelect.disabled).toBe(false);
+	});
+
+	it("disables pixel size when the effective route does not restore a grid", () => {
+		const els = createElements();
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
+		expect(els.quickCellScaleSelect.disabled).toBe(true);
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "preserve");
+		expect(els.quickCellScaleSelect.disabled).toBe(true);
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "refine");
+		expect(els.quickCellScaleSelect.disabled).toBe(false);
 	});
 
 	it("keeps the confirmed Auto route state while reprocessing", () => {

@@ -1,9 +1,10 @@
 import {
+	CELL_SCALE_FACTORS,
 	GRID_SEARCH_LIMITS,
 	PROCESS_DEFAULTS,
 	TRIMMED_GRID_SEARCH_LIMITS,
 } from "../shared/config";
-import type { PixelGrid, RawImage } from "../shared/types";
+import type { CellScale, PixelGrid, RawImage } from "../shared/types";
 import { getBackgroundTargets, removeBackground } from "./background-removal";
 import { detectGrid } from "./detector";
 import { getGeminiWatermarkDownsampleOptions } from "./gemini-watermark-preprocessing";
@@ -61,6 +62,41 @@ export const expandContentGridToCanvas = (
 		cropH: outH * grid.cellH,
 		outW,
 		outH,
+	};
+};
+
+/**
+ * 検出した格子の位相を保ったまま、セル寸法だけを倍率で拡縮する。
+ *
+ * [Intended] 位相（cropX/cropY）を動かさないので、拡縮後のセル境界は必ず元の格子境界に乗る。
+ * 両軸へ同じ倍率が掛かるため、出力の縦横比は倍率によらず元の格子と同じになる
+ * （軸ごとに独立して分割する forcePixelsW/H とはここが決定的に違う）。
+ * [Policy] セル寸法は 1px 未満にしない。元画像を超える拡大は作らない方針に揃える。
+ */
+export const scaleGridCells = (
+	grid: PixelGrid,
+	source: Pick<RawImage, "width" | "height">,
+	cellScale: CellScale,
+): PixelGrid => {
+	const factor = CELL_SCALE_FACTORS[cellScale];
+	if (factor === 1) return grid;
+	const cellW = Math.max(1, grid.cellW * factor);
+	const cellH = Math.max(1, grid.cellH * factor);
+	if (cellW === grid.cellW && cellH === grid.cellH) return grid;
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const spanW = grid.cropW ?? source.width - cropX;
+	const spanH = grid.cropH ?? source.height - cropY;
+	const outW = Math.max(1, Math.floor(spanW / cellW));
+	const outH = Math.max(1, Math.floor(spanH / cellH));
+	return {
+		...grid,
+		cellW,
+		cellH,
+		outW,
+		outH,
+		...(grid.cropW === undefined ? {} : { cropW: outW * cellW }),
+		...(grid.cropH === undefined ? {} : { cropH: outH * cellH }),
 	};
 };
 

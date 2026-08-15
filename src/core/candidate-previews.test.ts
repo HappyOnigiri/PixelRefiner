@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ProcessingAnalysis } from "../shared/types";
+import type { GridCandidateReport, ProcessingAnalysis } from "../shared/types";
 import {
 	candidateProcessOptions,
 	createCandidatePreview,
@@ -21,6 +21,7 @@ const analysis = (
 		route: "preserve",
 		confidence: 0.1,
 		warnings: ["LOW_GRID_CONFIDENCE"],
+		autoResultCandidateIndex: 0,
 		gridCandidates: [
 			{
 				grid: { cellW: 4, cellH: 4, offsetX: 0, offsetY: 0, score: 1 },
@@ -61,80 +62,137 @@ const analysis = (
 		],
 	}) satisfies ProcessingAnalysis;
 
+/** rankGridCandidates が必ず加える原寸維持の候補。 */
+const preserveReport: GridCandidateReport = {
+	grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 0 },
+	outW: 64,
+	outH: 64,
+	cropX: 0,
+	cropY: 0,
+	cropW: 64,
+	cropH: 64,
+	method: "preserve",
+	totalScore: 0.1,
+	confidence: 0.05,
+};
+
 describe("candidate previews", () => {
-	it("推奨・細かめ・粗め・原寸維持を決定論的に選ぶ", () => {
+	it("Auto結果・セル倍率4段階・原寸維持の順で候補を決定論的に選ぶ", () => {
 		const plans = selectCandidatePlans(analysis("scaled-pixel"));
+
 		expect(plans.map((plan) => plan.kind)).toEqual([
-			"recommended",
-			"finer",
-			"coarser",
+			"auto-result",
+			"cell-scale",
+			"cell-scale",
+			"cell-scale",
+			"cell-scale",
 			"preserve",
 		]);
-		expect(plans[0].recommended).toBe(true);
+		expect(plans.map((plan) => plan.cellScale)).toEqual([
+			undefined,
+			"quarter",
+			"half",
+			"double",
+			"quadruple",
+			undefined,
+		]);
+		expect(plans[0]).toMatchObject({
+			recommended: true,
+			processingMode: "auto",
+			outW: 16,
+			outH: 16,
+		});
+		expect(selectCandidatePlans(analysis("scaled-pixel"))).toEqual(plans);
 	});
 
 	it("通常画像か不明な入力では空き枠へConvert候補を加える", () => {
 		const value = analysis("uncertain");
-		value.gridCandidates = value.gridCandidates.slice(0, 1);
 		expect(selectCandidatePlans(value).map((plan) => plan.kind)).toEqual([
-			"recommended",
+			"auto-result",
+			"cell-scale",
+			"cell-scale",
+			"cell-scale",
+			"cell-scale",
 			"preserve",
 			"convert",
 		]);
 	});
 
-	it("推奨と見分けが付かない近接候補は細かめ・粗めに採らない", () => {
+	it("原寸維持と見分けが付かないセル倍率候補は採らない", () => {
 		const value = analysis("scaled-pixel");
-		// 推奨(100x100, cell 4)に対し面積差1%・セル差0.1pxの候補だけを並べる。
+		// セル 4px の 1/4 は 1px となり、原寸維持（64x64）と同じ出力になる。
+		value.gridCandidates = [...value.gridCandidates, preserveReport];
+
+		expect(selectCandidatePlans(value).map((plan) => plan.cellScale)).toEqual([
+			undefined,
+			"half",
+			"double",
+			"quadruple",
+			undefined,
+		]);
+	});
+
+	it("セル寸法が1pxを下回る倍率は候補にしない", () => {
+		const value = analysis("scaled-pixel");
 		value.gridCandidates = [
 			{
 				...value.gridCandidates[0],
-				grid: { cellW: 4, cellH: 4, offsetX: 0, offsetY: 0, score: 1 },
-				outW: 100,
-				outH: 100,
-			},
-			{
-				...value.gridCandidates[0],
-				grid: { cellW: 4.1, cellH: 4.1, offsetX: 0, offsetY: 0, score: 1 },
-				outW: 101,
-				outH: 100,
-			},
-			{
-				...value.gridCandidates[0],
-				grid: { cellW: 3.9, cellH: 3.9, offsetX: 0, offsetY: 0, score: 1 },
-				outW: 99,
-				outH: 100,
+				grid: { ...value.gridCandidates[0].grid, cellW: 2, cellH: 2 },
 			},
 		];
-		expect(selectCandidatePlans(value).map((plan) => plan.kind)).toEqual([
-			"recommended",
-			"preserve",
+
+		expect(selectCandidatePlans(value).map((plan) => plan.cellScale)).toEqual([
+			undefined,
+			"half",
+			"double",
+			"quadruple",
+			undefined,
 		]);
 	});
 
 	it("分類が未算出でも呼び出し側の判定でConvert候補を加えられる", () => {
 		const value = analysis(undefined);
-		value.gridCandidates = value.gridCandidates.slice(0, 1);
-		expect(selectCandidatePlans(value).map((plan) => plan.kind)).toEqual([
-			"recommended",
-			"preserve",
-		]);
 		expect(
-			selectCandidatePlans(value, "continuous").map((plan) => plan.kind),
-		).toEqual(["recommended", "preserve", "convert"]);
+			selectCandidatePlans(value).some((plan) => plan.kind === "convert"),
+		).toBe(false);
+		expect(
+			selectCandidatePlans(value, "continuous").some(
+				(plan) => plan.kind === "convert",
+			),
+		).toBe(true);
 	});
 
-	it("候補適用時に元のヒント設定を引き継がない", () => {
+	it("セル倍率の候補はforcePixelsを設定せずcellScaleだけを渡す", () => {
+		const plans = selectCandidatePlans(analysis("scaled-pixel"));
+		const cellScalePlan = plans.find((plan) => plan.kind === "cell-scale");
+		expect(cellScalePlan).toBeDefined();
+
 		const options = candidateProcessOptions(
-			{ hintPixelsW: 10, hintPixelsH: 10 },
-			selectCandidatePlans(analysis("scaled-pixel"))[0],
+			{ hintPixelsW: 10, hintPixelsH: 10, forcePixelsW: 8, forcePixelsH: 8 },
+			// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+			cellScalePlan!,
 		);
+
 		expect(options).toMatchObject({
 			processingMode: "refine",
-			forcePixelsW: 16,
-			forcePixelsH: 16,
+			cellScale: "quarter",
 		});
+		// [Intended] force はユーザーが詳細設定で明示したときだけ通る経路で、候補が
+		// 勝手に使うと内容 BBox の軸独立分割で縦横比が壊れる。
+		expect(options.forcePixelsW).toBeUndefined();
+		expect(options.forcePixelsH).toBeUndefined();
 		expect(options.hintPixelsW).toBeUndefined();
+	});
+
+	it("原寸維持とConvertの候補はセル倍率を持ち込まない", () => {
+		const plans = selectCandidatePlans(analysis("uncertain"));
+		for (const kind of ["preserve", "convert"] as const) {
+			const plan = plans.find((entry) => entry.kind === kind);
+			expect(plan).toBeDefined();
+			// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+			const options = candidateProcessOptions({ cellScale: "double" }, plan!);
+			expect(options.cellScale).toBeUndefined();
+		}
 	});
 
 	it("大画像の候補は先に軽量なプレビューへ縮小する", () => {
@@ -153,7 +211,7 @@ describe("candidate previews", () => {
 		expect(preview.resultWidth).toBe(400);
 	});
 
-	it("PRF-400のUI既定値fixtureで候補モーダル条件を満たす", async () => {
+	it("PRF-400のUI既定値fixtureで候補提示の条件を満たす", async () => {
 		const image = await readPngAsRawImage(
 			"test/fixtures/quality_prf400_ui_low_confidence.png",
 		);
@@ -212,6 +270,19 @@ describe("candidate previews", () => {
 			}),
 		);
 		expect(visualResults.size).toBe(refined.length);
+		// セル倍率の候補は入力の縦横比を保つ。軸ごとに分割する force 経路と違い、
+		// 両軸へ同じ倍率が掛かるため、Auto 結果との縦横比のずれは丸め分に収まる。
+		const autoRendered = rendered.find(
+			(candidate) => candidate.kind === "auto-result",
+		);
+		expect(autoRendered).toBeDefined();
+		const autoAspect =
+			(autoRendered?.resultWidth ?? 1) / (autoRendered?.resultHeight ?? 1);
+		for (const candidate of rendered) {
+			if (candidate.kind !== "cell-scale") continue;
+			const aspect = candidate.resultWidth / candidate.resultHeight;
+			expect(Math.abs(aspect - autoAspect)).toBeLessThan(autoAspect * 0.25);
+		}
 	});
 
 	it("低信頼時も先頭でないAuto実結果を推奨候補として一度だけ含める", () => {
@@ -227,17 +298,8 @@ describe("candidate previews", () => {
 			outW: 32,
 			outH: 32,
 		});
-		expect(
-			plans.filter((plan) => plan.outW === 32 && plan.outH === 32),
-		).toHaveLength(1);
-		expect(plans.some((plan) => plan.kind === "recommended")).toBe(false);
-		expect(plans.length).toBeLessThanOrEqual(4);
-		expect(plans.map((plan) => plan.kind)).toEqual([
-			"auto-result",
-			"coarser",
-			"preserve",
-		]);
-		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
+		expect(plans.filter((plan) => plan.kind === "auto-result")).toHaveLength(1);
+		expect(plans.length).toBeLessThanOrEqual(7);
 	});
 
 	it("Auto実結果の再処理では元のヒント設定を引き継ぐ", () => {
@@ -266,60 +328,28 @@ describe("candidate previews", () => {
 		});
 	});
 
-	it("Auto実結果の実出力サイズを細かめ・粗めの基準にする", () => {
+	it("Autoが原寸維持を採用したときは細かい側のセル倍率を出さない", () => {
 		const value = analysis("scaled-pixel");
-		// 8x8 の候補を採用したが、検出後のトリミングで実出力は 3x3 まで縮んだ状況。
-		value.autoResultCandidateIndex = 2;
-		value.autoResultOutW = 3;
-		value.autoResultOutH = 3;
-
-		const plans = selectCandidatePlans(value);
-
-		expect(plans.map((plan) => plan.kind)).toEqual([
-			"auto-result",
-			"finer",
-			"preserve",
-		]);
-		// 実面積 9 を基準にすると 8x8 自身が細かめの先頭に来るが、Auto実結果カードと
-		// 同じサイズなので採らず、次の候補へ進む。
-		expect(plans[1]).toMatchObject({ outW: 16, outH: 16 });
-	});
-
-	it("Autoが原寸維持を採用したときは原寸維持カードをAuto実結果として一度だけ出す", () => {
-		const value = analysis("scaled-pixel");
-		value.gridCandidates = [
-			...value.gridCandidates,
-			{
-				grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 0 },
-				outW: 64,
-				outH: 64,
-				cropX: 0,
-				cropY: 0,
-				cropW: 64,
-				cropH: 64,
-				method: "preserve",
-				totalScore: 0.1,
-				confidence: 0.05,
-			},
-		];
+		value.gridCandidates = [...value.gridCandidates, preserveReport];
 		value.autoResultCandidateIndex = 3;
 
 		const plans = selectCandidatePlans(value);
 
 		expect(plans.map((plan) => plan.kind)).toEqual([
 			"auto-result",
-			"recommended",
-			"finer",
-			"coarser",
+			"cell-scale",
+			"cell-scale",
 		]);
 		expect(plans[0]).toMatchObject({
 			recommended: true,
 			processingMode: "auto",
 		});
-		// 検出グリッド候補の3枠（推奨・細かめ・粗め）が維持される。
-		expect(plans[1]).toMatchObject({ outW: 16, outH: 16, recommended: false });
-		expect(plans[2]).toMatchObject({ outW: 32, outH: 32 });
-		expect(plans[3]).toMatchObject({ outW: 8, outH: 8 });
+		// 原寸維持のセルは 1px 相当なので、細かくする側は同じ絵にしかならない。
+		expect(plans.map((plan) => plan.cellScale)).toEqual([
+			undefined,
+			"double",
+			"quadruple",
+		]);
 	});
 
 	it("resize_with_trimmingのAuto結果を候補計画へ含める", async () => {
@@ -356,10 +386,8 @@ describe("candidate previews", () => {
 			outW: 46,
 			outH: 13,
 		});
-		expect(
-			plans.filter((plan) => plan.outW === 46 && plan.outH === 13),
-		).toHaveLength(1);
-		expect(plans.length).toBeLessThanOrEqual(4);
+		expect(plans.filter((plan) => plan.kind === "auto-result")).toHaveLength(1);
+		expect(plans.length).toBeLessThanOrEqual(7);
 
 		const reselected = processImage(
 			image,

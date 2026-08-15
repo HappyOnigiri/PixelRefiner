@@ -11,6 +11,7 @@ describe("migrateAdvancedSettings", () => {
 		// [Policy] Auto 専用の処理条件を残さず、手動経路でも同じ補助処理を使う。
 		expect(state["cell-sampling-mode"]).toBe(PROCESS_DEFAULTS.cellSamplingMode);
 		expect(state["small-aspect-grid-alignment"]).toBe("on");
+		expect(state["advanced-cell-scale"]).toBe(PROCESS_DEFAULTS.cellScale);
 		expect(state["watermark-sampling-compat"]).toBe("on");
 		expect(state["advanced-convert-size-mode"]).toBe(
 			PROCESS_DEFAULTS.detailLevel,
@@ -74,6 +75,7 @@ describe("migrateAdvancedSettings", () => {
 		expect(state["cell-sampling-mode"]).toBe("legacy-median");
 		expect(state["background-dehalo"]).toBe(false);
 		expect(state["small-aspect-grid-alignment"]).toBe("on");
+		expect(state["advanced-cell-scale"]).toBe(PROCESS_DEFAULTS.cellScale);
 	});
 
 	it("migrates route-dependent auto behavior to always on", () => {
@@ -85,6 +87,7 @@ describe("migrateAdvancedSettings", () => {
 		migrateAdvancedSettings(state);
 
 		expect(state["small-aspect-grid-alignment"]).toBe("on");
+		expect(state["advanced-cell-scale"]).toBe(PROCESS_DEFAULTS.cellScale);
 		expect(state["watermark-sampling-compat"]).toBe("on");
 	});
 });

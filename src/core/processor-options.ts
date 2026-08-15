@@ -1,4 +1,5 @@
 import {
+	CELL_SCALE_FACTORS,
 	CONVERT_DEFAULTS,
 	clampInt,
 	clampOptionalInt,
@@ -9,12 +10,15 @@ import {
 import type {
 	AutoBehaviorSetting,
 	BackgroundRemovalScope,
+	CellScale,
 	Connectivity,
 	DetailLevel,
 	DitherMode,
 	GeminiWatermarkRemovalMode,
+	GridCandidateReport,
 	GridSignalOptions,
 	OutlineStyle,
+	PixelGrid,
 	ProcessingMode,
 	RawImage,
 	RGB,
@@ -25,11 +29,45 @@ import type { CellSamplingMode } from "./cell-sampler";
 import type { DetectOptions } from "./detector";
 import type { DownsampleOptions } from "./image-operations";
 
+/**
+ * グリッド検出の結果一式。検出をやり直さずに同じ格子で処理し直すための受け渡し口。
+ *
+ * [Policy] 検出そのものだけでなく、検出中に決まる派生値（サンプラーの切り替えや
+ * 経路判定に効くフラグ）も含める。格子だけを渡すと、同じ格子でも別の出力になる。
+ */
+export type DetectedGridHandoff = {
+	grid: PixelGrid;
+	gridMethod: string;
+	downsampleOptions: DownsampleOptions;
+	allowSmallTrimmedGrid: boolean;
+	gridAlignedToContent: boolean;
+	/** 検出時に算出済みの候補ランキング。省略時は処理側で算出し直す。 */
+	rankedCandidates?: GridCandidateReport[];
+};
+
 export type ProcessOptions = DetectOptions & {
 	/** 入力分類を使う自動経路、または処理経路の明示指定。 */
 	processingMode?: ProcessingMode;
 	/** Convert 経路で採用する論理解像度。 */
 	detailLevel?: DetailLevel;
+	/**
+	 * refine 経路で検出セル寸法に掛ける倍率。
+	 * [Intended] 検出格子の位相を保ったままセルだけを拡縮するので、両軸に同じ倍率がかかり
+	 * 入力のアスペクト比が保たれる。forcePixelsW/H とは別物で、こちらは格子に乗る。
+	 */
+	cellScale?: CellScale;
+	/**
+	 * 検出済みの格子。指定するとグリッド検出をスキップしてこの格子を使う。
+	 * [Policy] UI からは設定できない内部専用の受け渡し口。候補プレビューが同じ入力に対して
+	 * 検出を繰り返すのを避けるためだけに使う。指定の有無で出力は変わらない。
+	 */
+	detectedGrid?: DetectedGridHandoff;
+	/**
+	 * 検出した格子を呼び出し元へ渡す。
+	 * [Policy] debugHook と同じく関数なので、構造化クローンを挟むスレッド境界は越えない。
+	 * 同じ realm で processImage を直接呼ぶ側だけが使える。
+	 */
+	onDetectedGrid?: (detected: DetectedGridHandoff) => void;
 	/** Convert 経路で使う明示的な出力幅。片軸だけなら比率から高さを補完する。 */
 	convertPixelsW?: number;
 	/** Convert 経路で使う明示的な出力高さ。片軸だけなら比率から幅を補完する。 */
@@ -214,6 +252,7 @@ export const createDefaultProcessOptions = () =>
 		trimAlphaThreshold: PROCESS_RANGES.trimAlphaThreshold.default,
 		processingMode: PROCESS_DEFAULTS.processingMode,
 		detailLevel: PROCESS_DEFAULTS.detailLevel,
+		cellScale: PROCESS_DEFAULTS.cellScale,
 		preRemoveBackground: PROCESS_DEFAULTS.preRemoveBackground,
 		postRemoveBackground: PROCESS_DEFAULTS.postRemoveBackground,
 		bgExtractionMethod: PROCESS_DEFAULTS.bgExtractionMethod,
@@ -269,6 +308,9 @@ export const normalizeProcessOptions = (
 	detect: DetectOptions;
 	processingMode: ProcessingMode;
 	detailLevel: DetailLevel;
+	cellScale: CellScale;
+	detectedGrid?: DetectedGridHandoff;
+	onDetectedGrid?: (detected: DetectedGridHandoff) => void;
 	convertPixelsW?: number;
 	convertPixelsH?: number;
 	convertReduceColors: boolean;
@@ -356,6 +398,12 @@ export const normalizeProcessOptions = (
 		raw.preRemoveBackground ?? PROCESS_DEFAULTS.preRemoveBackground;
 	const processingMode = raw.processingMode ?? PROCESS_DEFAULTS.processingMode;
 	const detailLevel = raw.detailLevel ?? PROCESS_DEFAULTS.detailLevel;
+	// [Policy] 未知の段階は既定へ落とす。保存済み設定に古い値が残っていても、
+	// 「検出したまま」の出力へ戻るだけで済むようにする。
+	const cellScale =
+		raw.cellScale !== undefined && raw.cellScale in CELL_SCALE_FACTORS
+			? raw.cellScale
+			: PROCESS_DEFAULTS.cellScale;
 	const convertPixelsW = clampOptionalInt(
 		raw.convertPixelsW,
 		PROCESS_RANGES.convertPixelsW,
@@ -480,6 +528,9 @@ export const normalizeProcessOptions = (
 		detect,
 		processingMode,
 		detailLevel,
+		cellScale,
+		detectedGrid: raw.detectedGrid,
+		onDetectedGrid: raw.onDetectedGrid,
 		convertPixelsW,
 		convertPixelsH,
 		convertReduceColors: raw.reduceColors ?? CONVERT_DEFAULTS.reduceColors,

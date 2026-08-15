@@ -1,4 +1,9 @@
-import type { DetailLevel, RGB, SmallComponentRemovalMode } from "./types";
+import type {
+	CellScale,
+	DetailLevel,
+	RGB,
+	SmallComponentRemovalMode,
+} from "./types";
 
 export type IntRange = {
 	min: number;
@@ -165,7 +170,8 @@ export const AUTO_GRID_GUARD_LIMITS = {
 } as const;
 
 export const CANDIDATE_PREVIEW_LIMITS = {
-	maxCandidates: 4,
+	// Auto 結果 + セル倍率 4 段階 + 原寸維持 + Convert
+	maxCandidates: 7,
 	maxThumbnailDimension: 192,
 	maxCacheEntries: 8,
 	/** 面積差がこの比率以内なら、候補として区別できないほど近いとみなす。 */
@@ -174,6 +180,13 @@ export const CANDIDATE_PREVIEW_LIMITS = {
 	minSimilarAreaDiff: 2,
 	/** セルサイズ差がこの px 未満なら、候補として区別できないほど近いとみなす。 */
 	similarCellDelta: 0.2,
+	/**
+	 * 原寸維持に対する面積比がこれ以上のセル倍率候補は、原寸維持を優先して落とす。
+	 * [Intended] 候補同士の近さ（similarAreaRatio）より緩く見る。原寸維持へ迫るほど
+	 * 細かい候補は、並べたサムネイルでも実物でも原寸維持と見分けが付かず、
+	 * 「縮小しない」という同じ選択肢が 2 枚並ぶだけになる。
+	 */
+	preserveSimilarAreaRatio: 0.75,
 } as const;
 
 export const BATCH_PALETTE_DEFAULTS = {
@@ -242,6 +255,19 @@ export const CONVERT_DETAIL_SCALES = {
 	balanced: 1,
 	detailed: 1.5,
 } as const satisfies Record<DetailLevel, number>;
+
+/**
+ * 「ドットの大きさ」の各段階が検出セル寸法に掛ける倍率。
+ * [Intended] 1 未満は 1 セルを分割して細かくする方向、1 超は複数セルを 1 ドットへまとめる方向。
+ * 整数スケールに限るのは、格子検出の取り違えが本来のセルの整数倍・整数分の 1 で起きるため。
+ */
+export const CELL_SCALE_FACTORS = {
+	quarter: 0.25,
+	half: 0.5,
+	same: 1,
+	double: 2,
+	quadruple: 4,
+} as const satisfies Record<CellScale, number>;
 
 export const CONVERT_DEFAULTS = {
 	detailLevel: "balanced",
@@ -809,6 +835,8 @@ export const TONE_RAMP_MAPPING = {
 export const PROCESS_DEFAULTS = {
 	processingMode: "auto",
 	detailLevel: CONVERT_DEFAULTS.detailLevel,
+	// refine 経路で検出セル寸法に掛ける倍率（1 倍＝検出したまま）
+	cellScale: "same",
 	preRemoveBackground: true,
 	postRemoveBackground: true,
 	bgExtractionMethod: "auto",

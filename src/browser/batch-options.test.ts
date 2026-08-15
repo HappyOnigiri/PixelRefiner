@@ -20,20 +20,21 @@ describe("batch item options", () => {
 			processingMode: "preserve",
 		});
 		const refine = createBatchItemOptions(base, {
-			id: "recommended:8x8",
-			kind: "recommended",
-			recommended: true,
+			id: "cell-scale:double",
+			kind: "cell-scale",
+			recommended: false,
 			processingMode: "refine",
-			outW: 8,
-			outH: 8,
+			cellScale: "double",
 		});
 
 		expect(preserve.processingMode).toBe("preserve");
 		expect(refine).toMatchObject({
 			processingMode: "refine",
-			forcePixelsW: 8,
-			forcePixelsH: 8,
+			cellScale: "double",
 		});
+		// [Intended] 候補は force を使わない。使うと内容 BBox の軸独立分割で縦横比が壊れる。
+		expect(refine.forcePixelsW).toBeUndefined();
+		expect(refine.forcePixelsH).toBeUndefined();
 
 		const autoResult = createBatchItemOptions(
 			{ processingMode: "auto", forcePixelsW: 8, forcePixelsH: 8 },

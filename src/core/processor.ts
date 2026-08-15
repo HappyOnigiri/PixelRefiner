@@ -49,6 +49,7 @@ import { processConvertRoute } from "./processor-convert-route";
 import {
 	expandContentGridToCanvas,
 	resolveProcessingGrid,
+	scaleGridCells,
 } from "./processor-grid-resolution";
 import {
 	getBackgroundBehavior,
@@ -363,13 +364,17 @@ const processImageCore = (
 		}
 	}
 
+	// [Intended] 検出は同じ入力・同じ検出パラメータなら決定論的なので、既に検出済みの格子を
+	// 受け取った場合はそれをそのまま使ってよい。出力は検出し直した場合と一致する。
+	// 候補プレビューが 1 枚の画像に対して検出を何度も繰り返すのを避けるための経路。
 	const {
 		grid: detectionGrid,
 		gridMethod,
 		downsampleOptions,
 		allowSmallTrimmedGrid,
 		gridAlignedToContent,
-	} = resolveProcessingGrid({
+	} = o.detectedGrid ??
+	resolveProcessingGrid({
 		o,
 		working: processingGeometry ? analysisGeometry : working,
 		geometryImage: processingGeometry ? inputImage : geometryImage,
@@ -383,11 +388,17 @@ const processImageCore = (
 		log,
 	});
 
-	const rankedGridCandidates = rankGridCandidates(
-		analysisGeometry,
-		detectionGrid,
+	const rankedGridCandidates =
+		o.detectedGrid?.rankedCandidates ??
+		rankGridCandidates(analysisGeometry, detectionGrid, gridMethod);
+	o.onDetectedGrid?.({
+		grid: detectionGrid,
 		gridMethod,
-	);
+		downsampleOptions,
+		allowSmallTrimmedGrid,
+		gridAlignedToContent,
+		rankedCandidates: rankedGridCandidates,
+	});
 	// [Intended] 分類の画像特徴は、グリッド候補の評価に使うのと同じ working から取る。
 	// 加工前の入力画像を使うと、背景除去の有無で両者が別画像になり判定が背景面積に左右される。
 	const classificationResult =
@@ -471,10 +482,14 @@ const processImageCore = (
 	const diagnosticGrid = detectionGrid;
 	// [Intended] 被写体境界に揃えた格子は、トリムしない場合だけ同じ位相のまま
 	// 元キャンバス全体へ広げる。被写体を再サンプリングせず余白セルだけを追加する。
-	const grid =
+	const baseGrid =
 		o.preserveProcessingScale && !trimToContent && gridAlignedToContent
 			? expandContentGridToCanvas(detectionGrid, working)
 			: detectionGrid;
+	// [Intended] 「ドットの大きさ」は検出格子の位相を保ったままセル寸法だけを拡縮する。
+	// 拡縮後の境界は必ず元の格子境界に乗り、両軸へ同じ倍率が掛かるので縦横比も変わらない。
+	// 既定の "same" は倍率 1 で、同じグリッドがそのまま返る（出力は現行と 1px も変わらない）。
+	const grid = scaleGridCells(baseGrid, working, o.cellScale);
 	const down = downsample(working, grid, downsampleOptions);
 	const geometryDown = downsampleGeminiWatermarkGeometry(
 		geometryMask,

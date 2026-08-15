@@ -686,6 +686,49 @@
                     </label>
                     <label class="setting-item">
                       <span class="label-text">
+                        <span data-i18n="setting.quick_cell_scale"
+                          >Pixel Size</span
+                        >
+                        <span
+                          class="help"
+                          data-i18n-attr="data-tooltip:tooltip.help.quick_cell_scale"
+                          data-tooltip="Chooses the size of the pixels restored by Crisp Edges, in five steps relative to the detected pixel size (1/4x to 4x). When grid detection misses and the result looks too coarse or too fine, pick another step to restore it again. In Best Match, this applies only when Crisp Edges is selected automatically."
+                          >?</span
+                        >
+                      </span>
+                      <select id="quick-cell-scale">
+                        <option
+                          value="quarter"
+                          data-i18n="option.cell_scale_quarter"
+                        >
+                          Very small
+                        </option>
+                        <option value="half" data-i18n="option.cell_scale_half">
+                          Small
+                        </option>
+                        <option
+                          value="same"
+                          data-i18n="option.cell_scale_same"
+                          selected
+                        >
+                          Standard
+                        </option>
+                        <option
+                          value="double"
+                          data-i18n="option.cell_scale_double"
+                        >
+                          Large
+                        </option>
+                        <option
+                          value="quadruple"
+                          data-i18n="option.cell_scale_quadruple"
+                        >
+                          Very large
+                        </option>
+                      </select>
+                    </label>
+                    <label class="setting-item">
+                      <span class="label-text">
                         <span data-i18n="setting.quick_colors"
                           >Color Reduction</span
                         >
@@ -1325,6 +1368,53 @@
                             </option>
                           </select>
                         </div>
+                      </label>
+
+                      <label class="setting-item">
+                        <span class="label-text">
+                          <span data-i18n="setting.advanced_cell_scale"
+                            >Pixel Size</span
+                          >
+                          <span
+                            class="help"
+                            data-i18n-attr="data-tooltip:tooltip.help.advanced_cell_scale"
+                            data-tooltip="Scales the detected cell size before downsampling, keeping the detected grid phase. Standard uses the detected cell size as is. Only applies when grid detection is Auto or Pixel + Auto and the result comes from grid restoration."
+                            >?</span
+                          >
+                        </span>
+                        <select id="advanced-cell-scale">
+                          <option
+                            value="quarter"
+                            data-i18n="option.cell_scale_quarter"
+                          >
+                            Very small
+                          </option>
+                          <option
+                            value="half"
+                            data-i18n="option.cell_scale_half"
+                          >
+                            Small
+                          </option>
+                          <option
+                            value="same"
+                            data-i18n="option.cell_scale_same"
+                            selected
+                          >
+                            Standard
+                          </option>
+                          <option
+                            value="double"
+                            data-i18n="option.cell_scale_double"
+                          >
+                            Large
+                          </option>
+                          <option
+                            value="quadruple"
+                            data-i18n="option.cell_scale_quadruple"
+                          >
+                            Very large
+                          </option>
+                        </select>
                       </label>
 
                       <label class="setting-item">
@@ -2448,6 +2538,29 @@
                 <canvas id="result-canvas" class="js-result-canvas"></canvas>
                 <canvas id="grid-canvas" class="js-grid-canvas"></canvas>
               </div>
+              <!-- 他の候補（グリッド検出が低信頼のときだけ表示する） -->
+              <section
+                class="candidate-strip js-candidate-strip"
+                id="candidate-strip"
+                hidden
+              >
+                <h3
+                  class="candidate-strip-heading"
+                  data-i18n="candidate.other_heading"
+                >
+                  Other options
+                </h3>
+                <p
+                  class="candidate-strip-reasons js-candidate-reasons"
+                  aria-live="polite"
+                ></p>
+                <div
+                  class="candidate-strip-list js-candidate-list"
+                  role="group"
+                  data-i18n-attr="aria-label:candidate.other_heading"
+                  aria-label="Other options"
+                ></div>
+              </section>
               <!-- ダウンロードボタン -->
               <div class="result-actions">
                 <div class="view-controls">
@@ -2821,42 +2934,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div
-      id="candidate-modal"
-      class="modal candidate-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-hidden="true"
-      aria-labelledby="candidate-modal-title"
-      style="display: none"
-    >
-      <div class="modal-content candidate-modal-content">
-        <div class="modal-header">
-          <h3 id="candidate-modal-title" data-i18n="candidate.title">
-            Choose the best result
-          </h3>
-          <button
-            type="button"
-            class="close-button js-close-candidates"
-            data-i18n-attr="aria-label:ui.close"
-          >
-            &times;
-          </button>
-        </div>
-        <div class="candidate-modal-body">
-          <p data-i18n="candidate.intro">
-            Automatic detection was uncertain. Compare the actual results before
-            choosing.
-          </p>
-          <p
-            class="candidate-reasons js-candidate-reasons"
-            aria-live="polite"
-          ></p>
-          <div class="candidate-list js-candidate-list"></div>
         </div>
       </div>
     </div>

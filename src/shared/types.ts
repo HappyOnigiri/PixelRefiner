@@ -123,6 +123,14 @@ export type DetailLevel =
 	| "balanced"
 	| "detailed";
 
+/**
+ * 検出したセル寸法に掛ける倍率。
+ * [Intended] refine は「検出した格子を復元する」経路なので、細かさの指定は
+ * 好みの解像度ではなく「検出倍率の取り違えの補正」を意味する。格子検出が外すときは
+ * 本来のセルの整数倍・整数分の 1 を掴むため、段階も整数スケールに限る。
+ */
+export type CellScale = "quarter" | "half" | "same" | "double" | "quadruple";
+
 export type SmallComponentRemovalMode = "off" | "light" | "auto" | "strong";
 
 export type GeminiWatermarkRemovalMode = "off" | "auto";
@@ -297,10 +305,8 @@ export type ProcessResult = {
 };
 
 export type CandidateKind =
-	| "recommended"
 	| "auto-result"
-	| "finer"
-	| "coarser"
+	| "cell-scale"
 	| "preserve"
 	| "convert";
 
@@ -312,6 +318,12 @@ export type CandidateSelection = {
 	outW?: number;
 	outH?: number;
 	detailLevel?: DetailLevel;
+	/**
+	 * kind が "cell-scale" のときに適用するセル倍率。
+	 * [Intended] 候補は「検出格子はそのままでドットの大きさだけ差し替えたもの」なので、
+	 * 出力サイズではなく倍率で持つ。かんたん設定・詳細設定の同名項目と同じ値になる。
+	 */
+	cellScale?: CellScale;
 };
 
 export type CandidatePreview = CandidateSelection & {

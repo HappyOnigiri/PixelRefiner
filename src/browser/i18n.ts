@@ -50,25 +50,31 @@ const resources = {
 		"ui.placeholder.result": "処理結果がここに表示されます",
 		"ui.close": "閉じる",
 		"ui.download_options": "ダウンロード種別を選択",
-		"candidate.title": "結果を選択",
-		"candidate.intro":
-			"自動判定に確信を持てませんでした。実際の結果を比較して選んでください。",
+		"candidate.other_heading": "他の候補",
 		"candidate.recommended_badge": "おすすめ",
 		"candidate.metadata": "{width} × {height} px・{colors}色",
-		"candidate.label.recommended": "推奨候補",
 		"candidate.label.auto-result": "Auto結果",
-		"candidate.label.finer": "細かめ",
-		"candidate.label.coarser": "粗め",
 		"candidate.label.preserve": "原寸維持",
 		"candidate.label.convert": "Convert候補",
-		"candidate.description.recommended":
-			"検出結果の中で画像構造に最も合う候補です。",
+		"candidate.label.cell_scale.quarter": "ドットをとても小さく",
+		"candidate.label.cell_scale.half": "ドットを小さく",
+		"candidate.label.cell_scale.same": "検出したドットのまま",
+		"candidate.label.cell_scale.double": "ドットを大きく",
+		"candidate.label.cell_scale.quadruple": "ドットをとても大きく",
 		"candidate.description.auto-result": "Auto処理で実際に採用された結果です。",
-		"candidate.description.finer": "細部を多く残す候補です。",
-		"candidate.description.coarser": "大きなドットへまとめる候補です。",
 		"candidate.description.preserve":
 			"縮小せず、安全に元の解像度を維持します。",
 		"candidate.description.convert": "通常画像としてドット絵風に変換します。",
+		"candidate.description.cell_scale.quarter":
+			"検出したドットの1/4の大きさで復元します。",
+		"candidate.description.cell_scale.half":
+			"検出したドットの半分の大きさで復元します。",
+		"candidate.description.cell_scale.same":
+			"検出したドットの大きさのまま復元します。",
+		"candidate.description.cell_scale.double":
+			"検出したドット2つ分を1ドットにまとめます。",
+		"candidate.description.cell_scale.quadruple":
+			"検出したドット4つ分を1ドットにまとめます。",
 		"batch.status.pending": "未処理",
 		"batch.status.processing": "処理中",
 		"batch.status.done": "完了",
@@ -80,6 +86,8 @@ const resources = {
 		"setting.preset": "プリセット",
 		"setting.quick_finish": "仕上がり",
 		"setting.quick_pixel_detail": "ドットの細かさ",
+		"setting.quick_cell_scale": "ドットの大きさ",
+		"setting.advanced_cell_scale": "ドットの大きさ",
 		"setting.quick_colors": "減色",
 		"setting.quick_background": "背景",
 		"setting.quick_gradient": "グラデーション表現",
@@ -109,6 +117,11 @@ const resources = {
 		"option.processing_refine": "輪郭をくっきり",
 		"option.processing_convert": "細部を残してドット化",
 		"option.processing_preserve": "サイズを変えず補正",
+		"option.cell_scale_quarter": "とても小さい",
+		"option.cell_scale_half": "小さい",
+		"option.cell_scale_same": "標準",
+		"option.cell_scale_double": "大きい",
+		"option.cell_scale_quadruple": "とても大きい",
 		"option.size_very_small": "とても粗い",
 		"option.size_small": "粗い",
 		"option.size_slightly_small": "やや粗い",
@@ -227,7 +240,11 @@ const resources = {
 		"tooltip.help.convert_output_dimension":
 			"Convertでリサンプリングする寸法を指定します。背景トリム、アウトライン、余白追加によって最終キャンバスの寸法は変わる場合があります。",
 		"tooltip.help.quick_detail":
-			"「細部を残してドット化」で使うドットの細かさを5段階から選びます。粗くするほど出力が小さくなり、1ドットが大きく見えます。「細かい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\n「おまかせ」では、細部を残す仕上がりが自動で選ばれた画像にだけ適用されます。",
+			"「細部を残してドット化」で使うドットの細かさを5段階から選びます。粗くするほど出力が小さくなり、1ドットが大きく見えます。「細かい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\n「おまかせ」では、細部を残す仕上がりが自動で選ばれた画像にだけ適用されます。「輪郭をくっきり」で使うのは「ドットの大きさ」で、こちらとは別の項目です。",
+		"tooltip.help.quick_cell_scale":
+			"「輪郭をくっきり」で復元するドットの大きさを5段階から選びます。検出したドットの大きさを基準に、その1/4〜4倍へ変えます。格子の検出が外れて出力が粗くなりすぎたときに、小さい側を選ぶと復元し直せます。元画像を超えて拡大することはありません。\n\n「おまかせ」では、輪郭をくっきりする仕上がりが自動で選ばれた画像にだけ適用されます。「細部を残してドット化」で使うのは「ドットの細かさ」です。",
+		"tooltip.help.advanced_cell_scale":
+			"検出したセル寸法に倍率を掛けてから縮小します。格子の位相は変えないので、セル境界は検出した格子に乗ったままで、出力の縦横比も変わりません。グリッド検出モードが「自動」または「ピクセル+自動」で、格子の復元で仕上げる場合にだけ効きます。",
 		"tooltip.help.quick_reduction_mode":
 			"減色方法を選びます。おまかせでは、「輪郭をくっきり」と「サイズを変えず補正」は元の色を維持し、「細部を残してドット化」は24色に減色します。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",
 		"tooltip.help.quick_background":
@@ -631,22 +648,28 @@ const resources = {
 		"ui.placeholder.result": "处理结果会显示在这里",
 		"ui.close": "关闭",
 		"ui.download_options": "选择下载类型",
-		"candidate.title": "选择处理结果",
-		"candidate.intro": "自动判断不够确定，请比较实际结果后再选择。",
+		"candidate.other_heading": "其他方案",
 		"candidate.recommended_badge": "推荐",
 		"candidate.metadata": "{width} × {height} px・{colors} 色",
-		"candidate.label.recommended": "推荐方案",
 		"candidate.label.auto-result": "Auto结果",
-		"candidate.label.finer": "更精细",
-		"candidate.label.coarser": "更粗犷",
 		"candidate.label.preserve": "保持原尺寸",
 		"candidate.label.convert": "转换方案",
-		"candidate.description.recommended": "最符合图像结构的检测结果。",
+		"candidate.label.cell_scale.quarter": "像素小很多",
+		"candidate.label.cell_scale.half": "像素更小",
+		"candidate.label.cell_scale.same": "保持检测到的像素",
+		"candidate.label.cell_scale.double": "像素更大",
+		"candidate.label.cell_scale.quadruple": "像素大很多",
 		"candidate.description.auto-result": "Auto处理实际采用的结果。",
-		"candidate.description.finer": "保留更多细节的方案。",
-		"candidate.description.coarser": "将图像整理为更大像素块的方案。",
 		"candidate.description.preserve": "不缩小图像，安全保留原始分辨率。",
 		"candidate.description.convert": "按普通图像转换为像素画风格。",
+		"candidate.description.cell_scale.quarter":
+			"以检测到的像素大小的 1/4 还原。",
+		"candidate.description.cell_scale.half": "以检测到的像素大小的一半还原。",
+		"candidate.description.cell_scale.same": "按检测到的像素大小还原。",
+		"candidate.description.cell_scale.double":
+			"将每 2 个检测到的像素合并为 1 个。",
+		"candidate.description.cell_scale.quadruple":
+			"将每 4 个检测到的像素合并为 1 个。",
 		"batch.status.pending": "待处理",
 		"batch.status.processing": "处理中",
 		"batch.status.done": "完成",
@@ -658,6 +681,8 @@ const resources = {
 		"setting.preset": "预设",
 		"setting.quick_finish": "效果",
 		"setting.quick_pixel_detail": "像素细节",
+		"setting.quick_cell_scale": "像素大小",
+		"setting.advanced_cell_scale": "像素大小",
 		"setting.quick_colors": "减色",
 		"setting.quick_background": "背景",
 		"setting.quick_gradient": "渐变纹理",
@@ -687,6 +712,11 @@ const resources = {
 		"option.processing_refine": "清晰轮廓",
 		"option.processing_convert": "保留细节的像素画",
 		"option.processing_preserve": "原尺寸优化",
+		"option.cell_scale_quarter": "非常小",
+		"option.cell_scale_half": "较小",
+		"option.cell_scale_same": "标准",
+		"option.cell_scale_double": "较大",
+		"option.cell_scale_quadruple": "非常大",
 		"option.size_very_small": "非常粗",
 		"option.size_small": "粗",
 		"option.size_slightly_small": "稍粗",
@@ -804,7 +834,11 @@ const resources = {
 		"tooltip.help.convert_output_dimension":
 			"指定 Convert 重采样使用的尺寸。背景裁剪、描边和留白可能会改变最终画布尺寸。",
 		"tooltip.help.quick_detail":
-			"为“保留细节的像素画”选择五档像素细节。设置越粗，输出尺寸越小，单个像素看起来越大。“精细”也不会放大到超过原图尺寸，不影响颜色数量等其他设置。\n\n在“智能推荐”中，仅当系统自动选择保留细节的效果时生效。",
+			"为“保留细节的像素画”选择五档像素细节。设置越粗，输出尺寸越小，单个像素看起来越大。“精细”也不会放大到超过原图尺寸，不影响颜色数量等其他设置。\n\n在“智能推荐”中，仅当系统自动选择保留细节的效果时生效。“清晰轮廓”使用的是另一个项目“像素大小”。",
+		"tooltip.help.quick_cell_scale":
+			"为“清晰轮廓”选择还原时的像素大小，共五档。以检测到的像素大小为基准，在 1/4 到 4 倍之间调整。当网格检测失误导致结果过粗时，选择更小的档位即可重新还原。不会放大到超过原图尺寸。\n\n在“智能推荐”中，仅当系统自动选择清晰轮廓时生效。“保留细节的像素画”使用的是“像素细节”。",
+		"tooltip.help.advanced_cell_scale":
+			"在缩小之前，为检测到的单元格尺寸乘以倍率。网格相位保持不变，因此单元格边界仍位于检测到的网格上，输出的纵横比也不会改变。仅当网格检测模式为“自动”或“像素+自动”，且结果来自网格还原时生效。",
 		"tooltip.help.quick_reduction_mode":
 			"选择减色方式。智能推荐会为“清晰轮廓”和“原尺寸优化”保留原色，并为“保留细节的像素画”选择24色。任意颜色数量和导入固定调色板可在高级设置中指定。",
 		"tooltip.help.quick_background":
@@ -1194,27 +1228,33 @@ const resources = {
 		"ui.placeholder.result": "Processed result will appear here",
 		"ui.close": "Close",
 		"ui.download_options": "Select download options",
-		"candidate.title": "Choose the best result",
-		"candidate.intro":
-			"Automatic detection was uncertain. Compare the actual results before choosing.",
+		"candidate.other_heading": "Other options",
 		"candidate.recommended_badge": "Recommended",
 		"candidate.metadata": "{width} × {height} px · {colors} colors",
-		"candidate.label.recommended": "Recommended",
 		"candidate.label.auto-result": "Auto result",
-		"candidate.label.finer": "Finer",
-		"candidate.label.coarser": "Coarser",
 		"candidate.label.preserve": "Keep original size",
 		"candidate.label.convert": "Convert option",
-		"candidate.description.recommended":
-			"The detected result that best matches the image structure.",
+		"candidate.label.cell_scale.quarter": "Much smaller pixels",
+		"candidate.label.cell_scale.half": "Smaller pixels",
+		"candidate.label.cell_scale.same": "Detected pixel size",
+		"candidate.label.cell_scale.double": "Larger pixels",
+		"candidate.label.cell_scale.quadruple": "Much larger pixels",
 		"candidate.description.auto-result":
-			"The result actually selected by Auto processing.",
-		"candidate.description.finer": "Keeps more fine detail.",
-		"candidate.description.coarser": "Groups the image into larger pixels.",
+			"The result Auto processing actually used.",
 		"candidate.description.preserve":
-			"Avoids downscaling and safely keeps the original resolution.",
+			"Keeps the original resolution without downscaling.",
 		"candidate.description.convert":
-			"Treats the input as a regular image and converts it to pixel art.",
+			"Converts the image to pixel art as a regular picture.",
+		"candidate.description.cell_scale.quarter":
+			"Restores at a quarter of the detected pixel size.",
+		"candidate.description.cell_scale.half":
+			"Restores at half the detected pixel size.",
+		"candidate.description.cell_scale.same":
+			"Restores at the detected pixel size.",
+		"candidate.description.cell_scale.double":
+			"Merges every two detected pixels into one.",
+		"candidate.description.cell_scale.quadruple":
+			"Merges every four detected pixels into one.",
 		"batch.status.pending": "Pending",
 		"batch.status.processing": "Processing",
 		"batch.status.done": "Done",
@@ -1226,6 +1266,8 @@ const resources = {
 		"setting.preset": "Preset",
 		"setting.quick_finish": "Finish",
 		"setting.quick_pixel_detail": "Pixel Detail",
+		"setting.quick_cell_scale": "Pixel Size",
+		"setting.advanced_cell_scale": "Pixel Size",
 		"setting.quick_colors": "Color Reduction",
 		"setting.quick_background": "Background",
 		"setting.quick_gradient": "Gradient Texture",
@@ -1255,6 +1297,11 @@ const resources = {
 		"option.processing_refine": "Crisp Edges",
 		"option.processing_convert": "Detailed Pixel Art",
 		"option.processing_preserve": "Original Size Cleanup",
+		"option.cell_scale_quarter": "Very small",
+		"option.cell_scale_half": "Small",
+		"option.cell_scale_same": "Standard",
+		"option.cell_scale_double": "Large",
+		"option.cell_scale_quadruple": "Very large",
 		"option.size_very_small": "Very coarse",
 		"option.size_small": "Coarse",
 		"option.size_slightly_small": "Slightly coarse",
@@ -1373,7 +1420,11 @@ const resources = {
 		"tooltip.help.convert_output_dimension":
 			"Sets the resampling dimension used by Convert. Background trimming, outlines, and padding can change the final canvas size.",
 		"tooltip.help.quick_detail":
-			"Chooses from five pixel-detail levels for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image and does not change the color count or other settings.\n\nIn Best Match, this applies only when a detailed finish is selected automatically.",
+			"Chooses from five pixel-detail levels for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image and does not change the color count or other settings.\n\nIn Best Match, this applies only when a detailed finish is selected automatically. Crisp Edges uses Pixel Size instead, which is a separate setting.",
+		"tooltip.help.quick_cell_scale":
+			"Chooses the size of the pixels restored by Crisp Edges, in five steps relative to the detected pixel size (1/4x to 4x). When grid detection misses and the result looks too coarse, pick a smaller step to restore it again. It never upscales beyond the original image.\n\nIn Best Match, this applies only when Crisp Edges is selected automatically. Detailed Pixel Art uses Pixel Detail instead.",
+		"tooltip.help.advanced_cell_scale":
+			"Scales the detected cell size before downsampling. The grid phase is kept, so cell boundaries stay on the detected grid and the output aspect ratio does not change. Applies only when Grid Detection Mode is Auto or Pixel + Auto and the result comes from grid restoration.",
 		"tooltip.help.quick_reduction_mode":
 			"Chooses color reduction. Best Match keeps original colors for Crisp Edges and Original Size Cleanup, and selects 24 colors for Detailed Pixel Art. Custom color counts and imported palettes are available in Advanced Settings.",
 		"tooltip.help.quick_background":

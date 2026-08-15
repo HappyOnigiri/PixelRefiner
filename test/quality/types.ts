@@ -1,12 +1,13 @@
 import type { QuickSettingsState } from "../../src/browser/quick-settings";
 import type {
-	CandidateModalDecision,
-	CandidateModalReason,
+	CandidateSuggestionDecision,
+	CandidateSuggestionReason,
 	WarningPresentation,
-} from "../../src/core/candidate-modal-decision";
+} from "../../src/core/candidate-suggestion-decision";
 import type { ProcessOptions } from "../../src/core/processor";
 import type {
 	CandidateKind,
+	CellScale,
 	DitherMode,
 	ProcessingMode,
 } from "../../src/shared/types";
@@ -91,7 +92,7 @@ export type QualityImageCase = {
 };
 
 /**
- * 候補選択モーダルに並ぶ選択肢 1 件。ブラウザと同じ候補プランから作る。
+ * 候補リストに並ぶ選択肢 1 件。ブラウザと同じ候補プランから作る。
  * [Intended] 生成に失敗した候補も欠番として残す。表示見込みの判定はプラン数だけで
  * 決めるため、生成失敗は判定に現れず、ここを見ないと気付けない。
  */
@@ -102,6 +103,8 @@ export type QualityCandidateOption = {
 	// [Intended] Auto 実結果の選択肢は Auto 経路の再実行で作るため auto を取る。
 	// ProcessingRoute では表せないので処理モードとして持つ。
 	processingMode: ProcessingMode;
+	/** kind が "cell-scale" のときのセル倍率。段階ごとに 1 件ずつ並ぶため表示に使う。 */
+	cellScale?: CellScale;
 	/** 生成に失敗した候補は null。 */
 	outputWidth: number | null;
 	outputHeight: number | null;
@@ -243,12 +246,12 @@ export type QualityCaseResult = {
 	/** confidence の意味を明示するためのグリッド信頼度。confidence と同値で保持する。 */
 	gridConfidence: number | null;
 	warnings: string[];
-	candidateModalDecision: CandidateModalDecision;
-	candidateModalReason: CandidateModalReason;
+	candidateSuggestionDecision: CandidateSuggestionDecision;
+	candidateSuggestionReason: CandidateSuggestionReason;
 	warningPresentation: WarningPresentation;
 	/** 品質レポートでは実際のプレビューではなく、候補プラン数を表示見込みの根拠に使う。 */
 	candidatePlanCount: number;
-	/** 候補選択モーダルが出る見込みのケースだけ生成する選択肢。それ以外は空配列。 */
+	/** 候補リストが出る見込みのケースだけ生成する選択肢。それ以外は空配列。 */
 	candidateOptions: QualityCandidateOption[];
 	expectedWidth: number;
 	expectedHeight: number;
