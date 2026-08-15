@@ -123,6 +123,10 @@ export const createRunProcessing = ({
 		}
 		imageSession.setImageStatus(currentItem.id, "processing");
 
+		// [Intended] 結果を書き込んだ後に中断された場合は、done の画像を pending へ戻さない。
+		// 戻すと一覧が未変換のまま表示され、保留キューが同じ設定で変換をやり直す。
+		let resultApplied = false;
+
 		try {
 			const processOptions = createProcessOptions(els, processingState);
 
@@ -167,6 +171,7 @@ export const createRunProcessing = ({
 				},
 				processingState.settingsMode,
 			);
+			resultApplied = true;
 
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
@@ -293,7 +298,7 @@ export const createRunProcessing = ({
 				isProcessingCancelledError(err) ||
 				!latestProcessing.isLatest(generation)
 			) {
-				if (currentItem.id !== latestImageId) {
+				if (!resultApplied && currentItem.id !== latestImageId) {
 					imageSession.setImageStatus(currentItem.id, "pending");
 				}
 				return;
