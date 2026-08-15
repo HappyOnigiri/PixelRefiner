@@ -553,6 +553,61 @@
       "catastrophicFailure": false
     },
     {
+      "id": "guide-recipe1-knight-sprite",
+      "status": "passed",
+      "outputWidth": 60,
+      "outputHeight": 85,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "guide-recipe2-potion-icon",
+      "status": "passed",
+      "outputWidth": 16,
+      "outputHeight": 23,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "guide-recipe3-dragon-sprite",
+      "status": "passed",
+      "outputWidth": 44,
+      "outputHeight": 47,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "guide-recipe4-landscape",
+      "status": "passed",
+      "outputWidth": 256,
+      "outputHeight": 144,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
+      "id": "guide-recipe5-chibi-character",
+      "status": "passed",
+      "outputWidth": 60,
+      "outputHeight": 81,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "auto-auto-grid-detection",
       "status": "passed",
       "outputWidth": 88,

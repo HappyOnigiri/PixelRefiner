@@ -19,6 +19,75 @@ export const describeCase = (
 				"あわせて、固定した目標画像までの残りの差を目標との比較で測ります。",
 		};
 	}
+	if (result.id === "guide-recipe1-knight-sprite") {
+		return {
+			en:
+				"Process the 2048 x 2048 AI-generated knight published in the recipes guide, whose " +
+				"cell boundaries are antialiased over a magenta background, with the Best Match preset " +
+				"the page tells the reader to select, and reproduce the published 60 x 85 result pixel " +
+				"for pixel. A mismatch means the published image no longer follows from the published steps.",
+			ja:
+				"レシピ集ページが掲載しているマゼンタ背景・2048×2048の生成AI製の騎士（セル境界はアンチエイリアス）を、" +
+				"ページが案内するとおり「おまかせ」プリセットのまま処理し、掲載している60×85の変換結果と1画素も違わないことを確認します。" +
+				"一致しなくなった場合は、掲載画像が掲載手順の結果ではなくなっています。",
+		};
+	}
+	if (result.id === "guide-recipe2-potion-icon") {
+		return {
+			en:
+				"Process the 2752 x 1536 AI-generated potion bottle published in the recipes guide, " +
+				"drawn over a chroma-key green background, with the Transparent Icon preset the page tells " +
+				"the reader to select, and reproduce the published 16 x 23 result pixel for pixel, including " +
+				"the transparent background.",
+			ja:
+				"レシピ集ページが掲載している緑背景・2752×1536の生成AI製のポーション瓶を、" +
+				"ページが案内するとおり「透過アイコン」プリセットのまま処理し、" +
+				"背景を透過した掲載中の16×23の変換結果と1画素も違わないことを確認します。",
+		};
+	}
+	if (result.id === "guide-recipe3-dragon-sprite") {
+		return {
+			en:
+				"Process the 2816 x 1536 AI-generated green dragon published in the recipes guide, " +
+				"drawn over a red background, with the Retro Game Style preset the page tells the reader " +
+				"to select, and reproduce the published 44 x 47 result pixel for pixel, " +
+				"including the four-tone palette the conversion replaces the generated colors with.",
+			ja:
+				"レシピ集ページが掲載している赤背景・2816×1536の生成AI製の緑のドラゴンを、" +
+				"ページが案内するとおり「レトロゲーム風」プリセットで処理し、" +
+				"生成時の色を置き換えた4階調のパレットを含めて、" +
+				"掲載している44×47の変換結果と1画素も違わないことを確認します。",
+		};
+	}
+	if (result.id === "guide-recipe4-landscape") {
+		return {
+			en:
+				"Process the 2752 x 1536 AI-generated mountain landscape published in the recipes guide, " +
+				"whose pixel cells are softened by generation, with the Background Artwork preset the page " +
+				"tells the reader to select, and reproduce the published 256 x 144 result " +
+				"pixel for pixel without making any part of the full-frame scenery transparent.",
+			ja:
+				"レシピ集ページが掲載している2752×1536の生成AI製の山岳風景（生成時にセル境界がぼけたドット絵）を、" +
+				"ページが案内するとおり「背景用の一枚絵」プリセットで処理し、" +
+				"風景のどの部分も透過せず、掲載している256×144の変換結果と1画素も違わないことを確認します。",
+		};
+	}
+	if (result.id === "guide-recipe5-chibi-character") {
+		return {
+			en:
+				"Process the 2816 x 1536 AI-generated chibi character published in the recipes guide, " +
+				"an ordinary flat-colored illustration rather than pixel art, with the Convert Illustration " +
+				"to Pixel Art preset the page tells the reader to select, and reproduce the published " +
+				"60 x 81 result pixel for pixel, including the " +
+				"transparent background and the thick outlines carried over from the illustration.",
+			ja:
+				"レシピ集ページが掲載している青背景・2816×1536の生成AI製のデフォルメキャラクターを、" +
+				"ドット絵ではないフラットな塗りのイラストのまま、" +
+				"ページが案内するとおり「イラストをドット絵に変換」プリセットで処理し、" +
+				"背景の透過とイラストから引き継いだ太い輪郭線を含めて、" +
+				"掲載している60×81の変換結果と1画素も違わないことを確認します。",
+		};
+	}
 	if (result.id === "restore-thin-features-and-alpha-coverage") {
 		return {
 			en:

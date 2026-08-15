@@ -109,6 +109,65 @@ parameterized by the quality test and rendered in full by the HTML report. Auto
 case exclusions therefore happen while building the manifest rather than only
 hiding report entries; their explicit cases remain in the report.
 
+## Guide page examples
+
+The recipes guide (`guide.html`) publishes a generated image together with the
+result of converting it by following named steps — selecting a built-in preset,
+or changing a Quick Settings item. Every published example has one case here, so
+the report keeps answering whether that published result is still reproducible
+by following the published steps.
+
+Those cases set `presetId`, or `quickSettings` when the page names Quick
+Settings instead of a preset, and no `options`. The benchmark resolves the
+options from `BUILT_IN_PRESETS` or from `createQuickProcessOptions` when the
+case runs, so changing a preset or the meaning of a Quick Settings item reaches
+the case instead of leaving a stale copy of its values in `cases.json`, and the
+fixture-only background-extraction default is not mixed in either: the case has
+to run exactly what a reader running the same steps would get.
+
+Both ends of the case are files the page itself serves, not copies of them.
+`input` is the full-size original under `public/guide/`, the same file the page
+offers for download, and `expected` is the published output PNG. That is what
+makes the case answer the reader's question: the image they can download,
+converted by the steps they are told to follow, produces the image they are
+shown. A copy under `test/fixtures/` would only prove that some private file
+reproduces the result. The expectation is an exact match, which fails as soon as
+the published image stops following from the published steps. Fix that by
+regenerating the guide image, not by loosening the case.
+
+The image displayed on the page is a separate, downscaled copy
+(`recipeN-input.jpg`), because the originals run to several megabytes each.
+Downscaling changes the conversion — a smaller input yields a smaller output —
+so the displayed copy reproduces nothing, and the download link is what carries
+the promise.
+
+Adding an example:
+
+1. Publish the image as it was generated — the full-resolution original — as
+   `public/guide/recipeN-input-full.png`, and record the prompt in the case's
+   provenance. Add a downscaled `recipeN-input.jpg` for the page to display, and
+   a download link to the original next to it.
+2. Add the case to [`cases.json`](./cases.json) with `presetId` or
+   `quickSettings`, `input` pointing at the published original, `expected`
+   pointing at the published output, and `expectedWidth` / `expectedHeight`
+   matching the caption on the page.
+3. Describe the case in `describeCase` in
+   [`report/case-description.ts`](./report/case-description.ts).
+4. Run `pnpm test:quality:update` to register the baseline, then
+   `pnpm test:quality:full`.
+
+Guide originals live outside `test/fixtures/`, so they get no automatically
+generated Auto twin and need no entry in
+[`auto-case-exclusions.json`](./auto-case-exclusions.json). The guide case
+already pins the published steps.
+
+Only the recipes carry examples, so only they are pinned here. The five
+principles earlier on the page quote prompt fragments that illustrate the wording
+rather than a run that produced a published image, and no case backs them.
+Replacing one of those fragments with the prompt of an actual run means the page
+now publishes an example, so give it a recipe and a case by the steps above
+instead of leaving the fragment unbacked.
+
 ## Target images
 
 Two separate references exist for every case, and they answer different

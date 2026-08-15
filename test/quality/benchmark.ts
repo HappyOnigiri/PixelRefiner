@@ -1,6 +1,11 @@
 import { cpSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
+import {
+	createBuiltInPresetOptions,
+	createQuickProcessOptions,
+	QUICK_SETTINGS_DEFAULTS,
+} from "../../src/browser/quick-settings";
 import { processBatchImages } from "../../src/core/batch";
 import { evaluateCandidateModalDecision } from "../../src/core/candidate-modal-decision";
 import {
@@ -52,13 +57,25 @@ const QUALITY_FIXTURE_OPTIONS = {
 
 // [Intended] 省略時に効く既定経路をレポートへ明示的に残すため、既定値も展開して返す。
 // 値は PROCESS_DEFAULTS から取るので、既定が変わればケースの実行経路も追随する。
-const effectiveCaseOptions = (
+export const effectiveCaseOptions = (
 	qualityCase: QualityImageCase,
 ): ProcessOptions => {
 	// [Intended] 自動判定ケースは UI 既定だけで処理する。fixture 用の背景抽出指定すら
 	// 混ぜないのは、UI を触らずに 1 枚渡した場合の判定精度を測るのが目的だから。
 	if (caseParameterMode(qualityCase) === "auto")
 		return { ...AUTO_CASE_OPTIONS };
+	// [Intended] プリセット指定のケースは fixture 用の背景抽出指定も混ぜず、出荷される
+	// プリセットの値だけで処理する。ガイドの手順どおりに操作した結果を再現するのが目的で、
+	// テスト都合の指定が 1 つでも入ると、掲載画像との一致が手順の裏付けにならなくなる。
+	if (qualityCase.presetId !== undefined)
+		return createBuiltInPresetOptions(qualityCase.presetId);
+	// [Intended] かんたん設定のケースもプリセットと同じく fixture 用の背景抽出指定を混ぜず、
+	// 案内された操作だけから作ったオプションで処理する。
+	if (qualityCase.quickSettings !== undefined)
+		return createQuickProcessOptions({
+			...QUICK_SETTINGS_DEFAULTS,
+			...qualityCase.quickSettings,
+		});
 	return {
 		...QUALITY_FIXTURE_OPTIONS,
 		processingMode: PROCESS_DEFAULTS.processingMode,

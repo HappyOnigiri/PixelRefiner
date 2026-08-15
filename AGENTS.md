@@ -19,6 +19,10 @@ When adding or changing `data-i18n` or `data-i18n-attr` attributes in the app UI
 
 The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in the `en`, `ja`, and `zh-CN` resources in `test/quality/report/translations.ts` instead. Do not add report-only keys to `src/browser/i18n.ts`.
 
+## Guide Page
+
+When `guide.html` publishes a converted example, add one quality case for it so the report keeps proving that the published result is reproducible: publish the generated source image at its original size under `public/guide/` and use that same file as the case `input`, and add a case to `test/quality/cases.json` whose `presetId` is the preset the page tells the reader to select — or whose `quickSettings` holds the Quick Settings changes when the page names those instead — and whose `expected` is the published output image. The page must offer that original for download, because the displayed copy is downscaled and does not reproduce the published result. See [Guide page examples](test/quality/README.md#guide-page-examples).
+
 ## Intent Comments
 
 - コードコメントは日本語で記述する。

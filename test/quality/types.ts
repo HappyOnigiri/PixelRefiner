@@ -1,3 +1,4 @@
+import type { QuickSettingsState } from "../../src/browser/quick-settings";
 import type {
 	CandidateModalDecision,
 	CandidateModalReason,
@@ -61,6 +62,19 @@ export type QualityImageCase = {
 	parameterMode?: QualityParameterMode;
 	inputKind: string;
 	degradationPatterns: string[];
+	/**
+	 * 組み込みプリセットをそのまま使うケースの、プリセット ID。
+	 * [Intended] 指定したケースは options を持たず、実行時に benchmark 側が
+	 * プリセットの内容へ差し替える。オプション一式をケース定義へ写すと、
+	 * プリセットを変えたときに両方直す必要が出て、出荷される値との一致が崩れる。
+	 */
+	presetId?: string;
+	/**
+	 * かんたん設定だけを操作するケースの、既定から変える項目。
+	 * [Intended] presetId と同じ理由で、解決後のオプション一式ではなく操作内容を持つ。
+	 * ガイドが案内する手順にプリセットが無い場合はこちらで表す。
+	 */
+	quickSettings?: Partial<QuickSettingsState>;
 	options: ProcessOptions;
 	sharedPalette?: {
 		inputs: string[];

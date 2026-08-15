@@ -2,8 +2,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	createBuiltInPresetOptions,
+	createQuickProcessOptions,
+	QUICK_SETTINGS_DEFAULTS,
+} from "../../src/browser/quick-settings";
 import type { RawImage } from "../../src/shared/types";
 import {
+	effectiveCaseOptions,
 	generateQualityBaseline,
 	writeQualityBaselineImage,
 } from "./benchmark";
@@ -130,5 +136,50 @@ describe("quality baseline generation", () => {
 		// 書き出す画像は正解画像ではなく処理結果のまま。
 		expect(generated.image.width).toBe(EXPLICIT_OUTPUT_SIZE.width);
 		expect(generated.image.height).toBe(EXPLICIT_OUTPUT_SIZE.height);
+	});
+});
+
+describe("effectiveCaseOptions", () => {
+	// [Intended] cases.json 側にかんたん設定のケースがまだ無いため、この経路は
+	// ここでだけ実行される。分岐が消えたり別のオプションを返したりしても気づけるようにする。
+	it("resolves quick settings cases through createQuickProcessOptions", () => {
+		const quickSettings = { reductionMode: "gb_pocket" } as const;
+		expect(
+			effectiveCaseOptions({
+				...explicitCase,
+				id: "quick-settings-options-test",
+				options: {},
+				quickSettings,
+			}),
+		).toEqual(
+			createQuickProcessOptions({
+				...QUICK_SETTINGS_DEFAULTS,
+				...quickSettings,
+			}),
+		);
+	});
+
+	it("resolves preset cases through the shipped preset values", () => {
+		expect(
+			effectiveCaseOptions({
+				...explicitCase,
+				id: "preset-options-test",
+				options: {},
+				presetId: "retro-game",
+			}),
+		).toEqual(createBuiltInPresetOptions("retro-game"));
+	});
+
+	it("keeps the fixture background-extraction default out of preset and quick settings cases", () => {
+		const fromCaseOptions = effectiveCaseOptions(explicitCase);
+		expect(fromCaseOptions.bgExtractionMethod).toBe("top-left");
+		expect(
+			effectiveCaseOptions({
+				...explicitCase,
+				id: "quick-settings-fixture-default-test",
+				options: {},
+				quickSettings: { reductionMode: "gb_pocket" },
+			}).bgExtractionMethod,
+		).not.toBe("top-left");
 	});
 });

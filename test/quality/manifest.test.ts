@@ -11,6 +11,14 @@ import type { QualityImageCase } from "./types";
 const cases = loadCases();
 const cloneCases = (): QualityImageCase[] => structuredClone(cases);
 
+// [Intended] 登録済みケースの種類に依存せず、否定テスト内で Quick Settings ケースを作る。
+const asQuickSettingsCase = (draft: QualityImageCase[]): QualityImageCase => {
+	const quick = draft.find((item) => item.presetId !== undefined);
+	if (!quick) throw new Error("Preset case not found");
+	delete quick.presetId;
+	return quick;
+};
+
 afterEach(() => {
 	vi.unstubAllEnvs();
 });
@@ -124,6 +132,81 @@ describe("quality manifest", () => {
 				delete lossy.expectation.minEdgeF1;
 			},
 			error: "non-exact case requires minEdgeF1",
+		},
+		{
+			name: "unknown presets",
+			mutate: (draft: QualityImageCase[]) => {
+				const preset = draft.find((item) => item.presetId !== undefined);
+				if (!preset) throw new Error("Preset case not found");
+				preset.presetId = "no-such-preset";
+			},
+			error: "unknown preset no-such-preset",
+		},
+		{
+			name: "case options on preset cases",
+			mutate: (draft: QualityImageCase[]) => {
+				const preset = draft.find((item) => item.presetId !== undefined);
+				if (!preset) throw new Error("Preset case not found");
+				preset.options.trimToContent = false;
+			},
+			error: "preset cases must not define case options",
+		},
+		{
+			name: "quick settings on preset cases",
+			mutate: (draft: QualityImageCase[]) => {
+				const preset = draft.find((item) => item.presetId !== undefined);
+				if (!preset) throw new Error("Preset case not found");
+				preset.quickSettings = { reductionMode: "mono" };
+			},
+			error: "preset cases must not define quickSettings",
+		},
+		{
+			name: "case options on quick settings cases",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = { reductionMode: "mono" };
+				quick.options.trimToContent = false;
+			},
+			error: "quick settings cases must not define case options",
+		},
+		{
+			name: "unknown quick setting keys",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = {
+					colours: "mono",
+				} as unknown as QualityImageCase["quickSettings"];
+			},
+			error: "unknown quick setting colours",
+		},
+		{
+			name: "quick setting values outside the UI choices",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = {
+					reductionMode: "gameboy",
+				} as unknown as QualityImageCase["quickSettings"];
+			},
+			error: "invalid reductionMode gameboy",
+		},
+		{
+			name: "background pick without a color",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = { background: "pick" };
+			},
+			error: "background pick requires backgroundColor",
+		},
+		{
+			name: "malformed background colors",
+			mutate: (draft: QualityImageCase[]) => {
+				const quick = asQuickSettingsCase(draft);
+				quick.quickSettings = {
+					background: "pick",
+					backgroundColor: "magenta",
+				};
+			},
+			error: "backgroundColor must be a #rrggbb color",
 		},
 		{
 			name: "missing asset provenance",

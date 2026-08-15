@@ -283,6 +283,44 @@ describe("I18nManager", () => {
 		}
 	});
 
+	it("registers guide page copy in every language", () => {
+		const i18n = new I18nManager();
+		for (const language of ["ja", "en", "zh-CN"] as const) {
+			i18n.setLanguage(language);
+			for (const key of [
+				"app.guide_link",
+				"guide.page_title",
+				"guide.page_name",
+				"guide.subtitle",
+				"guide.back_to_app",
+				"guide.copy_prompt",
+				"guide.copied",
+				"guide.copy_failed",
+				"guide.intro.heading",
+				"guide.intro.body2",
+				"guide.intro.fixable_1",
+				"guide.intro.unfixable_5",
+				"guide.principles.heading",
+				"guide.principles.p1_heading",
+				"guide.principles.p5_body",
+				"guide.principles.no_effort_body",
+				"guide.recipes.heading",
+				"guide.recipes.goal_label",
+				"guide.recipes.settings_label",
+				"guide.recipes.download_source",
+				"guide.recipe1.settings",
+				"guide.recipe3.input_alt",
+				"guide.recipe5.output_alt",
+				"guide.troubleshooting.heading",
+				"guide.troubleshooting.col_symptom",
+				"guide.troubleshooting.r1_fix",
+				"guide.notes.body",
+			] as const) {
+				expect(i18n.t(key)).not.toBe(key);
+			}
+		}
+	});
+
 	it("registers Gemini watermark controls in every language", () => {
 		const i18n = new I18nManager();
 		for (const language of ["ja", "en", "zh-CN"] as const) {
