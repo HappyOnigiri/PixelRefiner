@@ -62,6 +62,25 @@ describe("cancellable processor", () => {
 		expect(createEndpoint).toHaveBeenCalledTimes(2);
 	});
 
+	it("ignores a late resolution from the terminated worker", async () => {
+		const firstResult = deferred<never>();
+		const firstEndpoint = endpoint(() => firstResult.promise);
+		const createEndpoint = vi.fn(() => firstEndpoint);
+		const processor = createCancellableProcessor(createEndpoint);
+
+		const first = processor.process(image as RawImage, options);
+		const cancelled = expect(first).rejects.toBeInstanceOf(
+			ProcessingCancelledError,
+		);
+		processor.cancelActive();
+		await cancelled;
+
+		// 終了させた Worker から遅れて応答が届いても、呼び出し側の結果は中断のままにする。
+		firstResult.resolve(undefined as never);
+
+		await expect(first).rejects.toBeInstanceOf(ProcessingCancelledError);
+	});
+
 	it("keeps an idle worker instead of recreating it", async () => {
 		const firstEndpoint = endpoint(vi.fn(async () => undefined as never));
 		const createEndpoint = vi.fn(() => firstEndpoint);
