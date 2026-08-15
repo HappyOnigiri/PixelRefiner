@@ -136,6 +136,16 @@ describe("i18n messages", () => {
 		expect(missing).toEqual([]);
 	});
 
+	it("guide.ts がレシピ集の文言を登録している", () => {
+		// [Intended] guide.* は appMessages に含めないので、この呼び出しが
+		// 唯一の登録経路になる。消えても t() は素のキーを返すだけで気づけない。
+		const source = readFileSync(join(HERE, "../guide.ts"), "utf8");
+		expect(source).toContain("i18n.registerMessages(guideMessages)");
+		expect(source.indexOf("i18n.registerMessages(guideMessages)")).toBeLessThan(
+			source.indexOf("i18n.updatePage()"),
+		);
+	});
+
 	it("使われていないキーが残っていない", () => {
 		const sources = collectSourceText();
 		const htmlKeys = new Set([
