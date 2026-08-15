@@ -170,6 +170,15 @@ describe("i18n messages", () => {
 		);
 	});
 
+	it("i18n 本体はレシピ集の文言を型としてだけ取り込む", () => {
+		// [Intended] 値 import に変わっても型エラーにならず、guide.* の訳文が
+		// 本体バンドルへ黙って戻る。ビルド成果物は CI で検査していない。
+		const source = readFileSync(join(HERE, "index.ts"), "utf8");
+		expect(source).toContain(
+			'import type { guideMessages } from "./messages/guide"',
+		);
+	});
+
 	it("使われていないキーが残っていない", () => {
 		const sources = collectSourceText();
 		const htmlKeys = new Set([
