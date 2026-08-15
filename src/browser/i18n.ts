@@ -438,6 +438,18 @@ const resources = {
 		"guide.intro.unfixable_3": "影・グロー・ソフトシャドウ",
 		"guide.intro.unfixable_4": "画像全体のわずかな傾き",
 		"guide.intro.unfixable_5": "1枚に複数の被写体が入っている",
+		"guide.blur.heading": "拡大すると、AI 生成画像はぼけている",
+		"guide.blur.body1":
+			"引きで見るとドット絵に見えても、拡大すると 1 ドットの縁が数ピクセルかけて滲み、同じドットの中でも色が揺れています。画像生成モデルはドットの格子を正確には守らないため、生成画像はそのままでは素材として使いにくく、ゲームや UI に載せると輪郭がぼやけます。",
+		"guide.blur.body2":
+			"Pixel Refiner は、このぼけたドットを格子に合わせ直し、1 ドットを 1 色に塗り直します。この後のレシピは、そうやって整えやすい生成画像を作るためのものです。",
+		"guide.blur.view_whole": "全体",
+		"guide.blur.view_detail": "部分拡大（元画素の4倍）",
+		"guide.blur.whole_alt": "引きで見るとドット絵に見える生成画像の騎士",
+		"guide.blur.zoom_alt":
+			"兜の左上の拡大。ドットの縁が数ピクセルかけて滲んでいる",
+		"guide.blur.caption":
+			"同じ生成画像。右は兜の左上 80×80 ピクセルを 4 倍に拡大したもので、ドットの境目が滲み、背景と輪郭の間には中間色が出ています。",
 		"guide.principles.heading": "5つの基本原則",
 		"guide.principles.p1_heading":
 			"原則1: 背景は「被写体に含まれない」原色のベタ一色にする",
@@ -952,6 +964,18 @@ const resources = {
 		"guide.intro.unfixable_3": "阴影、辉光、柔和投影",
 		"guide.intro.unfixable_4": "整幅图片存在轻微倾斜",
 		"guide.intro.unfixable_5": "一张图中包含多个主体",
+		"guide.blur.heading": "放大之后，AI 生成图片其实很模糊",
+		"guide.blur.body1":
+			"远看像是像素画，放大后却能看到：单个像素块的边缘要经过好几个像素才过渡完，同一个像素块内部的颜色也在变化。图像生成模型并不会严格遵守像素网格，因此生成图片很难直接当作素材使用，放进游戏或 UI 里轮廓会发虚。",
+		"guide.blur.body2":
+			"Pixel Refiner 会把这些模糊的像素块重新对齐到网格，并把每一块重涂成单一颜色。后面的配方，就是为了生成更容易被这样整理的图片。",
+		"guide.blur.view_whole": "整体",
+		"guide.blur.view_detail": "局部放大（原像素的 4 倍）",
+		"guide.blur.whole_alt": "远看像是像素画的生成骑士图片",
+		"guide.blur.zoom_alt":
+			"头盔左上角的放大图：像素块的边缘要经过好几个像素才过渡完",
+		"guide.blur.caption":
+			"同一张生成图片。右侧是头盔左上角 80×80 像素放大 4 倍的结果：像素块之间的边界发糊，背景与轮廓之间还出现了中间色。",
 		"guide.principles.heading": "五条基本原则",
 		"guide.principles.p1_heading": "原则 1：背景使用主体中不存在的纯色平涂",
 		"guide.principles.p1_body":
@@ -1477,6 +1501,19 @@ const resources = {
 		"guide.intro.unfixable_3": "Shadows, glows, and soft shadows",
 		"guide.intro.unfixable_4": "A slight tilt across the whole image",
 		"guide.intro.unfixable_5": "Several subjects packed into one image",
+		"guide.blur.heading": "Zoom In and the Generated Image Is Blurred",
+		"guide.blur.body1":
+			"From a distance a generated image looks like pixel art, but zoom in and the edge of a single dot fades over several pixels, and the color drifts within one dot. Image models do not follow the pixel grid exactly, so a generated image is hard to use as an asset as it is: put it in a game or a UI and the outlines look soft.",
+		"guide.blur.body2":
+			"Pixel Refiner snaps these blurred dots back onto a grid and repaints each dot in a single color. The recipes below are about generating images that are easy to snap back.",
+		"guide.blur.view_whole": "Whole image",
+		"guide.blur.view_detail": "Detail (4× of the original pixels)",
+		"guide.blur.whole_alt":
+			"A generated knight sprite that looks like pixel art at a glance",
+		"guide.blur.zoom_alt":
+			"Close-up of the top left of the helmet: every dot edge fades over several pixels",
+		"guide.blur.caption":
+			"The same generated image. On the right, 80×80 pixels from the top left of the helmet are enlarged 4×: the boundary between dots is smeared, and intermediate colors appear between the background and the outline.",
 		"guide.principles.heading": "Five Basic Principles",
 		"guide.principles.p1_heading":
 			"Principle 1: Use a flat, saturated background color that never appears in the subject",

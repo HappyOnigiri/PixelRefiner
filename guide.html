@@ -209,6 +209,71 @@
           </div>
         </section>
 
+        <!-- 1-2. 生成画像のぼけ -->
+        <section
+          class="panel guide-section"
+          aria-labelledby="guide-blur-heading"
+        >
+          <h2 id="guide-blur-heading" data-i18n="guide.blur.heading">
+            Zoom In and the Generated Image Is Blurred
+          </h2>
+          <p data-i18n="guide.blur.body1">
+            From a distance a generated image looks like pixel art, but zoom in
+            and the edge of a single dot fades over several pixels, and the
+            color drifts within one dot. Image models do not follow the pixel
+            grid exactly, so a generated image is hard to use as an asset as it
+            is: put it in a game or a UI and the outlines look soft.
+          </p>
+          <p data-i18n="guide.blur.body2">
+            Pixel Refiner snaps these blurred dots back onto a grid and repaints
+            each dot in a single color. The recipes below are about generating
+            images that are easy to snap back.
+          </p>
+          <figure class="guide-figure">
+            <div class="guide-figure-views">
+              <div class="guide-figure-view">
+                <img
+                  src="/guide/recipe1-input.jpg"
+                  alt="A generated knight sprite that looks like pixel art at a glance"
+                  data-i18n-attr="alt:guide.blur.whole_alt"
+                  width="256"
+                  height="256"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span
+                  class="guide-figure-scale"
+                  data-i18n="guide.blur.view_whole"
+                  >Whole image</span
+                >
+              </div>
+              <div class="guide-figure-view">
+                <img
+                  class="guide-figure-zoom"
+                  src="/guide/recipe1-input-zoom.png"
+                  alt="Close-up of the top left of the helmet: every dot edge fades over several pixels"
+                  data-i18n-attr="alt:guide.blur.zoom_alt"
+                  width="320"
+                  height="320"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span
+                  class="guide-figure-scale"
+                  data-i18n="guide.blur.view_detail"
+                  >Detail (4× of the original pixels)</span
+                >
+              </div>
+            </div>
+            <figcaption data-i18n="guide.blur.caption">
+              The same generated image. On the right, 80×80 pixels from the top
+              left of the helmet are enlarged 4×: the boundary between dots is
+              smeared, and intermediate colors appear between the background and
+              the outline.
+            </figcaption>
+          </figure>
+        </section>
+
         <!-- 2. 5つの基本原則 -->
         <section
           class="panel guide-section"

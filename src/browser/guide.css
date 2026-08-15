@@ -244,6 +244,12 @@
   color: var(--text-dim);
 }
 
+/* [Intended] 拡大は元画素をそのまま見せるためのものなので、ブラウザの
+   平滑化を切る。滑らかに引き伸ばすと、生成画像のぼけと区別できなくなる。 */
+.guide-figure-zoom {
+  image-rendering: pixelated;
+}
+
 .guide-figure figcaption {
   margin-top: 6px;
   font-size: 0.78rem;
