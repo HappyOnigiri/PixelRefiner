@@ -7,10 +7,15 @@ import {
 import type { GridSignalOptions, PixelGrid, RawImage } from "../shared/types";
 import {
 	type AxisBoundaryContrastEvaluator,
-	type BoundaryContrastEvaluator,
 	combineAxisContrast,
 	createAxisBoundaryContrastEvaluator,
 } from "./grid-signals/boundary-contrast";
+import {
+	evidenceAt,
+	findCoarserHarmonic,
+	findSkippedEvidencePeaks,
+	scanBoundaryEvidence,
+} from "./grid-signals/boundary-evidence";
 import { downsample } from "./image-operations";
 
 type GridEstimateFromTrimmed = {
@@ -83,112 +88,6 @@ const harmonicOutHeights = (outH: number): number[] => {
 		heights.push(outH * factors[index]);
 	}
 	return heights;
-};
-
-/**
- * 境界コントラストだけを 1 刻みで走査し、証拠が最も強い出力高さを返す。
- *
- * [Intended] 再構成誤差の走査は候補ごとにダウンサンプリングが要るため刻みを粗くしてあるが、
- * 境界コントラストのピークは正解セル幅で鋭く立つので、粗い刻みでは飛び越えてしまう。
- * この指標は軸プロファイルの走査だけで求まり、ダウンサンプリングを伴わないので
- * 全高さを 1 刻みで見ても負荷が小さい。
- */
-const scanBoundaryEvidence = (
-	croppedW: number,
-	croppedH: number,
-	ratio: number,
-	outHMin: number,
-	outHMax: number,
-	boundaryContrast: BoundaryContrastEvaluator,
-): {
-	bestOutH: number;
-	bestEvidence: number;
-	scores: Float64Array;
-	outHMin: number;
-} => {
-	let bestOutH = 0;
-	const scores = new Float64Array(Math.max(0, outHMax - outHMin + 1));
-	for (let outH = outHMin; outH <= outHMax; outH += 1) {
-		const outW = Math.max(2, Math.round(outH * ratio));
-		const cellW = croppedW / outW;
-		const cellH = croppedH / outH;
-		if (!(cellW > 1 && cellH > 1)) continue;
-		scores[outH - outHMin] = boundaryContrast(cellW, cellH);
-	}
-	// [Intended] 最大値そのものを採る。正しい格子の 2 倍粗い読み方は境界がすべて実エッジに
-	// 乗るため証拠がほぼ並ぶので、「同等なら粗い方」にすると正解を機械的に半分にしてしまう
-	// （実測: 24x32 の合成スプライトが 12x16 になった）。粗い側へ倒すかどうかは、
-	// 再構成との優位比で判断する findCoarserHarmonic だけが決める。
-	// ただし範囲は minOverrideOutH 以上に限る。数セルしか無い格子は偶然の一致で
-	// 跳ね上がるため（実測: 8x8 が正解の fixture で 2x2 が最大値を取る）、そこを含めた
-	// 最大値は「入力に格子があるか」の判断材料にならない。
-	let bestEvidence = 0;
-	for (let index = 0; index < scores.length; index += 1) {
-		const outH = outHMin + index;
-		if (outH < BOUNDARY_CONTRAST_LIMITS.minOverrideOutH) continue;
-		if (scores[index] > bestEvidence) {
-			bestOutH = outH;
-			bestEvidence = scores[index];
-		}
-	}
-	return { bestOutH, bestEvidence, scores, outHMin };
-};
-
-type BoundaryEvidenceScan = ReturnType<typeof scanBoundaryEvidence>;
-
-const evidenceAt = (scan: BoundaryEvidenceScan, outH: number): number => {
-	const index = outH - scan.outHMin;
-	return index >= 0 && index < scan.scores.length ? scan.scores[index] : 0;
-};
-
-/**
- * 再構成が選んだ格子が、より粗い倍音の過分割になっていないか調べる。
- * 見つかればその倍音の出力高さ、無ければ 0 を返す。
- *
- * [Intended] 倍音の位置は端数やトリミング位置で数行ずれるため、厳密な整数比ではなく
- * 各倍音の周囲を窓で探す。粗い倍音から順に見て、最初に条件を満たしたものを採る。
- */
-const findCoarserHarmonic = (
-	scan: BoundaryEvidenceScan,
-	reconOutH: number,
-	reconEvidence: number,
-	outHMax: number,
-): number => {
-	const factors = BOUNDARY_CONTRAST_LIMITS.harmonicFactors;
-	for (let index = factors.length - 1; index >= 0; index -= 1) {
-		const center = reconOutH / factors[index];
-		if (center < BOUNDARY_CONTRAST_LIMITS.minOverrideOutH) continue;
-		const radius = Math.max(
-			1,
-			center * BOUNDARY_CONTRAST_LIMITS.harmonicWindow,
-		);
-		// [Intended] 窓の下端にも minOverrideOutH を掛ける。中心だけを見ていると、
-		// 中心が下限ちょうどの倍音で窓が下限を割り、周期の繰り返しが足りない
-		// 出力高さが乗り換え先に選ばれる。
-		const from = Math.max(
-			scan.outHMin,
-			BOUNDARY_CONTRAST_LIMITS.minOverrideOutH,
-			Math.round(center - radius),
-		);
-		const to = Math.min(outHMax, Math.round(center + radius));
-		let bestOutH = 0;
-		let bestEvidence = 0;
-		for (let outH = from; outH <= to; outH += 1) {
-			const evidence = evidenceAt(scan, outH);
-			if (evidence > bestEvidence) {
-				bestEvidence = evidence;
-				bestOutH = outH;
-			}
-		}
-		if (
-			bestOutH > 0 &&
-			bestEvidence >= BOUNDARY_CONTRAST_LIMITS.minEvidence &&
-			bestEvidence >= reconEvidence * BOUNDARY_CONTRAST_LIMITS.overrideRatio
-		) {
-			return bestOutH;
-		}
-	}
-	return 0;
 };
 
 /**
@@ -663,6 +562,7 @@ export class FastGridSearchFromTrimmed
 		const rangeFloor = harmonicOutH > 0 ? evidenceOutHMin : outHMin;
 		const r0 = Math.max(rangeFloor, refineCenter - refineRadius);
 		const r1 = Math.min(outHMax, refineCenter + refineRadius);
+		const finePixelStride = Math.max(1, Math.floor(pixelStride / 2));
 		const refined = this.scan(
 			cropped,
 			mask,
@@ -670,12 +570,68 @@ export class FastGridSearchFromTrimmed
 			r0,
 			r1,
 			1,
-			Math.max(1, Math.floor(pixelStride / 2)),
+			finePixelStride,
 		);
 		// 注記:
 		// 候補リスト（UI でのサイズ調整用）には「粗い検索」の分散候補を使用する。
 		// 最終的に採用するグリッドは「精密検索」の最良結果を維持する。
-		const best = refined?.est ?? coarse.est;
+		let best = refined?.est ?? coarse.est;
+		// [Intended] 粗い刻みは正解の出力高さをまたぐことがある。1 ドットが大きく描かれた
+		// 入力では再構成誤差の谷が出力高さ 1 行ぶんしか無く、隣を見ても手掛かりが残らない
+		// （実測: 100x100 ドットの 2048px 生成画像で、被写体 BBox 1231x1744 に対し
+		// outHMin=54・刻み 3 の走査点が 84 と 87 になり、正解 85 の谷（誤差 24.2、
+		// 隣は 63.6 と 69.2）を素通りした）。境界コントラストは 1 刻みで見ているので、
+		// 走査から漏れた山を再走査の中心として使う。
+		// [Intended] 最大の山だけでは足りない。市松の合成画像では正解の 1 オクターブ下が
+		// 全域の最大になり、正解は 2 番目以降の山になる（実測: 540x540・セル 30px で
+		// 出力 9 の証拠 31.7 が最大、正解 18 はその次）。乗り換え先が倍音関係に無い
+		// ときの受け皿でもあるので、強い順に数個ぶん見る。
+		if (boundaryContrastOverride) {
+			const scannedByCoarse = (outH: number): boolean =>
+				(outH >= r0 && outH <= r1) ||
+				(outH >= outHMin &&
+					outH <= outHMax &&
+					(outH - outHMin) % outHStep === 0);
+			const peaks = findSkippedEvidencePeaks(
+				evidence,
+				Math.max(
+					BOUNDARY_CONTRAST_LIMITS.minEvidence,
+					reconEvidence * BOUNDARY_CONTRAST_LIMITS.overrideRatio,
+				),
+				scannedByCoarse,
+				BOUNDARY_CONTRAST_LIMITS.skippedPeakCandidates,
+			);
+			for (let index = 0; index < peaks.length; index += 1) {
+				const peak = peaks[index];
+				// [Policy] 山を根拠に動かすのは粗い側だけ。再構成誤差は細かいほど下がるので、
+				// 細かい側の山へ降りると誤差比較が必ずそちらへ倒れる。境界コントラストが
+				// 正解の 2 倍細かい格子で最大になる入力があり（実測: 輪郭のぼけた
+				// 2816x1536 と 1254x1254 の生成画像で、正解 22x21 / 33x47 の証拠 1.00 /
+				// 1.05 に対し 2 倍細かい格子が 1.52 / 1.53）、そこでは乗り換えが害になる。
+				if (peak >= best.outH) continue;
+				const atPeak = this.scan(
+					cropped,
+					mask,
+					sampleWindow,
+					Math.max(
+						evidenceOutHMin,
+						peak - BOUNDARY_CONTRAST_LIMITS.refineRadius,
+					),
+					Math.min(outHMax, peak + BOUNDARY_CONTRAST_LIMITS.refineRadius),
+					1,
+					finePixelStride,
+				);
+				// [Policy] 採否は再構成誤差に決めさせる。境界コントラストは走査から漏れた
+				// 位置を教えるだけで、そこまでの最良より誤差が下がらなければ乗り換えない。
+				if (
+					atPeak &&
+					(atPeak.est.score ?? Number.POSITIVE_INFINITY) <
+						(best.score ?? Number.POSITIVE_INFINITY)
+				) {
+					best = atPeak.est;
+				}
+			}
+		}
 		// [Intended] 採用した倍率と、境界がもっとも揃う倍率が食い違っているなら、
 		// どちらを採るべきかは指標だけでは決まらない。利用者へ候補を出す根拠にする。
 		const contested =
