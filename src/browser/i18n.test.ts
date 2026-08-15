@@ -168,7 +168,14 @@ describe("I18nManager", () => {
 		const i18n = new I18nManager();
 		for (const lang of ["ja", "en", "zh-CN"] as const) {
 			i18n.setLanguage(lang);
-			expect(i18n.t("preset.photo_to_pixel")).not.toBe("preset.photo_to_pixel");
+			for (const key of [
+				"preset.photo_to_pixel",
+				"preset.retro_game",
+				"preset.background_art",
+				"preset.illustration_to_pixel_art",
+			] as const) {
+				expect(i18n.t(key)).not.toBe(key);
+			}
 			for (const key of [
 				"setting.quick_finish",
 				"setting.quick_pixel_detail",
@@ -212,11 +219,15 @@ describe("I18nManager", () => {
 		expect(i18n.t("preset.auto")).toBe("おまかせ");
 		expect(i18n.t("setting.quick_colors")).toBe("減色");
 		expect(i18n.t("preset.transparent_icon")).toBe("透過アイコン");
+		expect(i18n.t("preset.retro_game")).toBe("レトロゲーム風");
+		expect(i18n.t("preset.background_art")).toBe("背景用の一枚絵");
+		expect(i18n.t("preset.illustration_to_pixel_art")).toBe(
+			"イラストをドット絵に変換",
+		);
 		expect(i18n.t("option.quick_processing_refine")).toBe("輪郭をくっきり");
 		expect(i18n.t("option.quick_processing_convert")).toBe(
 			"細部を残してドット化",
 		);
-		expect(i18n.t("preset.limited_colors")).toBe("16色レトロ");
 	});
 
 	it("keeps equivalent preset, quick, and advanced labels consistent", () => {
