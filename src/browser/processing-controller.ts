@@ -121,7 +121,7 @@ export const createRunProcessing = ({
 		if (selection) {
 			imageSession.setCandidateSelection(currentItem.id, selection);
 		}
-		imageSession.setImageStatus(currentItem.id, "processing");
+		const processingToken = imageSession.beginProcessing(currentItem.id);
 
 		// [Intended] 結果を書き込んだ後に中断された場合は、done の画像を pending へ戻さない。
 		// 戻すと一覧が未変換のまま表示され、保留キューが同じ設定で変換をやり直す。
@@ -145,8 +145,13 @@ export const createRunProcessing = ({
 					)
 				: await processor.process(currentImage, processOptions);
 			// [Intended] キャンセル直前に完了通知が届いた旧処理も、結果や画像状態を上書きさせない。
-			if (!latestProcessing.isLatest(generation)) {
-				if (currentItem.id !== latestImageId) {
+			// 一括処理など別経路がこの画像を処理し直していた場合は、状態もその経路に委ねる。
+			const superseded = !imageSession.isProcessingCurrent(
+				currentItem.id,
+				processingToken,
+			);
+			if (superseded || !latestProcessing.isLatest(generation)) {
+				if (!superseded && currentItem.id !== latestImageId) {
 					imageSession.setImageStatus(currentItem.id, "pending");
 				}
 				return;
@@ -298,7 +303,11 @@ export const createRunProcessing = ({
 				isProcessingCancelledError(err) ||
 				!latestProcessing.isLatest(generation)
 			) {
-				if (!resultApplied && currentItem.id !== latestImageId) {
+				if (
+					!resultApplied &&
+					currentItem.id !== latestImageId &&
+					imageSession.isProcessingCurrent(currentItem.id, processingToken)
+				) {
 					imageSession.setImageStatus(currentItem.id, "pending");
 				}
 				return;
@@ -307,7 +316,9 @@ export const createRunProcessing = ({
 			// [Intended] トーストは重ねて表示できないため、呼び出し側がまとめて通知する場合は出さない。
 			// 原因は画像一覧の状態として残るので、ここで失われるわけではない。
 			if (!options.suppressErrorNotification) showError(msg);
-			imageSession.setImageStatus(currentItem.id, "error", msg);
+			if (imageSession.isProcessingCurrent(currentItem.id, processingToken)) {
+				imageSession.setImageStatus(currentItem.id, "error", msg);
+			}
 		} finally {
 			const finishDecision = latestProcessing.finish(
 				generation,
