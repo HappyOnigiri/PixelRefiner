@@ -15,6 +15,7 @@ import {
 } from "./batch";
 import {
 	candidateProcessOptions,
+	createCandidateAcceptor,
 	createCandidatePreview,
 	selectCandidatePlans,
 } from "./candidate-previews";
@@ -102,6 +103,7 @@ const worker: ProcessorWorker = {
 			options.cellScale,
 		);
 		const detectedGrid = detectionCache.get(cacheKey);
+		const accept = createCandidateAcceptor(analysis);
 		const previews: CandidatePreview[] = [];
 		for (let index = 0; index < plans.length; index += 1) {
 			const plan = plans[index];
@@ -123,6 +125,10 @@ const worker: ProcessorWorker = {
 					img,
 					candidateProcessOptions(options, plan, detectedGrid),
 				);
+				// [Intended] 見て選べない候補は、生成し終えた実出力で落とす。プラン段階の
+				// 見積もりでは、トリム後に 1x1 まで潰れる候補や隣の段階と同寸法になる候補を
+				// 判別できない。
+				if (!accept(plan, processed.result)) continue;
 				previews.push(
 					createCandidatePreview(
 						plan,

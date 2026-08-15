@@ -7,7 +7,6 @@ import type {
 	CandidatePreview,
 	CandidateSelection,
 	CellScale,
-	GridCandidateReport,
 	InputClassification,
 	ProcessingAnalysis,
 	RawImage,
@@ -34,34 +33,6 @@ const area = (width: number, height: number): number => width * height;
 const isNearPreserve = (scaledArea: number, preserveArea: number): boolean =>
 	scaledArea >=
 	preserveArea * CANDIDATE_PREVIEW_LIMITS.preserveSimilarAreaRatio;
-
-/**
- * 倍率を掛けたセルで、この画像から何ドット取れるかの見積もり。
- * [Policy] 呼び出し前にセル寸法が 1px を下回る段階を除いてあるので、ここでは下限を見ない。
- */
-const scaledOutputSize = (
-	candidate: GridCandidateReport,
-	cellScale: CellScale,
-): { outW: number; outH: number } => {
-	const factor = CELL_SCALE_FACTORS[cellScale];
-	return {
-		outW: Math.max(
-			1,
-			Math.floor(candidate.cropW / (candidate.grid.cellW * factor)),
-		),
-		outH: Math.max(
-			1,
-			Math.floor(candidate.cropH / (candidate.grid.cellH * factor)),
-		),
-	};
-};
-
-/**
- * 候補として意味のある出力の下限。
- * [Policy] 1 ドットしか無い出力は絵として比べようがなく、粗い側の倍率がすべて
- * 同じ 1x1 に潰れて並ぶ。見て選べない候補は最初から出さない。
- */
-const MIN_CANDIDATE_OUTPUT_DIMENSION = 2;
 
 export const selectCandidatePlans = (
 	analysis: ProcessingAnalysis,
@@ -98,17 +69,7 @@ export const selectCandidatePlans = (
 		});
 	}
 
-	// 原寸維持の実出力は必ず入力サイズそのもの。細かい側の候補がこれに並ぶほど
-	// 大きくなった場合は、原寸維持を残して候補側を落とす。
-	const preserveCandidate = analysis.gridCandidates.find(
-		(candidate) => candidate.method === "preserve",
-	);
-	const preserveArea = preserveCandidate
-		? area(preserveCandidate.outW, preserveCandidate.outH)
-		: undefined;
-
 	if (anchor) {
-		const takenSizes = new Set<string>();
 		for (const cellScale of CANDIDATE_CELL_SCALES) {
 			const factor = CELL_SCALE_FACTORS[cellScale];
 			// [Intended] Auto 結果と同じ段階は候補にしない。候補は「ドットの大きさだけを
@@ -119,21 +80,9 @@ export const selectCandidatePlans = (
 			// 倍率ごと下限へ引き上げるので、出しても見出しの倍率と実際の倍率が食い違う。
 			if (anchor.grid.cellW * factor < 1 || anchor.grid.cellH * factor < 1)
 				continue;
-			const { outW, outH } = scaledOutputSize(anchor, cellScale);
-			if (
-				outW < MIN_CANDIDATE_OUTPUT_DIMENSION ||
-				outH < MIN_CANDIDATE_OUTPUT_DIMENSION
-			)
-				continue;
-			// 粗い側は端数の切り捨てで隣の段階と同じ寸法に落ち着くことがある。
-			const sizeKey = `${outW}x${outH}`;
-			if (takenSizes.has(sizeKey)) continue;
-			if (
-				preserveArea !== undefined &&
-				isNearPreserve(area(outW, outH), preserveArea)
-			)
-				continue;
-			takenSizes.add(sizeKey);
+			// [Policy] 出力寸法による絞り込みはここでは行わない。実処理はダウンサンプル後に
+			// 内容範囲へトリムするため、この段階で計算できる見積もりは実出力より大きく出る。
+			// 採否は生成した候補の実寸法で決める（acceptCandidateResult）。
 			plans.push({
 				id: `cell-scale:${cellScale}`,
 				kind: "cell-scale",
@@ -206,6 +155,47 @@ export const candidateProcessOptions = (
 		options.convertPixelsH = selection.outH;
 	}
 	return options;
+};
+
+/**
+ * 生成し終えた候補を実際に並べてよいかを判定する関数を作る。
+ *
+ * [Intended] 採否をプラン段階の見積もりではなく実出力で決めるためのもの。実処理は
+ * ダウンサンプル後に内容範囲へトリムするので、「切り出し幅 ÷ セル幅」で見積もると
+ * 実出力より大きく出る。見積もりで判定すると、1 ドットしか無い候補や、実際には
+ * 同じ寸法へ落ち着く候補が並んでしまう。
+ * 返す関数は採用した寸法を覚えるため、1 回の候補生成につき 1 つだけ作って使い回す。
+ */
+export const createCandidateAcceptor = (
+	analysis: ProcessingAnalysis,
+): ((selection: CandidateSelection, result: RawImage) => boolean) => {
+	// [Intended] 原寸維持は縮小しないので、実出力は候補レポートの寸法そのものになる。
+	// 実測を待たずに比較の基準として使える。
+	const preserveCandidate = analysis.gridCandidates.find(
+		(candidate) => candidate.method === "preserve",
+	);
+	const preserveArea = preserveCandidate
+		? area(preserveCandidate.outW, preserveCandidate.outH)
+		: undefined;
+	const takenSizes = new Set<string>();
+	return (selection, result) => {
+		if (selection.kind !== "cell-scale") return true;
+		if (
+			result.width < CANDIDATE_PREVIEW_LIMITS.minOutputDimension ||
+			result.height < CANDIDATE_PREVIEW_LIMITS.minOutputDimension
+		)
+			return false;
+		if (
+			preserveArea !== undefined &&
+			isNearPreserve(area(result.width, result.height), preserveArea)
+		)
+			return false;
+		// 粗い側は端数の切り捨てとトリムで隣の段階と同じ寸法に落ち着くことがある。
+		const sizeKey = `${result.width}x${result.height}`;
+		if (takenSizes.has(sizeKey)) return false;
+		takenSizes.add(sizeKey);
+		return true;
+	};
 };
 
 export const createCandidatePreview = (

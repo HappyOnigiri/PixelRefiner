@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { GridCandidateReport, ProcessingAnalysis } from "../shared/types";
+import type {
+	GridCandidateReport,
+	ProcessingAnalysis,
+	RawImage,
+} from "../shared/types";
 import {
 	candidateProcessOptions,
+	createCandidateAcceptor,
 	createCandidatePreview,
 	selectCandidatePlans,
 } from "./candidate-previews";
@@ -62,6 +67,13 @@ const analysis = (
 		],
 	}) satisfies ProcessingAnalysis;
 
+/** 実出力の寸法だけを見る判定へ渡す、中身のない画像。 */
+const rawImage = (width: number, height: number): RawImage => ({
+	width,
+	height,
+	data: new Uint8ClampedArray(width * height * 4),
+});
+
 /** rankGridCandidates が必ず加える原寸維持の候補。 */
 const preserveReport: GridCandidateReport = {
 	grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 0 },
@@ -118,18 +130,53 @@ describe("candidate previews", () => {
 		]);
 	});
 
-	it("原寸維持と見分けが付かないセル倍率候補は採らない", () => {
+	it("原寸維持と見分けが付かないセル倍率候補は実出力で落とす", () => {
 		const value = analysis("scaled-pixel");
 		// セル 4px の 1/4 は 1px となり、原寸維持（64x64）と同じ出力になる。
 		value.gridCandidates = [...value.gridCandidates, preserveReport];
+		const accept = createCandidateAcceptor(value);
+		const quarter = selectCandidatePlans(value).find(
+			(plan) => plan.cellScale === "quarter",
+		);
+		expect(quarter).toBeDefined();
 
-		expect(selectCandidatePlans(value).map((plan) => plan.cellScale)).toEqual([
-			undefined,
-			"half",
-			"double",
-			"quadruple",
-			undefined,
-		]);
+		// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+		expect(accept(quarter!, rawImage(64, 64))).toBe(false);
+		// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+		expect(accept(quarter!, rawImage(32, 32))).toBe(true);
+	});
+
+	it("実出力が1ドットしかない候補と同寸法の候補は採らない", () => {
+		const value = analysis("scaled-pixel");
+		const accept = createCandidateAcceptor(value);
+		const plans = selectCandidatePlans(value).filter(
+			(plan) => plan.kind === "cell-scale",
+		);
+		expect(plans.length).toBeGreaterThanOrEqual(3);
+
+		// 見積もりでは 2x2 でも、トリム後に 1x1 まで潰れる候補は並べない。
+		expect(accept(plans[0], rawImage(1, 1))).toBe(false);
+		expect(accept(plans[1], rawImage(8, 8))).toBe(true);
+		// 隣の段階と同じ寸法へ落ち着いた候補は 2 枚目を落とす。
+		expect(accept(plans[2], rawImage(8, 8))).toBe(false);
+	});
+
+	it("セル倍率以外の候補は実出力の重複や下限では落とさない", () => {
+		const value = analysis("uncertain");
+		const accept = createCandidateAcceptor(value);
+		const plans = selectCandidatePlans(value);
+		const cellScale = plans.find((plan) => plan.kind === "cell-scale");
+		const preserve = plans.find((plan) => plan.kind === "preserve");
+		const convert = plans.find((plan) => plan.kind === "convert");
+		expect(cellScale && preserve && convert).toBeTruthy();
+
+		// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+		expect(accept(cellScale!, rawImage(8, 8))).toBe(true);
+		// 原寸維持と Convert は「ドットの大きさ違い」ではないので、同寸法でも並べる。
+		// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+		expect(accept(preserve!, rawImage(8, 8))).toBe(true);
+		// biome-ignore lint/style/noNonNullAssertion: 直前に存在を検証している
+		expect(accept(convert!, rawImage(8, 8))).toBe(true);
 	});
 
 	it("セル寸法が1pxを下回る倍率は候補にしない", () => {
@@ -247,18 +294,24 @@ describe("candidate previews", () => {
 		);
 		expect(first.some((plan) => plan.kind === "preserve")).toBe(true);
 		expect(second).toEqual(first);
-		const rendered = first.map((selection) => {
+		// 実際に並ぶ候補と同じ手順で作る。採否は実出力を見る判定に任せる。
+		const accept = createCandidateAcceptor(processed.analysis);
+		const rendered = first.flatMap((selection) => {
 			const candidate = processImage(
 				image,
 				candidateProcessOptions(options, selection),
 			);
-			return createCandidatePreview(
-				selection,
-				candidate.result,
-				candidate.extractedPalette.length,
-			);
+			if (!accept(selection, candidate.result)) return [];
+			return [
+				createCandidatePreview(
+					selection,
+					candidate.result,
+					candidate.extractedPalette.length,
+				),
+			];
 		});
-		expect(rendered).toHaveLength(first.length);
+		expect(rendered.length).toBeGreaterThan(0);
+		expect(rendered.length).toBeLessThanOrEqual(first.length);
 		for (const candidate of rendered) {
 			let visiblePixels = 0;
 			for (
@@ -363,11 +416,17 @@ describe("candidate previews", () => {
 		// 検出格子で復元した結果（same）も含めて選べるようにする。
 		expect(plans.map((plan) => plan.cellScale)).toEqual([
 			undefined,
+			"quarter",
 			"half",
 			"same",
 			"double",
 			"quadruple",
 		]);
+		// 原寸維持と同じ絵になる段階は、実出力を見る判定の側で落とす。
+		const accept = createCandidateAcceptor(value);
+		const quarter = plans.find((plan) => plan.cellScale === "quarter");
+		// biome-ignore lint/style/noNonNullAssertion: 直前の期待値で存在を検証している
+		expect(accept(quarter!, rawImage(64, 64))).toBe(false);
 		// 原寸維持カードは Auto 結果カードが兼ねる。
 		expect(plans.some((plan) => plan.kind === "preserve")).toBe(false);
 	});

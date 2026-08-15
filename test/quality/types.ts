@@ -249,7 +249,10 @@ export type QualityCaseResult = {
 	candidateSuggestionDecision: CandidateSuggestionDecision;
 	candidateSuggestionReason: CandidateSuggestionReason;
 	warningPresentation: WarningPresentation;
-	/** 品質レポートでは実際のプレビューではなく、候補プラン数を表示見込みの根拠に使う。 */
+	/**
+	 * 品質レポートでは実際のプレビューではなく、候補プラン数を表示見込みの根拠に使う。
+	 * アプリが実出力を見て落とす分があるため、実際に並ぶ枚数の上限にあたる。
+	 */
 	candidatePlanCount: number;
 	/** 候補リストが出る見込みのケースだけ生成する選択肢。それ以外は空配列。 */
 	candidateOptions: QualityCandidateOption[];

@@ -418,6 +418,8 @@ export const evaluateQualityCase = (
 	// [Intended] 表示見込みの判定には候補プレビューの生成結果を挟まず、UI 初回 Auto 処理と
 	// 同じ候補プラン数だけを根拠にする。ここでの判定は実際に候補を並べた事実ではなく、
 	// 候補生成の失敗を含まない決定論的な診断である。選択肢の画像は判定後に別途生成する。
+	// [Policy] 実際に並ぶ枚数はこれ以下になる。アプリは生成した候補の実出力を見て、
+	// 1 ドットしか無いものや隣の段階と同寸法のものを落とすため。
 	const candidatePlans = selectCandidatePlans(currentRun.analysis);
 	const candidatePlanCount = candidatePlans.length;
 	const candidateSuggestion = evaluateCandidateSuggestion({

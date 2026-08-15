@@ -174,6 +174,12 @@ export const CANDIDATE_PREVIEW_LIMITS = {
 	maxCandidates: 7,
 	maxThumbnailDimension: 192,
 	maxCacheEntries: 8,
+	/**
+	 * 候補として意味のある出力の最小辺。
+	 * [Policy] 1 ドットしか無い出力は絵として比べようがなく、粗い側の倍率がすべて
+	 * 同じ 1x1 に潰れて並ぶ。見て選べない候補は最初から出さない。
+	 */
+	minOutputDimension: 2,
 	/** 面積差がこの比率以内なら、候補として区別できないほど近いとみなす。 */
 	similarAreaRatio: 0.02,
 	/** 面積差の下限（極小サイズで比率が効かない場合の救済）。 */
