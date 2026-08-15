@@ -63,6 +63,11 @@
     <meta property="og:image" content="https://pixel-refiner.app/ogp.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://pixel-refiner.app/ogp.png" />
+
+    <!-- [Intended] スタイルは JS からの import ではなく head の link で読み込む。
+         描画をブロックさせることで、未装飾の画面が一瞬見える FOUC を防ぐ。 -->
+    <link rel="stylesheet" href="/src/browser/style.css" />
+    <link rel="stylesheet" href="/src/browser/guide.css" />
   </head>
 
   <body>

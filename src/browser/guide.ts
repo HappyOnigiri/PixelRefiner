@@ -1,8 +1,9 @@
 import { inject } from "@vercel/analytics";
 import { i18n, type Language } from "./i18n";
 import { initTheme } from "./theme";
-import "./style.css";
-import "./guide.css";
+
+// [Intended] CSS は guide.html の <link> で読み込む。
+// JS から import すると dev で描画後にスタイルが当たり、FOUC になる。
 
 // コピー完了の表示を元のラベルへ戻すまでの時間
 const COPIED_LABEL_DURATION_MS = 1500;
