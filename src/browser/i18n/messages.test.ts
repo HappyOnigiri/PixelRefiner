@@ -9,6 +9,8 @@ import { guideMessages } from "./messages/guide";
 const HERE = resolve(fileURLToPath(import.meta.url), "..");
 const REPO_ROOT = resolve(HERE, "../../..");
 
+const MESSAGES_DIR = join(HERE, "messages");
+
 const catalogs = { ...appMessageCatalogs, guide: guideMessages };
 const allMessages = { ...appMessages, ...guideMessages };
 
@@ -36,11 +38,12 @@ const collectSourceText = (): string => {
 		for (const entry of readdirSync(dir, { withFileTypes: true })) {
 			const path = join(dir, entry.name);
 			if (entry.isDirectory()) {
-				walk(path);
+				// [Intended] 除外はディレクトリ単位で判定する。パスの前方一致だと
+				// messages.test.ts のような同じ接頭辞の兄弟ファイルまで外れる。
+				if (path !== MESSAGES_DIR) walk(path);
 				continue;
 			}
 			if (!entry.name.endsWith(".ts")) continue;
-			if (path.startsWith(join(HERE, "messages"))) continue;
 			chunks.push(readFileSync(path, "utf8"));
 		}
 	};
