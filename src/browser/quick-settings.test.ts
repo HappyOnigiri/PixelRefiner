@@ -136,14 +136,16 @@ describe("quick settings", () => {
 		expect(options.outlineStyle).toBe(PROCESS_DEFAULTS.outlineStyle);
 	});
 
-	it("defines six built-in presets", () => {
+	it("defines eight built-in presets", () => {
 		expect(BUILT_IN_PRESETS.map((preset) => preset.id)).toEqual([
 			"auto",
 			"crisp-sprite",
 			"keep-fine-details",
-			"transparent-icon",
-			"limited-colors",
 			"photo-to-pixel",
+			"transparent-icon",
+			"retro-game",
+			"background-art",
+			"illustration-to-pixel-art",
 		]);
 		expect(createBuiltInPresetOptions("transparent-icon")).toMatchObject({
 			colorCount: 32,
@@ -184,6 +186,13 @@ describe("quick settings", () => {
 				background: "auto",
 				dithering: "off",
 			},
+			"photo-to-pixel": {
+				processingMode: "convert",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
 			"transparent-icon": {
 				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
@@ -191,17 +200,24 @@ describe("quick settings", () => {
 				background: "auto",
 				dithering: "off",
 			},
-			"limited-colors": {
+			"retro-game": {
 				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
-				reductionMode: "16",
+				reductionMode: "gb_pocket",
 				background: "auto",
-				dithering: "subtle",
+				dithering: "off",
 			},
-			"photo-to-pixel": {
-				processingMode: "convert",
+			"background-art": {
+				processingMode: "auto",
 				detailLevel: PROCESS_DEFAULTS.detailLevel,
 				reductionMode: "auto",
+				background: "keep",
+				dithering: "off",
+			},
+			"illustration-to-pixel-art": {
+				processingMode: "convert",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "32",
 				background: "auto",
 				dithering: "off",
 			},
