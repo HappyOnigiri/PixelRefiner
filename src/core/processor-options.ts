@@ -307,9 +307,9 @@ export const normalizeProcessOptions = (
 	smallComponentBackgroundGate: boolean;
 	phaseAwareGridSearch: boolean;
 	boundaryContrastOverride: boolean;
-	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	/** 3 択の生値を on/off へ解決した実効値。生値と区別するため名前を分ける。 */
 	smallAspectGridAlignmentEnabled: boolean;
-	/** 経路依存を解決済みの実効値。生値（3 択）と区別するため名前を分ける。 */
+	/** 3 択の生値を on/off へ解決した実効値。生値と区別するため名前を分ける。 */
 	watermarkSamplingCompatEnabled: boolean;
 	enableGridDetection: boolean;
 	makeSquare: boolean;
