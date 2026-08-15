@@ -167,4 +167,36 @@ describe("quick settings controls", () => {
 		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
 		expect(els.quickDitheringSelect.disabled).toBe(false);
 	});
+
+	it("keeps the confirmed dithering state while reprocessing", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "refine");
+		expect(els.quickDitheringSelect.disabled).toBe(true);
+
+		els.quickBackgroundSelect.value = "keep";
+		els.quickBackgroundSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDitheringSelect.disabled).toBe(true);
+	});
+
+	it("updates dithering immediately for a route-independent reduction choice", () => {
+		const els = createElements();
+		setupQuickSettingsControls({
+			els: els as unknown as Elements,
+			triggerAutoProcess: vi.fn(),
+			clearCandidateSelections: vi.fn(),
+		});
+		updateQuickSettingsDisabledStates(els as unknown as Elements, "convert");
+		expect(els.quickDitheringSelect.disabled).toBe(false);
+
+		els.quickReductionModeSelect.value = "none";
+		els.quickReductionModeSelect.dispatchEvent(new Event("change"));
+
+		expect(els.quickDitheringSelect.disabled).toBe(true);
+	});
 });

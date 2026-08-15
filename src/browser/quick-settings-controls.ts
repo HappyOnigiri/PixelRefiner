@@ -65,12 +65,18 @@ export const updateQuickSettingsDisabledStates = (
 
 	const reductionMode = els.quickReductionModeSelect
 		.value as QuickReductionMode;
-	const reductionDisabled =
-		reductionMode === "none" ||
-		(reductionMode === "auto" &&
-			effectiveRoute !== undefined &&
-			effectiveRoute !== "convert");
-	setQuickControlDisabled(els.quickDitheringSelect, reductionDisabled);
+	// [Intended] 減色「おまかせ」のときだけディザリングの可否が経路で変わるため、
+	// 経路が未確定の再処理中は直前の表示状態を維持する。維持しないと、Auto のまま
+	// 他の項目を変えるたびにディザリングが一度有効表示へ戻ってちらつく。
+	// 経路に依存しない選択（減色なし・固定色数）は常に更新する。
+	if (reductionMode !== "auto") {
+		setQuickControlDisabled(els.quickDitheringSelect, reductionMode === "none");
+	} else if (!keepPendingAutoRoute) {
+		setQuickControlDisabled(
+			els.quickDitheringSelect,
+			effectiveRoute !== undefined && effectiveRoute !== "convert",
+		);
+	}
 };
 
 /**
