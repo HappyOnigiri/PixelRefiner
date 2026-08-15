@@ -46,12 +46,15 @@ export const createProcessorEndpoint = (): ProcessorEndpoint => {
 export const createCancellableProcessor = (
 	createEndpoint: () => ProcessorEndpoint = createProcessorEndpoint,
 ): ProcessorClient & { cancelActive: () => void } => {
-	let endpoint = createEndpoint();
+	// [Intended] Worker は最初の要求まで作らない。中断のたびに作り直すと、
+	// 次の要求が来ない場合に使われない Worker を起こすことになる。
+	let endpoint: ProcessorEndpoint | undefined;
 	const pendingCancellations = new Set<(error: Error) => void>();
 
 	const invoke = <Result>(
 		operation: (processor: ProcessorClient) => Promise<Result>,
 	): Promise<Result> => {
+		endpoint ??= createEndpoint();
 		const activeProcessor = endpoint.processor;
 		return new Promise<Result>((resolve, reject) => {
 			let settled = false;
@@ -95,8 +98,8 @@ export const createCancellableProcessor = (
 			if (pendingCancellations.size === 0) return;
 			const cancellations = [...pendingCancellations];
 			// [Intended] 同期的な画像処理は Worker 内から中断できないため、Worker 自体を終了して CPU 処理を止める。
-			endpoint.worker.terminate();
-			endpoint = createEndpoint();
+			endpoint?.worker.terminate();
+			endpoint = undefined;
 			const error = new ProcessingCancelledError();
 			for (let index = 0; index < cancellations.length; index += 1) {
 				cancellations[index](error);
