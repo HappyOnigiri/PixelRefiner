@@ -207,19 +207,10 @@
    変換結果は小さなドット絵なので、拡大時もドットの角を保つ。 */
 /* [Intended] 表示倍率は CSS で固定せず、各画像の width/height 属性で与える。
    変換結果は等倍で出力しており、整数倍にそろえないとドットの幅が不揃いになる。 */
+/* 模様そのものは style.css の共通定義から受け取り、ここではタイルの大きさだけ変える。 */
 .guide-figure-output img {
   image-rendering: pixelated;
-  background-color: var(--bg-checkered-base);
-  background-image: linear-gradient(
-      45deg,
-      var(--bg-checkered-color) 25%,
-      transparent 25%
-    ),
-    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
-  background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  --checkered-tile: 16px;
 }
 
 /* [Intended] 同じ画像を縮尺違いで並べる枠。生成画像は縮小と部分拡大で

@@ -546,14 +546,23 @@ canvas {
   overflow: hidden;
 }
 
-.img-comp-container.bg-checkered {
+/* [Intended] 市松模様の 4 段グラデーションはここだけに置く。敷きたい側は
+   セレクタをこの一覧に足し、タイルの大きさだけ --checkered-tile で渡す。
+   同じスタックを写すと、色を直すときに取りこぼしが出る。 */
+.img-comp-container.bg-checkered,
+.has-image .canvas-container.bg-checkered,
+.js-result-canvas-container.has-image.bg-checkered,
+.guide-figure-output img {
+  --checkered-half: calc(var(--checkered-tile, 20px) / 2);
   background-color: var(--bg-checkered-base);
   background-image: linear-gradient(45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
     linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-size: var(--checkered-tile, 20px) var(--checkered-tile, 20px);
+  background-position: 0 0, 0 var(--checkered-half),
+    var(--checkered-half) calc(var(--checkered-half) * -1),
+    calc(var(--checkered-half) * -1) 0;
 }
 
 .img-comp-container.bg-white {
@@ -1447,15 +1456,6 @@ select:focus {
   background: #00ff00;
 }
 
-.has-image .canvas-container.bg-checkered {
-  background-color: var(--bg-checkered-base);
-  background-image: linear-gradient(45deg, var(--bg-checkered-color) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-}
 
 /* 結果ビューアーコンテナーの基本スタイル */
 .js-result-canvas-container {
@@ -1489,16 +1489,9 @@ select:focus {
 }
 
 .js-result-canvas-container.has-image.bg-checkered {
-  /* 明るい市松模様（透明プレビュー風） */
+  /* 明るい市松模様（透明プレビュー風）。模様そのものは共通の定義から受け取り、
+     ここでは他の背景バリエーションに負けないよう地の色だけを強めに指定する。 */
   background-color: var(--bg-checkered-base) !important;
-  background-image: linear-gradient(45deg,
-      var(--bg-checkered-color) 25%,
-      transparent 25%),
-    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
 /* 結果ビューアー内のプレースホルダースタイル */
