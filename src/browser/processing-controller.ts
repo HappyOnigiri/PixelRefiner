@@ -1,5 +1,9 @@
 import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
-import type { CandidateSelection, ProcessingRoute } from "../shared/types";
+import type {
+	CandidatePreview,
+	CandidateSelection,
+	ProcessingRoute,
+} from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -183,6 +187,44 @@ export const createProcessingController = ({
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
 			if (imageSession.getActiveImage()?.id !== currentItem.id) return;
+
+			// [Intended] 候補プレビューは結果を画面へ反映する前に生成する。
+			// 結果の表示更新が読み込みオーバーレイを閉じるため、後から生成すると
+			// 変換が終わったように見えた後で候補モーダルだけが遅れて現れる。
+			const candidateModalInput = {
+				isAuto: processOptions.processingMode === "auto",
+				isInitial: !effectiveSelection,
+				showCandidates,
+				hasCandidateSelection: effectiveSelection !== undefined,
+				warningCodes: analysis.warnings,
+			};
+			let candidatePreviews: CandidatePreview[] = [];
+			if (
+				evaluateCandidateModalDecision(candidateModalInput)
+					.candidateModalEligible
+			) {
+				try {
+					const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
+					candidatePreviews = await processor.previewCandidates(
+						currentImage,
+						processOptions,
+						analysis,
+						cacheKey,
+					);
+				} catch (error) {
+					if (isProcessingCancelledError(error)) throw error;
+					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
+					console.error("Failed to create candidate previews:", error);
+				}
+				// 生成待ちの間に別の処理が始まった、または表示対象が切り替わった場合は、
+				// 結果の保存だけで表示は更新しない。
+				if (
+					!latestProcessing.isLatest(generation) ||
+					imageSession.getActiveImage()?.id !== currentItem.id
+				)
+					return;
+			}
+
 			// [Intended] 経路はかんたん設定で処理したときだけ無効状態の根拠になる。
 			// 他タブの設定で決まった経路を持ち込むと、かんたん設定の細かさが理由なく編集不可になる。
 			updateQuickSettingsDisabledStates(
@@ -283,42 +325,20 @@ export const createProcessingController = ({
 				updateGrid();
 			});
 			els.outputPanel.classList.add("has-image");
-			const candidateModalInput = {
-				isAuto: processOptions.processingMode === "auto",
-				isInitial: !effectiveSelection,
-				showCandidates,
-				hasCandidateSelection: effectiveSelection !== undefined,
-				warningCodes: analysis.warnings,
-			};
-			const candidateModalPrecheck =
-				evaluateCandidateModalDecision(candidateModalInput);
-			if (candidateModalPrecheck.candidateModalEligible) {
-				try {
-					const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
-					const previews = await processor.previewCandidates(
-						currentImage,
-						processOptions,
-						analysis,
-						cacheKey,
-					);
-					// 待機中に別の処理が始まった、または表示対象が切り替わった場合は表示しない。
-					const stillCurrent =
-						latestProcessing.isLatest(generation) &&
-						imageSession.getActiveImage()?.id === currentItem.id;
-					const candidateModalAfterPreview = evaluateCandidateModalDecision({
-						...candidateModalInput,
-						candidatePreviewCount: stillCurrent ? previews.length : 0,
-					});
-					if (
-						candidateModalAfterPreview.warningPresentation === "candidate-modal"
-					) {
-						candidateChooser.show(previews, analysis.warnings, currentItem.id);
-					}
-				} catch (error) {
-					if (isProcessingCancelledError(error)) throw error;
-					// [Intended] 候補UIの失敗は、すでに得られた安全な処理結果を無効にしない。
-					console.error("Failed to create candidate previews:", error);
-				}
+			// [Intended] 生成済みの候補は結果の表示直後に提示する。
+			// 変換結果と候補モーダルが同じタイミングで現れるようにする。
+			const candidateModalAfterPreview = evaluateCandidateModalDecision({
+				...candidateModalInput,
+				candidatePreviewCount: candidatePreviews.length,
+			});
+			if (
+				candidateModalAfterPreview.warningPresentation === "candidate-modal"
+			) {
+				candidateChooser.show(
+					candidatePreviews,
+					analysis.warnings,
+					currentItem.id,
+				);
 			}
 			// els.outputSize.textContent = `${resultImage.width}x${resultImage.height} px`; // ResultViewer で処理する
 
