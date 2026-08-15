@@ -13,7 +13,11 @@ HARD_LINE_LIMIT = 1000
 # [Policy] 翻訳リソースはキーごとにすべてのロケールをまとめて保持し、キーの追加と
 # 翻訳変更を同期した一単位としてレビューできるようにする。行数はこの単位を
 # 分割する理由にならないので、メッセージ定義のディレクトリごと対象外にする。
-EXCLUDED_DIRECTORIES = {Path("src/browser/i18n/messages")}
+# 品質レポートは訳文と描画コードが同じディレクトリに同居するため、まとめて対象外にする。
+EXCLUDED_DIRECTORIES = {
+    Path("src/browser/i18n/messages"),
+    Path("test/quality/report"),
+}
 
 
 def is_excluded(path: Path) -> bool:
