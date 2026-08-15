@@ -52,6 +52,9 @@
   --radius-lg: 6px;
 
   /* 市松模様の背景 */
+  /* [Intended] 透過の確認用なので、テーマに関係なく明るい市松に固定する。
+     一般的な画像ツールと同じ見え方にそろえ、明度差も控えめに保つ。 */
+  --bg-checkered-base: #f0f0f0;
   --bg-checkered-color: #d0d0d0;
 }
 
@@ -521,7 +524,7 @@ canvas {
 }
 
 .img-comp-container.bg-checkered {
-  background-color: #f0f0f0;
+  background-color: var(--bg-checkered-base);
   background-image: linear-gradient(45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
@@ -1422,11 +1425,11 @@ select:focus {
 }
 
 .has-image .canvas-container.bg-checkered {
-  background-color: #f0f0f0;
-  background-image: linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
-    linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
-    linear-gradient(-45deg, transparent 75%, #d0d0d0 75%);
+  background-color: var(--bg-checkered-base);
+  background-image: linear-gradient(45deg, var(--bg-checkered-color) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
@@ -1464,7 +1467,7 @@ select:focus {
 
 .js-result-canvas-container.has-image.bg-checkered {
   /* 明るい市松模様（透明プレビュー風） */
-  background-color: #f0f0f0 !important;
+  background-color: var(--bg-checkered-base) !important;
   background-image: linear-gradient(45deg,
       var(--bg-checkered-color) 25%,
       transparent 25%),
