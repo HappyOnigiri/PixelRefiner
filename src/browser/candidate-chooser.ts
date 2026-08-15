@@ -56,13 +56,16 @@ export class CandidateChooser {
 		sourceImageId: string,
 		selectedId?: string,
 	): void {
+		// [Intended] 表示状態を先に切り替えてから中身を書く。理由文は aria-live の
+		// ライブリージョンで、hidden のまま書き換えても読み上げられない。候補が現れた
+		// ことを支援技術へ伝える手段がこれしかないので、順序を入れ替えない。
+		this.section.hidden = candidates.length === 0;
 		this.list.replaceChildren();
 		this.reasons.textContent = translateProcessingWarnings(warnings).join(" ");
 		for (let index = 0; index < candidates.length; index += 1) {
 			this.list.appendChild(this.createCard(candidates[index]));
 		}
 		this.sourceImageId = sourceImageId;
-		this.section.hidden = candidates.length === 0;
 		this.setSelected(selectedId);
 	}
 
