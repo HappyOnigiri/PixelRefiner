@@ -158,11 +158,54 @@ describe("quick settings", () => {
 	});
 
 	it("defines every built-in preset only as quick settings", () => {
-		for (const preset of BUILT_IN_PRESETS) {
-			expect(createBuiltInPresetOptions(preset.id)).toEqual(
-				createQuickProcessOptions(preset.quickSettings),
-			);
-		}
+		const quickSettingsById = Object.fromEntries(
+			BUILT_IN_PRESETS.map((preset) => [preset.id, preset.quickSettings]),
+		);
+
+		expect(quickSettingsById).toEqual({
+			auto: {
+				processingMode: "auto",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+			"crisp-sprite": {
+				processingMode: "refine",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+			"keep-fine-details": {
+				processingMode: "preserve",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+			"transparent-icon": {
+				processingMode: "auto",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "32",
+				background: "auto",
+				dithering: "off",
+			},
+			"limited-colors": {
+				processingMode: "auto",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "16",
+				background: "auto",
+				dithering: "subtle",
+			},
+			"photo-to-pixel": {
+				processingMode: "convert",
+				detailLevel: PROCESS_DEFAULTS.detailLevel,
+				reductionMode: "auto",
+				background: "auto",
+				dithering: "off",
+			},
+		});
 	});
 
 	it.each([
