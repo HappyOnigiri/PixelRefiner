@@ -46,40 +46,42 @@ export const createProcessorEndpoint = (): ProcessorEndpoint => {
 export const createCancellableProcessor = (
 	createEndpoint: () => ProcessorEndpoint = createProcessorEndpoint,
 ): ProcessorClient & { cancelActive: () => void } => {
-	let endpoint = createEndpoint();
+	// [Intended] Worker は最初の要求まで作らない。中断のたびに作り直すと、
+	// 次の要求が来ない場合に使われない Worker を起こすことになる。
+	let endpoint: ProcessorEndpoint | undefined;
 	const pendingCancellations = new Set<(error: Error) => void>();
 
 	const invoke = <Result>(
 		operation: (processor: ProcessorClient) => Promise<Result>,
 	): Promise<Result> => {
+		endpoint ??= createEndpoint();
 		const activeProcessor = endpoint.processor;
 		return new Promise<Result>((resolve, reject) => {
 			let settled = false;
-			const settle = (
-				callback: (value: Result | PromiseLike<Result>) => void,
-				value: Result | PromiseLike<Result>,
-			) => {
-				if (settled) return;
+			// 決着済みなら false を返す。中断の登録を必ず 1 箇所で取り消すためにまとめる。
+			const finalize = (): boolean => {
+				if (settled) return false;
 				settled = true;
 				pendingCancellations.delete(cancel);
-				callback(value);
+				return true;
 			};
 			const cancel = (error: Error) => {
-				if (settled) return;
-				settled = true;
-				pendingCancellations.delete(cancel);
-				reject(error);
+				if (finalize()) reject(error);
 			};
 			pendingCancellations.add(cancel);
-			void operation(activeProcessor).then(
-				(result) => settle(resolve, result),
-				(error: unknown) => {
-					if (settled) return;
-					settled = true;
-					pendingCancellations.delete(cancel);
-					reject(error);
-				},
-			);
+			// [Intended] operation が同期的に投げた例外も reject 経路へ流す。
+			// executor の例外として抜けると中断の登録が集合に残り、
+			// 実行中の処理がなくても cancelActive が Worker を終了し続けてしまう。
+			void Promise.resolve()
+				.then(() => operation(activeProcessor))
+				.then(
+					(result) => {
+						if (finalize()) resolve(result);
+					},
+					(error: unknown) => {
+						if (finalize()) reject(error);
+					},
+				);
 		});
 	};
 
@@ -95,8 +97,8 @@ export const createCancellableProcessor = (
 			if (pendingCancellations.size === 0) return;
 			const cancellations = [...pendingCancellations];
 			// [Intended] 同期的な画像処理は Worker 内から中断できないため、Worker 自体を終了して CPU 処理を止める。
-			endpoint.worker.terminate();
-			endpoint = createEndpoint();
+			endpoint?.worker.terminate();
+			endpoint = undefined;
 			const error = new ProcessingCancelledError();
 			for (let index = 0; index < cancellations.length; index += 1) {
 				cancellations[index](error);

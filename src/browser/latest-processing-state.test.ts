@@ -11,6 +11,29 @@ describe("latest processing state", () => {
 		expect(state.finish(second, false)).toBe("hide-loading");
 	});
 
+	it("treats only the newest generation as the latest one", () => {
+		const state = createLatestProcessingState();
+		const first = state.begin();
+
+		expect(state.isLatest(first)).toBe(true);
+
+		const second = state.begin();
+
+		expect(state.isLatest(first)).toBe(false);
+		expect(state.isLatest(second)).toBe(true);
+	});
+
+	it("leaves the running generation untouched when a stale run finishes", () => {
+		const state = createLatestProcessingState();
+		const first = state.begin();
+		const second = state.begin();
+
+		expect(state.finish(first, true)).toBe("stale");
+		// 古い処理の完了は、実行中の判定にも外部管理の保持にも影響しない。
+		expect(state.setAutoProcessScheduled(false)).toBe(false);
+		expect(state.finish(second, false)).toBe("hide-loading");
+	});
+
 	it("keeps loading while an auto-process request is scheduled", () => {
 		const state = createLatestProcessingState();
 		const generation = state.begin();

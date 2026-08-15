@@ -24,7 +24,7 @@ import { showError } from "./notifications";
 import { createProcessPendingImages } from "./pending-processing";
 import { setupPresetControls } from "./preset-controls";
 import { formatProcessingAnalysis } from "./processing-analysis-display";
-import { createRunProcessing } from "./processing-controller";
+import { createProcessingController } from "./processing-controller";
 import { translateProcessingWarnings } from "./processing-warnings";
 import { updateQuickSettingsDisabledStates } from "./quick-settings-controls";
 import { setupResultActions } from "./result-actions";
@@ -112,6 +112,9 @@ export const initApp = (): void => {
 			updateQuickSettingsDisabledStates(
 				els,
 				item?.settingsMode === "quick" ? item.analysis?.route : undefined,
+			);
+			updateAdvancedProcessingDisabledStates(
+				item?.settingsMode === "advanced" ? item.analysis?.route : undefined,
 			);
 			if (item) {
 				// 結果があれば復元し、なければ元画像を使用
@@ -241,7 +244,7 @@ export const initApp = (): void => {
 		}
 	};
 
-	const processingController = createRunProcessing({
+	const processingController = createProcessingController({
 		els,
 		processingState,
 		imageSession,
@@ -251,6 +254,8 @@ export const initApp = (): void => {
 		updatePaletteDisplay: () => updatePaletteDisplay(),
 		updateGrid: () => updateGrid(),
 		updateBgColorFromMethod: () => updateBgColorFromMethod(),
+		updateAdvancedProcessingControls: (activeRoute) =>
+			updateAdvancedProcessingDisabledStates(activeRoute),
 		candidateChooser,
 	});
 	const { runProcessing } = processingController;

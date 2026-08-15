@@ -70,7 +70,13 @@ export const setupPresetControls = ({
 				if (input.type === "checkbox") {
 					state[input.id] = input.checked;
 				} else if (input.type === "number" || input.type === "range") {
-					state[input.id] = Number(input.value);
+					const optionalConvertDimension =
+						input.id === "advanced-convert-width" ||
+						input.id === "advanced-convert-height";
+					state[input.id] =
+						optionalConvertDimension && input.value === ""
+							? ""
+							: Number(input.value);
 				} else {
 					state[input.id] = input.value;
 				}

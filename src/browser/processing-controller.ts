@@ -1,5 +1,5 @@
 import { evaluateCandidateModalDecision } from "../core/candidate-modal-decision";
-import type { CandidateSelection } from "../shared/types";
+import type { CandidateSelection, ProcessingRoute } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -30,6 +30,7 @@ type ProcessingControllerOptions = {
 	updatePaletteDisplay: () => void;
 	updateGrid: () => void;
 	updateBgColorFromMethod: () => void;
+	updateAdvancedProcessingControls: (activeRoute?: ProcessingRoute) => void;
 	candidateChooser: CandidateChooser;
 };
 
@@ -52,7 +53,7 @@ export type ProcessingController = {
 	setAutoProcessScheduled: (scheduled: boolean) => void;
 };
 
-export const createRunProcessing = ({
+export const createProcessingController = ({
 	els,
 	processingState,
 	imageSession,
@@ -62,6 +63,7 @@ export const createRunProcessing = ({
 	updatePaletteDisplay,
 	updateGrid,
 	updateBgColorFromMethod,
+	updateAdvancedProcessingControls,
 	candidateChooser,
 }: ProcessingControllerOptions): ProcessingController => {
 	const compareBeforeCanvas = document.createElement("canvas");
@@ -121,7 +123,11 @@ export const createRunProcessing = ({
 		if (selection) {
 			imageSession.setCandidateSelection(currentItem.id, selection);
 		}
-		imageSession.setImageStatus(currentItem.id, "processing");
+		const processingToken = imageSession.beginProcessing(currentItem.id);
+
+		// [Intended] 結果を書き込んだ後に中断された場合は、done の画像を pending へ戻さない。
+		// 戻すと一覧が未変換のまま表示され、保留キューが同じ設定で変換をやり直す。
+		let resultApplied = false;
 
 		try {
 			const processOptions = createProcessOptions(els, processingState);
@@ -141,8 +147,13 @@ export const createRunProcessing = ({
 					)
 				: await processor.process(currentImage, processOptions);
 			// [Intended] キャンセル直前に完了通知が届いた旧処理も、結果や画像状態を上書きさせない。
-			if (!latestProcessing.isLatest(generation)) {
-				if (currentItem.id !== latestImageId) {
+			// 一括処理など別経路がこの画像を処理し直していた場合は、状態もその経路に委ねる。
+			const superseded = !imageSession.isProcessingCurrent(
+				currentItem.id,
+				processingToken,
+			);
+			if (superseded || !latestProcessing.isLatest(generation)) {
+				if (!superseded && currentItem.id !== latestImageId) {
 					imageSession.setImageStatus(currentItem.id, "pending");
 				}
 				return;
@@ -167,6 +178,7 @@ export const createRunProcessing = ({
 				},
 				processingState.settingsMode,
 			);
+			resultApplied = true;
 
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
@@ -176,6 +188,30 @@ export const createRunProcessing = ({
 			updateQuickSettingsDisabledStates(
 				els,
 				processingState.settingsMode === "quick" ? analysis.route : undefined,
+			);
+			// [Intended] Convert 候補の選択を、詳細設定でも同じサイズ指定として表示する。
+			if (
+				processingState.settingsMode === "advanced" &&
+				effectiveSelection?.processingMode === "convert"
+			) {
+				if (effectiveSelection.detailLevel) {
+					els.advancedConvertSizeModeSelect.value =
+						effectiveSelection.detailLevel;
+				} else if (
+					effectiveSelection.outW !== undefined &&
+					effectiveSelection.outH !== undefined
+				) {
+					els.advancedConvertSizeModeSelect.value = "custom-both";
+					els.advancedConvertWidthInput.value = String(effectiveSelection.outW);
+					els.advancedConvertHeightInput.value = String(
+						effectiveSelection.outH,
+					);
+				}
+			}
+			updateAdvancedProcessingControls(
+				processingState.settingsMode === "advanced"
+					? analysis.route
+					: undefined,
 			);
 
 			mainResultViewer.updateImage(resultImage);
@@ -293,7 +329,11 @@ export const createRunProcessing = ({
 				isProcessingCancelledError(err) ||
 				!latestProcessing.isLatest(generation)
 			) {
-				if (currentItem.id !== latestImageId) {
+				if (
+					!resultApplied &&
+					currentItem.id !== latestImageId &&
+					imageSession.isProcessingCurrent(currentItem.id, processingToken)
+				) {
 					imageSession.setImageStatus(currentItem.id, "pending");
 				}
 				return;
@@ -302,17 +342,25 @@ export const createRunProcessing = ({
 			// [Intended] トーストは重ねて表示できないため、呼び出し側がまとめて通知する場合は出さない。
 			// 原因は画像一覧の状態として残るので、ここで失われるわけではない。
 			if (!options.suppressErrorNotification) showError(msg);
-			imageSession.setImageStatus(currentItem.id, "error", msg);
+			if (imageSession.isProcessingCurrent(currentItem.id, processingToken)) {
+				imageSession.setImageStatus(currentItem.id, "error", msg);
+			}
 		} finally {
 			const finishDecision = latestProcessing.finish(
 				generation,
 				options.keepLoadingOverlay === true,
 			);
 			if (finishDecision === "hide-loading") hideLoading();
-			if (finishDecision === "keep-loading" && options.keepLoadingOverlay) {
-				els.outputPanel.classList.remove("is-processing");
-				els.outputPanel.removeAttribute("aria-busy");
-				els.processButton.disabled = false;
+			if (finishDecision === "keep-loading") {
+				// [Intended] 結果の表示更新が同じオーバーレイを閉じるため、維持する場合は開き直す。
+				// 開き直さないと、次の変換が始まるまで処理中表示が一度消えて点滅する。
+				mainResultViewer.setLoading(true);
+				els.loadingOverlay.style.display = "flex";
+				if (options.keepLoadingOverlay) {
+					els.outputPanel.classList.remove("is-processing");
+					els.outputPanel.removeAttribute("aria-busy");
+					els.processButton.disabled = false;
+				}
 			}
 		}
 	};
