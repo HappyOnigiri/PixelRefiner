@@ -60,6 +60,19 @@ export const describeCase = (
 				"掲載している44×47の変換結果と1画素も違わないことを確認します。",
 		};
 	}
+	if (result.id === "guide-recipe4-landscape") {
+		return {
+			en:
+				"Process the 2752 x 1536 AI-generated mountain landscape published in the recipes guide, " +
+				"whose pixel cells are softened by generation, with Background set to Keep background in " +
+				"Quick Settings as the page tells the reader, and reproduce the published 256 x 144 result " +
+				"pixel for pixel without making any part of the full-frame scenery transparent.",
+			ja:
+				"レシピ集ページが掲載している2752×1536の生成AI製の山岳風景（生成時にセル境界がぼけたドット絵）を、" +
+				"ページが案内するとおりかんたん設定の「背景」を「背景を残す」にして処理し、" +
+				"風景のどの部分も透過せず、掲載している256×144の変換結果と1画素も違わないことを確認します。",
+		};
+	}
 	if (result.id === "guide-recipe5-chibi-character") {
 		return {
 			en:

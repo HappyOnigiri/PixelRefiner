@@ -586,6 +586,17 @@
       "catastrophicFailure": false
     },
     {
+      "id": "guide-recipe4-landscape",
+      "status": "passed",
+      "outputWidth": 256,
+      "outputHeight": 144,
+      "meanRgbaError": 0,
+      "edgeF1": 1,
+      "backgroundMaskIou": 1,
+      "smallComponentRetention": 1,
+      "catastrophicFailure": false
+    },
+    {
       "id": "guide-recipe5-chibi-character",
       "status": "passed",
       "outputWidth": 60,

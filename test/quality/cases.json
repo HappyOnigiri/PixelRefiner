@@ -2676,6 +2676,52 @@
     ]
   },
   {
+    "id": "guide-recipe4-landscape",
+    "featureIds": ["guide-recipes", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "quickSettings": { "background": "keep" },
+    "options": {},
+    "input": "test/fixtures/guide_recipe4_landscape.png",
+    "expected": "public/guide/recipe4-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 256,
+      "expectedHeight": 144
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/guide_recipe4_landscape.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art background illustration for an 8-bit retro JRPG, NES style, wide grassland with distant mountains under a clear morning sky, scenery only, no characters, no creatures, no objects, no buildings, no items, ultra low-res 64x64 pixel art scaled up, extremely chunky visible square pixels, simple composition, strict limited 8-color palette, strict retro pixel grid, sharp square edges, hard dithering, absolutely no anti-aliasing, no smooth gradients, no blur, no text, no UI, no frame",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe4-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/guide_recipe4_landscape.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
+  },
+  {
     "id": "guide-recipe5-chibi-character",
     "featureIds": ["guide-recipes", "PRF-310", "PRF-400"],
     "profile": "full",

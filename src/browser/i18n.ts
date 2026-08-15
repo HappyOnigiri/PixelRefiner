@@ -539,8 +539,13 @@ const resources = {
 			"透過しないケース。キャラクターや小物を置かない風景を、そのまま背景として使えるドット絵に変換します。要素を減らして1ドットを大きく描かせる指示がポイントです。",
 		"guide.recipe4.settings":
 			"「かんたん設定」の「背景」を「背景を残す」にします（「仕上がり」は「おまかせ」のままで構いません）。",
-		"guide.recipe4.input_alt": "レシピ4の生成画像（差し替え予定のサンプル）",
-		"guide.recipe4.output_alt": "レシピ4の変換結果（差し替え予定のサンプル）",
+		"guide.recipe4.input_alt":
+			"レシピ4の生成画像。明るい空の下に緑の平原と青い山並みを描いたドット絵",
+		"guide.recipe4.output_alt":
+			"レシピ4の変換結果。山岳風景を背景ごと残したドット絵",
+		"guide.recipe4.caption_input": "生成画像（2752×1536px・縮小表示）",
+		"guide.recipe4.caption_output":
+			"変換結果（おまかせ＋背景を残す・256×144px の等倍出力）",
 		"guide.recipe5.heading": "レシピ5: 普通のイラストをドット絵化する",
 		"guide.recipe5.goal":
 			"ドット絵風に生成できないモデルや画風でも、普通のイラストからドット絵へ変換できます。ドット絵を頼む代わりに、変換に強く効くフラットな塗りと太い輪郭線を指示します。",
@@ -1090,8 +1095,13 @@ const resources = {
 			"不做透明化的情况。把没有角色和小物件的风景，转换成可以直接当作背景使用的像素画。关键是要求减少元素、把每个像素画得更大。",
 		"guide.recipe4.settings":
 			"在“快速设置”中把“背景”设为“保留背景”（“效果”保持“智能推荐”即可）。",
-		"guide.recipe4.input_alt": "配方 4 的生成图片（待替换的示例）",
-		"guide.recipe4.output_alt": "配方 4 的转换结果（待替换的示例）",
+		"guide.recipe4.input_alt":
+			"配方 4 的生成图片：明亮天空下的绿色原野与蓝色群山像素画",
+		"guide.recipe4.output_alt":
+			"配方 4 的转换结果：保留完整背景的山野风景像素画",
+		"guide.recipe4.caption_input": "生成图片（2752×1536px，缩小显示）",
+		"guide.recipe4.caption_output":
+			"转换结果（智能推荐＋保留背景，256×144px 的原尺寸输出）",
 		"guide.recipe5.heading": "配方 5：把普通插画转成像素画",
 		"guide.recipe5.goal":
 			"即使模型或画风无法直接生成像素画，也可以把普通插画转换成像素画。与其要求生成像素画，不如要求对转换特别有利的平涂上色和粗轮廓线。",
@@ -1672,9 +1682,13 @@ const resources = {
 		"guide.recipe4.settings":
 			"In Quick Settings, set Background to “Keep background” (Finish can stay on “Best Match”).",
 		"guide.recipe4.input_alt":
-			"Generated image for recipe 4 (placeholder sample)",
+			"Generated image for recipe 4: green fields and blue mountains beneath a bright sky",
 		"guide.recipe4.output_alt":
-			"Converted result for recipe 4 (placeholder sample)",
+			"Converted result for recipe 4: the mountain landscape kept as a full-frame background",
+		"guide.recipe4.caption_input":
+			"Generated image (2752×1536 px, shown scaled down)",
+		"guide.recipe4.caption_output":
+			"Converted result (Best Match + Keep background, 256×144 px output)",
 		"guide.recipe5.heading":
 			"Recipe 5: Turn a normal illustration into pixel art",
 		"guide.recipe5.goal":
