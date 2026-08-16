@@ -118,6 +118,15 @@ or changing a Quick Settings item. Every published example has one case here, so
 the report keeps answering whether that published result is still reproducible
 by following the published steps.
 
+The case for recipe N is named `guide-recipeN-<name>`, and
+[`guide-cases.test.ts`](./guide-cases.test.ts) holds the page and `cases.json` to
+that convention: it collects the `guide.recipeN.*` keys that `guide.html`
+references outside comments, expects each recipe to carry exactly one
+`guide.recipeN.heading`, and fails when a recipe has no case, when a case has no
+recipe, when a case reads or expects a file outside `public/guide/recipeN-`, and
+when a `guide-` case ID departs from the naming. It only reads sources, so it
+runs in `make ci` rather than with the image cases.
+
 Those cases set `presetId`, or `quickSettings` when the page names Quick
 Settings instead of a preset, and no `options`. The benchmark resolves the
 options from `BUILT_IN_PRESETS` or from `createQuickProcessOptions` when the

@@ -9,6 +9,7 @@ import type {
 	ProcessingRoute,
 } from "../../shared/types";
 import type { ImageItem } from "../session";
+import { collectHtmlKeys } from "./html-keys";
 import { LANGUAGES } from "./language";
 import { appMessageCatalogs, appMessages } from "./messages";
 import { guideMessages } from "./messages/guide";
@@ -20,21 +21,6 @@ const MESSAGES_DIR = join(HERE, "messages");
 
 const catalogs = { ...appMessageCatalogs, guide: guideMessages };
 const allMessages = { ...appMessages, ...guideMessages };
-
-// data-i18n / data-i18n-attr で参照しているキーを HTML から取り出す
-const collectHtmlKeys = (html: string): string[] => {
-	const keys: string[] = [];
-	for (const [, key] of html.matchAll(/data-i18n="([^"]+)"/g)) {
-		keys.push(key);
-	}
-	for (const [, config] of html.matchAll(/data-i18n-attr="([^"]+)"/g)) {
-		for (const pair of config.split(",")) {
-			const key = pair.split(":")[1];
-			if (key) keys.push(key.trim());
-		}
-	}
-	return keys;
-};
 
 const readHtml = (name: string) => readFileSync(join(REPO_ROOT, name), "utf8");
 
