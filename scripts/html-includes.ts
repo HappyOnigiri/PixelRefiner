@@ -62,7 +62,7 @@ const indentLines = (content: string, indent: string): string => {
 export type HtmlIncludeOptions = {
 	/** プロジェクトルート。取り込みパスはここからの相対で解決する */
 	root: string;
-	/** 取り込んだファイルの絶対パスを受け取る。dev サーバーの監視に使う */
+	/** 取り込んだファイルの絶対パスを、取り込むたびに受け取る */
 	onInclude?: (path: string) => void;
 };
 
@@ -140,10 +140,14 @@ const listPartialFiles = (directory: string): string[] => {
  * パーシャル取り込みを行う Vite プラグイン。
  * [Intended] `order: "pre"` にして、Vite が script や asset の URL を解決する前に
  * 取り込みを済ませる。取り込んだ側と同じ扱いを受けさせるため。
+ *
+ * [Intended] パーシャルの変更で開発サーバーがページを再読み込みするのは Vite の
+ * 既定動作に任せる。モジュールグラフに載らない `.html` の変更は Vite 自身が
+ * full-reload を送るため、プラグイン側で送ると二重になる。パーシャルの拡張子を
+ * `.html` 以外にすると、この既定動作から外れる。
  */
 export const htmlIncludes = (): Plugin => {
 	let root = process.cwd();
-	const included = new Set<string>();
 	return {
 		name: "pixel-refiner:html-includes",
 		configResolved(config) {
@@ -163,17 +167,8 @@ export const htmlIncludes = (): Plugin => {
 		transformIndexHtml: {
 			order: "pre",
 			handler(html) {
-				return resolveHtmlIncludes(html, {
-					root,
-					onInclude: (path) => included.add(path),
-				});
+				return resolveHtmlIncludes(html, { root });
 			},
-		},
-		hotUpdate({ file, server }) {
-			if (!included.has(file)) return;
-			// パーシャルはモジュールグラフに載らないので、変更時はページごと再読み込みする
-			server.hot.send({ type: "full-reload" });
-			return [];
 		},
 	};
 };
