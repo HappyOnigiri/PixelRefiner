@@ -35,4 +35,5 @@ When `guide.html` publishes a converted example, add one quality case for it by 
 ## Verification
 
 - Run `make ci` after changes.
+- `make ci` leaves out the image quality cases, so also run `make quality` after changing processing in `src/core`, defaults or ranges in `src/shared/config.ts`, the presets or the Quick Settings mapping in `src/browser/quick-settings.ts`, the cases or the harness under `test/quality/`, or the case images under `test/fixtures/` and `public/guide/`. See [Commands](test/quality/README.md#commands) for the other quality commands.
 - コミットを求められた場合は、Conventional Commits 形式を使い、説明を日本語で記述する。
