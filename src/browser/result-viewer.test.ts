@@ -119,8 +119,12 @@ describe("ResultViewer のクラスフック", () => {
 	const hooks = collectSourceHooks(source);
 
 	it("ソースからフックを抽出できている", () => {
-		// 抽出が空振りすると以降の検査が素通りするので、取れていること自体を確かめる
-		expect(hooks.length).toBeGreaterThan(0);
+		// [Intended] 抽出が痩せると以降の検査が黙って素通りするので、下限を
+		// get() の呼び出し回数に取る。セレクタが定数へ括り出されて
+		// `".js-*"` の形で拾えなくなった時点で落ちる。
+		const getCallCount = source.match(/this\.get</g)?.length ?? 0;
+		expect(getCallCount).toBeGreaterThan(0);
+		expect(hooks.length).toBeGreaterThanOrEqual(getCallCount);
 	});
 
 	// [Intended] 検査単位は ResultViewer に渡すコンテナそのものに合わせる。
