@@ -1,7 +1,7 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
-import type { DetailLevel, ProcessingMode } from "../shared/types";
+import type { CellScale, DetailLevel, ProcessingMode } from "../shared/types";
 import type { ResourceKey } from "./i18n";
 
 export type QuickReductionMode =
@@ -29,6 +29,7 @@ export type QuickDithering = "off" | "subtle" | "strong";
 export type QuickSettingsState = {
 	processingMode: ProcessingMode;
 	detailLevel: DetailLevel;
+	cellScale: CellScale;
 	reductionMode: QuickReductionMode;
 	background: QuickBackground;
 	dithering: QuickDithering;
@@ -46,6 +47,7 @@ export type BuiltInPreset = {
 export const QUICK_SETTINGS_DEFAULTS: QuickSettingsState = {
 	processingMode: PROCESS_DEFAULTS.processingMode,
 	detailLevel: PROCESS_DEFAULTS.detailLevel,
+	cellScale: PROCESS_DEFAULTS.cellScale,
 	reductionMode: "auto",
 	background: "auto",
 	dithering: "off",
@@ -69,6 +71,7 @@ export const createQuickProcessOptions = (
 		...createDefaultProcessOptions(),
 		processingMode: quick.processingMode,
 		detailLevel: quick.detailLevel,
+		cellScale: quick.cellScale,
 		outlineStyle: PROCESS_DEFAULTS.outlineStyle,
 		// [Policy] 背景を残す出力はキャンバス全体を維持し、背景を透過する出力だけを内容範囲へ詰める。
 		trimToContent: quick.background !== "keep",

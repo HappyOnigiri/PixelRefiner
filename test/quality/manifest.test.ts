@@ -28,6 +28,28 @@ describe("quality manifest", () => {
 		expect(validateManifest(cases)).toEqual([]);
 	});
 
+	it("かんたん設定のドットの大きさを指定したケースを受理する", () => {
+		// [Intended] UI へ公開した項目は品質ケースでも指定できないと、掲載手順の
+		// 再現性を確かめられない。表に無い項目は unknown quick setting で弾かれる。
+		const draft = cloneCases();
+		const quick = asQuickSettingsCase(draft);
+		quick.quickSettings = { cellScale: "double" };
+
+		expect(validateManifest(draft)).toEqual([]);
+	});
+
+	it("ドットの大きさもUIの選択肢の外は弾く", () => {
+		const draft = cloneCases();
+		const quick = asQuickSettingsCase(draft);
+		quick.quickSettings = {
+			cellScale: "huge",
+		} as unknown as QualityImageCase["quickSettings"];
+
+		expect(validateManifest(draft)).toContain(
+			`${quick.id}: invalid cellScale huge`,
+		);
+	});
+
 	it("excludes option-specific fixtures from auto cases", () => {
 		const ids = new Set(cases.map((qualityCase) => qualityCase.id));
 		for (const id of [

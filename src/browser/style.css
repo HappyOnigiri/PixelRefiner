@@ -1207,37 +1207,50 @@ select:focus {
   opacity: 1;
 }
 
-/* [Intended] `.modal .modal-content` と詳細度を揃えないと、既存の max-width: 800px に負けて
-   候補カードを2列で並べる幅が確保できない。 */
-.modal .candidate-modal-content {
-	width: min(920px, calc(100vw - 32px));
-	max-width: min(920px, calc(100vw - 32px));
-	max-height: min(760px, calc(100vh - 32px));
+/* 結果パネル内に並ぶ「他の候補」。グリッド検出が低信頼のときだけ表示する。 */
+.candidate-strip {
+	margin-top: 12px;
+	padding: 12px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-sm);
+	background: var(--bg-panel);
 }
 
-.candidate-modal-body {
-	padding: 18px;
-	overflow-y: auto;
+.candidate-strip[hidden] {
+	display: none;
 }
 
-.candidate-reasons {
-	margin: 8px 0 18px;
+.candidate-strip-heading {
+	margin: 0;
+	font-size: 0.92rem;
+}
+
+.candidate-strip-reasons {
+	margin: 6px 0 10px;
 	color: var(--text-muted);
-	font-size: 0.9rem;
+	font-size: 0.82rem;
 }
 
-.candidate-list {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 14px;
+.candidate-strip-reasons:empty {
+	display: none;
+}
+
+/* [Intended] 候補は最大 7 枚並ぶため、折り返さず横スクロールにする。
+   縦に積むと結果画像がスクロールアウトし、候補と見比べられなくなる。 */
+.candidate-strip-list {
+	display: flex;
+	gap: 10px;
+	overflow-x: auto;
+	padding-bottom: 4px;
 }
 
 .candidate-card {
-	display: grid;
-	grid-template-columns: minmax(128px, 46%) 1fr;
-	gap: 14px;
-	min-height: 180px;
-	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 auto;
+	gap: 8px;
+	width: 148px;
+	padding: 8px;
 	border: 1px solid var(--border-color);
 	border-radius: var(--radius-sm);
 	background: var(--bg-panel);
@@ -1252,11 +1265,16 @@ select:focus {
 	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
+.candidate-card.is-selected {
+	border-color: var(--primary-action);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-action) 45%, transparent);
+}
+
 .candidate-card-preview {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-height: 156px;
+	min-height: 96px;
 	overflow: hidden;
 	background-color: #fff;
 	background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
@@ -1270,7 +1288,7 @@ select:focus {
 .candidate-card-preview canvas {
 	display: block;
 	width: 100%;
-	height: 156px;
+	height: 96px;
 	object-fit: contain;
 	image-rendering: pixelated;
 	/* [Intended] 全canvasを初期非表示にする共通規則を候補内だけ解除する。 */
@@ -1284,11 +1302,12 @@ select:focus {
 
 .candidate-card-details {
 	justify-content: center;
-	gap: 8px;
+	gap: 4px;
 }
 
 .candidate-card-heading {
 	gap: 5px;
+	font-size: 0.86rem;
 	font-weight: 700;
 }
 
@@ -1303,14 +1322,8 @@ select:focus {
 .candidate-card-metadata,
 .candidate-card-description {
 	color: var(--text-muted);
-	font-size: 0.82rem;
-	line-height: 1.45;
-}
-
-@media (max-width: 700px) {
-	.candidate-list {
-		grid-template-columns: 1fr;
-	}
+	font-size: 0.74rem;
+	line-height: 1.4;
 }
 
 /* 情報トースト */
@@ -1551,6 +1564,11 @@ select:focus {
   justify-content: center;
   gap: 16px;
   z-index: 10;
+}
+
+/* [Intended] display: flex を持つため、hidden 属性で閉じる場合は打ち消す。 */
+.loading-overlay[hidden] {
+  display: none;
 }
 
 .spinner {

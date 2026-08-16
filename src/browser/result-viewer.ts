@@ -473,7 +473,7 @@ export class ResultViewer {
 			return;
 		}
 
-		// [Intended] 数値だけの候補一覧は表示せず、低信頼度時は実結果の候補モーダルへ誘導する。
+		// [Intended] 数値だけの候補一覧は表示せず、低信頼度時は実結果の候補リストへ誘導する。
 		this.sizeLabel.textContent = `${this.currentImage.width} x ${this.currentImage.height}`;
 		this.sizeLabel.style.cursor = "default";
 		this.sizeLabel.style.textDecoration = "none";

@@ -123,6 +123,14 @@ export type DetailLevel =
 	| "balanced"
 	| "detailed";
 
+/**
+ * 検出したセル寸法に掛ける倍率。
+ * [Intended] refine は「検出した格子を復元する」経路なので、細かさの指定は
+ * 好みの解像度ではなく「検出倍率の取り違えの補正」を意味する。格子検出が外すときは
+ * 本来のセルの整数倍・整数分の 1 を掴むため、段階も整数スケールに限る。
+ */
+export type CellScale = "quarter" | "half" | "same" | "double" | "quadruple";
+
 export type SmallComponentRemovalMode = "off" | "light" | "auto" | "strong";
 
 export type GeminiWatermarkRemovalMode = "off" | "auto";
@@ -269,13 +277,6 @@ export type ProcessingAnalysis = {
 	 * 実際の Auto 結果を識別して再選択できるようにする。
 	 */
 	autoResultCandidateIndex?: number;
-	/**
-	 * Auto 処理の実出力サイズ。autoResultCandidateIndex がある場合のみ設定する。
-	 * [Policy] gridCandidates のレポート値は検出後のトリミングで実出力とずれることが
-	 * あるため、候補の相対ラベル（細かめ・粗め）の基準にはこの実測値を使う。
-	 */
-	autoResultOutW?: number;
-	autoResultOutH?: number;
 	foregroundRatioBefore?: number;
 	foregroundRatioAfter?: number;
 	contentLossRatio?: number;
@@ -285,22 +286,33 @@ export type ProcessingAnalysis = {
 	smallComponentRemoval?: SmallComponentRemovalDiagnostic;
 };
 
-export type ProcessResult = {
-	result: RawImage;
-	grid: PixelGrid;
-	extractedPalette: RGB[];
+/**
+ * 比較スライダー用の 2 枚。
+ *
+ * [Intended] compareBefore は元画像の解像度をそのまま保つため、結果本体より桁違いに大きい。
+ * 比較は毎回見るものではないので、結果本体とは型を分けて、比較モーダルを開いたときだけ
+ * 作って運ぶ。
+ */
+export type CompareImages = {
 	/** 比較用に出力形状へ正規化した元画像。 */
 	compareBefore: RawImage;
 	/** 比較用に出力形状へ正規化したサニタイズ済み入力。 */
 	compareBeforeSanitized: RawImage;
+};
+
+/** 比較用の 2 枚を除いた処理結果。処理スレッドとの受け渡しと結果の保持にはこちらを使う。 */
+export type ProcessedImageResult = {
+	result: RawImage;
+	grid: PixelGrid;
+	extractedPalette: RGB[];
 	analysis: ProcessingAnalysis;
 };
 
+export type ProcessResult = ProcessedImageResult & CompareImages;
+
 export type CandidateKind =
-	| "recommended"
 	| "auto-result"
-	| "finer"
-	| "coarser"
+	| "cell-scale"
 	| "preserve"
 	| "convert";
 
@@ -312,6 +324,12 @@ export type CandidateSelection = {
 	outW?: number;
 	outH?: number;
 	detailLevel?: DetailLevel;
+	/**
+	 * kind が "cell-scale" のときに適用するセル倍率。
+	 * [Intended] 候補は「検出格子はそのままでドットの大きさだけ差し替えたもの」なので、
+	 * 出力サイズではなく倍率で持つ。かんたん設定・詳細設定の同名項目と同じ値になる。
+	 */
+	cellScale?: CellScale;
 };
 
 export type CandidatePreview = CandidateSelection & {

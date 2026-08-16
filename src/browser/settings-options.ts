@@ -1,7 +1,7 @@
 import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { clampInt, PROCESS_DEFAULTS, PROCESS_RANGES } from "../shared/config";
-import type { DitherMode, OutlineStyle } from "../shared/types";
+import type { CellScale, DitherMode, OutlineStyle } from "../shared/types";
 import { isConvertDetailLevel } from "./advanced-processing-controls";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
@@ -71,6 +71,7 @@ export const createAdvancedProcessOptions = (
 		detailLevel: isConvertDetailLevel(convertSizeMode)
 			? convertSizeMode
 			: PROCESS_DEFAULTS.detailLevel,
+		cellScale: els.advancedCellScaleSelect.value as CellScale,
 		convertPixelsW: useConvertWidth ? convertPixelsW : undefined,
 		convertPixelsH: useConvertHeight ? convertPixelsH : undefined,
 		detectionQuantStep: clampInt(

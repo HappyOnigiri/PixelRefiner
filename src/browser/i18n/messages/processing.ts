@@ -3,15 +3,10 @@ import { defineMessages } from "../define-messages";
 // 処理の実行時メッセージ（candidate. / warning. / error. / classification. / batch.）
 export const processingMessages = defineMessages({
 	// candidate.*
-	"candidate.title": {
-		ja: "結果を選択",
-		en: "Choose the best result",
-		"zh-CN": "选择处理结果",
-	},
-	"candidate.intro": {
-		ja: "自動判定に確信を持てませんでした。実際の結果を比較して選んでください。",
-		en: "Automatic detection was uncertain. Compare the actual results before choosing.",
-		"zh-CN": "自动判断不够确定，请比较实际结果后再选择。",
+	"candidate.other_heading": {
+		ja: "他の候補",
+		en: "Other options",
+		"zh-CN": "其他方案",
 	},
 	"candidate.recommended_badge": {
 		ja: "おすすめ",
@@ -23,25 +18,10 @@ export const processingMessages = defineMessages({
 		en: "{width} × {height} px · {colors} colors",
 		"zh-CN": "{width} × {height} px・{colors} 色",
 	},
-	"candidate.label.recommended": {
-		ja: "推奨候補",
-		en: "Recommended",
-		"zh-CN": "推荐方案",
-	},
 	"candidate.label.auto-result": {
 		ja: "Auto結果",
 		en: "Auto result",
 		"zh-CN": "Auto结果",
-	},
-	"candidate.label.finer": {
-		ja: "細かめ",
-		en: "Finer",
-		"zh-CN": "更精细",
-	},
-	"candidate.label.coarser": {
-		ja: "粗め",
-		en: "Coarser",
-		"zh-CN": "更粗犷",
 	},
 	"candidate.label.preserve": {
 		ja: "原寸維持",
@@ -53,35 +33,70 @@ export const processingMessages = defineMessages({
 		en: "Convert option",
 		"zh-CN": "转换方案",
 	},
-	"candidate.description.recommended": {
-		ja: "検出結果の中で画像構造に最も合う候補です。",
-		en: "The detected result that best matches the image structure.",
-		"zh-CN": "最符合图像结构的检测结果。",
+	"candidate.label.cell_scale.quarter": {
+		ja: "ドットをとても小さく",
+		en: "Much smaller pixels",
+		"zh-CN": "像素小很多",
+	},
+	"candidate.label.cell_scale.half": {
+		ja: "ドットを小さく",
+		en: "Smaller pixels",
+		"zh-CN": "像素更小",
+	},
+	"candidate.label.cell_scale.same": {
+		ja: "検出したドットのまま",
+		en: "Detected pixel size",
+		"zh-CN": "保持检测到的像素",
+	},
+	"candidate.label.cell_scale.double": {
+		ja: "ドットを大きく",
+		en: "Larger pixels",
+		"zh-CN": "像素更大",
+	},
+	"candidate.label.cell_scale.quadruple": {
+		ja: "ドットをとても大きく",
+		en: "Much larger pixels",
+		"zh-CN": "像素大很多",
 	},
 	"candidate.description.auto-result": {
 		ja: "Auto処理で実際に採用された結果です。",
-		en: "The result actually selected by Auto processing.",
+		en: "The result Auto processing actually used.",
 		"zh-CN": "Auto处理实际采用的结果。",
-	},
-	"candidate.description.finer": {
-		ja: "細部を多く残す候補です。",
-		en: "Keeps more fine detail.",
-		"zh-CN": "保留更多细节的方案。",
-	},
-	"candidate.description.coarser": {
-		ja: "大きなドットへまとめる候補です。",
-		en: "Groups the image into larger pixels.",
-		"zh-CN": "将图像整理为更大像素块的方案。",
 	},
 	"candidate.description.preserve": {
 		ja: "縮小せず、安全に元の解像度を維持します。",
-		en: "Avoids downscaling and safely keeps the original resolution.",
+		en: "Keeps the original resolution without downscaling.",
 		"zh-CN": "不缩小图像，安全保留原始分辨率。",
 	},
 	"candidate.description.convert": {
 		ja: "通常画像としてドット絵風に変換します。",
-		en: "Treats the input as a regular image and converts it to pixel art.",
+		en: "Converts the image to pixel art as a regular picture.",
 		"zh-CN": "按普通图像转换为像素画风格。",
+	},
+	"candidate.description.cell_scale.quarter": {
+		ja: "検出したドットの1/4の大きさで復元します。",
+		en: "Restores at a quarter of the detected pixel size.",
+		"zh-CN": "以检测到的像素大小的 1/4 还原。",
+	},
+	"candidate.description.cell_scale.half": {
+		ja: "検出したドットの半分の大きさで復元します。",
+		en: "Restores at half the detected pixel size.",
+		"zh-CN": "以检测到的像素大小的一半还原。",
+	},
+	"candidate.description.cell_scale.same": {
+		ja: "検出したドットの大きさのまま復元します。",
+		en: "Restores at the detected pixel size.",
+		"zh-CN": "按检测到的像素大小还原。",
+	},
+	"candidate.description.cell_scale.double": {
+		ja: "検出したドット2つ分を1ドットにまとめます。",
+		en: "Merges every two detected pixels into one.",
+		"zh-CN": "将每 2 个检测到的像素合并为 1 个。",
+	},
+	"candidate.description.cell_scale.quadruple": {
+		ja: "検出したドット4つ分を1ドットにまとめます。",
+		en: "Merges every four detected pixels into one.",
+		"zh-CN": "将每 4 个检测到的像素合并为 1 个。",
 	},
 	// batch.*
 	"batch.status.pending": {

@@ -2,16 +2,17 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { CandidateModalReason } from "../../../src/core/candidate-modal-decision";
+import type { CandidateSuggestionReason } from "../../../src/core/candidate-suggestion-decision";
 import type {
 	CandidateKind,
+	CellScale,
 	ProcessingRoute,
 	ProcessingWarningCode,
 } from "../../../src/shared/types";
 import { QUALITY_METRIC_RULES } from "../comparison";
 import type { QualityChangeStatus } from "../types";
 import {
-	CANDIDATE_MODAL_DECISION_KEYS,
+	CANDIDATE_SUGGESTION_DECISION_KEYS,
 	WARNING_PRESENTATION_KEYS,
 } from "./auto-diagnostics";
 import { TARGET_STATE_KEYS } from "./target-section";
@@ -111,7 +112,7 @@ const GROUP_VALUES: Record<string, string[]> = {
 	assertions: collectAssertionNames(),
 	processingWarnings: WARNING_CODES,
 	warningTriggers: WARNING_CODES,
-	candidateModalReasons: valuesOf<CandidateModalReason>({
+	candidateSuggestionReasons: valuesOf<CandidateSuggestionReason>({
 		LOW_GRID_CONFIDENCE: true,
 		NO_WARNING: true,
 		NO_LOW_GRID_CONFIDENCE: true,
@@ -122,20 +123,25 @@ const GROUP_VALUES: Record<string, string[]> = {
 		NOT_AUTO: true,
 	}),
 	candidateKinds: valuesOf<CandidateKind>({
-		recommended: true,
 		"auto-result": true,
-		finer: true,
-		coarser: true,
+		"cell-scale": true,
 		preserve: true,
 		convert: true,
+	}),
+	candidateCellScales: valuesOf<CellScale>({
+		quarter: true,
+		half: true,
+		same: true,
+		double: true,
+		quadruple: true,
 	}),
 };
 
 /** 実行時に決まるフラットなキー。出所ごとに並べる。 */
 const DYNAMIC_FLAT_KEYS = [
-	// 目標判定・候補モーダル判定・WARNING 表示先の対応表
+	// 目標判定・候補リスト判定・WARNING 表示先の対応表
 	...Object.values(TARGET_STATE_KEYS),
-	...Object.values(CANDIDATE_MODAL_DECISION_KEYS),
+	...Object.values(CANDIDATE_SUGGESTION_DECISION_KEYS),
 	...Object.values(WARNING_PRESENTATION_KEYS),
 	// 前回との差分と処理ルートは、値をそのままキーにする
 	...valuesOf<QualityChangeStatus>({

@@ -174,26 +174,26 @@ export const REPORT_MESSAGES = defineReportMessages({
 		"zh-CN": "判定条件",
 	},
 	candidateDiagnostics: {
-		ja: "Auto候補モーダル診断",
+		ja: "Auto候補リスト診断",
 		en: "Auto candidate diagnostic",
-		"zh-CN": "Auto 候选模态诊断",
+		"zh-CN": "Auto 候选列表诊断",
 	},
-	candidateModal: {
-		ja: "候補選択モーダル",
-		en: "Candidate modal",
-		"zh-CN": "候选选择模态",
+	candidateSuggestion: {
+		ja: "候補リスト",
+		en: "Candidate list",
+		"zh-CN": "候选列表",
 	},
-	candidateModalWouldShow: {
+	candidateSuggestionWouldShow: {
 		ja: "表示される想定",
 		en: "expected to show",
 		"zh-CN": "预计显示",
 	},
-	candidateModalWouldNotShow: {
+	candidateSuggestionWouldNotShow: {
 		ja: "表示されない",
 		en: "not expected to show",
 		"zh-CN": "预计不显示",
 	},
-	candidateModalNotApplicable: {
+	candidateSuggestionNotApplicable: {
 		ja: "対象外",
 		en: "not applicable",
 		"zh-CN": "不适用",
@@ -203,10 +203,10 @@ export const REPORT_MESSAGES = defineReportMessages({
 		en: "WARNING presentation",
 		"zh-CN": "WARNING 显示位置",
 	},
-	warningPresentationCandidateModal: {
-		ja: "候補モーダル",
-		en: "candidate modal",
-		"zh-CN": "候选模态",
+	warningPresentationCandidateList: {
+		ja: "候補リスト",
+		en: "candidate list",
+		"zh-CN": "候选列表",
 	},
 	warningPresentationIndicator: {
 		ja: "警告アイコン",
@@ -218,7 +218,7 @@ export const REPORT_MESSAGES = defineReportMessages({
 		en: "none",
 		"zh-CN": "无",
 	},
-	candidateModalReason: {
+	candidateSuggestionReason: {
 		ja: "判定理由",
 		en: "Decision reason",
 		"zh-CN": "判定原因",
@@ -721,7 +721,7 @@ export const REPORT_MESSAGES = defineReportMessages({
 			"zh-CN": "Auto 的判定置信度低，或检测到的网格退化，因此退回保持原尺寸。",
 		},
 	},
-	candidateModalReasons: {
+	candidateSuggestionReasons: {
 		LOW_GRID_CONFIDENCE: {
 			ja: "グリッド信頼度が低く、候補を提示できる",
 			en: "Grid confidence is low and candidates can be offered",
@@ -764,25 +764,15 @@ export const REPORT_MESSAGES = defineReportMessages({
 		},
 	},
 	candidateKinds: {
-		recommended: {
-			ja: "推奨候補",
-			en: "Recommended",
-			"zh-CN": "推荐方案",
-		},
 		"auto-result": {
-			ja: "Auto実結果",
+			ja: "Auto結果",
 			en: "Auto result",
-			"zh-CN": "Auto 结果",
+			"zh-CN": "Auto结果",
 		},
-		finer: {
-			ja: "細かめ",
-			en: "Finer",
-			"zh-CN": "更精细",
-		},
-		coarser: {
-			ja: "粗め",
-			en: "Coarser",
-			"zh-CN": "更粗犷",
+		"cell-scale": {
+			ja: "ドットの大きさ",
+			en: "Pixel size",
+			"zh-CN": "像素大小",
 		},
 		preserve: {
 			ja: "原寸維持",
@@ -793,6 +783,33 @@ export const REPORT_MESSAGES = defineReportMessages({
 			ja: "Convert候補",
 			en: "Convert option",
 			"zh-CN": "转换方案",
+		},
+	},
+	candidateCellScales: {
+		quarter: {
+			ja: "ドットをとても小さく（1/4倍）",
+			en: "Much smaller pixels (1/4x)",
+			"zh-CN": "像素小很多（1/4 倍）",
+		},
+		half: {
+			ja: "ドットを小さく（1/2倍）",
+			en: "Smaller pixels (1/2x)",
+			"zh-CN": "像素更小（1/2 倍）",
+		},
+		same: {
+			ja: "検出したドットのまま（1倍）",
+			en: "Detected pixel size (1x)",
+			"zh-CN": "保持检测到的像素（1 倍）",
+		},
+		double: {
+			ja: "ドットを大きく（2倍）",
+			en: "Larger pixels (2x)",
+			"zh-CN": "像素更大（2 倍）",
+		},
+		quadruple: {
+			ja: "ドットをとても大きく（4倍）",
+			en: "Much larger pixels (4x)",
+			"zh-CN": "像素大很多（4 倍）",
 		},
 	},
 });

@@ -14,6 +14,9 @@ export type ProcessorClient = {
 	processCandidate: (
 		...args: Parameters<ProcessorWorker["processCandidate"]>
 	) => Promise<ReturnType<ProcessorWorker["processCandidate"]>>;
+	compareImages: (
+		...args: Parameters<ProcessorWorker["compareImages"]>
+	) => Promise<ReturnType<ProcessorWorker["compareImages"]>>;
 };
 
 export type ProcessorEndpoint = {
@@ -93,6 +96,8 @@ export const createCancellableProcessor = (
 			invoke((processor) => processor.previewCandidates(...args)),
 		processCandidate: (...args) =>
 			invoke((processor) => processor.processCandidate(...args)),
+		compareImages: (...args) =>
+			invoke((processor) => processor.compareImages(...args)),
 		cancelActive: () => {
 			if (pendingCancellations.size === 0) return;
 			const cancellations = [...pendingCancellations];
@@ -121,4 +126,5 @@ export const processor: ProcessorClient = {
 	previewCandidates: (...args) =>
 		getSharedProcessor().previewCandidates(...args),
 	processCandidate: (...args) => getSharedProcessor().processCandidate(...args),
+	compareImages: (...args) => getSharedProcessor().compareImages(...args),
 };

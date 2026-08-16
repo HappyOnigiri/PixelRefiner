@@ -32,10 +32,22 @@ export const tooltipMessages = defineMessages({
 			"指定 Convert 重采样使用的尺寸。背景裁剪、描边和留白可能会改变最终画布尺寸。",
 	},
 	"tooltip.help.quick_detail": {
-		ja: "「細部を残してドット化」で使うドットの細かさを5段階から選びます。粗くするほど出力が小さくなり、1ドットが大きく見えます。「細かい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\n「おまかせ」では、細部を残す仕上がりが自動で選ばれた画像にだけ適用されます。",
-		en: "Chooses from five pixel-detail levels for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image and does not change the color count or other settings.\n\nIn Best Match, this applies only when a detailed finish is selected automatically.",
+		ja: "「細部を残してドット化」で使うドットの細かさを5段階から選びます。粗くするほど出力が小さくなり、1ドットが大きく見えます。「細かい」も元画像を超えて拡大しません。色数など、ほかの設定には影響しません。\n\n「おまかせ」では、細部を残す仕上がりが自動で選ばれた画像にだけ適用されます。「輪郭をくっきり」で使うのは「ドットの大きさ」で、こちらとは別の項目です。",
+		en: "Chooses from five pixel-detail levels for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image and does not change the color count or other settings.\n\nIn Best Match, this applies only when a detailed finish is selected automatically. Crisp Edges uses Pixel Size instead, which is a separate setting.",
 		"zh-CN":
-			"为“保留细节的像素画”选择五档像素细节。设置越粗，输出尺寸越小，单个像素看起来越大。“精细”也不会放大到超过原图尺寸，不影响颜色数量等其他设置。\n\n在“智能推荐”中，仅当系统自动选择保留细节的效果时生效。",
+			"为“保留细节的像素画”选择五档像素细节。设置越粗，输出尺寸越小，单个像素看起来越大。“精细”也不会放大到超过原图尺寸，不影响颜色数量等其他设置。\n\n在“智能推荐”中，仅当系统自动选择保留细节的效果时生效。“清晰轮廓”使用的是另一个项目“像素大小”。",
+	},
+	"tooltip.help.quick_cell_scale": {
+		ja: "「輪郭をくっきり」で復元するドットの大きさを5段階から選びます。検出したドットの大きさを基準に、その1/4〜4倍へ変えます。格子の検出が外れて出力が粗くなりすぎたときに、小さい側を選ぶと復元し直せます。元画像を超えて拡大することはありません。\n\n「おまかせ」では、輪郭をくっきりする仕上がりが自動で選ばれた画像にだけ適用されます。「細部を残してドット化」で使うのは「ドットの細かさ」です。",
+		en: "Chooses the size of the pixels restored by Crisp Edges, in five steps relative to the detected pixel size (1/4x to 4x). When grid detection misses and the result looks too coarse, pick a smaller step to restore it again. It never upscales beyond the original image.\n\nIn Best Match, this applies only when Crisp Edges is selected automatically. Detailed Pixel Art uses Pixel Detail instead.",
+		"zh-CN":
+			"为“清晰轮廓”选择还原时的像素大小，共五档。以检测到的像素大小为基准，在 1/4 到 4 倍之间调整。当网格检测失误导致结果过粗时，选择更小的档位即可重新还原。不会放大到超过原图尺寸。\n\n在“智能推荐”中，仅当系统自动选择清晰轮廓时生效。“保留细节的像素画”使用的是“像素细节”。",
+	},
+	"tooltip.help.advanced_cell_scale": {
+		ja: "検出したセル寸法に倍率を掛けてから縮小します。格子の位相は変えないので、セル境界は検出した格子に乗ったままで、出力の縦横比も変わりません。グリッド検出モードが「自動」または「ピクセル+自動」で、格子の復元で仕上げる場合にだけ効きます。",
+		en: "Scales the detected cell size before downsampling. The grid phase is kept, so cell boundaries stay on the detected grid and the output aspect ratio does not change. Applies only when Grid Detection Mode is Auto or Pixel + Auto and the result comes from grid restoration.",
+		"zh-CN":
+			"在缩小之前，为检测到的单元格尺寸乘以倍率。网格相位保持不变，因此单元格边界仍位于检测到的网格上，输出的纵横比也不会改变。仅当网格检测模式为“自动”或“像素+自动”，且结果来自网格还原时生效。",
 	},
 	"tooltip.help.quick_reduction_mode": {
 		ja: "減色方法を選びます。おまかせでは、「輪郭をくっきり」と「サイズを変えず補正」は元の色を維持し、「細部を残してドット化」は24色に減色します。任意の色数指定と固定パレットの読み込みは詳細設定で行えます。",

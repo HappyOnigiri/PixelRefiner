@@ -207,7 +207,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		// [Intended] 一覧はバッジだけを出す。診断値を並べると 1 ケースの高さが伸び、
 		// 目標品質の一覧性が落ちるため、信頼度と判定理由はケース詳細へ寄せる。
 		expect(html).not.toContain('class="candidate-diagnostics"');
-		expect(html).not.toContain('data-i18n="candidateModalReason"');
+		expect(html).not.toContain('data-i18n="candidateSuggestionReason"');
 		expect(html).not.toContain('data-i18n="candidatePlanCount"');
 		expect(html).not.toContain('data-i18n="warningPresentation"');
 		expect(html).toContain('hasWarnings":"WARNINGあり"');
@@ -217,7 +217,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(html.match(/data-i18n="hasCandidateSelection"/g)?.length ?? 0).toBe(
 			results.cases.filter(
-				(result) => result.candidateModalDecision === "would-show",
+				(result) => result.candidateSuggestionDecision === "would-show",
 			).length,
 		);
 		const paletteCaseId = "convert-game-boy-pocket-palette";
@@ -346,7 +346,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(autoDetail).toContain(
 			'<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>',
 		);
-		expect(autoDetail).toContain('data-i18n="candidateModalWouldNotShow"');
+		expect(autoDetail).toContain('data-i18n="candidateSuggestionWouldNotShow"');
 		// [Policy] 候補選択と WARNING の描画は、意図的に低信頼な入力を持つケースで見る。
 		// 正しく処理できるケースを標本にすると、検出の改善で標本が静かに失われる。
 		const modalCaseId = "show-ui-default-candidates";
@@ -354,9 +354,9 @@ describe.skipIf(!enabled)("quality report", () => {
 			path.join(reportRoot, "cases", modalCaseId, "index.html"),
 			"utf8",
 		);
-		expect(modalDetail).toContain('data-i18n="candidateModalWouldShow"');
+		expect(modalDetail).toContain('data-i18n="candidateSuggestionWouldShow"');
 		expect(modalDetail).toContain(
-			'data-i18n="warningPresentationCandidateModal"',
+			'data-i18n="warningPresentationCandidateList"',
 		);
 		// [Intended] WARNING は文言だけでなく、どの判定で付いたかまで詳細から辿れること。
 		expect(modalDetail).toContain(
@@ -369,9 +369,9 @@ describe.skipIf(!enabled)("quality report", () => {
 			'data-i18n="warningTriggers.LOW_GRID_CONFIDENCE"',
 		);
 		expect(modalDetail).toContain(
-			'data-i18n="candidateModalReasons.LOW_GRID_CONFIDENCE"',
+			'data-i18n="candidateSuggestionReasons.LOW_GRID_CONFIDENCE"',
 		);
-		// [Intended] 候補選択モーダルが出る見込みのケースは、選択肢とその画像を詳細へ出す。
+		// [Intended] 候補リストが出る見込みのケースは、選択肢とその画像を詳細へ出す。
 		expect(modalDetail).toContain(
 			'<h3 data-i18n="candidateOptions">Candidate options</h3>',
 		);
@@ -381,8 +381,11 @@ describe.skipIf(!enabled)("quality report", () => {
 				?.candidateOptions ?? [];
 		expect(modalCandidateOptions.length).toBeGreaterThan(0);
 		for (const option of modalCandidateOptions) {
+			// セル倍率の候補は段階ごとに見出しを分けるので、種別の見出しは引かない。
 			expect(modalDetail).toContain(
-				`data-i18n="candidateKinds.${option.kind}"`,
+				option.cellScale === undefined
+					? `data-i18n="candidateKinds.${option.kind}"`
+					: `data-i18n="candidateCellScales.${option.cellScale}"`,
 			);
 			if (option.file === null) continue;
 			expect(existsSync(path.join(reportRoot, option.file))).toBe(true);
@@ -399,22 +402,24 @@ describe.skipIf(!enabled)("quality report", () => {
 			(result) => result.id === autoModalCaseId,
 		);
 		expect(autoModalResult?.warnings).toContain("LOW_GRID_CONFIDENCE");
-		expect(autoModalResult?.candidateModalDecision).toBe("would-show");
+		expect(autoModalResult?.candidateSuggestionDecision).toBe("would-show");
 		expect(autoModalResult?.targetStatus).toBe("unmet");
 		const autoModalDetail = readFileSync(
 			path.join(reportRoot, "cases", autoModalCaseId, "index.html"),
 			"utf8",
 		);
 		expect(autoModalDetail).toContain('class="badge parameter-auto"');
-		expect(autoModalDetail).toContain('data-i18n="candidateModalWouldShow"');
 		expect(autoModalDetail).toContain(
-			'data-i18n="warningPresentationCandidateModal"',
+			'data-i18n="candidateSuggestionWouldShow"',
+		);
+		expect(autoModalDetail).toContain(
+			'data-i18n="warningPresentationCandidateList"',
 		);
 		expect(autoModalDetail).toContain('class="images candidate-options"');
 		// [Intended] 候補生成はモーダルが出る見込みのケースだけに限る。品質ゲートと
 		// 表示されないケースに候補 1 件あたり 1 回の追加処理を持ち込まないため。
 		for (const result of results.cases) {
-			if (result.candidateModalDecision === "would-show") continue;
+			if (result.candidateSuggestionDecision === "would-show") continue;
 			expect(result.candidateOptions).toEqual([]);
 		}
 		expect(autoDetail).toContain('data-i18n="sizeMatches"');
@@ -433,8 +438,8 @@ describe.skipIf(!enabled)("quality report", () => {
 		);
 		expect(uiCandidateCase?.warnings).toContain("LOW_GRID_CONFIDENCE");
 		expect(uiCandidateCase?.candidatePlanCount).toBeGreaterThan(0);
-		expect(uiCandidateCase?.candidateModalDecision).toBe("would-show");
-		expect(uiCandidateCase?.warningPresentation).toBe("candidate-modal");
+		expect(uiCandidateCase?.candidateSuggestionDecision).toBe("would-show");
+		expect(uiCandidateCase?.warningPresentation).toBe("candidate-list");
 		expect(markdown).toContain(`- Changed: ${results.summary.changed}`);
 		expect(markdown).toContain(`- Unchanged: ${results.summary.unchanged}`);
 		expect(markdown).toContain(`- New: ${results.summary.newCases}`);

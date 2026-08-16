@@ -1,4 +1,5 @@
 import type {
+	CellScale,
 	DetailLevel,
 	ProcessingMode,
 	ProcessingRoute,
@@ -57,6 +58,12 @@ export const updateQuickSettingsDisabledStates = (
 			els.quickDetailLevelSelect,
 			effectiveRoute !== undefined && effectiveRoute !== "convert",
 		);
+		// [Intended] ドットの大きさは検出した格子を拡縮する指定なので、格子を復元する
+		// 「輪郭をくっきり」でしか効かない。細かさ（convert 専用）と対になる関係。
+		setQuickControlDisabled(
+			els.quickCellScaleSelect,
+			effectiveRoute !== undefined && effectiveRoute !== "refine",
+		);
 	}
 
 	const background = els.quickBackgroundSelect.value as QuickBackground;
@@ -88,6 +95,7 @@ export const updateQuickSettingsDisabledStates = (
 export const readQuickSettings = (els: Elements): QuickSettingsState => ({
 	processingMode: els.quickProcessingModeSelect.value as ProcessingMode,
 	detailLevel: els.quickDetailLevelSelect.value as DetailLevel,
+	cellScale: els.quickCellScaleSelect.value as CellScale,
 	reductionMode: els.quickReductionModeSelect.value as QuickReductionMode,
 	background: els.quickBackgroundSelect.value as QuickBackground,
 	backgroundColor: els.quickBackgroundColorInput.value,
@@ -122,6 +130,7 @@ export const setupQuickSettingsControls = ({
 
 	[
 		els.quickDetailLevelSelect,
+		els.quickCellScaleSelect,
 		els.quickReductionModeSelect,
 		els.quickBackgroundSelect,
 		els.quickDitheringSelect,

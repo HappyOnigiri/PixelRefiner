@@ -65,11 +65,7 @@ export const initApp = (): void => {
 		mainResultViewer.updateWarnings(warnings);
 		modalResultViewer.updateWarnings(warnings);
 	};
-	const candidateChooser = new CandidateChooser(
-		els.candidateModal,
-		// 閉じるボタンのフォーカスは CandidateChooser 側で先頭カードへ移すため渡さない。
-		createModalController(els.candidateModal, null),
-	);
+	const candidateChooser = new CandidateChooser(els.candidateStrip);
 
 	const resultModalController = createModalController(
 		els.resultModal,
@@ -591,6 +587,7 @@ export const initApp = (): void => {
 		processingState,
 		comparer,
 		compareModalController,
+		refreshCompare: processingController.refreshCompare,
 	});
 	setupResultActions({
 		els,

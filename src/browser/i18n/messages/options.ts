@@ -42,6 +42,31 @@ export const optionMessages = defineMessages({
 		en: "Original Size Cleanup",
 		"zh-CN": "原尺寸优化",
 	},
+	"option.cell_scale_quarter": {
+		ja: "とても小さい",
+		en: "Very small",
+		"zh-CN": "非常小",
+	},
+	"option.cell_scale_half": {
+		ja: "小さい",
+		en: "Small",
+		"zh-CN": "较小",
+	},
+	"option.cell_scale_same": {
+		ja: "標準",
+		en: "Standard",
+		"zh-CN": "标准",
+	},
+	"option.cell_scale_double": {
+		ja: "大きい",
+		en: "Large",
+		"zh-CN": "较大",
+	},
+	"option.cell_scale_quadruple": {
+		ja: "とても大きい",
+		en: "Very large",
+		"zh-CN": "非常大",
+	},
 	"option.size_very_small": {
 		ja: "とても粗い",
 		en: "Very coarse",

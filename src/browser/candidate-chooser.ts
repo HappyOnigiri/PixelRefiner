@@ -5,8 +5,9 @@ import type {
 } from "../shared/types";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
-import type { ModalController } from "./modal-controller";
 import { translateProcessingWarnings } from "./processing-warnings";
+
+type TranslationKey = Parameters<typeof i18n.t>[0];
 
 type CandidateChooserCallbacks = {
 	onSelect: (
@@ -15,80 +16,106 @@ type CandidateChooserCallbacks = {
 	) => Promise<void>;
 };
 
+/**
+ * 結果パネル内に並ぶ「他の候補」。
+ *
+ * [Intended] モーダルではなく結果パネルの一部にする。候補はメイン画像へ反映して
+ * 既存のズームで拡大しながら比べるものなので、フォーカスを奪って前面に出す必要がない。
+ */
 export class CandidateChooser {
-	private modal: HTMLElement;
-	private controller: ModalController;
+	private section: HTMLElement;
 	private list: HTMLElement;
 	private reasons: HTMLElement;
 	private callbacks: CandidateChooserCallbacks | null = null;
 	private sourceImageId: string | null = null;
 
-	constructor(modal: HTMLElement, controller: ModalController) {
-		this.modal = modal;
-		this.controller = controller;
+	constructor(section: HTMLElement) {
+		this.section = section;
 		this.list = this.get<HTMLElement>(".js-candidate-list");
 		this.reasons = this.get<HTMLElement>(".js-candidate-reasons");
-		this.get<HTMLButtonElement>(".js-close-candidates").addEventListener(
-			"click",
-			() => this.hide(),
-		);
-		this.modal.addEventListener("click", (event) => {
-			if (event.target === this.modal) this.hide();
-		});
-		this.modal.addEventListener("keydown", (event) =>
+		this.section.addEventListener("keydown", (event) =>
 			this.handleKeydown(event),
 		);
 	}
 
 	private get<T extends HTMLElement>(selector: string): T {
-		const element = this.modal.querySelector(selector);
+		const element = this.section.querySelector(selector);
 		if (!element)
 			throw new Error(`Element ${selector} not found in candidates`);
 		return element as T;
 	}
 
-	public setCallbacks(callbacks: CandidateChooserCallbacks): void {
-		this.callbacks = callbacks;
+	/** 表示中の候補が、どの画像に対する提案か。 */
+	public getSourceImageId(): string | null {
+		return this.sourceImageId;
 	}
 
 	public show(
 		candidates: CandidatePreview[],
 		warnings: ProcessingWarningCode[],
 		sourceImageId: string,
+		selectedId?: string,
 	): void {
+		// [Intended] 表示状態を先に切り替えてから中身を書く。理由文は aria-live の
+		// ライブリージョンで、hidden のまま書き換えても読み上げられない。候補が現れた
+		// ことを支援技術へ伝える手段がこれしかないので、順序を入れ替えない。
+		this.section.hidden = candidates.length === 0;
 		this.list.replaceChildren();
 		this.reasons.textContent = translateProcessingWarnings(warnings).join(" ");
 		for (let index = 0; index < candidates.length; index += 1) {
 			this.list.appendChild(this.createCard(candidates[index]));
 		}
 		this.sourceImageId = sourceImageId;
-		this.controller.open();
-		this.modal.setAttribute("aria-hidden", "false");
-		// ModalController は open 時に rAF で閉じるボタンへフォーカスするため、
-		// 先頭カードへ移すのはその後のフレームで行う。
-		requestAnimationFrame(() => {
-			requestAnimationFrame(() => {
-				if (this.controller.isOpen())
-					this.list.querySelector<HTMLButtonElement>("button")?.focus();
-			});
-		});
+		this.setSelected(selectedId);
 	}
 
-	/** ユーザー操作で閉じる。直前のフォーカス位置へ戻す。 */
-	public hide(): void {
-		this.close(true);
+	/**
+	 * 選択中のカードを強調する。
+	 * [Intended] 未選択のときは Auto 結果がメイン画像に出ているので、その候補を選択中にする。
+	 */
+	public setSelected(selectedId?: string): void {
+		const cards = this.list.querySelectorAll<HTMLButtonElement>(
+			"button[data-candidate-id]",
+		);
+		for (const card of cards) {
+			const isSelected =
+				selectedId === undefined
+					? card.dataset.autoResult === "true"
+					: card.dataset.candidateId === selectedId;
+			card.classList.toggle("is-selected", isSelected);
+			card.setAttribute("aria-pressed", String(isSelected));
+		}
 	}
 
-	/** 処理の開始やアクティブ画像の切替で閉じる。フォーカスは動かさない。 */
+	/** 処理の開始やアクティブ画像の切替で閉じる。 */
 	public dismiss(): void {
-		this.close(false);
+		if (this.section.hidden) return;
+		this.section.hidden = true;
+		this.list.replaceChildren();
+		this.reasons.textContent = "";
+		this.sourceImageId = null;
 	}
 
-	private close(restoreFocus: boolean): void {
-		if (!this.controller.isOpen()) return;
-		this.controller.close(restoreFocus);
-		this.modal.setAttribute("aria-hidden", "true");
-		this.sourceImageId = null;
+	public setCallbacks(callbacks: CandidateChooserCallbacks): void {
+		this.callbacks = callbacks;
+	}
+
+	/** カードの見出しと説明のキー。セル倍率は段階ごとに文言を分ける。 */
+	private textKeys(candidate: CandidatePreview): {
+		label: TranslationKey;
+		description: TranslationKey;
+	} {
+		if (candidate.kind === "cell-scale") {
+			const scale = candidate.cellScale ?? "same";
+			return {
+				label: `candidate.label.cell_scale.${scale}`,
+				description: `candidate.description.cell_scale.${scale}`,
+			};
+		}
+		return {
+			label: `candidate.label.${candidate.kind}`,
+			description: `candidate.description.${candidate.kind}`,
+		};
 	}
 
 	private createCard(candidate: CandidatePreview): HTMLButtonElement {
@@ -96,6 +123,8 @@ export class CandidateChooser {
 		button.type = "button";
 		button.className = "candidate-card";
 		button.dataset.candidateId = candidate.id;
+		if (candidate.kind === "auto-result") button.dataset.autoResult = "true";
+		button.setAttribute("aria-pressed", "false");
 
 		const preview = document.createElement("span");
 		preview.className = "candidate-card-preview";
@@ -103,11 +132,12 @@ export class CandidateChooser {
 		drawRawImageToCanvas(candidate.preview, canvas);
 		preview.appendChild(canvas);
 
+		const keys = this.textKeys(candidate);
 		const details = document.createElement("span");
 		details.className = "candidate-card-details";
 		const heading = document.createElement("span");
 		heading.className = "candidate-card-heading";
-		heading.textContent = i18n.t(`candidate.label.${candidate.kind}`);
+		heading.textContent = i18n.t(keys.label);
 		if (candidate.recommended) {
 			const badge = document.createElement("span");
 			badge.className = "candidate-recommended";
@@ -123,20 +153,22 @@ export class CandidateChooser {
 		});
 		const description = document.createElement("span");
 		description.className = "candidate-card-description";
-		description.textContent = i18n.t(`candidate.description.${candidate.kind}`);
+		description.textContent = i18n.t(keys.description);
 		details.append(heading, metadata, description);
 		button.append(preview, details);
 		button.addEventListener("click", async () => {
 			const sourceImageId = this.sourceImageId;
 			if (!this.callbacks || !sourceImageId) return;
-			this.hide();
+			// [Intended] 候補は選んだ後も並べたままにする。インライン表示では選び直しが
+			// できることに意味があるので、選択の反映は強調表示の更新だけで行う。
+			this.setSelected(candidate.id);
 			await this.callbacks.onSelect(candidate, sourceImageId);
 		});
 		return button;
 	}
 
 	private handleKeydown(event: KeyboardEvent): void {
-		// Escape と Tab のフォーカストラップは ModalController が処理する。
+		// [Intended] 横並びのカード間は矢印キーで移動できるようにする（ツールバーと同じ操作）。
 		if (
 			!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)
 		)

@@ -66,6 +66,7 @@ export const advancedModeControls = (
 	els.makeSquareCheck,
 	els.keepAspectRatioCheck,
 	els.gridDetectionModeSelect,
+	els.advancedCellScaleSelect,
 	els.reduceColorModeSelect,
 	els.ditherModeSelect,
 	els.colorCountInput,
@@ -91,6 +92,7 @@ export const advancedModeControls = (
 export const gridDetectionAdvancedControls = (
 	els: Elements,
 ): Array<HTMLInputElement | HTMLSelectElement> => [
+	els.advancedCellScaleSelect,
 	els.autoGridFromTrimmedCheck,
 	els.phaseAwareGridSearchCheck,
 	els.boundaryContrastOverrideCheck,
@@ -231,6 +233,9 @@ export const migrateAdvancedSettings = (
 			: PROCESS_DEFAULTS.detailLevel;
 	state["advanced-convert-width"] ??= "";
 	state["advanced-convert-height"] ??= "";
+
+	// [Policy] 項目追加前のプリセットは検出したセル寸法のまま処理していたので、既定の等倍で補う。
+	state["advanced-cell-scale"] ??= PROCESS_DEFAULTS.cellScale;
 
 	state["preserve-thin-features"] ??= PROCESS_DEFAULTS.preserveThinFeatures;
 	state["auto-grid-from-trimmed"] ??= PROCESS_DEFAULTS.autoGridFromTrimmed;

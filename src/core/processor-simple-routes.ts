@@ -177,6 +177,9 @@ export const processForcedRoute = (
 			: cropRawImage(image, bounds.x, bounds.y, bounds.w, bounds.h);
 	const createLogicalPass = (bounds: NonNullable<typeof b>) => {
 		const cropped = cropToBounds(working, bounds);
+		// [Policy] セル寸法は軸ごとに独立して求める。横と縦でドット幅が微妙に異なる入力を
+		// 救うための最終手段であり、縦横比を保つ等方分割へ「修正」してはいけない。
+		// 縦横比を保った縮小が要る場合は、かんたん設定の「ドットの大きさ」(cellScale) を使う。
 		const cellW = cropped.width / outW;
 		const cellH = cropped.height / outH;
 		const g: PixelGrid = {

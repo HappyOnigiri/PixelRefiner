@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type {
 	CandidateKind,
+	CellScale,
 	InputClassification,
 	ProcessingRoute,
 } from "../../shared/types";
@@ -64,13 +65,22 @@ const collectSourceText = (): string => {
 const valuesOf = <T extends string>(values: Record<T, true>): string[] =>
 	Object.keys(values);
 
-const CANDIDATE_KINDS: Record<CandidateKind, true> = {
-	recommended: true,
+/**
+ * [Intended] cell-scale だけは倍率ごとに文言を分けるため candidate.label.cell_scale.*
+ * を引く。ここでは種別そのままのキーを持つ候補だけを列挙する。
+ */
+const CANDIDATE_KINDS: Record<Exclude<CandidateKind, "cell-scale">, true> = {
 	"auto-result": true,
-	finer: true,
-	coarser: true,
 	preserve: true,
 	convert: true,
+};
+
+const CELL_SCALES: Record<CellScale, true> = {
+	quarter: true,
+	half: true,
+	same: true,
+	double: true,
+	quadruple: true,
 };
 
 /**
@@ -87,6 +97,8 @@ const DYNAMIC_KEY_VALUES: Record<string, string[]> = {
 	}),
 	"candidate.label.": valuesOf(CANDIDATE_KINDS),
 	"candidate.description.": valuesOf(CANDIDATE_KINDS),
+	"candidate.label.cell_scale.": valuesOf(CELL_SCALES),
+	"candidate.description.cell_scale.": valuesOf(CELL_SCALES),
 	"classification.": [
 		...valuesOf<InputClassification>({
 			"native-pixel": true,
@@ -225,6 +237,14 @@ describe("i18n messages", () => {
 		for (const [prefix, values] of Object.entries(DYNAMIC_KEY_VALUES)) {
 			const defined = Object.keys(allMessages)
 				.filter((key) => key.startsWith(prefix))
+				// [Intended] candidate.label.cell_scale.* のように、より長い
+				// プレフィックスを持つキーはそちらの検査で見るので、ここでは除く。
+				.filter(
+					(key) =>
+						!DYNAMIC_KEY_PREFIXES.some(
+							(other) => other.length > prefix.length && key.startsWith(other),
+						),
+				)
 				.map((key) => key.slice(prefix.length))
 				.sort();
 			const expected = [...values].sort();

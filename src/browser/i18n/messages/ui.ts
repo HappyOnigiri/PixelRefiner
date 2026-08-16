@@ -131,6 +131,11 @@ export const uiMessages = defineMessages({
 		en: "Sanitized",
 		"zh-CN": "预处理",
 	},
+	"ui.compare_preparing": {
+		ja: "比較画像を準備中...",
+		en: "Preparing comparison...",
+		"zh-CN": "正在准备对比图...",
+	},
 	"ui.placeholder.input": {
 		ja: '画像をここにドラッグ＆ドロップ<br /><span class="drop-subtext">または クリックして選択<br />(複数可)</span>',
 		en: 'Drag & drop images here<br /><span class="drop-subtext">or Click to select<br />(Multiple allowed)</span>',

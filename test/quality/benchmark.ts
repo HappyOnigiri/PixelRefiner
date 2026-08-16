@@ -7,15 +7,19 @@ import {
 	QUICK_SETTINGS_DEFAULTS,
 } from "../../src/browser/quick-settings";
 import { processBatchImages } from "../../src/core/batch";
-import { evaluateCandidateModalDecision } from "../../src/core/candidate-modal-decision";
 import {
 	candidateProcessOptions,
 	selectCandidatePlans,
 } from "../../src/core/candidate-previews";
+import { evaluateCandidateSuggestion } from "../../src/core/candidate-suggestion-decision";
 import { processImage } from "../../src/core/processor";
 import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
-import type { CandidateSelection, RawImage } from "../../src/shared/types";
+import type {
+	CandidateSelection,
+	ProcessedImageResult,
+	RawImage,
+} from "../../src/shared/types";
 import { AUTO_CASE_OPTIONS } from "./auto-cases";
 import {
 	baselineImagePath,
@@ -87,7 +91,7 @@ const processQualityCase = (
 	qualityCase: QualityImageCase,
 	input: ReturnType<typeof readPng>,
 	options: ProcessOptions,
-): ReturnType<typeof processImage> => {
+): ProcessedImageResult => {
 	if (!qualityCase.sharedPalette) return processImage(input, options);
 	const images = [
 		input,
@@ -136,7 +140,7 @@ const runQualityCasePair = (qualityCase: QualityImageCase) => {
 };
 
 /**
- * 候補選択モーダルに並ぶ選択肢を、ブラウザと同じ候補プラン・同じ入力画像から作る。
+ * 候補リストに並ぶ選択肢を、ブラウザと同じ候補プラン・同じ入力画像から作る。
  *
  * [Intended] ブラウザはサムネイルへ縮小した画像を並べるが、レポートには他の画像と同じ
  * 原寸で書き出す。縮小は表示側の image-stage が行うので、選択肢の実出力を等倍で確認できる。
@@ -155,13 +159,16 @@ const buildCandidateOptions = (
 			kind: plan.kind,
 			recommended: plan.recommended,
 			processingMode: plan.processingMode,
+			cellScale: plan.cellScale,
 		};
 		try {
 			const processed = processImage(
 				input,
 				candidateProcessOptions(options, plan),
 			);
-			const file = `${caseDirectory}/candidate-${plan.kind}.png`;
+			// [Policy] cell-scale の候補は複数あるため、倍率までファイル名に含める。
+			// 種別だけにすると 4 件が同じ名前で上書きし合い、最後の 1 件しか残らない。
+			const file = `${caseDirectory}/candidate-${plan.kind}-${plan.cellScale ?? "x"}.png`;
 			writePng(path.join(REPORT_ROOT, file), processed.result);
 			return {
 				...identity,
@@ -413,11 +420,18 @@ export const evaluateQualityCase = (
 		);
 	}
 	// [Intended] 表示見込みの判定には候補プレビューの生成結果を挟まず、UI 初回 Auto 処理と
-	// 同じ候補プラン数だけを根拠にする。ここでの判定は実際にモーダルを開いた事実ではなく、
+	// 同じ候補プラン数だけを根拠にする。ここでの判定は実際に候補を並べた事実ではなく、
 	// 候補生成の失敗を含まない決定論的な診断である。選択肢の画像は判定後に別途生成する。
-	const candidatePlans = selectCandidatePlans(currentRun.analysis);
+	// [Policy] 実際に並ぶ枚数はこれ以下になる。アプリは生成した候補の実出力を見て、
+	// 1 ドットしか無いものや隣の段階と同寸法のものを落とすため。
+	// 現在の倍率を渡さないと、アプリが除外する段階と診断が食い違う。
+	const candidatePlans = selectCandidatePlans(
+		currentRun.analysis,
+		undefined,
+		effectiveOptions.cellScale,
+	);
 	const candidatePlanCount = candidatePlans.length;
-	const candidateModal = evaluateCandidateModalDecision({
+	const candidateSuggestion = evaluateCandidateSuggestion({
 		isAuto: effectiveOptions.processingMode === "auto",
 		isInitial: true,
 		showCandidates: true,
@@ -458,7 +472,7 @@ export const evaluateQualityCase = (
 			path.join(REPORT_ROOT, files.backgroundMask),
 			createBackgroundMaskImage(currentRun.result),
 		);
-		if (candidateModal.candidateModalDecision === "would-show") {
+		if (candidateSuggestion.candidateSuggestionDecision === "would-show") {
 			candidateOptions = buildCandidateOptions(
 				candidatePlans,
 				input,
@@ -491,9 +505,10 @@ export const evaluateQualityCase = (
 		confidence: currentRun.analysis.confidence,
 		gridConfidence: currentRun.analysis.confidence,
 		warnings: currentRun.analysis.warnings,
-		candidateModalDecision: candidateModal.candidateModalDecision,
-		candidateModalReason: candidateModal.candidateModalReason,
-		warningPresentation: candidateModal.warningPresentation,
+		candidateSuggestionDecision:
+			candidateSuggestion.candidateSuggestionDecision,
+		candidateSuggestionReason: candidateSuggestion.candidateSuggestionReason,
+		warningPresentation: candidateSuggestion.warningPresentation,
 		candidatePlanCount,
 		candidateOptions,
 		expectedWidth: expected.width,

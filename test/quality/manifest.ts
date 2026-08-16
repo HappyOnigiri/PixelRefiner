@@ -5,8 +5,13 @@ import {
 	type QuickBackground,
 	type QuickDithering,
 	type QuickReductionMode,
+	type QuickSettingsState,
 } from "../../src/browser/quick-settings";
-import type { DetailLevel, ProcessingMode } from "../../src/shared/types";
+import type {
+	CellScale,
+	DetailLevel,
+	ProcessingMode,
+} from "../../src/shared/types";
 import { buildAutoCases } from "./auto-cases";
 import type { QualityImageCase, QualityParameterMode } from "./types";
 
@@ -23,7 +28,8 @@ const BUILT_IN_PRESET_IDS = new Set(
 
 // [Intended] cases.json は型検査を経ずに読み込むので、かんたん設定の項目名と値は
 // 実行時に確かめる。Record で全選択肢を並べているのは、UI 側に選択肢が増えたときに
-// この表の更新漏れを型エラーとして検出するため。
+// この表の更新漏れを型エラーとして検出するため。項目そのものの追加漏れも同じ理由で
+// 型エラーにする（表に無い項目は unknown quick setting として弾かれてしまう）。
 const QUICK_SETTING_VALUES = {
 	processingMode: {
 		auto: true,
@@ -38,6 +44,13 @@ const QUICK_SETTING_VALUES = {
 		balanced: true,
 		detailed: true,
 	} satisfies Record<DetailLevel, true>,
+	cellScale: {
+		quarter: true,
+		half: true,
+		same: true,
+		double: true,
+		quadruple: true,
+	} satisfies Record<CellScale, true>,
 	reductionMode: {
 		auto: true,
 		none: true,
@@ -68,11 +81,17 @@ const QUICK_SETTING_VALUES = {
 		subtle: true,
 		strong: true,
 	} satisfies Record<QuickDithering, true>,
-} as const;
+} as const satisfies Record<
+	// backgroundColor は選択肢ではなく色文字列なので、この表では扱わない。
+	Exclude<keyof QuickSettingsState, "backgroundColor">,
+	Record<string, true>
+>;
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 const hasOwn = (target: object, key: string): boolean =>
+	// [Workaround] tsconfig の lib が ES2020 のため Object.hasOwn を型が認識しない。
+	// biome-ignore lint/suspicious/noPrototypeBuiltins: 同上。lib を上げたら置き換える。
 	Object.prototype.hasOwnProperty.call(target, key);
 
 const validateQuickSettings = (qualityCase: QualityImageCase): string[] => {
@@ -104,9 +123,7 @@ const validateQuickSettings = (qualityCase: QualityImageCase): string[] => {
 	// [Intended] 背景色を選ぶ操作は色の指定とセットでしか案内されないので、
 	// 片方だけのケースは掲載手順を再現しない。
 	if (quick.background === "pick" && quick.backgroundColor === undefined) {
-		errors.push(
-			`${qualityCase.id}: background pick requires backgroundColor`,
-		);
+		errors.push(`${qualityCase.id}: background pick requires backgroundColor`);
 	}
 	return errors;
 };

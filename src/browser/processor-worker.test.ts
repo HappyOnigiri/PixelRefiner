@@ -31,6 +31,7 @@ const endpoint = (
 			processBatch: vi.fn(),
 			previewCandidates: vi.fn(),
 			processCandidate: vi.fn(),
+			compareImages: vi.fn(),
 		},
 	};
 };

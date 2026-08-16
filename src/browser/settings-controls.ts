@@ -291,6 +291,7 @@ export const setupSettingsControls = ({
 		els.keepAspectRatioCheck.checked = defaults.keepAspectRatio;
 		els.gridDetectionModeSelect.value =
 			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
+		els.advancedCellScaleSelect.value = defaults.cellScale;
 		els.reduceColorModeSelect.value = defaults.reduceColorMode;
 		els.ditherModeSelect.value = defaults.ditherMode;
 		els.outlineColorInput.value = rgbToHex(defaults.outlineColor);
@@ -303,6 +304,7 @@ export const setupSettingsControls = ({
 		els.quickProcessingModeSelect.value =
 			QUICK_SETTINGS_DEFAULTS.processingMode;
 		els.quickDetailLevelSelect.value = QUICK_SETTINGS_DEFAULTS.detailLevel;
+		els.quickCellScaleSelect.value = QUICK_SETTINGS_DEFAULTS.cellScale;
 		els.quickReductionModeSelect.value = QUICK_SETTINGS_DEFAULTS.reductionMode;
 		els.quickBackgroundSelect.value = QUICK_SETTINGS_DEFAULTS.background;
 		els.quickDitheringSelect.value = QUICK_SETTINGS_DEFAULTS.dithering;
@@ -346,7 +348,7 @@ export const setupSettingsControls = ({
 
 		autoProcessTimeout = window.setTimeout(() => {
 			autoProcessTimeout = undefined;
-			// [Intended] 設定調整のたびに候補モーダルが開くと、入力からフォーカスが奪われ調整を続けられない。
+			// [Intended] 設定調整のたびに候補を作り直すと、1 回の調整で 7 通りの変換が走る。
 			// 候補の提示は明示的な処理実行に限る。
 			void runProcessing({ showCandidates: false }).finally(() => {
 				// [Intended] 予約の解除は変換の完了時に行う。呼び出し直後に解除すると、
@@ -360,7 +362,7 @@ export const setupSettingsControls = ({
 
 	// 出力サイズを決める設定を直接変えた場合は、候補プレビューでの選択より新しい指定として扱う。
 	// [Intended] 対象は出力サイズに効く設定に限る。色やアウトラインまで含めると、
-	// サイズと無関係な微調整のたびに候補モーダルで選んだサイズが失われる。
+	// サイズと無関係な微調整のたびに候補リストで選んだ結果が失われる。
 	const clearCandidateSelections = () => {
 		imageSession.clearCandidateSelections();
 	};
@@ -673,6 +675,7 @@ export const setupSettingsControls = ({
 	[
 		els.forcePixelsWInput,
 		els.forcePixelsHInput,
+		els.advancedCellScaleSelect,
 		...advancedSettingControls(els),
 		els.preRemoveCheck,
 		els.postRemoveCheck,

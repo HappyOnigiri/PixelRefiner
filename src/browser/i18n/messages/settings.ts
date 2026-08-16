@@ -27,6 +27,16 @@ export const settingMessages = defineMessages({
 		en: "Pixel Detail",
 		"zh-CN": "像素细节",
 	},
+	"setting.quick_cell_scale": {
+		ja: "ドットの大きさ",
+		en: "Pixel Size",
+		"zh-CN": "像素大小",
+	},
+	"setting.advanced_cell_scale": {
+		ja: "ドットの大きさ",
+		en: "Pixel Size",
+		"zh-CN": "像素大小",
+	},
 	"setting.quick_colors": {
 		ja: "減色",
 		en: "Color Reduction",
