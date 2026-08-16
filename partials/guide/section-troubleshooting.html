@@ -1,0 +1,87 @@
+<!-- 4. うまくいかないときは -->
+<section
+  class="panel guide-section"
+  aria-labelledby="guide-troubleshooting-heading"
+>
+  <h2
+    id="guide-troubleshooting-heading"
+    data-i18n="guide.troubleshooting.heading"
+  >
+    When It Does Not Work
+  </h2>
+  <div class="guide-table-wrap">
+    <table class="guide-table">
+      <thead>
+        <tr>
+          <th data-i18n="guide.troubleshooting.col_symptom">Symptom</th>
+          <th data-i18n="guide.troubleshooting.col_cause">Cause</th>
+          <th data-i18n="guide.troubleshooting.col_fix">
+            How to fix the prompt
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-i18n="guide.troubleshooting.r1_symptom">
+            Holes appear in the whites of the character's eyes
+          </td>
+          <td data-i18n="guide.troubleshooting.r1_cause">
+            The background color also appears inside the subject
+          </td>
+          <td data-i18n="guide.troubleshooting.r1_fix" data-i18n-html>
+            Switch the background to a saturated color that never appears in the
+            subject (for example
+            <code>full frame edge-to-edge solid magenta background</code>)
+          </td>
+        </tr>
+        <tr>
+          <td data-i18n="guide.troubleshooting.r2_symptom">
+            A fringe of background color remains or bleeds around the outline
+          </td>
+          <td data-i18n="guide.troubleshooting.r2_cause">
+            A shadow or glow surrounds the subject
+          </td>
+          <td data-i18n="guide.troubleshooting.r2_fix" data-i18n-html>
+            Add
+            <code>no drop shadow, no outer glow, flat lighting</code>
+          </td>
+        </tr>
+        <tr>
+          <td data-i18n="guide.troubleshooting.r3_symptom">
+            The output is far too small, or pixels collapse
+          </td>
+          <td data-i18n="guide.troubleshooting.r3_cause">
+            Pixel size is not uniform within the image
+          </td>
+          <td data-i18n="guide.troubleshooting.r3_fix" data-i18n-html>
+            Add <code>consistent pixel size throughout</code>. If the result
+            chooser appears, compare the candidates and pick one
+          </td>
+        </tr>
+        <tr>
+          <td data-i18n="guide.troubleshooting.r4_symptom">
+            Outlines ripple with jagged steps or run diagonally
+          </td>
+          <td data-i18n="guide.troubleshooting.r4_cause">
+            The generated image is slightly tilted
+          </td>
+          <td data-i18n="guide.troubleshooting.r4_fix" data-i18n-html>
+            Add <code>upright, straight-on</code> and generate again
+          </td>
+        </tr>
+        <tr>
+          <td data-i18n="guide.troubleshooting.r5_symptom">
+            The edge of the subject is missing
+          </td>
+          <td data-i18n="guide.troubleshooting.r5_cause">
+            The subject is cropped at the edge of the image
+          </td>
+          <td data-i18n="guide.troubleshooting.r5_fix" data-i18n-html>
+            Add
+            <code>full body, centered, with margin, not cropped</code>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

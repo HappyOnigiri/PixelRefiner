@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { readHtmlWithIncludes } from "../../scripts/html-includes";
 import { collectHtmlKeys } from "../../src/browser/i18n/html-keys";
 import { loadCases } from "./manifest";
 import type { QualityImageCase } from "./types";
@@ -20,7 +20,7 @@ const RECIPE_KEY = /^guide\.recipe(\d+)\./;
 const RECIPE_HEADING_KEY = /^guide\.recipe(\d+)\.heading$/;
 const RECIPE_CASE_ID = /^guide-recipe(\d+)-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-const GUIDE_HTML = path.resolve("guide.html");
+const REPO_ROOT = path.resolve();
 
 const byNumber = (a: string, b: string) => Number(a) - Number(b);
 
@@ -30,8 +30,10 @@ const byNumber = (a: string, b: string) => Number(a) - Number(b);
 const stripHtmlComments = (html: string): string =>
 	html.replace(/<!--[\s\S]*?-->/g, "");
 
+// [Intended] guide.html は partials/ へ分割されているので、ビルドと同じ取り込みを
+// 済ませてから走査する。パーシャル側のレシピ記事を取りこぼさないため。
 const htmlKeys = collectHtmlKeys(
-	stripHtmlComments(readFileSync(GUIDE_HTML, "utf8")),
+	stripHtmlComments(readHtmlWithIncludes(REPO_ROOT, "guide.html")),
 );
 
 // guide.html が参照しているレシピ番号

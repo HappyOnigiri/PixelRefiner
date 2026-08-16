@@ -1,0 +1,128 @@
+<div class="settings-group">
+  <h3 class="settings-group-title" data-i18n="setting.color_reduction">
+    Color Reduction
+  </h3>
+  <!-- …設定内容… -->
+  <div class="grid-settings">
+    <label id="color-mode-setting" class="setting-item full-width">
+      <span class="label-text">
+        <span data-i18n="setting.color_mode">Reduction Mode</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.color_mode"
+          data-tooltip="Limits the number of colors in the output.&#10;&#10;Useful for achieving a classic pixel art look.&#10;None: No color reduction.&#10;Game Boy / PICO-8 / NES: Uses specific console palettes.&#10;Auto: Automatically reduces to the specified number of colors."
+          >?</span
+        >
+      </span>
+      <div class="input-with-button">
+        <select id="reduce-color-mode">
+          <option value="none" data-i18n="option.none" selected>None</option>
+          <option value="mono" data-i18n="option.mono">Monochrome</option>
+          <option value="gb_legacy" data-i18n="option.gb_legacy">
+            Game Boy (Original)
+          </option>
+          <option value="gb_pocket" data-i18n="option.gb_pocket">
+            Game Boy (Pocket)
+          </option>
+          <option value="gb_light" data-i18n="option.gb_light">
+            Game Boy (Light)
+          </option>
+          <option value="pico8" data-i18n="option.pico8">PICO-8</option>
+          <option value="nes" data-i18n="option.nes">NES</option>
+          <option value="pc98" data-i18n="option.pc98">PC-9801</option>
+          <option value="msx" data-i18n="option.msx">MSX1</option>
+          <option value="c64" data-i18n="option.c64">Commodore 64</option>
+          <option value="arne16" data-i18n="option.arne16">Arne 16</option>
+          <option value="sfc_sprite" data-i18n="option.sfc_sprite">
+            SFC Style (16 colors/Sprite)
+          </option>
+          <option value="sfc_bg" data-i18n="option.sfc_bg">
+            SFC Style (256 colors/BG)
+          </option>
+          <option value="auto" data-i18n="option.auto">Custom Count</option>
+          <option value="fixed" data-i18n="option.fixed">
+            Fixed / Custom Palette
+          </option>
+        </select>
+        <button
+          id="fixed-palette-import-button"
+          type="button"
+          class="action-button small-button outline-button"
+          style="display: none"
+          data-i18n="ui.import_palette"
+        >
+          Import
+        </button>
+        <button
+          id="show-palette-button"
+          type="button"
+          class="action-button small-button outline-button accent-outline-button"
+          style="display: none"
+          data-i18n="ui.show_palette"
+        >
+          Palette
+        </button>
+      </div>
+    </label>
+
+    <label id="color-count-setting" class="setting-item full-width">
+      <span class="label-text">
+        <span data-i18n="setting.color_count">Color Count</span>
+        <span
+          id="help-color-count"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.color_count"
+          data-tooltip="Specifies the maximum number of colors in the output.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <div class="input-with-slider">
+        <input id="color-count-slider" type="range" />
+        <input id="color-count" type="number" />
+      </div>
+    </label>
+
+    <label id="dither-mode-setting" class="setting-item full-width">
+      <span class="label-text">
+        <span data-i18n="setting.dither_mode">Dithering</span>
+      </span>
+      <select id="dither-mode">
+        <option value="none" data-i18n="option.dither_none" selected>
+          None
+        </option>
+        <option value="floyd-steinberg" data-i18n="option.dither_floyd">
+          Floyd-Steinberg
+        </option>
+        <option value="bayer-2x2" data-i18n="option.dither_bayer2">
+          Bayer 2x2
+        </option>
+        <option value="bayer-4x4" data-i18n="option.dither_bayer4">
+          Bayer 4x4
+        </option>
+        <option value="bayer-8x8" data-i18n="option.dither_bayer8">
+          Bayer 8x8
+        </option>
+        <option value="ordered" data-i18n="option.dither_ordered">
+          Ordered
+        </option>
+      </select>
+    </label>
+
+    <label id="dither-strength-setting" class="setting-item full-width">
+      <span class="label-text">
+        <span data-i18n="setting.dither_strength">Dither Strength</span>
+        <span
+          id="help-dither-strength"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.dither_strength"
+          data-tooltip="Applies dithering (error diffusion) during color reduction.&#10;&#10;100%: Full error diffusion.&#10;0%: No dithering (None).&#10;&#10;Allows for smoother gradients with fewer colors, but introduces characteristic pixel noise."
+          >?</span
+        >
+      </span>
+      <div class="input-with-slider">
+        <input id="dither-strength-slider" type="range" />
+        <input id="dither-strength" type="number" />
+      </div>
+    </label>
+  </div>
+</div>

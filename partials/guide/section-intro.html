@@ -1,0 +1,60 @@
+<!-- 1. はじめに -->
+<section class="panel guide-section" aria-labelledby="guide-intro-heading">
+  <h2 id="guide-intro-heading" data-i18n="guide.intro.heading">
+    Before You Start: The Idea
+  </h2>
+  <p data-i18n="guide.intro.body1">
+    Pixel Refiner can automatically fix blurred pixels, misaligned grids, and
+    too many colors. Problems that come from the generated image itself,
+    however, cannot be fixed at the conversion stage.
+  </p>
+  <p data-i18n="guide.intro.body2" data-i18n-html>
+    This page collects prompts that
+    <strong
+      >prevent the unfixable problems while the image is being generated</strong
+    >.
+  </p>
+  <div class="guide-card-grid">
+    <div class="guide-card">
+      <h3 data-i18n="guide.intro.fixable_heading">
+        What the tool can fix (no need to worry when generating)
+      </h3>
+      <ul>
+        <li data-i18n="guide.intro.fixable_1">
+          Blurred pixels and anti-aliasing
+        </li>
+        <li data-i18n="guide.intro.fixable_2">
+          Uneven scaling of pixel size and misaligned grids
+        </li>
+        <li data-i18n="guide.intro.fixable_3">
+          Too many colors (color reduction and palette conversion)
+        </li>
+        <li data-i18n="guide.intro.fixable_4">
+          Background transparency for flat backgrounds
+        </li>
+      </ul>
+    </div>
+    <div class="guide-card guide-card-caution">
+      <h3 data-i18n="guide.intro.unfixable_heading">
+        What the tool cannot fix (prevent it when generating)
+      </h3>
+      <ul>
+        <li data-i18n="guide.intro.unfixable_1">
+          The background color also appears inside the subject
+        </li>
+        <li data-i18n="guide.intro.unfixable_2">
+          The subject is cropped at the edge of the image
+        </li>
+        <li data-i18n="guide.intro.unfixable_3">
+          Shadows, glows, and soft shadows
+        </li>
+        <li data-i18n="guide.intro.unfixable_4">
+          A slight tilt across the whole image
+        </li>
+        <li data-i18n="guide.intro.unfixable_5">
+          Several subjects packed into one image
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

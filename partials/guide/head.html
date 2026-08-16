@@ -1,0 +1,51 @@
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- 基本 SEO -->
+  <title data-i18n="guide.page_title">Prompt Recipes | Pixel Refiner</title>
+  <meta
+    name="description"
+    content="Prompt recipes for AI image generation: how to create input images that convert cleanly into pixel art with Pixel Refiner."
+  />
+
+  <!-- 正規 URL / インデックス -->
+  <link rel="canonical" href="https://pixel-refiner.app/guide.html" />
+  <meta
+    name="robots"
+    content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+  />
+
+  <!-- [Intended] 言語別の URL を持たず、表示言語は保存済みの選択かブラウザ言語で
+       決まる。hreflang は言語ごとに別の URL があるときの目印なので、同じ URL を
+       並べても言語を選び分けられず、メタデータも英語のままになる。 -->
+
+  <!-- 追加メタ情報 -->
+  <meta name="author" content="Pixel Refiner" />
+  <meta name="application-name" content="Pixel Refiner" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f3f1eb" />
+
+  <!-- ファビコン / アイコン -->
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" href="/ogp.png" />
+
+  <!-- Open Graph / Twitter 用メタデータ -->
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://pixel-refiner.app/guide.html" />
+  <meta property="og:site_name" content="Pixel Refiner" />
+  <meta property="og:title" content="Prompt Recipes | Pixel Refiner" />
+  <meta
+    property="og:description"
+    content="Prompt recipes for AI image generation: how to create input images that convert cleanly into pixel art with Pixel Refiner."
+  />
+  <meta property="og:image" content="https://pixel-refiner.app/ogp.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://pixel-refiner.app/ogp.png" />
+
+  <!-- [Intended] スタイルは JS からの import ではなく head の link で読み込む。
+       描画をブロックさせることで、未装飾の画面が一瞬見える FOUC を防ぐ。 -->
+  <link rel="stylesheet" href="/src/browser/style.css" />
+  <link rel="stylesheet" href="/src/browser/guide.css" />
+</head>

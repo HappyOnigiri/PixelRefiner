@@ -1,0 +1,137 @@
+<!-- 2. 5つの基本原則 -->
+<section class="panel guide-section" aria-labelledby="guide-principles-heading">
+  <h2 id="guide-principles-heading" data-i18n="guide.principles.heading">
+    Five Basic Principles
+  </h2>
+
+  <article class="guide-article">
+    <h3 data-i18n="guide.principles.p1_heading">
+      Principle 1: Use a flat, saturated background color that never appears in
+      the subject
+    </h3>
+    <p data-i18n="guide.principles.p1_body">
+      When the background color also appears in the subject — a character with
+      white eyes on a white background, for example — background transparency
+      can eat into the subject. Pick a hue far from the subject: green (#00FF00)
+      for warm-colored subjects, magenta (#FF00FF) for green ones.
+    </p>
+    <div class="prompt-block" data-prompt-block>
+      <pre
+        class="prompt-code"
+      ><code>full frame edge-to-edge solid bright green background (#00FF00),
+no gradient, no texture, no vignette</code></pre>
+      <button
+        type="button"
+        class="prompt-copy"
+        data-copy-prompt
+        data-i18n="guide.copy_prompt"
+      >
+        Copy prompt
+      </button>
+    </div>
+  </article>
+
+  <article class="guide-article">
+    <h3 data-i18n="guide.principles.p2_heading">
+      Principle 2: No drop shadows, glows, or soft shadows
+    </h3>
+    <p data-i18n="guide.principles.p2_body">
+      The semi-transparent gradient between the subject and the background
+      leaves a fringe or discolors the outline once the background is removed.
+    </p>
+    <div class="prompt-block" data-prompt-block>
+      <pre
+        class="prompt-code"
+      ><code>no drop shadow, no outer glow, flat lighting</code></pre>
+      <button
+        type="button"
+        class="prompt-copy"
+        data-copy-prompt
+        data-i18n="guide.copy_prompt"
+      >
+        Copy prompt
+      </button>
+    </div>
+  </article>
+
+  <article class="guide-article">
+    <h3 data-i18n="guide.principles.p3_heading">
+      Principle 3: Keep the subject uncropped and leave a margin
+    </h3>
+    <p data-i18n="guide.principles.p3_body">
+      When the subject touches the edge of the image, background estimation
+      breaks down. Compose so the whole subject fits with margin around it.
+    </p>
+    <div class="prompt-block" data-prompt-block>
+      <pre
+        class="prompt-code"
+      ><code>full body, centered, with margin around the subject, not cropped</code></pre>
+      <button
+        type="button"
+        class="prompt-copy"
+        data-copy-prompt
+        data-i18n="guide.copy_prompt"
+      >
+        Copy prompt
+      </button>
+    </div>
+  </article>
+
+  <article class="guide-article">
+    <h3 data-i18n="guide.principles.p4_heading">
+      Principle 4: Do not tilt the image
+    </h3>
+    <p data-i18n="guide.principles.p4_body">
+      Images whose pixel grid is slightly tilted are hard to handle. Ask for a
+      straight composition at generation time.
+    </p>
+    <div class="prompt-block" data-prompt-block>
+      <pre
+        class="prompt-code"
+      ><code>upright, front view, straight-on</code></pre>
+      <button
+        type="button"
+        class="prompt-copy"
+        data-copy-prompt
+        data-i18n="guide.copy_prompt"
+      >
+        Copy prompt
+      </button>
+    </div>
+  </article>
+
+  <article class="guide-article">
+    <h3 data-i18n="guide.principles.p5_heading">
+      Principle 5: One subject per image, with a uniform pixel size
+    </h3>
+    <p data-i18n="guide.principles.p5_body">
+      Sheets that pack several sprites into one image, or images whose pixel
+      size varies from place to place, confuse grid detection.
+    </p>
+    <div class="prompt-block" data-prompt-block>
+      <pre
+        class="prompt-code"
+      ><code>single character, consistent pixel size throughout, chunky pixels</code></pre>
+      <button
+        type="button"
+        class="prompt-copy"
+        data-copy-prompt
+        data-i18n="guide.copy_prompt"
+      >
+        Copy prompt
+      </button>
+    </div>
+  </article>
+
+  <article class="guide-article">
+    <h3 data-i18n="guide.principles.no_effort_heading">
+      What you do not need to work hard for
+    </h3>
+    <p data-i18n="guide.principles.no_effort_body" data-i18n-html>
+      You do not need to remove anti-aliasing completely, or to land on exactly
+      32×32 pixels, at the generation stage. Even when an instruction such as
+      <code>32x32 pixel art</code> is not followed literally, it still pushes
+      the model toward larger, more uniform pixels, so it is worth including.
+    </p>
+  </article>
+</section>

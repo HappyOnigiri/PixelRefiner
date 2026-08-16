@@ -1,0 +1,139 @@
+<section
+  class="panel input-panel"
+  id="drop-area"
+  aria-labelledby="section-input-heading"
+>
+  <h2 id="section-input-heading" data-i18n="section.input">Input Image</h2>
+  <div class="status">
+    <span data-i18n="ui.size">Size</span>:
+    <span id="input-size">-</span>
+  </div>
+  <div class="canvas-container" id="input-canvas-container">
+    <div class="placeholder">
+      <div class="drop-icon">
+        <img src="/folder.png" alt="Folder" />
+      </div>
+      <div class="drop-text" data-i18n="ui.placeholder.input" data-i18n-html>
+        Drag & drop image here<br />
+        <span class="drop-subtext">or Click to select</span>
+      </div>
+    </div>
+    <canvas id="original-canvas"></canvas>
+  </div>
+  <input id="file-input" type="file" accept="image/*" style="display: none" />
+  <!-- 手動処理ボタン（自動処理が OFF の場合のみ表示） -->
+  <button
+    id="process-button"
+    type="button"
+    class="action-button process-action-button"
+    data-i18n="ui.process_btn"
+    style="display: none"
+  >
+    Process Image
+  </button>
+</section>
+
+<!-- 画像リスト（フィルムストリップ） -->
+<section
+  class="panel image-list-panel"
+  id="image-list-panel"
+  style="display: none"
+>
+  <div class="image-list-header">
+    <h2 data-i18n="ui.images">Images</h2>
+    <div class="batch-controls">
+      <button
+        id="clear-all-button"
+        type="button"
+        class="text-button danger-text"
+        data-i18n="ui.clear_all"
+      >
+        Clear All
+      </button>
+      <div class="download-group">
+        <button
+          id="download-all-button"
+          type="button"
+          class="action-button small-button download-button"
+          data-i18n="ui.download_all"
+        >
+          Download All
+        </button>
+        <button
+          id="download-all-dropdown-button"
+          type="button"
+          class="action-button small-button download-dropdown-button"
+          data-i18n-attr="aria-label:ui.download_options"
+        >
+          ▼
+        </button>
+        <div id="download-all-menu" class="download-menu">
+          <button type="button" data-scale="1" data-i18n="ui.download_all_zip">
+            Download All (ZIP)
+          </button>
+          <button type="button" data-scale="2">x2</button>
+          <button type="button" data-scale="4">x4</button>
+          <button type="button" data-scale="8">x8</button>
+          <button type="button" data-scale="16">x16</button>
+          <button type="button" data-scale="32">x32</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="image-list-container" id="image-list-container">
+    <!-- JavaScript がここへ追加する -->
+  </div>
+  <div class="batch-options">
+    <div class="batch-option">
+      <label>
+        <input id="shared-palette-toggle" type="checkbox" />
+        <span data-i18n="ui.shared_palette">Shared palette</span>
+      </label>
+      <span
+        class="help"
+        tabindex="0"
+        data-i18n-attr="data-tooltip:tooltip.help.shared_palette"
+        data-tooltip="Reduces colors with a single palette shared by every image.&#10;&#10;A common palette is built from all processed images, limited to the color count setting, and reapplied to each image.&#10;Useful when colors must match across character variations or animation frames."
+        >?</span
+      >
+    </div>
+    <div
+      id="shared-palette-settings"
+      class="batch-shared-palette-settings disabled"
+    >
+      <label class="setting-item">
+        <span data-i18n="setting.color_count">Color Count</span>
+        <input id="batch-color-count" type="number" />
+      </label>
+      <label class="setting-item">
+        <span data-i18n="setting.dither_mode">Dithering</span>
+        <select id="batch-dither-mode">
+          <option value="none" data-i18n="option.dither_none">None</option>
+          <option value="floyd-steinberg" data-i18n="option.dither_floyd">
+            Floyd-Steinberg
+          </option>
+          <option value="ordered" data-i18n="option.dither_ordered">
+            Ordered
+          </option>
+        </select>
+      </label>
+      <label class="setting-item">
+        <span data-i18n="setting.dither_strength">Dithering Strength</span>
+        <input id="batch-dither-strength" type="number" />
+      </label>
+    </div>
+    <div class="batch-option">
+      <label>
+        <input id="include-diagnostics-toggle" type="checkbox" />
+        <span data-i18n="ui.include_diagnostics">Include diagnostics</span>
+      </label>
+      <span
+        class="help"
+        tabindex="0"
+        data-i18n-attr="data-tooltip:tooltip.help.include_diagnostics"
+        data-tooltip="Adds diagnostics.json to the ZIP download.&#10;&#10;It records the input and output filenames, detected input type, processing route, confidence, and warning codes for each image.&#10;Useful for narrowing down images that need a second look after a large batch."
+        >?</span
+      >
+    </div>
+  </div>
+</section>
