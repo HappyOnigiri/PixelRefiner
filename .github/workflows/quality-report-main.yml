@@ -135,6 +135,9 @@ jobs:
       name: quality-reports
       url: ${{ steps.deploy-pages.outputs.page_url }}
     steps:
+      - name: Check out the Vercel deployment policy
+        uses: actions/checkout@v7
+
       - name: Download comparison report
         uses: actions/download-artifact@v8
         with:
@@ -155,6 +158,8 @@ jobs:
             git checkout --orphan gh-pages
           fi
           touch .nojekyll
+          # [Policy] gh-pages の push では Vercel Deployment を作らない。
+          cp "$GITHUB_WORKSPACE/vercel.json" vercel.json
           # [Policy] README と UI のフッターから参照する固定の公開先。パスを変える場合は
           # 参照側（README と src/browser/quality-report-link.ts）も同時に直す。
           report_path="quality/latest"

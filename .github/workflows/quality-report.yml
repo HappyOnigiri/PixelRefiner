@@ -151,6 +151,9 @@ jobs:
     env:
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
+      - name: Check out the Vercel deployment policy
+        uses: actions/checkout@v7
+
       - name: Download comparison report
         uses: actions/download-artifact@v8
         with:
@@ -171,6 +174,8 @@ jobs:
             git checkout --orphan gh-pages
           fi
           touch .nojekyll
+          # [Policy] gh-pages の push では Vercel Deployment を作らない。
+          cp "$GITHUB_WORKSPACE/vercel.json" vercel.json
           report_path="quality/pr-${PR_NUMBER}"
           rm -rf "$report_path"
           mkdir -p "$report_path"
@@ -235,6 +240,9 @@ jobs:
     env:
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
+      - name: Check out the Vercel deployment policy
+        uses: actions/checkout@v7
+
       - name: Remove the closed PR report
         env:
           GH_TOKEN: ${{ github.token }}
@@ -249,6 +257,8 @@ jobs:
             git checkout --orphan gh-pages
           fi
           touch .nojekyll
+          # [Policy] gh-pages の push では Vercel Deployment を作らない。
+          cp "$GITHUB_WORKSPACE/vercel.json" vercel.json
           report_path="quality/pr-${PR_NUMBER}"
           rm -rf "$report_path"
           git config user.name github-actions[bot]
