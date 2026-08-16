@@ -25,7 +25,7 @@ Before adding, renaming, or removing a translation key, read the `AGENTS.md` of 
 
 ## Guide Page
 
-When `guide.html` publishes a converted example, add one quality case for it by following [Guide page examples](test/quality/README.md#guide-page-examples), so the report keeps proving that the published result is reproducible.
+When the recipes guide publishes a converted example, add one quality case for it by following [Guide page examples](test/quality/README.md#guide-page-examples), so the report keeps proving that the published result is reproducible. The recipes themselves live in `partials/guide/section-recipes.html`, not in the `guide.html` skeleton.
 
 ## Intent Comments
 
