@@ -6,6 +6,7 @@ import { reportRoot } from "./benchmark";
 import { readPng } from "./image";
 import { loadCases, selectCasesForProfile } from "./manifest";
 import { aggregateQualityReport } from "./report/aggregate";
+import { hasPreviousRun } from "./report/previous-run";
 import { renderHtml } from "./report/render";
 
 const enabled = process.env.QUALITY_REPORT === "1";
@@ -17,6 +18,7 @@ describe.skipIf(!enabled)("quality report", () => {
 		const allCases = loadCases();
 		const selectedCases = selectCasesForProfile(allCases);
 		const results = aggregateQualityReport(selectedCases);
+		const previousRunAvailable = hasPreviousRun(results);
 		expect(results.cases).toHaveLength(selectedCases.length);
 		expect(existsSync(path.join(reportRoot, "index.html"))).toBe(true);
 		expect(existsSync(path.join(reportRoot, "summary.md"))).toBe(true);
@@ -75,12 +77,15 @@ describe.skipIf(!enabled)("quality report", () => {
 			"Math.min(stage.clientWidth / image.naturalWidth, stage.clientHeight / image.naturalHeight)",
 		);
 		expect(html).not.toContain(".images img{width:100%;height:220px");
-		expect(html).toContain('data-change-filter=""');
-		expect(html).toContain('data-change-filter="changed"');
-		expect(html).toContain('data-change-filter="unchanged"');
-		expect(html).toContain('data-change-filter="new"');
-		expect(html).not.toContain('data-change-filter="regressed"');
-		expect(html).not.toContain('data-change-filter="improved"');
+		const sidebarStart = html.indexOf('<aside class="sidebar">');
+		const sidebarEnd = html.indexOf("</aside>", sidebarStart);
+		const sidebar = html.slice(sidebarStart, sidebarEnd);
+		for (const changeFilter of ["", "changed", "unchanged", "new"])
+			expect(sidebar.includes(`data-change-filter="${changeFilter}"`)).toBe(
+				previousRunAvailable,
+			);
+		expect(sidebar).not.toContain('data-change-filter="regressed"');
+		expect(sidebar).not.toContain('data-change-filter="improved"');
 		const qualityGroupIndex = html.indexOf(
 			'<legend data-i18n="qualityStatus">',
 		);
@@ -91,8 +96,12 @@ describe.skipIf(!enabled)("quality report", () => {
 		const searchIndex = html.indexOf('class="search-row"');
 		const languageGroupIndex = html.indexOf('<legend data-i18n="language">');
 		expect(qualityGroupIndex).toBeGreaterThan(-1);
-		expect(changeGroupIndex).toBeGreaterThan(qualityGroupIndex);
-		expect(parameterGroupIndex).toBeGreaterThan(changeGroupIndex);
+		if (previousRunAvailable)
+			expect(changeGroupIndex).toBeGreaterThan(qualityGroupIndex);
+		else expect(changeGroupIndex).toBe(-1);
+		expect(parameterGroupIndex).toBeGreaterThan(
+			previousRunAvailable ? changeGroupIndex : qualityGroupIndex,
+		);
 		expect(searchIndex).toBeGreaterThan(parameterGroupIndex);
 		expect(languageGroupIndex).toBeGreaterThan(searchIndex);
 		expect(html).toContain("margin-bottom: 20px;");
@@ -150,7 +159,9 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(
 			existsSync(path.join(reportRoot, "cases", autoCaseId, "index.html")),
 		).toBe(true);
-		expect(html).toContain('id="active-change-label"');
+		expect(sidebar.includes('id="active-change-label"')).toBe(
+			previousRunAvailable,
+		);
 		expect(html).toContain('id="visible-count"');
 		expect(html).toContain(
 			results.metadata.kind === "pull-request"
@@ -171,15 +182,17 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(html).toContain('new":"新規追加"');
 		expect(html).not.toContain('data-change="regressed"');
 		expect(html).not.toContain('data-change="improved"');
-		for (const [state, count] of [
-			["changed", results.summary.changed],
-			["unchanged", results.summary.unchanged],
-			["new", results.summary.newCases],
-		] as const) {
-			expect(
-				html.match(new RegExp(`data-change="${state}"`, "g"))?.length ?? 0,
-			).toBe(count);
-		}
+		if (previousRunAvailable) {
+			for (const [state, count] of [
+				["changed", results.summary.changed],
+				["unchanged", results.summary.unchanged],
+				["new", results.summary.newCases],
+			] as const) {
+				expect(
+					html.match(new RegExp(`data-change="${state}"`, "g"))?.length ?? 0,
+				).toBe(count);
+			}
+		} else expect(html).not.toContain("data-change=");
 		expect(
 			results.summary.changed +
 				results.summary.unchanged +
@@ -319,18 +332,22 @@ describe.skipIf(!enabled)("quality report", () => {
 		for (const imageKey of [
 			"input",
 			"groundTruth",
-			"baseline",
 			"result",
 			"groundTruthDifference",
-			"baselineDifference",
 			"backgroundMask",
 		]) {
 			expect(compactDetail).toContain(`data-i18n="${imageKey}"`);
 		}
+		for (const imageKey of ["baseline", "baselineDifference"])
+			expect(compactDetail.includes(`data-i18n="${imageKey}"`)).toBe(
+				previousRunAvailable,
+			);
 		expect(compactDetail).toContain('<h2 data-i18n="targetComparison">');
-		// [Intended] 指標テーブルに行を持たない catastrophicFailure / status の回帰も
-		// レポートから辿れるように、regressedMetrics の列挙を必ず出す。
-		expect(compactDetail).toContain('data-i18n="regressedMetrics"');
+		// [Intended] 前回生成がある場合は、指標テーブルに行を持たない
+		// catastrophicFailure / status の回帰もレポートから辿れるようにする。
+		expect(compactDetail.includes('data-i18n="regressedMetrics"')).toBe(
+			previousRunAvailable,
+		);
 		expect(html).toContain('regressedMetrics":"悪化した指標"');
 		expect(html).toContain('catastrophicFailure":"致命的な失敗"');
 		expect(html).toContain('status":"合格判定"');
@@ -432,7 +449,6 @@ describe.skipIf(!enabled)("quality report", () => {
 			"|Candidate modal (expected)|WARNING presentation|",
 		);
 		expect(markdown).toContain("|Decision reason|WARNING codes|");
-		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
 		const uiCandidateCase = results.cases.find(
 			(result) => result.id === "show-ui-default-candidates",
 		);
@@ -440,9 +456,12 @@ describe.skipIf(!enabled)("quality report", () => {
 		expect(uiCandidateCase?.candidatePlanCount).toBeGreaterThan(0);
 		expect(uiCandidateCase?.candidateSuggestionDecision).toBe("would-show");
 		expect(uiCandidateCase?.warningPresentation).toBe("candidate-list");
-		expect(markdown).toContain(`- Changed: ${results.summary.changed}`);
-		expect(markdown).toContain(`- Unchanged: ${results.summary.unchanged}`);
-		expect(markdown).toContain(`- New: ${results.summary.newCases}`);
+		for (const changeSummary of [
+			`- Changed: ${results.summary.changed}`,
+			`- Unchanged: ${results.summary.unchanged}`,
+			`- New: ${results.summary.newCases}`,
+		])
+			expect(markdown.includes(changeSummary)).toBe(previousRunAvailable);
 		expect(markdown).not.toContain("- Regressed:");
 		expect(markdown).not.toContain("- Improved:");
 		const remoteMetadata = {
