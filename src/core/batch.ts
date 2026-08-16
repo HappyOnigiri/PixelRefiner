@@ -1,10 +1,12 @@
 import type {
 	DitherMode,
+	ProcessedImageResult,
 	ProcessingAnalysis,
 	ProcessResult,
 	RawImage,
 	RGB,
 } from "../shared/types";
+import { withoutCompareImages } from "./compare-images";
 import type { ProcessOptions } from "./processor";
 import { processImage } from "./processor";
 import { createSharedPalette } from "./shared-palette";
@@ -25,7 +27,11 @@ export type BatchProcessingOptions = {
 export type BatchProcessSuccess = {
 	id: string;
 	status: "done";
-	processResult: ProcessResult;
+	/**
+	 * [Intended] 比較用の 2 枚は持たない。一括処理の結果は一覧と書き出しにしか使わず、
+	 * 原寸の compareBefore を画像の枚数だけ抱えるとメモリだけを圧迫する。
+	 */
+	processResult: ProcessedImageResult;
 };
 
 export type BatchProcessFailure = {
@@ -74,7 +80,7 @@ export const processBatchImages = (
 			items.push({
 				id: input.id,
 				status: "done",
-				processResult: process(input.image, options),
+				processResult: withoutCompareImages(process(input.image, options)),
 			});
 		} catch (error) {
 			items.push({ id: input.id, status: "error", error: errorMessage(error) });
@@ -95,18 +101,20 @@ export const processBatchImages = (
 		try {
 			// [Intended] 共通パレットは通常経路の減色段階で適用し、
 			// 明示指定されたアウトライン色などの後処理を量子化しない。
-			item.processResult = process(
-				inputs[index].image,
-				sharedPalette.length === 0
-					? inputs[index].options
-					: {
-							...inputs[index].options,
-							reduceColors: true,
-							fixedPalette: sharedPalette,
-							colorCount: sharedPalette.length,
-							ditherMode: batchOptions.ditherMode,
-							ditherStrength: batchOptions.ditherStrength,
-						},
+			item.processResult = withoutCompareImages(
+				process(
+					inputs[index].image,
+					sharedPalette.length === 0
+						? inputs[index].options
+						: {
+								...inputs[index].options,
+								reduceColors: true,
+								fixedPalette: sharedPalette,
+								colorCount: sharedPalette.length,
+								ditherMode: batchOptions.ditherMode,
+								ditherStrength: batchOptions.ditherStrength,
+							},
+				),
 			);
 		} catch (error) {
 			items[index] = {

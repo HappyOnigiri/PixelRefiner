@@ -286,16 +286,29 @@ export type ProcessingAnalysis = {
 	smallComponentRemoval?: SmallComponentRemovalDiagnostic;
 };
 
-export type ProcessResult = {
-	result: RawImage;
-	grid: PixelGrid;
-	extractedPalette: RGB[];
+/**
+ * 比較スライダー用の 2 枚。
+ *
+ * [Intended] compareBefore は元画像の解像度をそのまま保つため、結果本体より桁違いに大きい。
+ * 比較は毎回見るものではないので、結果本体とは型を分けて、比較モーダルを開いたときだけ
+ * 作って運ぶ。
+ */
+export type CompareImages = {
 	/** 比較用に出力形状へ正規化した元画像。 */
 	compareBefore: RawImage;
 	/** 比較用に出力形状へ正規化したサニタイズ済み入力。 */
 	compareBeforeSanitized: RawImage;
+};
+
+/** 比較用の 2 枚を除いた処理結果。処理スレッドとの受け渡しと結果の保持にはこちらを使う。 */
+export type ProcessedImageResult = {
+	result: RawImage;
+	grid: PixelGrid;
+	extractedPalette: RGB[];
 	analysis: ProcessingAnalysis;
 };
+
+export type ProcessResult = ProcessedImageResult & CompareImages;
 
 export type CandidateKind =
 	| "auto-result"

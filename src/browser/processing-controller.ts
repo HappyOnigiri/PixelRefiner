@@ -1,14 +1,17 @@
 import { evaluateCandidateSuggestion } from "../core/candidate-suggestion-decision";
+import type { ProcessOptions } from "../core/processor";
 import type {
 	CandidatePreview,
 	CandidateSelection,
 	ProcessingRoute,
+	RawImage,
 } from "../shared/types";
 import { sortPalette } from "../utils/palette";
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import type { CandidateChooser } from "./candidate-chooser";
 import type { ImageComparer } from "./compare";
+import { applyCompareImages, setComparePreparing } from "./compare-view";
 import { i18n } from "./i18n";
 import { drawRawImageToCanvas } from "./io";
 import { createLatestProcessingState } from "./latest-processing-state";
@@ -55,7 +58,25 @@ export type RunProcessingOptions = {
 export type ProcessingController = {
 	runProcessing: (options?: RunProcessingOptions) => Promise<void>;
 	setAutoProcessScheduled: (scheduled: boolean) => void;
+	/** 比較用画像を用意して比較スライダーへ反映する。用意済みならそのまま反映する。 */
+	refreshCompare: () => Promise<void>;
 };
+
+/** 比較用画像を作り直すために必要な、いま表示している結果の出所。 */
+type CompareSource = {
+	image: RawImage;
+	options: ProcessOptions;
+	cacheKey: string;
+	selection?: CandidateSelection;
+	result: RawImage;
+};
+
+/**
+ * 候補を選んでから読み込み表示を出すまでの待ち時間。
+ * [Intended] 候補の結果はキャッシュに当たれば一瞬で返るので、その場合に読み込み表示が
+ * 一瞬だけ現れて消えるちらつきを避ける。キャッシュを外したときは通常どおり表示される。
+ */
+const CANDIDATE_LOADING_DELAY_MS = 150;
 
 export const createProcessingController = ({
 	els,
@@ -76,6 +97,19 @@ export const createProcessingController = ({
 	const processor = createCancellableProcessor();
 	const latestProcessing = createLatestProcessingState();
 	let latestImageId: string | undefined;
+	let compareSource: CompareSource | undefined;
+	/** 比較用画像を用意済みの結果。CompareSource と同じ鍵で持つ。 */
+	let preparedCompareKey: string | undefined;
+
+	const compareKey = (source: CompareSource): string =>
+		`${source.cacheKey} ${source.selection?.id ?? ""}`;
+
+	const showLoading = () => {
+		mainResultViewer.setLoading(true);
+		els.loadingOverlay.style.display = "flex";
+		els.outputPanel.classList.add("is-processing");
+		els.outputPanel.setAttribute("aria-busy", "true");
+	};
 
 	const hideLoading = () => {
 		mainResultViewer.setLoading(false);
@@ -83,6 +117,66 @@ export const createProcessingController = ({
 		els.outputPanel.classList.remove("is-processing");
 		els.outputPanel.removeAttribute("aria-busy");
 		els.processButton.disabled = false;
+	};
+
+	/**
+	 * 比較用画像を用意する。用意できたら true を返す。
+	 * [Intended] 比較用の 2 枚は結果と一緒には受け取らない。原寸の compareBefore は
+	 * 変換のたびに運んで PNG へ書き出すには大きすぎるので、比較を見るときだけ作る。
+	 */
+	const prepareCompareImages = async (): Promise<boolean> => {
+		const source = compareSource;
+		if (!source) return false;
+		if (preparedCompareKey === compareKey(source)) return true;
+		try {
+			const { compareBefore, compareBeforeSanitized } =
+				await processor.compareImages(
+					source.image,
+					source.options,
+					source.selection,
+					source.cacheKey,
+				);
+			// 待っている間に別の結果へ切り替わっていたら、その結果の比較として反映しない。
+			if (compareSource !== source) return false;
+			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
+			drawRawImageToCanvas(
+				compareBeforeSanitized,
+				compareBeforeSanitizedCanvas,
+			);
+			drawRawImageToCanvas(source.result, compareAfterCanvas);
+			processingState.compareBeforeOriginalUrl =
+				compareBeforeCanvas.toDataURL("image/png");
+			processingState.compareBeforeSanitizedUrl =
+				compareBeforeSanitizedCanvas.toDataURL("image/png");
+			processingState.compareAfterUrl =
+				compareAfterCanvas.toDataURL("image/png");
+			preparedCompareKey = compareKey(source);
+			return true;
+		} catch (error) {
+			// [Intended] 変換の開始で中断された場合は、次に比較を開いたときに作り直せばよい。
+			if (isProcessingCancelledError(error)) return false;
+			console.error("Failed to prepare compare images:", error);
+			showError(i18n.t("error.process_failed"));
+			return false;
+		}
+	};
+
+	const refreshCompare = async (): Promise<void> => {
+		// まだ 1 枚も変換していない場合は、用意するものがないので準備中の表示も出さない。
+		if (!compareSource) return;
+		if (preparedCompareKey === compareKey(compareSource)) {
+			applyCompareImages(processingState, comparer);
+			comparer.syncImageSize();
+			return;
+		}
+		setComparePreparing(els, true);
+		try {
+			if (!(await prepareCompareImages())) return;
+			applyCompareImages(processingState, comparer);
+			comparer.syncImageSize();
+		} finally {
+			setComparePreparing(els, false);
+		}
 	};
 
 	const runProcessing = async (
@@ -101,13 +195,17 @@ export const createProcessingController = ({
 		// 新しい結果にも警告があれば、処理完了後に改めて表示する。
 		mainResultViewer.updateWarnings([]);
 		modalResultViewer.updateWarnings([]);
-		mainResultViewer.setLoading(true);
 
 		// UI を無効化
 		els.processButton.disabled = true;
-		els.loadingOverlay.style.display = "flex";
-		els.outputPanel.classList.add("is-processing");
-		els.outputPanel.setAttribute("aria-busy", "true");
+		// [Intended] 候補の選択だけは読み込み表示を遅らせる。生成済みの結果に当たれば
+		// 待ち時間がないため、出しても一瞬で消えるちらつきになる。
+		let loadingTimer: number | undefined;
+		if (selection) {
+			loadingTimer = window.setTimeout(showLoading, CANDIDATE_LOADING_DELAY_MS);
+		} else {
+			showLoading();
+		}
 
 		// 現在アクティブな画像のみを処理する設計
 		// （一括処理には別実装が必要だが、現在は切替時に自動処理する）
@@ -139,18 +237,14 @@ export const createProcessingController = ({
 			// 同じ鍵を使うことで、候補側はグリッド検出をやり直さずに済む。
 			const cacheKey = `${currentItem.id}:${JSON.stringify(processOptions)}`;
 
-			const {
-				result,
-				grid,
-				extractedPalette,
-				compareBefore,
-				compareBeforeSanitized,
-				analysis,
-			} = effectiveSelection
+			const { result, grid, extractedPalette, analysis } = effectiveSelection
 				? await processor.processCandidate(
 						currentImage,
 						processOptions,
 						effectiveSelection,
+						// [Intended] 候補プレビューと同じ鍵を渡す。プレビュー生成時にすでに
+						// 通した処理の結果をそのまま受け取れるので、選び直しでも変換しない。
+						cacheKey,
 					)
 				: await processor.process(currentImage, processOptions, cacheKey);
 			// [Intended] キャンセル直前に完了通知が届いた旧処理も、結果や画像状態を上書きさせない。
@@ -175,17 +269,24 @@ export const createProcessingController = ({
 			// currentResult = resultImage; // 直接使用しなくなった
 			imageSession.updateImageResult(
 				currentItem.id,
-				{
-					result,
-					grid,
-					extractedPalette,
-					compareBefore,
-					compareBeforeSanitized,
-					analysis,
-				},
+				{ result, grid, extractedPalette, analysis },
 				processingState.settingsMode,
 			);
 			resultApplied = true;
+			// [Intended] 比較用画像は結果と一緒には作らない。ここでは出所だけ覚えておき、
+			// 比較モーダルを開いたときに用意する。
+			compareSource = {
+				image: currentImage,
+				options: processOptions,
+				cacheKey,
+				selection: effectiveSelection,
+				result,
+			};
+			// 用意済みの比較スライダーの内容は、この結果のものへ作り直すまで使わない。
+			preparedCompareKey = undefined;
+			processingState.compareBeforeOriginalUrl = "";
+			processingState.compareBeforeSanitizedUrl = "";
+			processingState.compareAfterUrl = "";
 
 			// [Intended] 待機中に表示対象が切り替わっていたら、結果の保存だけで表示は更新しない。
 			// 複数画像をまとめて変換する際に、古い画像の結果が現在の表示を上書きしないようにする。
@@ -297,32 +398,8 @@ export const createProcessingController = ({
 				}
 			});
 
-			// 比較スライダーを更新（リサイズ済みの元画像と処理済み画像の両方を生成）
-			drawRawImageToCanvas(compareBefore, compareBeforeCanvas);
-			drawRawImageToCanvas(
-				compareBeforeSanitized,
-				compareBeforeSanitizedCanvas,
-			);
-			drawRawImageToCanvas(resultImage, compareAfterCanvas);
-			processingState.compareBeforeOriginalUrl =
-				compareBeforeCanvas.toDataURL("image/png");
-			processingState.compareBeforeSanitizedUrl =
-				compareBeforeSanitizedCanvas.toDataURL("image/png");
-			processingState.compareAfterUrl =
-				compareAfterCanvas.toDataURL("image/png");
-
-			const before =
-				processingState.compareBeforeMode === "sanitized"
-					? processingState.compareBeforeSanitizedUrl
-					: processingState.compareBeforeOriginalUrl;
-			comparer.updateImages(before, processingState.compareAfterUrl);
-
-			// モーダルが開いている場合は直ちに反映する（サイズ同期を含む）
-			if (els.compareModal.style.display !== "none") {
-				requestAnimationFrame(() => {
-					comparer.syncImageSize();
-				});
-			}
+			// 比較モーダルを開いたまま変換された場合は、その場で新しい結果の比較へ差し替える。
+			if (els.compareModal.style.display !== "none") void refreshCompare();
 
 			// 処理結果の更新時にグリッドを再描画
 			// DOM 更新（キャンバス表示サイズの決定）を待つため少し遅延させる
@@ -379,6 +456,7 @@ export const createProcessingController = ({
 				imageSession.setImageStatus(currentItem.id, "error", msg);
 			}
 		} finally {
+			if (loadingTimer !== undefined) window.clearTimeout(loadingTimer);
 			const finishDecision = latestProcessing.finish(
 				generation,
 				options.keepLoadingOverlay === true,
@@ -411,5 +489,6 @@ export const createProcessingController = ({
 		setAutoProcessScheduled: (scheduled: boolean) => {
 			if (latestProcessing.setAutoProcessScheduled(scheduled)) hideLoading();
 		},
+		refreshCompare,
 	};
 };

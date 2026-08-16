@@ -15,7 +15,11 @@ import { evaluateCandidateSuggestion } from "../../src/core/candidate-suggestion
 import { processImage } from "../../src/core/processor";
 import type { ProcessOptions } from "../../src/core/processor-options";
 import { PROCESS_DEFAULTS } from "../../src/shared/config";
-import type { CandidateSelection, RawImage } from "../../src/shared/types";
+import type {
+	CandidateSelection,
+	ProcessedImageResult,
+	RawImage,
+} from "../../src/shared/types";
 import { AUTO_CASE_OPTIONS } from "./auto-cases";
 import {
 	baselineImagePath,
@@ -87,7 +91,7 @@ const processQualityCase = (
 	qualityCase: QualityImageCase,
 	input: ReturnType<typeof readPng>,
 	options: ProcessOptions,
-): ReturnType<typeof processImage> => {
+): ProcessedImageResult => {
 	if (!qualityCase.sharedPalette) return processImage(input, options);
 	const images = [
 		input,

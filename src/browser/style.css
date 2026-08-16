@@ -1566,6 +1566,11 @@ select:focus {
   z-index: 10;
 }
 
+/* [Intended] display: flex を持つため、hidden 属性で閉じる場合は打ち消す。 */
+.loading-overlay[hidden] {
+  display: none;
+}
+
 .spinner {
   width: 40px;
   height: 40px;

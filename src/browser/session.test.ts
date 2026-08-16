@@ -38,8 +38,6 @@ describe("ImageSession", () => {
 			result: original,
 			grid: { cellW: 1, cellH: 1, offsetX: 0, offsetY: 0, score: 1 },
 			extractedPalette: [],
-			compareBefore: original,
-			compareBeforeSanitized: original,
 			analysis: processingAnalysis,
 		});
 

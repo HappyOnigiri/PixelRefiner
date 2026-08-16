@@ -1,6 +1,7 @@
 import type { Elements } from "./app-elements";
 import type { ProcessingState } from "./app-state";
 import type { ImageComparer } from "./compare";
+import { applyCompareImages } from "./compare-view";
 import { readDisplaySettings } from "./display-settings";
 import type { ModalController } from "./modal-controller";
 
@@ -9,6 +10,8 @@ type CompareControlsOptions = {
 	processingState: ProcessingState;
 	comparer: ImageComparer;
 	compareModalController: ModalController;
+	/** 比較用画像を用意して比較スライダーへ反映する。 */
+	refreshCompare: () => Promise<void>;
 };
 
 export const setupCompareControls = ({
@@ -16,6 +19,7 @@ export const setupCompareControls = ({
 	processingState,
 	comparer,
 	compareModalController,
+	refreshCompare,
 }: CompareControlsOptions): { openCompareModal: () => void } => {
 	const openCompareModal = () => {
 		compareModalController.open();
@@ -46,14 +50,8 @@ export const setupCompareControls = ({
 		requestAnimationFrame(() => {
 			// 比較モーダルでは常にグリッドを OFF にする（描画対象はないが状態を一貫させる）
 			// （比較モーダルでは grid-canvas を使用しないため、現時点では何もしない。）
-			const before =
-				processingState.compareBeforeMode === "sanitized"
-					? processingState.compareBeforeSanitizedUrl
-					: processingState.compareBeforeOriginalUrl;
-			if (before && processingState.compareAfterUrl) {
-				comparer.updateImages(before, processingState.compareAfterUrl);
-			}
-			comparer.syncImageSize();
+			// [Intended] 比較用画像はここで用意する。用意済みならそのまま反映される。
+			void refreshCompare();
 		});
 	};
 
@@ -79,13 +77,7 @@ export const setupCompareControls = ({
 			"active",
 			mode === "sanitized",
 		);
-		const before =
-			mode === "sanitized"
-				? processingState.compareBeforeSanitizedUrl
-				: processingState.compareBeforeOriginalUrl;
-		if (before && processingState.compareAfterUrl) {
-			comparer.updateImages(before, processingState.compareAfterUrl);
-		}
+		applyCompareImages(processingState, comparer);
 	};
 
 	els.btnCompareBeforeOriginal.addEventListener("click", (e) => {

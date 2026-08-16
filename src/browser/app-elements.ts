@@ -128,6 +128,7 @@ export type Elements = {
 	compareModal: HTMLElement;
 	closeCompareModal: HTMLButtonElement;
 	compareContainer: HTMLElement;
+	comparePreparing: HTMLElement;
 	compBeforeImg: HTMLImageElement;
 	compAfterImg: HTMLImageElement;
 	btnViewCompare: HTMLButtonElement;
@@ -343,6 +344,7 @@ export const getElements = (): Elements => {
 		compareModal: get<HTMLElement>("compare-modal"),
 		closeCompareModal: get<HTMLButtonElement>("close-compare-modal"),
 		compareContainer: get<HTMLElement>("compare-container"),
+		comparePreparing: get<HTMLElement>("compare-preparing"),
 		compBeforeImg: get<HTMLImageElement>("comp-before"),
 		compAfterImg: get<HTMLImageElement>("comp-after"),
 		btnViewCompare: get<HTMLButtonElement>("btn-view-compare"),

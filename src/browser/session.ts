@@ -1,8 +1,8 @@
 import type {
 	CandidateSelection,
 	PixelGrid,
+	ProcessedImageResult,
 	ProcessingAnalysis,
-	ProcessResult,
 	RawImage,
 } from "../shared/types";
 import type { SettingsMode } from "./app-state";
@@ -135,7 +135,7 @@ export class ImageSession {
 
 	public updateImageResult(
 		id: string,
-		processed: ProcessResult,
+		processed: ProcessedImageResult,
 		settingsMode?: SettingsMode,
 	): PixelGrid | undefined {
 		const img = this.images.find((i) => i.id === id);

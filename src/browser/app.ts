@@ -587,6 +587,7 @@ export const initApp = (): void => {
 		processingState,
 		comparer,
 		compareModalController,
+		refreshCompare: processingController.refreshCompare,
 	});
 	setupResultActions({
 		els,
