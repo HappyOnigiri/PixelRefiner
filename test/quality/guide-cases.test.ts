@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { loadCases } from "./manifest";
+import type { QualityImageCase } from "./types";
 
 /**
  * [Policy] guide.html が公開する変換例と、その再現を証明する品質ケースの対応を縛る。
@@ -53,17 +54,24 @@ for (const key of htmlKeys) {
 	headingCountByRecipe.set(number, (headingCountByRecipe.get(number) ?? 0) + 1);
 }
 
-const guideCaseIds = loadCases()
-	.map((qualityCase) => qualityCase.id)
-	.filter((id) => id.startsWith("guide-"))
-	.sort();
+const guideCases = loadCases()
+	.filter((qualityCase) => qualityCase.id.startsWith("guide-"))
+	.sort((a, b) => a.id.localeCompare(b.id));
 
-const caseIdsByRecipe = new Map<string, string[]>();
-for (const id of guideCaseIds) {
-	const number = RECIPE_CASE_ID.exec(id)?.[1];
+const guideCaseIds = guideCases.map((qualityCase) => qualityCase.id);
+
+const casesByRecipe = new Map<string, QualityImageCase[]>();
+for (const qualityCase of guideCases) {
+	const number = RECIPE_CASE_ID.exec(qualityCase.id)?.[1];
 	if (number === undefined) continue;
-	caseIdsByRecipe.set(number, [...(caseIdsByRecipe.get(number) ?? []), id]);
+	casesByRecipe.set(number, [
+		...(casesByRecipe.get(number) ?? []),
+		qualityCase,
+	]);
 }
+
+const idsOfRecipe = (number: string): string[] =>
+	(casesByRecipe.get(number) ?? []).map((qualityCase) => qualityCase.id);
 
 describe("guide recipes and quality cases", () => {
 	it("guide.html のレシピ番号を取り違えていない", () => {
@@ -93,7 +101,7 @@ describe("guide recipes and quality cases", () => {
 
 	it("guide.html の各レシピに品質ケースが 1 つある", () => {
 		const problems = recipeNumbers.flatMap((number) => {
-			const ids = caseIdsByRecipe.get(number) ?? [];
+			const ids = idsOfRecipe(number);
 			if (ids.length === 1) return [];
 			if (ids.length === 0) {
 				return [
@@ -110,14 +118,41 @@ describe("guide recipes and quality cases", () => {
 	it("品質ケースに対応するレシピが guide.html に残っている", () => {
 		// [Intended] レシピを消してケースだけ残ると、公開していない変換例を
 		// 再現し続けることになる。逆向きも落とす。
-		const orphaned = [...caseIdsByRecipe.entries()]
-			.filter(([number]) => !recipeNumbers.includes(number))
-			.flatMap(([number, ids]) =>
-				ids.map(
+		const orphaned = [...casesByRecipe.keys()]
+			.filter((number) => !recipeNumbers.includes(number))
+			.flatMap((number) =>
+				idsOfRecipe(number).map(
 					(id) => `${id}: guide.html に guide.recipe${number}.* の参照が無い`,
 				),
 			);
 		expect(orphaned).toEqual([]);
+	});
+
+	it("guide ケースの入出力がそのレシピの掲載画像を指している", () => {
+		// [Intended] レシピとケースの対応づけは ID の番号だけが根拠なので、
+		// 既存ケースを複製して ID だけ書き換えると、別レシピの画像を検証した
+		// まま「そのレシピは再現できている」と表示し続ける。
+		const problems = [...casesByRecipe.entries()].flatMap(([number, cases]) =>
+			cases.flatMap((qualityCase) => {
+				const prefix = `public/guide/recipe${number}-`;
+				if (qualityCase.expected === undefined) {
+					return [`${qualityCase.id}: 掲載結果を示す expected が無い`];
+				}
+				return (
+					[
+						["input", qualityCase.input],
+						["expected", qualityCase.expected],
+					] as const
+				).flatMap(([field, file]) =>
+					file.startsWith(prefix)
+						? []
+						: [
+								`${qualityCase.id}: ${field} が ${prefix}* を指していない（${file}）`,
+							],
+				);
+			}),
+		);
+		expect(problems).toEqual([]);
 	});
 
 	it("guide ケースの ID が guide-recipeN-<name> の規約に従っている", () => {
