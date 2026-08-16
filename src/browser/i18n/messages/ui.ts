@@ -222,10 +222,10 @@ export const uiMessages = defineMessages({
 		en: "Processing...",
 		"zh-CN": "处理中...",
 	},
-	"status.processing_batch": {
-		ja: "一括処理中... ({current}/{total})",
-		en: "Batch Processing... ({current}/{total})",
-		"zh-CN": "正在批量处理... ({current}/{total})",
+	"status.processing_progress": {
+		ja: "処理中... ({current}/{total})",
+		en: "Processing... ({current}/{total})",
+		"zh-CN": "处理中... ({current}/{total})",
 	},
 	// modal.*
 	"modal.eyedropper.title": {
