@@ -253,6 +253,11 @@ type HtmlSelect = {
 	optionValues: string[];
 };
 
+/**
+ * [Intended] 属性名の手前は `\b` ではなく空白かタグ先頭で区切る。`\b` は
+ * `data-legacy-id` や `data-value` のハイフンの直後でも境界として成立するため、
+ * 別の属性の値を id や value として拾ってしまう。
+ */
 const collectSelects = (source: string): HtmlSelect[] => {
 	const selects: HtmlSelect[] = [];
 	for (const [, attributes, body] of source.matchAll(
@@ -261,12 +266,12 @@ const collectSelects = (source: string): HtmlSelect[] => {
 		const values: string[] = [];
 		let optionsWithoutValue = 0;
 		for (const [tag] of body.matchAll(/<option\b[^>]*>/g)) {
-			const value = /\bvalue="([^"]*)"/.exec(tag)?.[1];
+			const value = /(?:^|\s)value="([^"]*)"/.exec(tag)?.[1];
 			if (value === undefined) optionsWithoutValue += 1;
 			else values.push(value);
 		}
 		selects.push({
-			id: /\bid="([^"]*)"/.exec(attributes)?.[1] ?? "",
+			id: /(?:^|\s)id="([^"]*)"/.exec(attributes)?.[1] ?? "",
 			optionsWithoutValue,
 			optionValues: values,
 		});
