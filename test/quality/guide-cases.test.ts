@@ -74,9 +74,10 @@ const idsOfRecipe = (number: string): string[] =>
 	(casesByRecipe.get(number) ?? []).map((qualityCase) => qualityCase.id);
 
 describe("guide recipes and quality cases", () => {
-	it("guide.html のレシピ番号を取り違えていない", () => {
-		// [Intended] 抽出が空のまま以降の検査を通すと、レシピが 1 つも無い状態と
-		// 区別できずに「対応が取れている」と誤判定する。
+	it("guide.html からレシピ番号を抽出できている", () => {
+		// [Intended] 抽出が壊れても、品質ケースが残っていれば下の孤立ケース検出が
+		// 落ちる。ただしケースも 0 件なら空同士で全検査が成立して緑になるため、
+		// その同時縮退より手前で抽出の破損を止める。
 		expect(recipeNumbers.length).toBeGreaterThan(0);
 	});
 
@@ -156,8 +157,8 @@ describe("guide recipes and quality cases", () => {
 	});
 
 	it("guide ケースの ID が guide-recipeN-<name> の規約に従っている", () => {
-		// [Intended] 規約から外れた ID は上の 2 つの検査のどちらにも引っかからず、
-		// 「ケースがある」と「レシピがある」の両方をすり抜ける。
+		// [Intended] 規約から外れた ID は番号を取り出せないため対応表に載らず、
+		// 「ケースがある」と「レシピがある」の両方の検査をすり抜ける。
 		const invalid = guideCaseIds.filter((id) => !RECIPE_CASE_ID.test(id));
 		expect(invalid).toEqual([]);
 	});
