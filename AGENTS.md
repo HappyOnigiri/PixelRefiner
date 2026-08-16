@@ -33,7 +33,7 @@ When `guide.html` publishes a converted example, add one quality case for it so 
 
 ## Work Files
 
-- 調査メモやログなど自分で作る作業ファイルは、作業日の `tmp/<YYYYMMDD>/` に置く。出力先が決まっているツールの成果物はその場所のままにする。
+- 調査メモやログなど自分で作る作業ファイルは、メインリポジトリのルート直下にある作業日の `tmp/<YYYYMMDD>/` に置く（worktree で作業しているときも worktree 側には置かない）。出力先が決まっているツールの成果物はその場所のままにする。
 - 過去の日付のディレクトリはその時点の記録なので、現状の根拠には使わず、コードや設定を読み直して確かめる。
 
 ## Verification
