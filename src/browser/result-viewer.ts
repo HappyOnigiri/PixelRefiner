@@ -158,13 +158,9 @@ export class ResultViewer {
 			this.callbacks.onCompare?.();
 		});
 
-		// キャンバスコンテナのクリックで onImageClick を発火する
-		// レイアウトによってはキャンバスがコンテナより小さいためコンテナを使用するが、
-		// 通常は画像のクリックを受け取りたい。
-		// ただし、要望された機能は「画像をクリック」である。
-		// ズームモードではキャンバスがコンテナを満たすか、スクロールする。
-		// コンテナに設定しつつ、必要に応じて有効領域のクリックか確認する？
-		// コンテナ ".js-result-canvas-container" に設定するだけなら簡単で領域もカバーできる。
+		// [Intended] クリック領域はキャンバスではなく親の ".js-result-canvas-container" に張る。
+		// レイアウトによってはキャンバスがコンテナより小さく、余白のクリックを取りこぼすため。
+		// セレクタでは引かず parentElement を使うが、マークアップ側のこのクラスに依存している。
 		const canvasContainer = this.canvas.parentElement;
 		if (canvasContainer) {
 			canvasContainer.addEventListener("click", () => {
