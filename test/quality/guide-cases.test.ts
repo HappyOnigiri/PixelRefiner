@@ -8,12 +8,14 @@ import { loadCases } from "./manifest";
  * 対応づけは次の命名規約に依存する。
  *
  * - guide.html のレシピ N の文言は `guide.recipeN.*` というキーで参照する
+ * - レシピ N の記事は見出しを `guide.recipeN.heading` で 1 つだけ持つ
  * - そのレシピを再現する品質ケースの ID は `guide-recipeN-<name>` にする（レシピ 1 つにつき 1 ケース）
  *
- * 規約を変える場合は、この 2 つの正規表現と test/quality/README.md の
+ * 規約を変える場合は、この 3 つの正規表現と test/quality/README.md の
  * 「Guide page examples」も合わせて直すこと。
  */
 const RECIPE_KEY = /^guide\.recipe(\d+)\./;
+const RECIPE_HEADING_KEY = /^guide\.recipe(\d+)\.heading$/;
 const RECIPE_CASE_ID = /^guide-recipe(\d+)-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const GUIDE_HTML = path.resolve("guide.html");
@@ -36,14 +38,20 @@ const collectHtmlKeys = (html: string): string[] => {
 
 const byNumber = (a: string, b: string) => Number(a) - Number(b);
 
+const htmlKeys = collectHtmlKeys(readFileSync(GUIDE_HTML, "utf8"));
+
 // guide.html が参照しているレシピ番号
 const recipeNumbers = [
-	...new Set(
-		collectHtmlKeys(readFileSync(GUIDE_HTML, "utf8")).flatMap(
-			(key) => RECIPE_KEY.exec(key)?.[1] ?? [],
-		),
-	),
+	...new Set(htmlKeys.flatMap((key) => RECIPE_KEY.exec(key)?.[1] ?? [])),
 ].sort(byNumber);
+
+// レシピ番号ごとの見出しキーの本数 = そのレシピを名乗る記事の数
+const headingCountByRecipe = new Map<string, number>();
+for (const key of htmlKeys) {
+	const number = RECIPE_HEADING_KEY.exec(key)?.[1];
+	if (number === undefined) continue;
+	headingCountByRecipe.set(number, (headingCountByRecipe.get(number) ?? 0) + 1);
+}
 
 const guideCaseIds = loadCases()
 	.map((qualityCase) => qualityCase.id)
@@ -62,6 +70,25 @@ describe("guide recipes and quality cases", () => {
 		// [Intended] 抽出が空のまま以降の検査を通すと、レシピが 1 つも無い状態と
 		// 区別できずに「対応が取れている」と誤判定する。
 		expect(recipeNumbers.length).toBeGreaterThan(0);
+	});
+
+	it("guide.html のレシピ記事が番号ごとに 1 つある", () => {
+		// [Intended] レシピ番号は Set で重複を落とすため、記事を複製して番号を
+		// 直し忘れても 1 レシピとしか見えず、既存のケース 1 件で全検査が通る。
+		// 見出しキーの本数で記事の数を数え直し、番号の重複を落とす。
+		const problems = recipeNumbers.flatMap((number) => {
+			const count = headingCountByRecipe.get(number) ?? 0;
+			if (count === 1) return [];
+			if (count === 0) {
+				return [
+					`guide.recipe${number}: guide.recipe${number}.heading の参照が guide.html に無い`,
+				];
+			}
+			return [
+				`guide.recipe${number}: 見出しが ${count} 件ある。レシピ記事 1 つにつき見出し 1 つ`,
+			];
+		});
+		expect(problems).toEqual([]);
 	});
 
 	it("guide.html の各レシピに品質ケースが 1 つある", () => {
