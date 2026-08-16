@@ -27,6 +27,7 @@ import {
 	updateQuickSettingsDisabledStates,
 } from "./quick-settings-controls";
 import type { ImageSession } from "./session";
+import type { GridDetectionMode } from "./settings-options";
 
 type SettingsControlsOptions = {
 	els: Elements;
@@ -289,8 +290,12 @@ export const setupSettingsControls = ({
 		els.fastAutoGridFromTrimmedCheck.checked = defaults.fastAutoGridFromTrimmed;
 		els.makeSquareCheck.checked = defaults.makeSquare;
 		els.keepAspectRatioCheck.checked = defaults.keepAspectRatio;
-		els.gridDetectionModeSelect.value =
+		// [Intended] gridDetectionMode は UI 専用で ProcessOptions に無いため、
+		// PROCESS_DEFAULTS 側の値をどの型も縛っていない。ここで受け直して、
+		// 既定値が select の値集合から外れたらコンパイルエラーになるようにする。
+		const gridDetectionModeDefault: GridDetectionMode =
 			PROCESS_DEFAULTS.gridDetectionMode ?? "auto";
+		els.gridDetectionModeSelect.value = gridDetectionModeDefault;
 		els.advancedCellScaleSelect.value = defaults.cellScale;
 		els.reduceColorModeSelect.value = defaults.reduceColorMode;
 		els.ditherModeSelect.value = defaults.ditherMode;
