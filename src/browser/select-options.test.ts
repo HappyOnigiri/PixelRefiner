@@ -79,14 +79,20 @@ const CELL_SCALES = fromType<CellScale>({
 	quadruple: true,
 });
 
-const DITHER_MODES = fromType<DitherMode>({
+/**
+ * [Intended] fromType は SelectSpec を返して型引数を落とすため、同じ型に別の
+ * withheld を付けるには値集合の側を使い回す必要がある。列挙を 1 か所に保つ。
+ */
+const DITHER_MODE_VALUES: Record<DitherMode, true> = {
 	none: true,
 	"floyd-steinberg": true,
 	"bayer-2x2": true,
 	"bayer-4x4": true,
 	"bayer-8x8": true,
 	ordered: true,
-});
+};
+
+const DITHER_MODES = fromType<DitherMode>(DITHER_MODE_VALUES);
 
 /**
  * 色削減モードの選択肢。レトロパレットの一覧に、パレットを使わない 3 択を足したもの。
@@ -106,17 +112,11 @@ const REDUCE_COLOR_MODES = fromValues([
  */
 const SELECT_SPECS: Record<string, SelectSpec> = {
 	// バッチ設定は共通パレット向けの簡易 UI なので、ベイヤーの各サイズは出さない
-	"batch-dither-mode": fromType<DitherMode>(
-		{
-			none: true,
-			"floyd-steinberg": true,
-			"bayer-2x2": true,
-			"bayer-4x4": true,
-			"bayer-8x8": true,
-			ordered: true,
-		},
-		["bayer-2x2", "bayer-4x4", "bayer-8x8"],
-	),
+	"batch-dither-mode": fromType<DitherMode>(DITHER_MODE_VALUES, [
+		"bayer-2x2",
+		"bayer-4x4",
+		"bayer-8x8",
+	]),
 	"quick-processing-mode": PROCESSING_MODES,
 	"quick-detail-level": DETAIL_LEVELS,
 	"quick-cell-scale": CELL_SCALES,
