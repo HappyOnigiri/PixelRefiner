@@ -31,6 +31,11 @@ When `guide.html` publishes a converted example, add one quality case for it so 
 - `[Intended]` は意図的な挙動、`[Policy]` は運用上の制約、`[Workaround]` は一時的な外部要因への回避策を記録する。
 - タグ付きコードは、コメントの根拠を確認して無効になった場合を除き保持する。特殊な形のために誤ったリファクタリングを招きうる新規コードにはタグを付ける。
 
+## Work Files
+
+- 調査メモやログなど自分で作る作業ファイルは、作業日の `tmp/<YYYYMMDD>/` に置く。出力先が決まっているツールの成果物はその場所のままにする。
+- 過去の日付のディレクトリはその時点の記録なので、現状の根拠には使わず、コードや設定を読み直して確かめる。
+
 ## Verification
 
 - Run `make ci` after changes.
