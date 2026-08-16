@@ -3,19 +3,24 @@ import {
 	mkdtempSync,
 	readdirSync,
 	readFileSync,
+	rmSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { HTML_PARTIALS_DIRECTORY, resolveHtmlIncludes } from "./html-includes";
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 
+/** ケースごとに作った一時ルート。後始末で消す */
+const createdRoots: string[] = [];
+
 /** 取り込み対象を書いた一時的なプロジェクトルートを作る */
 const createRoot = (files: Record<string, string>): string => {
 	const root = mkdtempSync(join(tmpdir(), "html-includes-"));
+	createdRoots.push(root);
 	for (const [name, content] of Object.entries(files)) {
 		const path = join(root, name);
 		mkdirSync(join(path, ".."), { recursive: true });
@@ -23,6 +28,13 @@ const createRoot = (files: Record<string, string>): string => {
 	}
 	return root;
 };
+
+afterEach(() => {
+	// 消し忘れると一時領域にケースの数だけディレクトリが溜まり続ける
+	for (const root of createdRoots.splice(0)) {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
 
 describe("resolveHtmlIncludes", () => {
 	it("取り込んだ内容を指示と同じ深さへ字下げする", () => {
