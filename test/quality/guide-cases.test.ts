@@ -24,7 +24,15 @@ const GUIDE_HTML = path.resolve("guide.html");
 
 const byNumber = (a: string, b: string) => Number(a) - Number(b);
 
-const htmlKeys = collectHtmlKeys(readFileSync(GUIDE_HTML, "utf8"));
+// [Intended] 属性は HTML を構文解析せず生の文字列から拾うため、コメントアウト
+// した記事のキーも一緒に取れてしまう。ページに出ていない記事を公開中のレシピと
+// 数えると、レシピを隠してもケースが孤立扱いにならず検査が素通りする。
+const stripHtmlComments = (html: string): string =>
+	html.replace(/<!--[\s\S]*?-->/g, "");
+
+const htmlKeys = collectHtmlKeys(
+	stripHtmlComments(readFileSync(GUIDE_HTML, "utf8")),
+);
 
 // guide.html が参照しているレシピ番号
 const recipeNumbers = [
