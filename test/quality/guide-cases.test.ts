@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { collectHtmlKeys } from "../../src/browser/i18n/html-keys";
 import { loadCases } from "./manifest";
 import type { QualityImageCase } from "./types";
 
@@ -20,22 +21,6 @@ const RECIPE_HEADING_KEY = /^guide\.recipe(\d+)\.heading$/;
 const RECIPE_CASE_ID = /^guide-recipe(\d+)-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const GUIDE_HTML = path.resolve("guide.html");
-
-// data-i18n / data-i18n-attr で参照しているキーを HTML から取り出す
-// （src/browser/i18n/messages.test.ts の collectHtmlKeys と同じ抽出）
-const collectHtmlKeys = (html: string): string[] => {
-	const keys: string[] = [];
-	for (const [, key] of html.matchAll(/data-i18n="([^"]+)"/g)) {
-		keys.push(key);
-	}
-	for (const [, config] of html.matchAll(/data-i18n-attr="([^"]+)"/g)) {
-		for (const pair of config.split(",")) {
-			const key = pair.split(":")[1];
-			if (key) keys.push(key.trim());
-		}
-	}
-	return keys;
-};
 
 const byNumber = (a: string, b: string) => Number(a) - Number(b);
 
