@@ -1,7 +1,10 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
+import { htmlIncludes } from "./scripts/html-includes";
 
 export default defineConfig({
+	// [Intended] index.html を partials/ のパーシャルへ分割して読めるようにする。
+	plugins: [htmlIncludes()],
 	define: {
 		"import.meta.env.APP_VERSION": JSON.stringify(
 			process.env.npm_package_version,
