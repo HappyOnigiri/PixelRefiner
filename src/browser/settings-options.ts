@@ -12,6 +12,9 @@ import {
 import { readQuickSettings } from "./quick-settings-controls";
 import { BROWSER_RUNTIME_CONFIG } from "./runtime-config";
 
+/** グリッド検出の指定方法。詳細設定の select が公開する 4 択。 */
+export type GridDetectionMode = "auto" | "hint" | "force" | "off";
+
 const parseOptionalInt = (
 	input: HTMLInputElement,
 	range: { min: number; max: number; default: number },
@@ -53,7 +56,6 @@ export const createAdvancedProcessOptions = (
 	const useConvertHeight =
 		(convertSizeMode === "custom-height" && convertPixelsH !== undefined) ||
 		(convertSizeMode === "custom-both" && hasBothConvertDimensions);
-	type GridDetectionMode = "auto" | "hint" | "force" | "off";
 	const gridMode = els.gridDetectionModeSelect.value as GridDetectionMode;
 	const method = els.bgExtractionMethod
 		.value as ProcessOptions["bgExtractionMethod"];
