@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import { htmlIncludes } from "./scripts/html-includes";
 
+// [Workaround] Vercel の自動デプロイ経路を確認するための一時的な変更。
 export default defineConfig({
 	// [Intended] index.html を partials/ のパーシャルへ分割して読めるようにする。
 	plugins: [htmlIncludes()],
