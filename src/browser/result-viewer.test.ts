@@ -123,7 +123,10 @@ describe("ResultViewer のクラスフック", () => {
 		expect(hooks.length).toBeGreaterThan(0);
 	});
 
-	for (const id of ["output-panel", "result-modal"]) {
+	// [Intended] 検査単位は ResultViewer に渡すコンテナそのものに合わせる。
+	// モーダルは #result-modal ではなく .result-modal-body を渡しており、
+	// ヘッダーまで含めて数えるとコンテナの外にあるフックを「ある」と誤判定する。
+	for (const id of ["output-panel", "result-modal-body"]) {
 		it(`#${id} に ResultViewer が参照するフックがすべてある`, () => {
 			// [Intended] 検査は「ResultViewer が参照するフック ⊆ ブロック」の一方向。
 			// 候補一覧やモーダルの閉じるボタンなど片側にしか無いフックが正なので、
