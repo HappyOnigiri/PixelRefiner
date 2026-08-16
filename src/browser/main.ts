@@ -1,4 +1,5 @@
 import { inject } from "@vercel/analytics";
+import { injectSpeedInsights } from "@vercel/speed-insights";
 import { initApp } from "./app";
 import { initQualityReportLink } from "./quality-report-link";
 import { initTheme } from "./theme";
@@ -7,6 +8,7 @@ import "./style.css";
 
 initTheme();
 inject();
+injectSpeedInsights();
 
 window.addEventListener("DOMContentLoaded", () => {
 	initApp();

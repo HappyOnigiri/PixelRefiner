@@ -1,4 +1,5 @@
 import { inject } from "@vercel/analytics";
+import { injectSpeedInsights } from "@vercel/speed-insights";
 import { setupLanguageButtons, setupPromptCopyButtons } from "./guide-controls";
 import { i18n } from "./i18n";
 import { guideMessages } from "./i18n/messages/guide";
@@ -14,6 +15,7 @@ i18n.registerMessages(guideMessages);
 
 initTheme();
 inject();
+injectSpeedInsights();
 
 window.addEventListener("DOMContentLoaded", () => {
 	setupLanguageButtons();
