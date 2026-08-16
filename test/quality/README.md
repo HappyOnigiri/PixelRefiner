@@ -119,8 +119,10 @@ by following the published steps.
 
 The case for recipe N is named `guide-recipeN-<name>`, and
 [`guide-cases.test.ts`](./guide-cases.test.ts) holds the page and `cases.json` to
-that convention: it collects the `guide.recipeN.*` keys referenced by
-`guide.html` and fails when a recipe has no case, when a case has no recipe, and
+that convention: it collects the `guide.recipeN.*` keys that `guide.html`
+references outside comments, expects each recipe to carry exactly one
+`guide.recipeN.heading`, and fails when a recipe has no case, when a case has no
+recipe, when a case reads or expects a file outside `public/guide/recipeN-`, and
 when a `guide-` case ID departs from the naming. It only reads sources, so it
 runs in `make ci` rather than with the image cases.
 
