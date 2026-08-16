@@ -6,9 +6,19 @@ from pathlib import Path
 MAX_LINE_LENGTH = 160
 TAB_WIDTH = 4
 
-# [Policy] Translation resources contain intentionally uninterrupted localized
-# strings. Splitting them would obscure the text and make translation reviews harder.
-EXCLUDED_FILES = {Path("src/browser/i18n.ts")}
+# [Policy] 翻訳リソースには意図的に分割していないローカライズ文字列を含める。
+# 分割すると文章が分かりにくくなり、翻訳レビューも困難になる。
+EXCLUDED_DIRECTORIES = {Path("src/browser/i18n/messages")}
+
+# [Policy] 品質レポートの訳文も同じ理由で対象外にする。同じディレクトリにある描画
+# コードは行長を抑える対象のままにしたいので、ファイル単位で指定する。
+EXCLUDED_FILES = {Path("test/quality/report/translations.ts")}
+
+
+def is_excluded(path: Path) -> bool:
+    if path in EXCLUDED_FILES:
+        return True
+    return any(directory in path.parents for directory in EXCLUDED_DIRECTORIES)
 
 
 def find_typescript_files() -> list[Path]:
@@ -52,7 +62,10 @@ def check_file(path: Path) -> list[str]:
 def main() -> int:
     errors = []
     for path in find_typescript_files():
-        if path in EXCLUDED_FILES:
+        if is_excluded(path):
+            continue
+        # [Intended] コミット前の削除済みファイルはindexに残っていても検査対象にしない。
+        if not path.is_file():
             continue
         try:
             errors.extend(check_file(path))

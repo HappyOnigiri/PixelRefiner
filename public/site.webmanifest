@@ -4,8 +4,8 @@
   "description": "Optimize AI-generated pixel art into production-ready sprites.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1115",
-  "theme_color": "#0f1115",
+  "background_color": "#121416",
+  "theme_color": "#121416",
   "lang": "en",
   "icons": [
     {

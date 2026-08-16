@@ -1,6 +1,11 @@
 import type { PixelGrid, RawImage } from "../../src/shared/types";
 import { imagesEqual } from "./image";
-import type { QualityMetrics } from "./types";
+import type {
+	QualityExpectation,
+	QualityImageSize,
+	QualityMetrics,
+	QualityTargetMetrics,
+} from "./types";
 
 const isOpaque = (image: RawImage, pixelIndex: number): boolean =>
 	image.data[pixelIndex * 4 + 3] >= 16;
@@ -250,12 +255,98 @@ export const calculateMetrics = (
 	};
 };
 
+/**
+ * 目標画像との比較。寸法が違うと edgeF1・IoU・小成分保持は 0 になるが、
+ * meanRgbaError だけは走査位置を正規化して比較するので寸法差があっても意味を持つ。
+ */
+export const calculateTargetMetrics = (
+	actual: RawImage,
+	target: RawImage,
+): QualityTargetMetrics => ({
+	targetWidth: target.width,
+	targetHeight: target.height,
+	sizeMatches: actual.width === target.width && actual.height === target.height,
+	exactMatch: imagesEqual(actual, target),
+	meanRgbaError: meanRgbaError(actual, target),
+	edgeF1: edgeF1(actual, target),
+	backgroundMaskIou: backgroundMaskIou(actual, target),
+	smallComponentRetention: smallComponentRetention(actual, target),
+});
+
+/**
+ * 固定目標と、その目標に紐づく許容値に対する未達項目を返す。
+ * [Intended] auto ケースでも目標元の explicit ケースと同じ許容値を使う。
+ * 前回の auto 出力を再現できたことを、目標品質の達成と取り違えないため。
+ */
+export const targetQualityFailures = (
+	metrics: QualityTargetMetrics,
+	expectation: QualityExpectation,
+	outputWidth: number,
+	outputHeight: number,
+	byteIdentical: boolean,
+): string[] => {
+	const failed: string[] = [];
+	if (expectation.exact && !metrics.exactMatch)
+		failed.push("exact-image-match");
+	if (
+		expectation.maxMeanRgbaError !== undefined &&
+		metrics.meanRgbaError > expectation.maxMeanRgbaError
+	) {
+		failed.push("mean-rgba-error");
+	}
+	if (
+		expectation.minEdgeF1 !== undefined &&
+		metrics.edgeF1 < expectation.minEdgeF1
+	) {
+		failed.push("edge-f1");
+	}
+	if (
+		expectation.minBackgroundMaskIou !== undefined &&
+		metrics.backgroundMaskIou < expectation.minBackgroundMaskIou
+	) {
+		failed.push("background-mask-iou");
+	}
+	if (
+		expectation.minSmallComponentRetention !== undefined &&
+		metrics.smallComponentRetention < expectation.minSmallComponentRetention
+	) {
+		failed.push("small-component-retention");
+	}
+	if (!metrics.sizeMatches) failed.push("output-size");
+	if (
+		expectation.expectedWidth !== undefined &&
+		outputWidth !== expectation.expectedWidth
+	) {
+		failed.push("expected-width");
+	}
+	if (
+		expectation.expectedHeight !== undefined &&
+		outputHeight !== expectation.expectedHeight
+	) {
+		failed.push("expected-height");
+	}
+	if (!byteIdentical) failed.push("deterministic-output");
+	return [...new Set(failed)];
+};
+
+/**
+ * 差分画像の寸法。寸法の違う 2 枚を重ねるため、両方が収まる大きさになる。
+ * [Intended] 画素を作らずに寸法だけ要るレポート側と定義を共有し、書き出した画像と
+ * レポートに載る寸法がずれないようにする。
+ */
+export const diffImageSize = (
+	actual: RawImage,
+	expected: RawImage,
+): QualityImageSize => ({
+	width: Math.max(actual.width, expected.width),
+	height: Math.max(actual.height, expected.height),
+});
+
 export const createDiffImage = (
 	actual: RawImage,
 	expected: RawImage,
 ): RawImage => {
-	const width = Math.max(actual.width, expected.width);
-	const height = Math.max(actual.height, expected.height);
+	const { width, height } = diffImageSize(actual, expected);
 	const data = new Uint8ClampedArray(width * height * 4);
 	for (let y = 0; y < height; y += 1) {
 		for (let x = 0; x < width; x += 1) {
@@ -279,7 +370,7 @@ export const createDiffImage = (
 					expectedIndex < 0 || expectedAlpha === 0
 						? 0
 						: expected.data[expectedIndex + channel];
-				// [Intended] Encode alpha differences as visible intensity while keeping the PNG opaque.
+				// [Intended] PNG を不透明のまま保ちつつ、アルファ値の差を可視の強度として符号化する。
 				data[outputIndex + channel] = Math.max(
 					Math.abs(actualValue - expectedValue),
 					alphaDifference,

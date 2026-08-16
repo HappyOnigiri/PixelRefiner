@@ -1,16 +1,11 @@
 import { expose } from "comlink";
-import type { RawImage } from "../shared/types";
-import type { ProcessOptions, ProcessResult } from "./processor";
-import { processImage } from "./processor";
+import {
+	createProcessingService,
+	type ProcessingService,
+} from "./processing-service";
 
-export type ProcessorWorker = {
-	process: (img: RawImage, options: ProcessOptions) => ProcessResult;
-};
+export type { AutoResultPreviewInput } from "./processing-service";
 
-const worker: ProcessorWorker = {
-	process: (img, options) => {
-		return processImage(img, options);
-	},
-};
+export type ProcessorWorker = ProcessingService;
 
-expose(worker);
+expose(createProcessingService());

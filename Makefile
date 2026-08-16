@@ -1,23 +1,41 @@
-.PHONY: ci ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-debug type-check check-ts-rules check-ts-line-length setup
+.PHONY: ci fix build quality report ts-check-diff ts-fix-diff html-check-diff html-fix-diff repomix test test-unit test-debug type-check check-ts-rules check-ts-line-length check-file-line-count check-file-line-count-all check-architecture setup
 
-# Run repomix to bundle files into tmp/repomix/ folder
+# repomix を実行してファイルを tmp/repomix/ にまとめる
 repomix:
 	mkdir -p tmp/repomix
-	# Full version
-	pnpm dlx repomix --output tmp/repomix/repomix-full.txt
-	# Version excluding lockfiles, images, licenses, etc.
-	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
-	# Version further excluding test files
-	pnpm dlx repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
+	# 完全版
+	pnpm exec repomix --output tmp/repomix/repomix-full.txt
+	# ロックファイル、画像、ライセンスなどを除く版
+	pnpm exec repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**" --output tmp/repomix/repomix-lite.txt
+	# さらにテストファイルを除く版
+	pnpm exec repomix --ignore "**/pnpm-lock.yaml,**/node_modules/**,**/*.png,**/*.jpg,**/*.jpeg,**/*.gif,**/*.svg,**/*.ico,LICENSE,**/.cursor/**,**/*.test.ts,**/test/**,public/robots.txt,public/sitemap.xml,public/site.webmanifest,.gitignore,scripts/check_ts_rules.py,Makefile,vitest.config.ts,README.ja.md" --output tmp/repomix/repomix-lite-no-tests.txt
 
-# CI entrypoint (local and GitHub Actions)
-# Strategy: run auto-fix, then GitHub Actions detects diffs via git diff --exit-code
-# NOTE: if you change this target, also check .github/workflows/ci.yml
+# 通常 CI のエントリーポイント（ローカルおよび GitHub Actions）
+# [Policy] 検証中に追跡ファイルを書き換えない。修正は fix ターゲットで明示的に行う。
+# [Policy] 重い画像品質ケースは quality ターゲットと Quality Report workflow が担う。
+# 注: このターゲットを変更する場合は .github/workflows/ci.yml も確認する
 ci:
 	python3 scripts/run_ci.py
 
+fix:
+	$(MAKE) ts-fix-diff
+	$(MAKE) html-fix-diff
+
+build:
+	pnpm run build
+
+quality:
+	pnpm run test:quality:full
+
+# 比較レポートの生成だけを行い、通常 CI や品質ゲートは実行しない。
+report:
+	pnpm run test:quality:report
+
 test:
 	pnpm run test
+
+test-unit:
+	pnpm run test:unit
 
 test-debug:
 	rm -rf tmp/debug
@@ -29,8 +47,17 @@ type-check:
 check-ts-rules:
 	python3 scripts/check_ts_rules.py
 
+check-architecture:
+	python3 scripts/check_architecture.py
+
 check-ts-line-length:
 	python3 scripts/check_ts_line_length.py
+
+check-file-line-count:
+	python3 scripts/check_file_line_count.py
+
+check-file-line-count-all:
+	python3 scripts/check_file_line_count.py --all-warnings
 
 ts-check-diff:
 	@files="$$( ( \
@@ -43,9 +70,9 @@ ts-check-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx @biomejs/biome@latest check $$files
+	pnpm exec biome check $$files
 
-# Apply safe Biome fixes (format, organizeImports, etc.) to changed TS/TSX files
+# 変更された TS/TSX ファイルに安全な Biome 修正（整形、import の整理など）を適用する
 ts-fix-diff:
 	@files="$$( ( \
 		git diff --name-only --diff-filter=ACMRTUXB HEAD -- '*.ts' '*.tsx' 2>/dev/null; \
@@ -57,7 +84,7 @@ ts-fix-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx @biomejs/biome@latest check --write $$files
+	pnpm exec biome check --write $$files
 
 html-check-diff:
 	@files="$$( ( \
@@ -70,7 +97,7 @@ html-check-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx prettier@latest --check $$files
+	pnpm exec prettier --check $$files
 
 html-fix-diff:
 	@files="$$( ( \
@@ -83,7 +110,7 @@ html-fix-diff:
 		exit 0; \
 	fi; \
 	echo "$$files" | sed 's/^/ - /'; \
-	pnpm dlx prettier@latest --write $$files
+	pnpm exec prettier --write $$files
 
 setup:
 	corepack enable

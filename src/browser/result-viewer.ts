@@ -1,5 +1,4 @@
-import type { PixelGrid, RawImage } from "../shared/types";
-import { i18n } from "./i18n";
+import type { RawImage } from "../shared/types";
 import { drawRawImageToCanvas } from "./io";
 
 type ResultViewerCallbacks = {
@@ -9,7 +8,6 @@ type ResultViewerCallbacks = {
 	onGridToggle?: (enabled: boolean) => void;
 	onBgChange?: (bgType: string) => void;
 	onImageClick?: () => void;
-	onGridSelect?: (grid: PixelGrid) => void;
 };
 
 export class ResultViewer {
@@ -21,6 +19,8 @@ export class ResultViewer {
 	private canvas: HTMLCanvasElement;
 	private gridCanvas: HTMLCanvasElement;
 	private sizeLabel: HTMLElement;
+	private analysisLabel: HTMLElement;
+	private warningIndicator: HTMLElement;
 	private bgSelector: HTMLElement;
 	private zoomCheck: HTMLInputElement;
 	private gridCheck: HTMLInputElement;
@@ -29,10 +29,8 @@ export class ResultViewer {
 	private downloadMenu: HTMLElement;
 	private compareBtn: HTMLButtonElement;
 	private loadingOverlay: HTMLElement;
-	private candidatesMenu: HTMLElement | null = null;
 
 	private currentImage: RawImage | null = null;
-	private currentGrid: PixelGrid | null = null;
 	private currentBgType = "checkered";
 	private callbacks: ResultViewerCallbacks = {};
 	private resizeObserver: ResizeObserver | null = null;
@@ -43,6 +41,8 @@ export class ResultViewer {
 		this.canvas = this.get<HTMLCanvasElement>(".js-result-canvas");
 		this.gridCanvas = this.get<HTMLCanvasElement>(".js-grid-canvas");
 		this.sizeLabel = this.get<HTMLElement>(".js-output-size");
+		this.analysisLabel = this.get<HTMLElement>(".js-processing-analysis");
+		this.warningIndicator = this.get<HTMLElement>(".js-processing-warning");
 		this.bgSelector = this.get<HTMLElement>(".js-bg-selector");
 		this.zoomCheck = this.get<HTMLInputElement>(".js-zoom-output");
 		this.gridCheck = this.get<HTMLInputElement>(".js-grid-output");
@@ -54,7 +54,7 @@ export class ResultViewer {
 		this.compareBtn = this.get<HTMLButtonElement>(".js-btn-view-compare");
 		this.loadingOverlay = this.get<HTMLElement>(".js-loading-overlay");
 
-		// Init state from markup
+		// マークアップから状態を初期化
 		const activeBgBtn = this.bgSelector.querySelector(
 			".bg-btn.active",
 		) as HTMLElement | null;
@@ -62,7 +62,7 @@ export class ResultViewer {
 		this.currentBgType = initialBg;
 		this.setBackground(initialBg);
 
-		// Ensure download menu is addressable for aria-controls
+		// aria-controls からダウンロードメニューを参照できるようにする
 		if (!this.downloadMenu.id) {
 			this.downloadMenu.id = `download-menu-${ResultViewer.nextId++}`;
 		}
@@ -89,16 +89,16 @@ export class ResultViewer {
 	}
 
 	private initEventListeners() {
-		// Zoom Toggle
+		// ズーム切替
 		this.zoomCheck.addEventListener("change", () => {
 			this.updateZoomState();
 			this.callbacks.onZoomToggle?.(this.zoomCheck.checked);
 		});
 
-		// Grid Toggle
+		// グリッド切替
 		this.gridCheck.addEventListener("change", () => {
 			if (this.gridCheck.checked) {
-				// Grid ON -> Ensure Zoom is ON
+				// グリッド ON → ズームが ON であることを保証
 				if (!this.zoomCheck.checked) {
 					this.zoomCheck.checked = true;
 					this.updateZoomState();
@@ -109,7 +109,7 @@ export class ResultViewer {
 			this.callbacks.onGridToggle?.(this.gridCheck.checked);
 		});
 
-		// Background Selector
+		// 背景選択
 		this.bgSelector.querySelectorAll(".bg-btn").forEach((btn) => {
 			btn.addEventListener("click", (e) => {
 				const target = (e.target as HTMLElement).closest(
@@ -124,7 +124,7 @@ export class ResultViewer {
 			});
 		});
 
-		// Download Buttons
+		// ダウンロードボタン
 		const handleDownload = (scale: number) => {
 			this.callbacks.onDownload?.(scale);
 			this.closeDownloadMenu();
@@ -152,24 +152,20 @@ export class ResultViewer {
 			});
 		});
 
-		// Compare Button
+		// 比較ボタン
 		this.compareBtn.addEventListener("click", (e) => {
 			e.stopPropagation();
 			this.callbacks.onCompare?.();
 		});
 
-		// Click on canvas container to trigger onImageClick
-		// We use container because canvas might be smaller than container in some layouts,
-		// but typically we want the image click.
-		// However, the requested feature is "click on image".
-		// But in zoom mode, canvas fills container or scrolls.
-		// Let's attach to the container but check if we clicked on valid area if needed?
-		// Simply attaching to container ".js-result-canvas-container" is easier and covers the area.
+		// [Intended] クリック領域はキャンバスではなく親の ".js-result-canvas-container" に張る。
+		// レイアウトによってはキャンバスがコンテナより小さく、余白のクリックを取りこぼすため。
+		// セレクタでは引かず parentElement を使うが、マークアップ側のこのクラスに依存している。
 		const canvasContainer = this.canvas.parentElement;
 		if (canvasContainer) {
 			canvasContainer.addEventListener("click", () => {
-				// Ignore if clicking on buttons or controls inside (though there are none usually in the canvas area)
-				// Also ignore if no image
+				// 内部のボタンやコントロールをクリックした場合は無視（通常、キャンバス領域にはない）
+				// 画像がない場合も無視
 				if (!this.currentImage) return;
 				this.callbacks.onImageClick?.();
 			});
@@ -205,24 +201,16 @@ export class ResultViewer {
 		}
 	}
 
-	private static closeAllCandidatesMenus() {
-		for (const viewer of ResultViewer.instances) {
-			viewer.closeCandidatesMenu();
-		}
-	}
-
 	private initGlobalListeners() {
 		if (ResultViewer.globalListenersInitialized) return;
 		ResultViewer.globalListenersInitialized = true;
 
 		document.addEventListener("click", () => {
 			ResultViewer.closeAllDownloadMenus();
-			ResultViewer.closeAllCandidatesMenus();
 		});
 		document.addEventListener("keydown", (e) => {
 			if (e.key === "Escape") {
 				ResultViewer.closeAllDownloadMenus();
-				ResultViewer.closeAllCandidatesMenus();
 			}
 		});
 	}
@@ -251,21 +239,20 @@ export class ResultViewer {
 		this.callbacks = callbacks;
 	}
 
-	public updateImage(image: RawImage, grid?: PixelGrid) {
+	public updateImage(image: RawImage) {
 		this.currentImage = image;
-		this.currentGrid = grid ?? null;
 		drawRawImageToCanvas(image, this.canvas);
 
 		this.updateSizeLabel();
 
-		// Update UI visibility
+		// UI の表示状態を更新
 		this.downloadBtn.style.display = "inline-flex";
 		this.downloadDropdownBtn.style.display = "inline-flex";
 
-		// Update Container State
+		// コンテナの状態を更新
 		const canvasContainer = this.canvas.parentElement;
 		if (canvasContainer) {
-			// Remove placeholder, show canvases
+			// プレースホルダーを削除してキャンバスを表示
 			const placeholder = canvasContainer.querySelector(".placeholder");
 			if (placeholder) (placeholder as HTMLElement).style.display = "none";
 			this.canvas.style.display = "block";
@@ -278,19 +265,35 @@ export class ResultViewer {
 		this.drawGrid();
 	}
 
+	public updateAnalysis(text: string) {
+		this.analysisLabel.textContent = text;
+	}
+
+	public updateWarnings(messages: readonly string[]) {
+		const message = messages.join("\n");
+		this.warningIndicator.hidden = message.length === 0;
+		if (message.length === 0) {
+			this.warningIndicator.removeAttribute("data-tooltip");
+			this.warningIndicator.removeAttribute("aria-label");
+			return;
+		}
+		this.warningIndicator.dataset.tooltip = message;
+		this.warningIndicator.setAttribute("aria-label", message);
+	}
+
 	public setLoading(isLoading: boolean) {
 		this.loadingOverlay.style.display = isLoading ? "flex" : "none";
 	}
 
 	public setBackground(bgType: string) {
 		this.currentBgType = bgType;
-		// Update buttons
+		// ボタンを更新
 		this.bgSelector.querySelectorAll(".bg-btn").forEach((b) => {
 			const btn = b as HTMLElement;
 			btn.classList.toggle("active", btn.dataset.bg === bgType);
 		});
 
-		// Update container class
+		// コンテナクラスを更新
 		const container = this.canvas.parentElement;
 		if (container) {
 			["bg-checkered", "bg-white", "bg-black", "bg-green"].forEach((cls) => {
@@ -321,11 +324,11 @@ export class ResultViewer {
 				container.classList.add("zoom-enabled");
 			} else {
 				container.classList.remove("zoom-enabled");
-				// If zoom off, grid should appear off visually (handled by CSS usually, but logic enforcement here)
+				// ズームがオフならグリッドも視覚的にオフにする（通常は CSS で処理するが、ここでロジックを強制）
 				if (this.gridCheck.checked) {
-					// We don't auto-uncheck grid checkbox to preserve preference,
-					// but we might want to clear the grid canvas.
-					// For now, relies on CSS hiding .zoom-enabled .grid-canvas
+					// 設定を保持するためグリッドチェックボックスは自動で外さないが、
+					// グリッドキャンバスはクリアした方がよいかもしれない。
+					// 現時点では CSS による .zoom-enabled .grid-canvas の非表示に依存する
 				}
 			}
 		}
@@ -336,10 +339,10 @@ export class ResultViewer {
 		const ctx = this.gridCanvas.getContext("2d");
 		if (!ctx) return;
 
-		// Clear previous grid
+		// 前のグリッドをクリア
 		ctx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
 
-		// Grid is only drawn if enabled and zoom is enabled
+		// グリッドは有効かつズーム有効の場合のみ描画
 		if (
 			!this.gridCheck.checked ||
 			!this.zoomCheck.checked ||
@@ -351,7 +354,7 @@ export class ResultViewer {
 
 		this.canvas.parentElement?.classList.add("grid-enabled");
 
-		// Measure container (or canvas) display size
+		// コンテナ（またはキャンバス）の表示サイズを測定
 		const rect = this.canvas.getBoundingClientRect();
 		const dpr = window.devicePixelRatio || 1;
 		const cssW = rect.width;
@@ -359,7 +362,7 @@ export class ResultViewer {
 
 		if (cssW === 0 || cssH === 0) return;
 
-		// Set grid canvas resolution to screen pixels
+		// グリッドキャンバスの解像度を画面ピクセルに設定
 		const targetWidth = Math.round(cssW * dpr);
 		const targetHeight = Math.round(cssH * dpr);
 
@@ -371,7 +374,7 @@ export class ResultViewer {
 			this.gridCanvas.height = targetHeight;
 		}
 
-		// Calculations for object-fit: contain
+		// object-fit: contain の計算
 		const imgW = this.currentImage.width;
 		const imgH = this.currentImage.height;
 		const imgRatio = imgW / imgH;
@@ -383,40 +386,40 @@ export class ResultViewer {
 		let offsetY = 0;
 
 		if (containerRatio > imgRatio) {
-			// Container is wider than image -> Pillarbox (bars on sides)
+			// コンテナが画像より横長 → ピラーボックス（左右に余白）
 			drawH = cssH;
 			drawW = cssH * imgRatio;
 			offsetX = (cssW - drawW) / 2;
 		} else {
-			// Container is taller than image -> Letterbox (bars top/bottom)
+			// コンテナが画像より縦長 → レターボックス（上下に余白）
 			drawW = cssW;
 			drawH = cssW / imgRatio;
 			offsetY = (cssH - drawH) / 2;
 		}
 
-		// Adjust calculations to canvas coordinate space (Multiplying by DPR)
-		// Or we can simple scale the context.
+		// 計算をキャンバス座標系に合わせる（DPR を乗算）
+		// またはコンテキストを単純にスケーリングできる。
 		ctx.resetTransform();
 		ctx.scale(dpr, dpr);
 
 		ctx.beginPath();
-		// Use a thin line that remains visible
+		// 視認性を保つ細い線を使用
 		ctx.strokeStyle = "rgba(128, 128, 128, 0.4)";
 		ctx.lineWidth = 1;
 
-		// Shift by 0.5 to draw sharp lines if we are taking about 1px lines,
-		// but since we are scaling, direct coordinate is likely fine or we might want to align to pixels.
-		// However, "step" might be fractional.
-		// Drawing at logical pixel boundaries is safer.
+		// 1px 程度の線なら 0.5 ずらすと鮮明に描画できるが、
+		// スケーリングしているため直接座標でもよく、ピクセルに揃えることもできる。
+		// ただし "step" は小数になる可能性がある。
+		// 論理ピクセル境界で描画する方が安全である。
 
 		const stepX = drawW / imgW;
 		const stepY = drawH / imgH;
 
-		// Vertical lines
-		// We avoid drawing the very first and last lines if they overlap with container border,
-		// but typically we draw all internal lines.
-		// Optimization: if step is very small (zoom out), don't draw grid?
-		// User asked for "Zoom Mode" so it's likely zoomed in.
+		// 垂直線
+		// コンテナ境界と重なる場合は最初と最後の線を避けるが、
+		// 通常はすべての内部線を描画する。
+		// 最適化: step が非常に小さい（ズームアウト）場合はグリッドを描画しない？
+		// ユーザーは「ズームモード」を求めているため、ズームインしている可能性が高い。
 
 		for (let x = 0; x <= imgW; x++) {
 			const px = offsetX + x * stepX;
@@ -424,7 +427,7 @@ export class ResultViewer {
 			ctx.lineTo(px, offsetY + drawH);
 		}
 
-		// Horizontal lines
+		// 水平線
 		for (let y = 0; y <= imgH; y++) {
 			const py = offsetY + y * stepY;
 			ctx.moveTo(offsetX, py);
@@ -435,9 +438,7 @@ export class ResultViewer {
 
 	public clear() {
 		this.currentImage = null;
-		this.currentGrid = null;
 		this.closeDownloadMenu();
-		this.closeCandidatesMenu();
 		const ctx = this.canvas.getContext("2d");
 		ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		const gridCtx = this.gridCanvas.getContext("2d");
@@ -456,6 +457,8 @@ export class ResultViewer {
 		this.sizeLabel.style.cursor = "default";
 		this.sizeLabel.style.textDecoration = "none";
 		this.sizeLabel.onclick = null;
+		this.updateAnalysis("");
+		this.updateWarnings([]);
 		this.downloadBtn.style.display = "none";
 		this.downloadDropdownBtn.style.display = "none";
 	}
@@ -466,191 +469,10 @@ export class ResultViewer {
 			return;
 		}
 
-		if ((this.currentGrid?.candidates?.length ?? 0) > 0) {
-			this.sizeLabel.innerHTML = `${this.currentImage.width} x ${this.currentImage.height} <span style="font-size: 0.8em; opacity: 0.7;">&#9660;</span>`;
-			this.sizeLabel.style.cursor = "pointer";
-			this.sizeLabel.style.textDecoration = "underline";
-			this.sizeLabel.style.textDecorationStyle = "dotted";
-			this.sizeLabel.onclick = (e) => {
-				e.stopPropagation();
-				this.toggleCandidatesMenu();
-			};
-		} else {
-			this.sizeLabel.textContent = `${this.currentImage.width} x ${this.currentImage.height}`;
-			this.sizeLabel.style.cursor = "default";
-			this.sizeLabel.style.textDecoration = "none";
-			this.sizeLabel.onclick = null;
-		}
-	}
-
-	private toggleCandidatesMenu() {
-		if (this.candidatesMenu?.parentElement) {
-			this.closeCandidatesMenu();
-			return;
-		}
-		ResultViewer.closeAllDownloadMenus();
-		ResultViewer.closeAllCandidatesMenus();
-		this.showCandidatesMenu();
-	}
-
-	private closeCandidatesMenu() {
-		if (this.candidatesMenu) {
-			this.candidatesMenu.remove();
-			this.candidatesMenu = null;
-		}
-	}
-
-	private showCandidatesMenu() {
-		if (!this.currentGrid?.candidates) return;
-
-		this.closeCandidatesMenu();
-
-		const menu = document.createElement("div");
-		menu.className = "candidates-menu";
-		menu.setAttribute("role", "menu");
-		menu.style.position = "absolute";
-		// Above modal overlay (3000)
-		menu.style.zIndex = "3001";
-
-		const title = document.createElement("div");
-		title.className = "candidates-menu-title";
-		title.textContent = i18n.t("ui.select_size_title");
-		title.style.padding = "8px 12px";
-		title.style.fontSize = "0.85em";
-		title.style.fontWeight = "bold";
-		title.style.opacity = "0.8";
-		title.style.borderBottom = "1px solid var(--border-color)";
-		menu.appendChild(title);
-
-		const note = document.createElement("div");
-		note.className = "candidates-menu-note";
-		note.textContent = i18n.t("ui.select_size_note");
-		note.style.padding = "4px 12px 8px";
-		note.style.fontSize = "0.75em";
-		note.style.opacity = "0.6";
-		note.style.lineHeight = "1.4";
-		menu.style.borderBottom = "1px solid var(--border-color)";
-		menu.appendChild(note);
-
-		// Combine candidates and current size, then sort
-		const current = this.currentGrid;
-		const rawCandidates = [...(this.currentGrid.candidates || [])];
-
-		// 1. Exclude candidates that are "too close" to the current size.
-		// 2. Exclude candidates that are "too close" to each other.
-		// Criteria: small difference in area and cell size (px).
-		const isSimilar = (a: PixelGrid, b: PixelGrid) => {
-			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
-			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
-			const areaDiff = Math.abs(areaA - areaB);
-			const cellDiff = Math.abs(a.cellW - b.cellW);
-
-			// Consider identical if area difference is within 2% and pixel size difference is within 0.2px.
-			const areaThreshold = Math.max(areaA, areaB) * 0.02;
-			return areaDiff <= Math.max(2, areaThreshold) && cellDiff < 0.2;
-		};
-
-		// First, filter based on current size
-		const filtered = rawCandidates.filter((c) => !isSimilar(c, current));
-
-		// Exclude duplicates among candidates (sort by size and compare adjacent elements)
-		filtered.sort(
-			(a, b) => (a.outW ?? 0) * (a.outH ?? 0) - (b.outW ?? 0) * (b.outH ?? 0),
-		);
-		const uniqueCandidates: PixelGrid[] = [];
-		for (const c of filtered) {
-			if (
-				uniqueCandidates.length === 0 ||
-				!isSimilar(c, uniqueCandidates[uniqueCandidates.length - 1])
-			) {
-				uniqueCandidates.push(c);
-			}
-		}
-
-		// Integrate current size
-		const candidates = [current, ...uniqueCandidates];
-
-		// Sort by final size order (area order)
-		candidates.sort((a, b) => {
-			const areaA = (a.outW ?? 0) * (a.outH ?? 0);
-			const areaB = (b.outW ?? 0) * (b.outH ?? 0);
-			return areaA - areaB;
-		});
-
-		// Limit to maximum number of items
-		const displayCandidates = candidates.slice(0, 12);
-
-		displayCandidates.forEach((c) => {
-			const isCurrent = c.outW === current.outW && c.outH === current.outH;
-
-			if (isCurrent) {
-				const currentItem = document.createElement("div");
-				currentItem.className = "candidates-menu-current";
-				const pixelSizeLabel = i18n.t("ui.pixel_size");
-				currentItem.textContent = `${c.outW ?? "?"} x ${c.outH ?? "?"} (${pixelSizeLabel}: ${c.cellW.toFixed(1)}px)`;
-				currentItem.style.padding = "8px 12px";
-				currentItem.style.fontSize = "0.9em";
-				currentItem.style.backgroundColor = "var(--bg-secondary)";
-				currentItem.style.color = "var(--text-secondary)";
-				currentItem.style.borderBottom = "1px solid var(--border-color)";
-				currentItem.style.display = "flex";
-				currentItem.style.alignItems = "center";
-
-				const check = document.createElement("span");
-				check.innerHTML = "&#10003;";
-				check.style.marginRight = "8px";
-				check.style.color = "var(--accent-color)";
-				currentItem.prepend(check);
-
-				menu.appendChild(currentItem);
-			} else {
-				const btn = document.createElement("button");
-				const pixelSizeLabel = i18n.t("ui.pixel_size");
-				const label = `${c.outW ?? "?"} x ${c.outH ?? "?"} (${pixelSizeLabel}: ${c.cellW.toFixed(1)}px)`;
-				btn.textContent = label;
-				btn.type = "button";
-				btn.setAttribute("role", "menuitem");
-				btn.onclick = (e) => {
-					e.stopPropagation();
-					this.callbacks.onGridSelect?.(c);
-					this.closeCandidatesMenu();
-				};
-				menu.appendChild(btn);
-			}
-		});
-
-		document.body.appendChild(menu);
-		this.candidatesMenu = menu;
-
-		// Position near sizeLabel
-		const rect = this.sizeLabel.getBoundingClientRect();
-		const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-		const scrollLeft =
-			window.pageXOffset || document.documentElement.scrollLeft;
-
-		// Reset any inherited positioning (safety)
-		menu.style.right = "auto";
-		menu.style.bottom = "auto";
-
-		// Default: position below the label
-		menu.style.left = `${rect.left + scrollLeft}px`;
-		menu.style.top = `${rect.bottom + scrollTop + 6}px`;
-
-		// Reposition if it overflows viewport (after it's in DOM)
-		const menuRect = menu.getBoundingClientRect();
-		const padding = 10;
-
-		// Horizontal overflow
-		if (menuRect.right > window.innerWidth - padding) {
-			const nextLeft = rect.right + scrollLeft - Math.max(menuRect.width, 200);
-			menu.style.left = `${Math.max(padding + scrollLeft, nextLeft)}px`;
-		}
-
-		// Vertical overflow (open upward)
-		const nextMenuRect = menu.getBoundingClientRect();
-		if (nextMenuRect.bottom > window.innerHeight - padding) {
-			const topUp = rect.top + scrollTop - nextMenuRect.height - 6;
-			menu.style.top = `${Math.max(padding + scrollTop, topUp)}px`;
-		}
+		// [Intended] 数値だけの候補一覧は表示せず、低信頼度時は実結果の候補リストへ誘導する。
+		this.sizeLabel.textContent = `${this.currentImage.width} x ${this.currentImage.height}`;
+		this.sizeLabel.style.cursor = "default";
+		this.sizeLabel.style.textDecoration = "none";
+		this.sizeLabel.onclick = null;
 	}
 }

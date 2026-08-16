@@ -2,7 +2,7 @@ name: Quality Report
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review, closed]
+    types: [opened, reopened, synchronize, closed]
 
 permissions:
   contents: read
@@ -12,10 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  quality:
+    name: quality
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # [Policy] 比較レポートと品質ゲートは同じケース実行結果から生成する。
     steps:
       - uses: actions/checkout@v7
 
@@ -37,7 +38,16 @@ jobs:
           if [ -d "$baseline_root" ] && [ -f "$baseline_file" ]; then
             echo "QUALITY_BASELINE_ROOT=$baseline_root" >> "$GITHUB_ENV"
             echo "QUALITY_BASELINE_FILE=$baseline_file" >> "$GITHUB_ENV"
+            exit 0
           fi
+          # [Intended] base 側を取得できないときは、チェックイン済みベースラインへ落とさず
+          # 空の参照を渡す。head のベースラインは PR の現在地そのもので、「ベースブランチ」
+          # として並べると常に差分なしのレポートになり、base と比較したように読めてしまう。
+          # 空にしておけばレポート側がベースブランチとの比較を丸ごと省く。
+          empty_root="$RUNNER_TEMP/quality-baseline-empty"
+          mkdir -p "$empty_root"
+          echo "QUALITY_BASELINE_ROOT=$empty_root" >> "$GITHUB_ENV"
+          echo "QUALITY_BASELINE_FILE=$empty_root/baseline.json" >> "$GITHUB_ENV"
 
       - uses: pnpm/action-setup@v6
         with:
@@ -50,17 +60,62 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Generate comparison report
-        run: pnpm test:quality:report
+      - name: Generate comparison report and run quality gate
+        id: quality-gate
+        continue-on-error: true
+        # [Intended] auto ケースは正解画像を持たず、ベースライン（＝旧 auto 出力）と比べる
+        # 指標比較でしか良し悪しを測れない。そのため意図的な改善で参照画像そのものを
+        # 更新する PR では、改善後の出力が旧参照より「悪化」判定になるのは避けられない。
+        # QUALITY_GATE_ALLOW_DECLARED_AUTO_CHANGES=1 は、head でベースライン画像を
+        # 更新済み（＝劣化を宣言済み）の対象ケースに限り、regression をゲート失敗ではなく
+        # 警告（GITHUB_STEP_SUMMARY 掲載）へ降格することを許可する。従来 passed だった
+        # explicit ケースの regression は対象外で、常にゲートを落とす。従来から failed の
+        # explicit ケースは、更新済み画像で指標トレードオフを宣言した場合に限り降格できる。
+        # ローカルの pnpm test:quality:full はこの変数を立てないため挙動は変わらない。
         env:
+          QUALITY_GATE_ALLOW_DECLARED_AUTO_CHANGES: "1"
           QUALITY_PR_NUMBER: ${{ github.event.pull_request.number }}
           QUALITY_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set +e
+          pnpm run quality:report-and-gate:cases
+          gate_exit="$?"
+          set -e
+          pnpm run quality:report:aggregate
+          exit "$gate_exit"
 
-      - name: Run quality gate
-        id: quality-gate
-        continue-on-error: true
-        run: pnpm test:quality:full
+      # 品質ゲートの後に掲載する。ゲートの成否を含めないと、
+      # 落ちた PR でもサマリーが比較レポートの要約だけになり結果を誤読させる。
+      - name: Publish quality summary
+        if: always()
+        run: |
+          gate_outcome="${{ steps.quality-gate.outcome }}"
+          echo "## Quality gate: ${gate_outcome:-not run}" >> "$GITHUB_STEP_SUMMARY"
+          summary_file="tmp/quality-report/latest/summary.md"
+          if [ -f "$summary_file" ]; then
+            cat "$summary_file" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Comparison report generation did not produce a summary." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # [Intended] head でベースライン画像を更新済み（＝宣言済み）の対象ケースの
+          # regression は警告に降格され、ゲートを落とさない。隠蔽ではなく可視化のため、
+          # 件数と一覧をここに掲示する（画像の diff は比較レポート側で確認できる）。
+          warnings_root="tmp/quality-gate-warnings"
+          if [ -d "$warnings_root" ] && ls "$warnings_root"/*.json >/dev/null 2>&1; then
+            warning_count="$(jq -s '[.[].warnings[]] | length' "$warnings_root"/*.json)"
+            if [ "$warning_count" -gt 0 ]; then
+              {
+                echo ""
+                echo "## Quality gate warnings: declared case changes (${warning_count})"
+                echo ""
+                echo "対象ケースで指標の悪化を検出しましたが、head でベースライン画像が更新されている（＝変更を宣言済み）ため、ゲートは失敗させず要人間レビューの警告として扱っています。比較レポートのケース別ページで diff を確認してください。"
+                echo ""
+                jq -s -r '[.[].warnings[]] | .[] | "- **\(.id)**: \(.regressedMetrics | join(", "))"' "$warnings_root"/*.json
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
 
       - name: Upload comparison report
         uses: actions/upload-artifact@v7
@@ -78,10 +133,9 @@ jobs:
       always() &&
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      needs.build.result != 'cancelled'
-    needs: build
+      needs.quality.result != 'cancelled'
+    needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     concurrency:
       group: quality-pages
       cancel-in-progress: false
@@ -159,7 +213,7 @@ jobs:
           existing="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate --jq ".[] | select(.body | contains(\"${marker}\")) | .id" | head -n 1)"
           if [ -z "$existing" ]; then
             gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "${marker}
-          Quality report: ${report_url}"
+          Quality report (available while this PR is open): ${report_url}"
           fi
 
   cleanup:
@@ -167,7 +221,6 @@ jobs:
       github.event.action == 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     concurrency:
       group: quality-pages
       cancel-in-progress: false

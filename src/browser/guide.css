@@ -1,0 +1,320 @@
+/* AI画像生成レシピ集ページ（guide.html）専用のスタイル。
+   配色・角丸・影は style.css のトークンをそのまま使う。 */
+
+/* [Intended] 本体アプリより横幅を狭くして、長い本文の行長を読みやすく保つ。 */
+.app.guide-page {
+  max-width: 940px;
+}
+
+.guide-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.guide-back-link {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-decoration: none;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+
+.guide-back-link:hover {
+  color: var(--primary);
+}
+
+.guide-page h1 {
+  font-size: clamp(1.9rem, 5vw, 2.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+/* [Intended] ページ名は製品名より一段下の情報。枠や地色で強調せず、
+   書体・字送り・色だけでドット絵ロゴと区別する。 */
+.guide-page-name {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+/* [Intended] 読み物のセクションは押せないので、本体アプリのパネルが持つ
+   影とホバー時の枠色変化を打ち消し、面ではなく区切りとして見せる。 */
+.guide-section {
+  box-shadow: none;
+}
+
+.guide-section:hover {
+  border-color: var(--border-color);
+}
+
+.guide-section p {
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.guide-section p:last-child {
+  margin-bottom: 0;
+}
+
+.guide-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0 0 8px;
+}
+
+.guide-section code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface-hover);
+  border-radius: var(--radius-sm);
+  padding: 1px 4px;
+}
+
+.guide-section strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* はじめに: 直せるもの / 直せないもの */
+.guide-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.guide-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+/* [Intended] 生成時に防ぐ必要がある側だけ見出しを accent にする。
+   2枚を色分けするだけの左端バーは意味を持たないため置かない。
+   どちらの内容かは見出しの文言が示すので、色には依存させない。 */
+.guide-card-caution h3 {
+  color: var(--accent);
+}
+
+.guide-card ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+/* 原則・レシピの本体 */
+.guide-article {
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.guide-article:first-of-type {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
+}
+
+.guide-meta {
+  margin: 0 0 16px;
+}
+
+/* [Intended] チップにせず、字送りと色だけで項目名と分ける。 */
+.guide-meta-label {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-right: 10px;
+}
+
+/* プロンプト */
+/* [Intended] コピーボタンはコード面に重ねず下に置く。重ねると 1 行の
+   プロンプトでも下端に余白を確保する必要があり、空白が装飾に見える。 */
+.prompt-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.prompt-code {
+  align-self: stretch;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text-main);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* [Policy] 押せる部品は本体アプリのボタンと同じ見え方に揃える。 */
+.prompt-copy {
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.prompt-copy:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+
+/* 作例画像 */
+/* [Intended] 本文と同じ左端に揃える。中央寄せは作例を見せ場に変えてしまい、
+   手順を追う読み順から外れる。 */
+.guide-figure {
+  margin: 0 0 16px;
+}
+
+.guide-figure img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+/* [Intended] 市松模様は透過しているかを確かめるための表示なので、
+   透過が結果になる変換後の画像にだけ敷く。生成画像は不透明で、
+   敷いても意味を持たない。
+   変換結果は小さなドット絵なので、拡大時もドットの角を保つ。 */
+/* [Intended] 表示倍率は CSS で固定せず、各画像の width/height 属性で与える。
+   変換結果は等倍で出力しており、整数倍にそろえないとドットの幅が不揃いになる。 */
+/* 模様そのものは style.css の共通定義から受け取り、ここではタイルの大きさだけ変える。 */
+.guide-figure-output img {
+  image-rendering: pixelated;
+  --checkered-tile: 16px;
+}
+
+/* [Intended] 同じ画像を縮尺違いで並べる枠。生成画像は縮小と部分拡大で
+   ドットの縁のぼけを、変換結果は等倍と拡大で出力の小ささを見せる。
+   下端をそろえると、大きさの違う 2 枚を同じ足場で見比べられる。 */
+.guide-figure-views {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.guide-figure-view {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.guide-figure-scale {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/* [Intended] 拡大は元画素をそのまま見せるためのものなので、ブラウザの
+   平滑化を切る。滑らかに引き伸ばすと、生成画像のぼけと区別できなくなる。 */
+.guide-figure-zoom {
+  image-rendering: pixelated;
+}
+
+/* [Intended] 掲載画像は表示用に縮小したコピーなので、変換を手元で再現するための
+   原寸画像はここからダウンロードさせる。ページの転送量には載せない。 */
+.guide-figure-source {
+  margin-top: 4px;
+  font-size: 0.78rem;
+}
+
+.guide-figure-source a {
+  color: var(--text-dim);
+}
+
+.guide-figure-source a:hover {
+  color: var(--primary);
+}
+
+.guide-figure figcaption {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* うまくいかないときは */
+.guide-table-wrap {
+  overflow-x: auto;
+}
+
+.guide-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.guide-table th,
+.guide-table td {
+  border: 1px solid var(--border-color);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.65;
+}
+
+.guide-table th {
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.guide-table td {
+  color: var(--text-muted);
+}
+
+/* 注記 */
+/* [Intended] 本文ではなく出典の断り書きなので、他のセクションと同じ枠付きの
+   面には入れず、罫線一本の脚注として最後に置く。 */
+.guide-note {
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+}
+
+/* [Intended] セクション見出しの accent マーカーは外す。他の 4 セクションと
+   同じ強さで出ると、脚注が本文と同格に見える。 */
+.guide-note h2::before {
+  display: none;
+}
+
+.guide-note p {
+  font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+  .prompt-code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}

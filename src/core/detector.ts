@@ -1,9 +1,20 @@
+import {
+	GRID_CANDIDATE_CELL_SCALES,
+	PROCESS_ANALYSIS_THRESHOLDS,
+	PROCESS_RANGES,
+} from "../shared/config";
 import type { Pixel, PixelGrid, RawImage } from "../shared/types";
 import { computeMedian, computePercentile } from "./math";
 import { extractStrip, posterize } from "./ops";
 
 type Run = { start: number; length: number; color: [number, number, number] };
 type Segment = { start: number; runs: Run[] };
+
+/**
+ * 自動検出で各軸から抜き取るサンプルストリップの本数。
+ * [Policy] 検出の安定性と速度の釣り合いで決めた固定値。呼び出し側から変える手段は持たない。
+ */
+const DETECTION_STRIP_COUNT = 12;
 
 const quantize = (value: number, step: number): number => {
 	if (step <= 0) {
@@ -16,6 +27,21 @@ const colorEq = (
 	a: [number, number, number],
 	b: [number, number, number],
 ): boolean => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+
+const mergeAdjacentRuns = (runs: Run[]): Run[] => {
+	if (runs.length < 2) return runs;
+	const merged: Run[] = [runs[0]];
+	for (let i = 1; i < runs.length; i += 1) {
+		const run = runs[i];
+		const previous = merged[merged.length - 1];
+		if (colorEq(previous.color, run.color)) {
+			previous.length += run.length;
+			continue;
+		}
+		merged.push(run);
+	}
+	return merged;
+};
 
 export const getRunLengths = (
 	strip: Pixel[],
@@ -102,7 +128,10 @@ export const getRunLengths = (
 				}
 				smoothed.push(run);
 			}
-			segments.push({ start: segStart, runs: smoothed });
+			segments.push({
+				start: segStart,
+				runs: mergeAdjacentRuns(smoothed),
+			});
 		} else {
 			segments.push({ start: segStart, runs });
 		}
@@ -115,27 +144,23 @@ type Estimate = { cellSize: number; offset: number; score: number };
 export type DetectOptions = {
 	detectionQuantStep?: number;
 	/**
-	 * Maximum number of cells for automatic detection (upper limit for outW/outH).
-	 * Default is 128.
+	 * 自動検出する最大セル数（outW/outH の上限）。
+	 * デフォルト: 512
 	 */
 	autoMaxCellsW?: number;
 	autoMaxCellsH?: number;
 	/**
-	 * Number of sample strips for automatic detection (each axis). Larger values are more stable but slower.
-	 * Default: 12
-	 */
-	detectionStrips?: number;
-	/**
-	 * Guess the background color and mask it before detection (to handle background noise).
-	 * Default: true
+	 * 背景色を推測し、検出前にマスクする（背景ノイズに対応するため）。
+	 * デフォルト: true
 	 */
 	backgroundMask?: boolean;
 	/**
-	 * Tolerance for background mask (absolute difference for each RGB channel). If not specified, it is automatically estimated from the four corners.
+	 * 背景マスクの許容差（RGB 各チャンネルの絶対差）。
+	 * デフォルト: 0
 	 */
 	backgroundMaskTolerance?: number;
 	/**
-	 * Logs the detection process to the console (for debugging).
+	 * 検出処理をコンソールに出力する（デバッグ用）。
 	 */
 	debug?: boolean;
 	debugLabel?: string;
@@ -157,49 +182,78 @@ export const detectGrid = (
 		data: new Uint8ClampedArray(src.data),
 	});
 
-	const dominantBackground = (
-		src: RawImage,
-	): {
-		bgKeySet: Set<string>;
-		bgKeys: string[];
+	type BackgroundInfo = {
+		colors: Array<readonly [number, number, number]>;
 		coveredRatio: number;
-	} => {
-		const counts = new Map<string, number>();
+	};
+
+	const dominantBackground = (src: RawImage): BackgroundInfo => {
+		const counts = new Map<number, number>();
 		const totalPx = src.width * src.height;
+		let transparentCount = 0;
 		for (let i = 0; i < src.data.length; i += 4) {
+			if (src.data[i + 3] === 0) {
+				transparentCount += 1;
+				continue;
+			}
 			const r = src.data[i];
 			const g = src.data[i + 1];
 			const b = src.data[i + 2];
-			const key = `${r},${g},${b}`;
+			const key = (r << 16) | (g << 8) | b;
 			counts.set(key, (counts.get(key) ?? 0) + 1);
 		}
-		const sorted = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+		const sorted = Array.from(counts.entries()).sort(
+			(a, b) => b[1] - a[1] || a[0] - b[0],
+		);
 
 		const coverTarget = 0.7;
 		const maxColors = 8;
-		let covered = 0;
-		const bgKeys: string[] = [];
+		let covered = transparentCount;
+		const colors: Array<readonly [number, number, number]> = [];
 		for (const [k, c] of sorted) {
-			bgKeys.push(k);
+			if (totalPx > 0 && covered / totalPx >= coverTarget) break;
+			colors.push([(k >> 16) & 0xff, (k >> 8) & 0xff, k & 0xff]);
 			covered += c;
-			if (bgKeys.length >= maxColors) break;
+			if (colors.length >= maxColors) break;
 			if (covered / totalPx >= coverTarget) break;
 		}
 		return {
-			bgKeySet: new Set(bgKeys),
-			bgKeys,
-			coveredRatio: covered / totalPx,
+			colors,
+			coveredRatio: totalPx === 0 ? 0 : covered / totalPx,
 		};
 	};
 
-	const maskBackgroundByKeys = (
+	const isBackgroundPixel = (
+		data: Uint8ClampedArray,
+		index: number,
+		background: BackgroundInfo,
+		tolerance: number,
+	): boolean => {
+		if (data[index + 3] < 16) return true;
+		const r = data[index];
+		const g = data[index + 1];
+		const b = data[index + 2];
+		for (let i = 0; i < background.colors.length; i += 1) {
+			const color = background.colors[i];
+			if (
+				Math.abs(r - color[0]) <= tolerance &&
+				Math.abs(g - color[1]) <= tolerance &&
+				Math.abs(b - color[2]) <= tolerance
+			) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	const maskBackground = (
 		src: RawImage,
-		bgKeySet: Set<string>,
+		background: BackgroundInfo,
+		tolerance: number,
 	): RawImage => {
 		const out = cloneImage(src);
 		for (let i = 0; i < out.data.length; i += 4) {
-			const key = `${out.data[i]},${out.data[i + 1]},${out.data[i + 2]}`;
-			if (bgKeySet.has(key)) {
+			if (isBackgroundPixel(out.data, i, background, tolerance)) {
 				out.data[i + 3] = 0;
 			}
 		}
@@ -235,9 +289,9 @@ export const detectGrid = (
 		scores.sort((a, b) => b.score - a.score);
 
 		const picked: number[] = [];
-		// If there is no assumed grid, select "dense" lines for detection.
-		// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
-		// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
+		// 想定グリッドがない場合は、検出用に「密な」線を選択する。
+		// ただし背景マスクは「線の選択」にのみ使用し、連続領域の境界計算は元画像（ポスタリゼーション結果）で行う。
+		// （隙間の多い画像では背景をマスクしすぎると周期（セルサイズ）の推定が難しくなる）。
 		const minSep = Math.max(1, Math.floor(len / Math.max(1, count * 6)));
 		for (const item of scores) {
 			if (item.score <= 0) break;
@@ -249,14 +303,26 @@ export const detectGrid = (
 		return picked;
 	};
 
-	const stripCount = options.detectionStrips ?? 12;
+	const stripCount = DETECTION_STRIP_COUNT;
 	const shouldMaskBackground = options.backgroundMask ?? true;
+	const backgroundMaskTolerance = Math.min(
+		PROCESS_RANGES.backgroundMaskTolerance.max,
+		Math.max(
+			PROCESS_RANGES.backgroundMaskTolerance.min,
+			Math.trunc(
+				options.backgroundMaskTolerance ??
+					PROCESS_RANGES.backgroundMaskTolerance.default,
+			),
+		),
+	);
 
-	// If there is no assumed grid, select "dense" lines for detection.
-	// However, background mask is only used for "line selection", and run boundary calculation is performed on the original image (posterized result).
-	// (In images with many gaps, masking the background too much can make it difficult to estimate the period (cell size)).
+	// 想定グリッドがない場合は、検出用に「密な」線を選択する。
+	// ただし背景マスクは「線の選択」にのみ使用し、連続領域の境界計算は元画像（ポスタリゼーション結果）で行う。
+	// （隙間の多い画像では背景をマスクしすぎると周期（セルサイズ）の推定が難しくなる）。
 	const bgInfo = shouldMaskBackground ? dominantBackground(det) : null;
-	const detForPick = bgInfo ? maskBackgroundByKeys(det, bgInfo.bgKeySet) : det;
+	const detForPick = bgInfo
+		? maskBackground(det, bgInfo, backgroundMaskTolerance)
+		: det;
 	const detForDetect = det;
 
 	if (options.debug && bgInfo) {
@@ -264,9 +330,10 @@ export const detectGrid = (
 		console.log("[detectGrid]", options.debugLabel ?? "", {
 			backgroundMask: {
 				mode: "dominantColors",
-				bgKeys: bgInfo.bgKeys.slice(0, 5),
-				bgColorCount: bgInfo.bgKeys.length,
+				colors: bgInfo.colors.slice(0, 5),
+				bgColorCount: bgInfo.colors.length,
 				coveredRatio: bgInfo.coveredRatio,
+				tolerance: backgroundMaskTolerance,
 			},
 		});
 	}
@@ -291,13 +358,21 @@ export const detectGrid = (
 		});
 	}
 
-	// High resolution support: 128 is too small for 4-5px dots in 1000px+ images.
-	// We increase the default to 512 to support finer grids.
+	// 高解像度対応: 1000px 超の画像では、4〜5px のドットに対して 128 では小さすぎる。
+	// より細かいグリッドに対応するため、デフォルトを 512 に引き上げる。
+	const clampAutoMaxCells = (value: number | undefined): number =>
+		Math.min(
+			PROCESS_RANGES.autoMaxCells.max,
+			Math.max(
+				PROCESS_RANGES.autoMaxCells.min,
+				Math.trunc(value ?? PROCESS_RANGES.autoMaxCells.default),
+			),
+		);
 	const expMinX = Math.min(w, 8);
-	const expMaxX = options.autoMaxCellsW ?? 512;
+	const expMaxX = clampAutoMaxCells(options.autoMaxCellsW);
 	const twX = 2.0;
 	const expMinY = Math.min(h, 8);
-	const expMaxY = options.autoMaxCellsH ?? 512;
+	const expMaxY = clampAutoMaxCells(options.autoMaxCellsH);
 	const twY = 2.0;
 
 	type BoundaryData = { runLengths: number[]; boundaries: number[] };
@@ -318,7 +393,7 @@ export const detectGrid = (
 	const buildScanlineBoundaryData = (
 		axis: "x" | "y",
 		lines: number[],
-		bgKeySet: Set<string>,
+		background: BackgroundInfo,
 	): BoundaryData => {
 		const len = axis === "x" ? w : h;
 		const runLengths: number[] = [];
@@ -326,18 +401,24 @@ export const detectGrid = (
 
 		for (const line of lines) {
 			let i = 0;
-			// Initial state
+			// 初期状態
 			const isFgAt = (pos: number): 0 | 1 => {
 				let idx: number;
 				if (axis === "x") {
-					// y is fixed, x moves
+					// y を固定し、x を移動する
 					idx = (line * w + pos) * 4;
 				} else {
-					// x is fixed, y moves
+					// x を固定し、y を移動する
 					idx = (pos * w + line) * 4;
 				}
-				const key = `${detForDetect.data[idx]},${detForDetect.data[idx + 1]},${detForDetect.data[idx + 2]}`;
-				return bgKeySet.has(key) ? 0 : 1;
+				return isBackgroundPixel(
+					detForDetect.data,
+					idx,
+					background,
+					backgroundMaskTolerance,
+				)
+					? 0
+					: 1;
 			};
 
 			let cur: 0 | 1 = isFgAt(0);
@@ -354,7 +435,7 @@ export const detectGrid = (
 				}
 				i += 1;
 			}
-			// last run
+			// 最後の連続領域
 			const lastLen = len - start;
 			if (lastLen >= 2) runLengths.push(lastLen);
 		}
@@ -533,7 +614,7 @@ export const detectGrid = (
 	});
 	const estX = bgInfo
 		? (estimateFromBoundaryData(
-				buildScanlineBoundaryData("x", ys, bgInfo.bgKeySet),
+				buildScanlineBoundaryData("x", ys, bgInfo),
 				w,
 				expMinX,
 				expMaxX,
@@ -542,11 +623,10 @@ export const detectGrid = (
 			) ?? estimateFromSegments(xSegLists, w, expMinX, expMaxX, undefined, twX))
 		: estimateFromSegments(xSegLists, w, expMinX, expMaxX, undefined, twX);
 
-	// Previous logic had a retry mechanism here (estX2) that forced a lower cell count (max 64)
-	// if the first pass detected > 96 cells.
-	// This was causing high-resolution images (where dot size is small, e.g. 4px) to be
-	// incorrectly detected as having larger cells (e.g. 16px).
-	// We remove this retry restriction to support finer grids.
+	// 以前のロジックには、最初のパスで 96 セル超を検出した場合に、
+	// セル数を少なく（最大 64）強制する再試行機構（estX2）があった。
+	// これにより、高解像度画像（例: ドットサイズが 4px）でセルが大きく（例: 16px）
+	// 誤検出されていた。より細かいグリッドに対応するため、この再試行制限を削除する。
 
 	const ySegLists = xs.map((x) => {
 		const strip = extractStrip(detForDetect, "x", x);
@@ -562,7 +642,7 @@ export const detectGrid = (
 	});
 	const estY = bgInfo
 		? (estimateFromBoundaryData(
-				buildScanlineBoundaryData("y", xs, bgInfo.bgKeySet),
+				buildScanlineBoundaryData("y", xs, bgInfo),
 				h,
 				expMinY,
 				expMaxY,
@@ -575,32 +655,70 @@ export const detectGrid = (
 	const finalY = estY;
 
 	if (!finalX || !finalY) {
-		// Fallback for detection failure
-		const fallbackX = finalX ?? { cellSize: w, offset: 0, score: 0 };
-		const fallbackY = finalY ?? { cellSize: h, offset: 0, score: 0 };
-
-		const fCellW = Math.max(1, Math.round(fallbackX.cellSize));
-		const fCellH = Math.max(1, Math.round(fallbackY.cellSize));
-		const fOffsetX = ((fallbackX.offset % fCellW) + fCellW) % fCellW;
-		const fOffsetY = ((fallbackY.offset % fCellH) + fCellH) % fCellH;
-		const fOutW = Math.max(1, Math.floor((w - fOffsetX) / fCellW));
-		const fOutH = Math.max(1, Math.floor((h - fOffsetY) / fCellH));
-
-		return {
-			cellW: fCellW,
-			cellH: fCellH,
-			offsetX: fOffsetX,
-			offsetY: fOffsetY,
-			score: (fallbackX.score + fallbackY.score) / 2,
-			cropX: fOffsetX,
-			cropY: fOffsetY,
-			cropW: fOutW * fCellW,
-			cropH: fOutH * fCellH,
-			outW: fOutW,
-			outH: fOutH,
-			scoreX: fallbackX.score,
-			scoreY: fallbackY.score,
+		const failedAxes = [
+			...(finalX ? [] : (["x"] as const)),
+			...(finalY ? [] : (["y"] as const)),
+		];
+		const createFallbackGrid = (
+			cellW: number,
+			cellH: number,
+			offsetX: number,
+			offsetY: number,
+		): PixelGrid => {
+			const safeCellW = Math.max(1, Math.min(w, Math.round(cellW)));
+			const safeCellH = Math.max(1, Math.min(h, Math.round(cellH)));
+			const safeOffsetX = ((offsetX % safeCellW) + safeCellW) % safeCellW;
+			const safeOffsetY = ((offsetY % safeCellH) + safeCellH) % safeCellH;
+			const outW = Math.max(1, Math.floor((w - safeOffsetX) / safeCellW));
+			const outH = Math.max(1, Math.floor((h - safeOffsetY) / safeCellH));
+			return {
+				cellW: safeCellW,
+				cellH: safeCellH,
+				offsetX: safeOffsetX,
+				offsetY: safeOffsetY,
+				score: finalX?.score ?? finalY?.score ?? 0,
+				cropX: safeOffsetX,
+				cropY: safeOffsetY,
+				cropW: outW * safeCellW,
+				cropH: outH * safeCellH,
+				outW,
+				outH,
+				scoreX: finalX?.score,
+				scoreY: finalY?.score,
+				detectionFailedAxes: failedAxes,
+			};
 		};
+
+		if (!finalX && !finalY) {
+			// [Intended] 検出に完全に失敗した場合は、任意の画像を単一の論理ピクセルへ
+			// 縮退させず、元画像を保持する。
+			const preserve = createFallbackGrid(1, 1, 0, 0);
+			const coarse = createFallbackGrid(w, h, 0, 0);
+			coarse.score = PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore;
+			preserve.candidates = [coarse];
+			return preserve;
+		}
+
+		const detectedCell = Math.round((finalX ?? finalY)?.cellSize ?? 1);
+		const missingLength = finalX ? h : w;
+		const maxInferredCell = Math.max(1, Math.floor(missingLength / 2));
+		const inferredCell = Math.max(1, Math.min(detectedCell, maxInferredCell));
+		const selected = createFallbackGrid(
+			finalX?.cellSize ?? inferredCell,
+			finalY?.cellSize ?? inferredCell,
+			finalX?.offset ?? 0,
+			finalY?.offset ?? 0,
+		);
+		const partial = createFallbackGrid(
+			finalX?.cellSize ?? 1,
+			finalY?.cellSize ?? 1,
+			finalX?.offset ?? 0,
+			finalY?.offset ?? 0,
+		);
+		const preserve = createFallbackGrid(1, 1, 0, 0);
+		preserve.score = PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore;
+		selected.candidates = [partial, preserve];
+		return selected;
 	}
 
 	const cellW = Math.max(1, Math.round(finalX.cellSize));
@@ -622,6 +740,52 @@ export const detectGrid = (
 		});
 	}
 
+	const candidates: PixelGrid[] = [];
+	for (const scale of GRID_CANDIDATE_CELL_SCALES) {
+		const candidateCellW = Math.max(1, Math.round(cellW * scale));
+		const candidateCellH = Math.max(1, Math.round(cellH * scale));
+		if (candidateCellW === cellW && candidateCellH === cellH) continue;
+		const candidateOffsetX = offsetX % candidateCellW;
+		const candidateOffsetY = offsetY % candidateCellH;
+		const candidateOutW = Math.max(
+			1,
+			Math.floor((w - candidateOffsetX) / candidateCellW),
+		);
+		const candidateOutH = Math.max(
+			1,
+			Math.floor((h - candidateOffsetY) / candidateCellH),
+		);
+		candidates.push({
+			cellW: candidateCellW,
+			cellH: candidateCellH,
+			offsetX: candidateOffsetX,
+			offsetY: candidateOffsetY,
+			score: (finalX.score + finalY.score) / 2 + Math.abs(1 - scale),
+			cropX: candidateOffsetX,
+			cropY: candidateOffsetY,
+			cropW: candidateOutW * candidateCellW,
+			cropH: candidateOutH * candidateCellH,
+			outW: candidateOutW,
+			outH: candidateOutH,
+			scoreX: finalX.score,
+			scoreY: finalY.score,
+		});
+	}
+	// [Intended] Preserve は安全な自動フォールバックとして常に利用可能である。
+	candidates.push({
+		cellW: 1,
+		cellH: 1,
+		offsetX: 0,
+		offsetY: 0,
+		score: PROCESS_ANALYSIS_THRESHOLDS.legacyPreserveCandidateScore,
+		cropX: 0,
+		cropY: 0,
+		cropW: w,
+		cropH: h,
+		outW: w,
+		outH: h,
+	});
+
 	return {
 		cellW,
 		cellH,
@@ -636,5 +800,6 @@ export const detectGrid = (
 		outH,
 		scoreX: finalX.score,
 		scoreY: finalY.score,
+		candidates,
 	};
 };

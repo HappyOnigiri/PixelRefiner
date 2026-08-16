@@ -5,7 +5,7 @@ export const initTooltip = () => {
 
 	let activeElement: HTMLElement | null = null;
 
-	// Watch for attribute changes on the active element
+	// アクティブ要素の属性変更を監視
 	const observer = new MutationObserver((mutations) => {
 		for (const mutation of mutations) {
 			if (
@@ -46,13 +46,13 @@ export const initTooltip = () => {
 		const rect = activeElement.getBoundingClientRect();
 		const tooltipRect = tooltip.getBoundingClientRect();
 
-		// Default position: Top Center
+		// 既定位置: 上中央
 		let top = rect.top - tooltipRect.height - 8;
 		let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
 
-		// Check if it goes off screen
+		// 画面外にはみ出すか確認
 		if (top < 0) {
-			// Show below if not enough space on top
+			// 上部に十分な余白がなければ下に表示
 			top = rect.bottom + 8;
 		}
 
@@ -64,11 +64,11 @@ export const initTooltip = () => {
 
 		tooltip.style.top = `${top}px`;
 		tooltip.style.left = `${left}px`;
-		// Ensure z-index is exceedingly high
+		// z-index が十分に高いことを保証
 		tooltip.style.zIndex = "10000";
 	};
 
-	// Event Delegation
+	// イベント委譲
 	document.addEventListener("mouseover", (e) => {
 		const target = (e.target as HTMLElement).closest("[data-tooltip]");
 		if (target) {
@@ -79,11 +79,11 @@ export const initTooltip = () => {
 		}
 	});
 
-	// Use mouseout (bubbling) or mouseleave (capturing)
-	// simple mouseout is fine if we check relatedTarget
+	// mouseout（バブリング）または mouseleave（キャプチャリング）を使用する
+	// relatedTarget を確認すれば単純な mouseout で問題ない
 	document.addEventListener("mouseout", (e) => {
 		const target = (e.target as HTMLElement).closest("[data-tooltip]");
-		// If moving to a child, don't hide
+		// 子要素へ移動する場合は非表示にしない
 		if (target && target === activeElement) {
 			const related = e.relatedTarget as HTMLElement;
 			if (target.contains(related)) return;
@@ -91,7 +91,21 @@ export const initTooltip = () => {
 		}
 	});
 
-	// Handle scroll to update position if needed (optional, but good for fixed elements)
+	// [Intended] マウスを使えない環境でも説明へ到達できるよう、
+	// フォーカスの出入りでも同じツールチップを開閉する。
+	document.addEventListener("focusin", (e) => {
+		const target = (e.target as HTMLElement).closest("[data-tooltip]");
+		if (!target) return;
+		const text = target.getAttribute("data-tooltip");
+		if (text) showTooltip(target as HTMLElement, text);
+	});
+
+	document.addEventListener("focusout", (e) => {
+		const target = (e.target as HTMLElement).closest("[data-tooltip]");
+		if (target && target === activeElement) hideTooltip();
+	});
+
+	// 必要に応じてスクロール時に位置を更新する（任意だが固定要素には有用）
 	window.addEventListener("scroll", updatePosition, true);
 	window.addEventListener("resize", updatePosition);
 };

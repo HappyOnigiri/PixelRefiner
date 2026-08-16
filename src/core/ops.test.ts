@@ -19,25 +19,25 @@ describe("ops.ts", () => {
 			const img: RawImage = { width: 2, height: 2, data };
 			const blue: Pixel = [0, 0, 255, 255];
 
-			// setPixel should ignore out of bounds
+			// setPixel は範囲外を無視するはずである
 			setPixel(img, -1, 0, blue);
 			setPixel(img, 2, 0, blue);
 			setPixel(img, 0, -1, blue);
 			setPixel(img, 0, 2, blue);
 
-			// Memory should not be changed (all zero)
+			// メモリは変更されないはずである（すべてゼロ）
 			for (let i = 0; i < data.length; i++) {
 				expect(data[i]).toBe(0);
 			}
 
-			// getPixel should clamp coordinates
+			// getPixel は座標をクランプするはずである
 			setPixel(img, 0, 0, blue);
-			expect(getPixel(img, -1, 0)).toEqual(blue); // clamped to (0,0)
-			expect(getPixel(img, 0, -1)).toEqual(blue); // clamped to (0,0)
+			expect(getPixel(img, -1, 0)).toEqual(blue); // (0,0) にクランプされる
+			expect(getPixel(img, 0, -1)).toEqual(blue); // (0,0) にクランプされる
 
 			setPixel(img, 1, 1, [255, 255, 255, 255]);
-			expect(getPixel(img, 2, 1)).toEqual([255, 255, 255, 255]); // clamped to (1,1)
-			expect(getPixel(img, 1, 2)).toEqual([255, 255, 255, 255]); // clamped to (1,1)
+			expect(getPixel(img, 2, 1)).toEqual([255, 255, 255, 255]); // (1,1) にクランプされる
+			expect(getPixel(img, 1, 2)).toEqual([255, 255, 255, 255]); // (1,1) にクランプされる
 		});
 	});
 
@@ -47,9 +47,9 @@ describe("ops.ts", () => {
 			const height = 1;
 			const data = new Uint8ClampedArray(width * height * 4);
 			for (let i = 0; i < 256; i++) {
-				data[i * 4] = i; // R: 0-255
-				data[i * 4 + 1] = i; // G: 0-255
-				data[i * 4 + 2] = i; // B: 0-255
+				data[i * 4] = i; // R: 0〜255
+				data[i * 4 + 1] = i; // G: 0〜255
+				data[i * 4 + 2] = i; // B: 0〜255
 				data[i * 4 + 3] = 255; // A
 			}
 			const img: RawImage = { width, height, data };
@@ -95,7 +95,7 @@ describe("ops.ts", () => {
 
 	describe("upscaleNearest", () => {
 		it("should upscale image 2x correctly using nearest neighbor", () => {
-			// 2x2 image
+			// 2x2 画像
 			// [R, G]
 			// [B, W]
 			const data = new Uint8ClampedArray([
@@ -108,20 +108,20 @@ describe("ops.ts", () => {
 			expect(result.width).toBe(4);
 			expect(result.height).toBe(4);
 
-			// Check some pixels
-			// (0,0) in 4x4 should be same as (0,0) in 2x2
+			// いくつかのピクセルを確認する
+			// 4x4 の (0,0) は 2x2 の (0,0) と同じであるはずである
 			expect(getPixel(result, 0, 0)).toEqual([255, 0, 0, 255]);
 			expect(getPixel(result, 1, 1)).toEqual([255, 0, 0, 255]);
 
-			// (2,0) in 4x4 should be same as (1,0) in 2x2
+			// 4x4 の (2,0) は 2x2 の (1,0) と同じであるはずである
 			expect(getPixel(result, 2, 0)).toEqual([0, 255, 0, 255]);
 			expect(getPixel(result, 3, 1)).toEqual([0, 255, 0, 255]);
 
-			// (0,2) in 4x4 should be same as (0,1) in 2x2
+			// 4x4 の (0,2) は 2x2 の (0,1) と同じであるはずである
 			expect(getPixel(result, 0, 2)).toEqual([0, 0, 255, 255]);
 			expect(getPixel(result, 1, 3)).toEqual([0, 0, 255, 255]);
 
-			// (2,2) in 4x4 should be same as (1,1) in 2x2
+			// 4x4 の (2,2) は 2x2 の (1,1) と同じであるはずである
 			expect(getPixel(result, 2, 2)).toEqual([255, 255, 255, 255]);
 			expect(getPixel(result, 3, 3)).toEqual([255, 255, 255, 255]);
 		});

@@ -1,32 +1,141 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Colors */
-  --bg-app: #0f1115;
-  --bg-panel: #181b21;
-  --bg-input: #0f1115;
-  --border-color: #2a2e37;
-  --primary: #6366f1;
-  /* Indigo */
-  --primary-hover: #4f46e5;
-  --accent: #06b6d4;
-  /* Cyan */
-  --text-main: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  /* 色 */
+  color-scheme: light;
+  --bg-app: #f3f1eb;
+  --bg-panel: #fbfaf7;
+  --bg-input: #e9e6de;
+  --border-color: #cfc9bd;
+  /* [Intended] 入力部品の枠は隣接するパネル背景に対して3:1以上を確保するため、
+     区切り線用の --border-color とは別に定義する。 */
+  --input-border: #8a8172;
+  --primary: #285d88;
+  --primary-hover: #1f496c;
+  --primary-action: #285d88;
+  --primary-action-hover: #1f496c;
+  --accent: #a3442c;
+  --accent-action: #983e28;
+  --accent-action-hover: #7d3320;
+  --text-main: #202426;
+  --text-muted: #525b60;
+  --text-dim: #5f676b;
+  --heading-start: #202426;
+  --logo-start: #285d88;
+  --surface-hover: rgb(32 36 38 / 0.06);
+  --surface-hover-strong: rgb(32 36 38 / 0.12);
+  --panel-hover-border: #9f988c;
+  --focus-ring: #8a5300;
+  --loading-overlay: rgb(32 36 38 / 0.82);
+  --loading-text: #ffffff;
+  --image-list-bg: #eeebe4;
+  --scrollbar-track: #e9e6de;
+  --scrollbar-thumb: #9f988c;
+  --thumbnail-bg: #fbfaf7;
+  --thumbnail-grid: #d6d0c5;
+  --preview-control-border: rgb(32 36 38 / 0.24);
+  --swatch-border: rgb(32 36 38 / 0.22);
+  --swatch-hover-border: rgb(32 36 38 / 0.65);
+  --footer-icon-filter: invert(1);
 
-  /* Effects */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-glow: 0 0 15px rgba(99, 102, 241, 0.3);
+  /* 文字 */
+  --font-mono: 'IBM Plex Mono', monospace;
 
-  /* Layout */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* 効果 */
+  --shadow-sm: 0 1px 1px rgb(32 36 38 / 0.08);
+  --shadow-md: 0 2px 8px rgb(32 36 38 / 0.1);
+  --shadow-xl: 0 12px 32px rgb(32 36 38 / 0.2);
 
-  /* Checkered Background */
+  /* レイアウト */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+
+  /* 市松模様の背景 */
+  /* [Intended] 透過の確認用なので、テーマに関係なく明るい市松に固定する。
+     一般的な画像ツールと同じ見え方にそろえ、明度差も控えめに保つ。 */
+  --bg-checkered-base: #f0f0f0;
   --bg-checkered-color: #d0d0d0;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-app: #121416;
+  --bg-panel: #1b1e20;
+  --bg-input: #101214;
+  --border-color: #353a3d;
+  --input-border: #666f74;
+  --primary: #82add1;
+  --primary-hover: #a1c4df;
+  --primary-action: #315f87;
+  --primary-action-hover: #3d7099;
+  --accent: #e18a6f;
+  --accent-action: #9a402a;
+  --accent-action-hover: #b34c30;
+  --text-main: #e6e3dc;
+  --text-muted: #aeb5b8;
+  --text-dim: #858e92;
+  --heading-start: #e6e3dc;
+  --logo-start: #8bb6dc;
+  --surface-hover: rgb(255 255 255 / 0.05);
+  --surface-hover-strong: rgb(255 255 255 / 0.1);
+  --panel-hover-border: #596166;
+  --focus-ring: #ffbf47;
+  --loading-overlay: rgb(15 17 21 / 0.8);
+  --loading-text: #e2e8f0;
+  --image-list-bg: #171a1c;
+  --scrollbar-track: #171a1c;
+  --scrollbar-thumb: #596166;
+  --thumbnail-bg: #101214;
+  --thumbnail-grid: #272c2f;
+  --preview-control-border: rgb(255 255 255 / 0.14);
+  --swatch-border: rgb(255 255 255 / 0.15);
+  --swatch-hover-border: rgb(255 255 255 / 0.8);
+  --footer-icon-filter: none;
+  --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.2);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 0.24);
+  --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg-app: #121416;
+    --bg-panel: #1b1e20;
+    --bg-input: #101214;
+    --border-color: #353a3d;
+    --input-border: #666f74;
+    --primary: #82add1;
+    --primary-hover: #a1c4df;
+    --primary-action: #315f87;
+    --primary-action-hover: #3d7099;
+    --accent: #e18a6f;
+    --accent-action: #9a402a;
+    --accent-action-hover: #b34c30;
+    --text-main: #e6e3dc;
+    --text-muted: #aeb5b8;
+    --text-dim: #858e92;
+    --heading-start: #e6e3dc;
+    --logo-start: #8bb6dc;
+    --surface-hover: rgb(255 255 255 / 0.05);
+    --surface-hover-strong: rgb(255 255 255 / 0.1);
+    --panel-hover-border: #596166;
+    --focus-ring: #ffbf47;
+    --loading-overlay: rgb(15 17 21 / 0.8);
+    --loading-text: #e2e8f0;
+    --image-list-bg: #171a1c;
+    --scrollbar-track: #171a1c;
+    --scrollbar-thumb: #596166;
+    --thumbnail-bg: #101214;
+    --thumbnail-grid: #272c2f;
+    --preview-control-border: rgb(255 255 255 / 0.14);
+    --swatch-border: rgb(255 255 255 / 0.15);
+    --swatch-hover-border: rgb(255 255 255 / 0.8);
+    --footer-icon-filter: none;
+    --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.2);
+    --shadow-md: 0 2px 8px rgb(0 0 0 / 0.24);
+    --shadow-xl: 0 12px 32px rgb(0 0 0 / 0.4);
+  }
 }
 
 * {
@@ -37,7 +146,7 @@ body {
   margin: 0;
   background-color: var(--bg-app);
   color: var(--text-main);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
 }
@@ -47,47 +156,42 @@ body.modal-open {
 }
 
 .app {
-  max-width: 1400px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 28px;
+  width: 100%;
+  min-width: 0;
 }
 
-/* Header */
+/* ヘッダー */
 h1 {
   font-family: 'Pixelify Sans', sans-serif;
-  font-size: 3.5rem;
+  font-size: clamp(2.35rem, 6vw, 3.1rem);
   font-weight: 700;
   letter-spacing: 0.02em;
   margin: 0;
-  background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-align: center;
-  margin-bottom: 4px;
+  color: var(--heading-start);
+  text-align: left;
 }
 
 .logo-p {
-  background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--logo-start);
 }
 
 .header-top {
-  position: relative;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
 }
 
-.header-top .lang-selector {
-  position: absolute;
-  right: 0;
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .lang-selector {
@@ -105,64 +209,96 @@ h1 {
   cursor: pointer;
   padding: 2px 4px;
   border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .lang-btn:hover {
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-hover);
 }
 
 .lang-btn.active {
   color: var(--accent);
-  background: rgba(6, 182, 212, 0.1);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.theme-toggle:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+
+.theme-toggle [hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
 }
 
 .app-description {
-  text-align: center;
+  text-align: left;
   color: var(--text-muted);
-  margin: 0 auto 32px;
+  margin: 12px 0 0;
   max-width: 700px;
-  font-size: 1.15rem;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
-.badge-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
-  position: relative;
-  /* Add if necessary */
-}
-
-.hero-badge {
+/* [Intended] ヘッダーの視覚階層を崩さないよう、説明文より一段弱い
+   補助リンクとして扱う。新規タブで開くことは末尾の記号で示す。 */
+.app-guide-link {
   display: inline-flex;
   align-items: center;
-  padding: 6px 16px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 9999px;
-  color: var(--primary);
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--text-dim);
   font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-  white-space: nowrap;
-  /* Prevent text wrap */
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.app-guide-link::after {
+  content: '↗';
+  font-size: 0.75em;
+}
+
+.app-guide-link:hover {
+  color: var(--primary);
 }
 
 .text-highlight {
   color: var(--text-main);
   font-weight: 500;
-  border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 h2 {
   font-size: 1rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
   margin: 0 0 16px 0;
   display: flex;
@@ -173,26 +309,24 @@ h2 {
 h2::before {
   content: '';
   display: block;
-  width: 4px;
-  height: 16px;
+  width: 8px;
+  height: 8px;
   background: var(--accent);
-  border-radius: 2px;
-  box-shadow: 0 0 8px var(--accent);
 }
 
 main {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 24px;
 }
 
-/* Panels */
+/* パネル */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 32px;
-  box-shadow: var(--shadow-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
   transition: border-color 0.2s;
   display: flex;
   flex-direction: column;
@@ -223,28 +357,34 @@ main {
 .settings-group-title::before {
   content: '';
   display: block;
-  width: 3px;
-  height: 12px;
+  width: 6px;
+  height: 6px;
   background: var(--primary);
-  border-radius: 1px;
 }
 
 .panel:hover {
-  border-color: #3f4451;
+  border-color: var(--panel-hover-border);
 }
 
 .input-panel {}
 
 .input-panel.drag-over {
   border-color: var(--primary);
-  background: rgba(99, 102, 241, 0.05);
+  background: color-mix(in srgb, var(--primary) 7%, var(--bg-panel));
 }
 
-/* Layout helpers */
+/* レイアウトヘルパー */
 .app-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.col-main,
+.col-preview,
+.panel,
+.quick-settings {
+  min-width: 0;
 }
 
 @media (min-width: 900px) {
@@ -260,7 +400,7 @@ main {
 }
 
 .row {
-  /* Deprecated */
+  /* 非推奨 */
 }
 
 .grid-settings {
@@ -276,12 +416,35 @@ main {
   gap: 8px;
 }
 
+.setting-item[hidden] {
+  display: none;
+}
+
 .setting-item.disabled {
   display: none;
 }
 
 .setting-item.full-width {
   grid-column: 1 / -1;
+}
+
+.setting-item.is-disabled-visible {
+  opacity: 0.62;
+}
+
+.processing-mode-notice {
+  align-self: end;
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-panel));
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.processing-mode-notice[hidden] {
+  display: none;
 }
 
 .input-with-slider,
@@ -295,7 +458,7 @@ main {
   flex: 1;
   height: 6px;
   background: var(--bg-input);
-  border-radius: 3px;
+  border-radius: 0;
   accent-color: var(--primary);
   cursor: pointer;
 }
@@ -317,12 +480,13 @@ main {
   white-space: nowrap;
 }
 
-/* Canvas Container & Placeholder */
+/* キャンバスコンテナーとプレースホルダー */
 .canvas-container {
   width: 100%;
   height: 400px;
   background: var(--bg-input);
   border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -332,6 +496,7 @@ main {
 
 #input-canvas-container {
   cursor: pointer;
+  border-style: dashed;
 }
 
 canvas {
@@ -340,13 +505,13 @@ canvas {
   width: auto;
   height: auto;
   image-rendering: pixelated;
-  /* Essential for pixel art */
+  /* ピクセルアートに必須 */
   z-index: 2;
   display: none;
-  /* Hidden by default until image loaded */
+  /* 画像を読み込むまでデフォルトで非表示 */
 }
 
-/* Comparison Modal */
+/* 比較モーダル */
 .compare-modal-content {
   max-width: 95vw !important;
   width: 95vw !important;
@@ -381,14 +546,23 @@ canvas {
   overflow: hidden;
 }
 
-.img-comp-container.bg-checkered {
-  background-color: #f0f0f0;
+/* [Intended] 市松模様の 4 段グラデーションはここだけに置く。敷きたい側は
+   セレクタをこの一覧に足し、タイルの大きさだけ --checkered-tile で渡す。
+   同じスタックを写すと、色を直すときに取りこぼしが出る。 */
+.img-comp-container.bg-checkered,
+.has-image .canvas-container.bg-checkered,
+.js-result-canvas-container.has-image.bg-checkered,
+.guide-figure-output img {
+  --checkered-half: calc(var(--checkered-tile, 20px) / 2);
+  background-color: var(--bg-checkered-base);
   background-image: linear-gradient(45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
     linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-size: var(--checkered-tile, 20px) var(--checkered-tile, 20px);
+  background-position: 0 0, 0 var(--checkered-half),
+    var(--checkered-half) calc(var(--checkered-half) * -1),
+    calc(var(--checkered-half) * -1) 0;
 }
 
 .img-comp-container.bg-white {
@@ -423,7 +597,7 @@ canvas {
 .img-comp-overlay {
   z-index: 1;
   width: 50%;
-  /* Initial width */
+  /* 初期幅 */
 }
 
 #comp-slider-handle {
@@ -468,7 +642,7 @@ canvas {
 .view-controls {
   display: flex;
   background: var(--bg-input);
-  padding: 4px;
+  padding: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
   margin-right: 12px;
@@ -482,8 +656,8 @@ canvas {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: 0;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .view-btn:hover {
@@ -491,7 +665,7 @@ canvas {
 }
 
 .view-btn.active {
-  background: var(--primary);
+  background: var(--primary-action);
   color: white;
 }
 
@@ -504,7 +678,7 @@ canvas {
   z-index: 3;
 }
 
-/* Zoom Control applied to container */
+/* コンテナーに適用するズーム制御 */
 .canvas-container.zoom-enabled canvas {
   width: 100%;
   height: 100%;
@@ -516,28 +690,28 @@ canvas {
   transform: none;
 }
 
-/* Show canvas when it has content (managed by JS class) */
+/* コンテンツがある場合にキャンバスを表示する（JS クラスで管理） */
 .panel.has-image canvas {
   display: block;
 }
 
-/* Make result canvas pointer to indicate clickability */
+/* 結果キャンバスをクリック可能と示すためポインターにする */
 .panel.has-image .js-result-canvas-container,
 .modal.has-image .js-result-canvas-container {
   cursor: pointer;
 }
 
-/* Override styles for modal context */
+/* モーダルコンテキスト用にスタイルを上書きする */
 .result-modal-body .js-result-canvas-container {
   width: 100%;
-  /* Use available height in modal */
+  /* モーダル内の利用可能な高さを使用する */
   flex: 1;
   min-height: 0;
   border: none;
   border-radius: 0;
 }
 
-/* Zoom state behavior */
+/* ズーム状態の挙動 */
 .js-result-canvas-container.zoom-enabled .js-result-canvas,
 .js-result-canvas-container.zoom-enabled .js-grid-canvas {
   width: 100%;
@@ -553,12 +727,12 @@ canvas {
   justify-content: center;
 }
 
-/* Grid canvas is hidden by default even if panel has image */
+/* パネルに画像があってもグリッドキャンバスはデフォルトで非表示 */
 .panel.has-image #grid-canvas {
   display: none;
 }
 
-/* Grid visibility */
+/* グリッドの表示状態 */
 .panel.has-image .canvas-container.grid-enabled #grid-canvas {
   display: block;
 }
@@ -609,7 +783,7 @@ canvas {
   margin-top: 4px;
 }
 
-/* Inputs */
+/* 入力欄 */
 label {
   display: flex;
   flex-direction: column;
@@ -627,20 +801,18 @@ label {
 input[type="number"],
 input[type="text"] {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
 input[type="number"]:focus,
 input[type="text"]:focus {
-  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 input[type="checkbox"] {
@@ -651,20 +823,18 @@ input[type="checkbox"] {
 
 select {
   background: var(--bg-input);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.9rem;
-  transition: all 0.2s;
+  transition: border-color 0.15s, background-color 0.15s;
   cursor: pointer;
 }
 
 select:focus {
-  outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 .rgb-input-group {
@@ -687,7 +857,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
 .icon-button:hover {
@@ -696,12 +866,12 @@ select:focus {
 }
 
 .icon-button.active {
-  background: var(--primary);
+  background: var(--primary-action);
   color: white;
-  border-color: var(--primary);
+  border-color: var(--primary-action);
 }
 
-/* Modal */
+/* モーダル */
 .modal {
   position: fixed;
   top: 0;
@@ -713,7 +883,6 @@ select:focus {
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  backdrop-filter: blur(4px);
 }
 
 .modal .modal-content {
@@ -793,13 +962,13 @@ select:focus {
   image-rendering: pixelated;
 }
 
-/* Process Button in Settings */
+/* 設定内の処理ボタン */
 .process-action-button {
   width: 100%;
   margin-top: 24px;
 }
 
-/* Result Actions */
+/* 結果の操作 */
 .result-actions {
   padding: 16px 0 0;
   display: flex;
@@ -813,28 +982,96 @@ select:focus {
   background: var(--bg-panel);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 32px;
-  box-shadow: var(--shadow-md);
-  margin-top: 40px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-top: 20px;
+}
+
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 24px;
+  padding: 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.settings-tab {
+  min-width: 0;
+  padding: 10px 12px 9px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.settings-tab:hover,
+.settings-tab:focus-visible {
+  color: var(--text-main);
+}
+
+.settings-tab.is-active {
+  border-bottom-color: var(--accent);
+  background: transparent;
+  color: var(--text-main);
+}
+
+.settings-tab-panel[hidden] {
+  display: none;
+}
+
+.primary-settings-group {
+  margin-bottom: 24px;
+}
+
+.quick-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.quick-preset-setting {
+  grid-column: 1 / -1;
+}
+
+.quick-background-picker {
+  display: none;
+  gap: 8px;
+}
+
+.quick-background-picker input[type="color"] {
+  flex: 1;
+  height: 36px;
+}
+
+.quick-background-picker .action-button {
+  flex: 0 0 44px;
+  padding: 8px;
+}
+
+.advanced-settings-content {
+  padding-top: 4px;
 }
 
 
 
-/* Button */
+/* ボタン */
 .action-button {
   flex: 1;
-  background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+  background: var(--primary-action);
   color: white;
   border: none;
   padding: 16px;
   font-size: 1.1rem;
   font-weight: 700;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  transition: background-color 0.15s, border-color 0.15s;
+  letter-spacing: 0.01em;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -843,29 +1080,29 @@ select:focus {
 }
 
 .action-button.download-button {
-  background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
-  box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.4);
+  background: var(--accent-action);
 }
 
+/* [Intended] 塗り面のホバーは前景用の --primary / --accent ではなく塗り面用トークンを使う。
+   白文字とのコントラストがダークテーマでAAを割るため。 */
 .action-button:hover:not(:disabled) {
-  /* transform: translateY(-2px); */
-  box-shadow: 0 8px 12px -1px rgba(99, 102, 241, 0.5);
+  background: var(--primary-action-hover);
 }
 
-.action-button.download-button:hover:not(:disabled) {
-  box-shadow: 0 8px 12px -1px rgba(6, 182, 212, 0.5);
+.action-button.download-button:hover:not(:disabled),
+.action-button.download-dropdown-button:hover:not(:disabled) {
+  background: var(--accent-action-hover);
 }
 
 .action-button:disabled {
   background: var(--bg-panel);
   color: var(--text-dim);
   cursor: not-allowed;
-  box-shadow: none;
   border: 1px solid var(--border-color);
   opacity: 0.6;
 }
 
-/* Download Dropdown */
+/* ダウンロード用ドロップダウン */
 .download-group {
   flex: 1;
   display: flex;
@@ -883,7 +1120,7 @@ select:focus {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-  background: linear-gradient(135deg, var(--accent) 0%, #0891b2 100%);
+  background: var(--accent-action);
   padding: 0 !important;
   min-width: 50px;
 }
@@ -933,55 +1170,21 @@ select:focus {
 }
 
 .download-menu button:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-hover);
 }
 
-/* Grid Candidate Dropdown (Size) */
-.candidates-menu {
-  position: absolute;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  display: flex;
-  flex-direction: column;
-  min-width: 200px;
-  z-index: 3001;
-  overflow: hidden;
-}
-
-.candidates-menu button {
-  background: transparent;
-  border: none;
-  color: var(--text-main);
-  padding: 12px 16px;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s;
-  font-family: inherit;
-  font-size: 0.9rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.candidates-menu button:last-child {
-  border-bottom: none;
-}
-
-.candidates-menu button:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* Error Toast */
-.error-toast {
+/* エラーと処理警告のトースト */
+.error-toast,
+.warning-toast {
   position: fixed;
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
   background: #ef4444;
-  /* Red-500 */
+  /* 赤-500 */
   color: white;
   padding: 12px 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   font-weight: 600;
@@ -993,21 +1196,146 @@ select:focus {
   pointer-events: none;
 }
 
-.error-toast.show {
+.warning-toast {
+	background: #b45309;
+	white-space: pre-line;
+}
+
+.error-toast.show,
+.warning-toast.show {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
 
-/* Info Toast */
+/* 結果パネル内に並ぶ「他の候補」。グリッド検出が低信頼のときだけ表示する。 */
+.candidate-strip {
+	margin-top: 12px;
+	padding: 12px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-sm);
+	background: var(--bg-panel);
+}
+
+.candidate-strip[hidden] {
+	display: none;
+}
+
+.candidate-strip-heading {
+	margin: 0;
+	font-size: 0.92rem;
+}
+
+.candidate-strip-reasons {
+	margin: 6px 0 10px;
+	color: var(--text-muted);
+	font-size: 0.82rem;
+}
+
+.candidate-strip-reasons:empty {
+	display: none;
+}
+
+/* [Intended] 候補は最大 7 枚並ぶため、折り返さず横スクロールにする。
+   縦に積むと結果画像がスクロールアウトし、候補と見比べられなくなる。 */
+.candidate-strip-list {
+	display: flex;
+	gap: 10px;
+	overflow-x: auto;
+	padding-bottom: 4px;
+}
+
+.candidate-card {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 auto;
+	gap: 8px;
+	width: 148px;
+	padding: 8px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--radius-sm);
+	background: var(--bg-panel);
+	color: var(--text-main);
+	text-align: left;
+	cursor: pointer;
+}
+
+.candidate-card:hover,
+.candidate-card:focus-visible {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.candidate-card.is-selected {
+	border-color: var(--primary-action);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-action) 45%, transparent);
+}
+
+.candidate-card-preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 96px;
+	overflow: hidden;
+	background-color: #fff;
+	background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+		linear-gradient(-45deg, #ccc 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, #ccc 75%),
+		linear-gradient(-45deg, transparent 75%, #ccc 75%);
+	background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+	background-size: 16px 16px;
+}
+
+.candidate-card-preview canvas {
+	display: block;
+	width: 100%;
+	height: 96px;
+	object-fit: contain;
+	image-rendering: pixelated;
+	/* [Intended] 全canvasを初期非表示にする共通規則を候補内だけ解除する。 */
+}
+
+.candidate-card-details,
+.candidate-card-heading {
+	display: flex;
+	flex-direction: column;
+}
+
+.candidate-card-details {
+	justify-content: center;
+	gap: 4px;
+}
+
+.candidate-card-heading {
+	gap: 5px;
+	font-size: 0.86rem;
+	font-weight: 700;
+}
+
+.candidate-recommended {
+	align-self: flex-start;
+	padding: 2px 7px;
+	background: var(--primary-action);
+	color: #fff;
+	font-size: 0.72rem;
+}
+
+.candidate-card-metadata,
+.candidate-card-description {
+	color: var(--text-muted);
+	font-size: 0.74rem;
+	line-height: 1.4;
+}
+
+/* 情報トースト */
 .info-toast {
   position: fixed;
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: var(--accent);
+  background: var(--accent-action);
   color: white;
   padding: 12px 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
   z-index: 1000;
   font-weight: 600;
@@ -1028,7 +1356,7 @@ select:focus {
 .status-text {
   font-size: 0.85rem;
   color: var(--text-dim);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .status-bar {
@@ -1036,6 +1364,31 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.processing-analysis-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-family: inherit;
+  margin-top: 4px;
+}
+
+.processing-analysis:empty {
+  display: none;
+}
+
+.processing-warning {
+  color: #b45309 !important;
+  cursor: help;
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.processing-warning:focus-visible {
+  border-radius: 2px;
 }
 
 .controls-right {
@@ -1066,15 +1419,14 @@ select:focus {
   width: 20px;
   height: 20px;
   border-radius: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--preview-control-border);
   cursor: pointer;
   padding: 0;
-  transition: all 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .bg-btn:hover {
-  transform: scale(1.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--text-muted);
 }
 
 .bg-btn.active {
@@ -1104,7 +1456,7 @@ select:focus {
   background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
 }
 
-/* Container background variants (only applied when image is loaded) */
+/* コンテナー背景のバリエーション（画像読み込み時のみ適用） */
 .has-image .canvas-container.bg-white {
   background: #ffffff;
 }
@@ -1117,23 +1469,14 @@ select:focus {
   background: #00ff00;
 }
 
-.has-image .canvas-container.bg-checkered {
-  background-color: #f0f0f0;
-  background-image: linear-gradient(45deg, #d0d0d0 25%, transparent 25%),
-    linear-gradient(-45deg, #d0d0d0 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #d0d0d0 75%),
-    linear-gradient(-45deg, transparent 75%, #d0d0d0 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-}
 
-/* Result Viewer Container Base Styles */
+/* 結果ビューアーコンテナーの基本スタイル */
 .js-result-canvas-container {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 300px;
-  /* Default (no image): dark background like before */
+  /* デフォルト（画像なし）: 従来どおりの暗い背景 */
   background-color: var(--bg-input);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1141,8 +1484,8 @@ select:focus {
   border: 1px solid var(--border-color);
 }
 
-/* Background variants (Centralized) */
-/* Only apply when an image exists, so empty RESULT stays dark. */
+/* 背景のバリエーション（集約） */
+/* 空の結果表示を暗いままにするため、画像がある場合のみ適用する。 */
 .js-result-canvas-container.has-image.bg-white {
   background-color: #ffffff !important;
   background-image: none !important;
@@ -1159,19 +1502,12 @@ select:focus {
 }
 
 .js-result-canvas-container.has-image.bg-checkered {
-  /* Light checkerboard (transparent preview style) */
-  background-color: #f0f0f0 !important;
-  background-image: linear-gradient(45deg,
-      var(--bg-checkered-color) 25%,
-      transparent 25%),
-    linear-gradient(-45deg, var(--bg-checkered-color) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--bg-checkered-color) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--bg-checkered-color) 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  /* 明るい市松模様（透明プレビュー風）。模様そのものは共通の定義から受け取り、
+     ここでは他の背景バリエーションに負けないよう地の色だけを強めに指定する。 */
+  background-color: var(--bg-checkered-base) !important;
 }
 
-/* Placeholder styling in Result Viewer */
+/* 結果ビューアー内のプレースホルダースタイル */
 .js-result-canvas-container .placeholder {
   display: flex;
   flex-direction: column;
@@ -1181,7 +1517,7 @@ select:focus {
   width: 100%;
 }
 
-/* Canvas styling */
+/* キャンバスのスタイル */
 .js-result-canvas,
 .js-grid-canvas {
   max-width: 100%;
@@ -1214,14 +1550,14 @@ select:focus {
   color: var(--accent);
 }
 
-/* Loading Overlay */
+/* 読み込みオーバーレイ */
 .loading-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(15, 17, 21, 0.8);
+  background: var(--loading-overlay);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1230,10 +1566,15 @@ select:focus {
   z-index: 10;
 }
 
+/* [Intended] display: flex を持つため、hidden 属性で閉じる場合は打ち消す。 */
+.loading-overlay[hidden] {
+  display: none;
+}
+
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid rgba(99, 102, 241, 0.1);
+  border: 4px solid color-mix(in srgb, var(--primary) 14%, transparent);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1246,7 +1587,7 @@ select:focus {
 }
 
 .loading-text {
-  color: var(--text-main);
+  color: var(--loading-text);
   font-weight: 500;
   font-size: 1rem;
 }
@@ -1257,14 +1598,14 @@ select:focus {
   justify-content: center;
   cursor: pointer;
   color: var(--text-dim);
-  transition: all 0.2s;
+  transition: color 0.15s, background-color 0.15s;
   padding: 4px;
   border-radius: var(--radius-sm);
 }
 
 .zoom-toggle:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-hover);
 }
 
 .zoom-toggle input {
@@ -1273,10 +1614,10 @@ select:focus {
 
 .zoom-toggle:has(input:checked) {
   color: var(--accent);
-  background: rgba(6, 182, 212, 0.1);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-/* Tooltip */
+/* ツールチップ */
 .help {
   display: inline-flex;
   align-items: center;
@@ -1293,7 +1634,7 @@ select:focus {
 
 
 
-/* Footer */
+/* フッター */
 .app-footer {
   margin-top: auto;
   padding: 32px 0 16px;
@@ -1328,6 +1669,22 @@ select:focus {
   color: var(--text-muted);
 }
 
+.footer-links img {
+  filter: var(--footer-icon-filter);
+}
+
+.quality-report-link {
+  margin-left: 8px;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.quality-report-link:hover {
+  color: var(--text-muted);
+}
+
 .separator {
   color: var(--border-color);
   opacity: 0.3;
@@ -1341,20 +1698,20 @@ select:focus {
   opacity: 0.7;
 }
 
-/* Output Panel Size Label */
+/* 出力パネルのサイズラベル */
 .js-output-size {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .app-version {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-dim);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-hover);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -1366,7 +1723,7 @@ select:focus {
   }
 }
 
-/* Palette Section */
+/* パレットセクション */
 .palette-section {
   margin-top: 24px;
   padding-top: 24px;
@@ -1393,19 +1750,17 @@ select:focus {
 .color-swatch {
   width: 28px;
   height: 28px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--swatch-border);
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: border-color 0.15s, outline-color 0.15s;
   position: relative;
 }
 
 .color-swatch:hover {
-  transform: scale(1.2) translateY(-2px);
   z-index: 10;
-  border-color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  border-color: var(--swatch-hover-border);
+  outline: 2px solid var(--bg-panel);
 }
 
 
@@ -1426,12 +1781,10 @@ select:focus {
   background: transparent;
   border: 1px solid var(--primary);
   color: var(--primary);
-  box-shadow: none;
 }
 
 .outline-button:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .accent-outline-button {
@@ -1440,8 +1793,7 @@ select:focus {
 }
 
 .accent-outline-button:hover:not(:disabled) {
-  background: rgba(6, 182, 212, 0.1);
-  box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.2);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 
@@ -1458,7 +1810,7 @@ select:focus {
   }
 }
 
-/* Palette Modal */
+/* パレットモーダル */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1470,7 +1822,6 @@ select:focus {
   align-items: center;
   justify-content: center;
   z-index: 3000;
-  backdrop-filter: blur(4px);
 }
 
 .modal-overlay .modal-content {
@@ -1504,7 +1855,7 @@ select:focus {
   padding: 24px;
   overflow-y: auto;
   flex: 1;
-  /* Take remaining space */
+  /* 残りのスペースを使用する */
 }
 
 .modal-footer {
@@ -1517,10 +1868,10 @@ select:focus {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  /* Removed margin-top as it's now in footer */
+  /* footer 側で設定するため margin-top を削除した */
 }
 
-/* Custom Tooltip (JS managed) */
+/* カスタムツールチップ（JS 管理） */
 .custom-tooltip {
   position: fixed;
   background: var(--bg-panel);
@@ -1543,7 +1894,7 @@ select:focus {
   opacity: 1;
 }
 
-/* Result Modal */
+/* 結果モーダル */
 .result-modal-content {
   max-width: 95vw !important;
   width: 95vw !important;
@@ -1568,18 +1919,18 @@ select:focus {
   display: block;
 }
 
-/* Make result canvas pointer to indicate clickability */
+/* 結果キャンバスをクリック可能と示すためポインターにする */
 .panel.has-image #result-canvas-container {
   cursor: pointer;
 }
 
-/* Image List Panel */
+/* 画像リストパネル */
 .image-list-panel {
   margin-top: 1rem;
   padding: 1rem;
-  background-color: #1a1d23;
-  border-radius: 8px;
-  border: 1px solid #2a2e35;
+  background-color: var(--image-list-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
 }
 
 .image-list-header {
@@ -1591,7 +1942,7 @@ select:focus {
 
 .image-list-header h2 {
   font-size: 1rem;
-  color: #e0e0e0;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -1601,18 +1952,62 @@ select:focus {
   align-items: center;
 }
 
+.batch-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.batch-option {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.batch-shared-palette-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  padding-left: 1.5rem;
+}
+
+.batch-shared-palette-settings.disabled {
+  display: none;
+}
+
+.batch-shared-palette-settings .setting-item {
+  min-width: 140px;
+}
+
+.settings-common-controls {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.batch-options label {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  cursor: pointer;
+}
+
 .text-button {
   background: none;
   border: none;
-  color: #a0a0a0;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 0.875rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
 }
 .text-button:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background-color: var(--surface-hover);
+  color: var(--text-main);
 }
 .text-button.danger-text {
   color: #ff6b6b;
@@ -1625,36 +2020,36 @@ select:focus {
   display: flex;
   gap: 0.75rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem; /* Space for scrollbar */
+  padding-bottom: 0.5rem; /* スクロールバー用の余白 */
   scrollbar-width: thin;
-  scrollbar-color: #4a4e55 #1a1d23;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 .image-list-container::-webkit-scrollbar {
   height: 8px;
 }
 .image-list-container::-webkit-scrollbar-track {
-  background: #1a1d23;
+  background: var(--scrollbar-track);
 }
 .image-list-container::-webkit-scrollbar-thumb {
-  background-color: #4a4e55;
-  border-radius: 4px;
+  background-color: var(--scrollbar-thumb);
+  border-radius: var(--radius-md);
 }
 
 .image-item {
   position: relative;
   flex: 0 0 80px;
   width: 80px;
-  height: 80px;
-  border-radius: 6px;
+  height: 84px;
+  border-radius: var(--radius-lg);
   border: 2px solid transparent;
-  background-color: #0f1115;
+  background-color: var(--thumbnail-bg);
   cursor: pointer;
   background-image:
-    linear-gradient(45deg, #1a1d23 25%, transparent 25%),
-    linear-gradient(-45deg, #1a1d23 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #1a1d23 75%),
-    linear-gradient(-45deg, transparent 75%, #1a1d23 75%);
+    linear-gradient(45deg, var(--thumbnail-grid) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--thumbnail-grid) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--thumbnail-grid) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--thumbnail-grid) 75%);
   background-size: 20px 20px;
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   transition: border-color 0.2s;
@@ -1668,7 +2063,7 @@ select:focus {
 
 .image-item img {
   width: 100%;
-  height: 100%;
+  height: 80px;
   object-fit: contain;
   image-rendering: pixelated;
   pointer-events: none;
@@ -1695,7 +2090,8 @@ select:focus {
   z-index: 10;
 }
 
-.image-item:hover .remove-btn {
+.image-item:hover .remove-btn,
+.image-item:focus-within .remove-btn {
   opacity: 1;
 }
 
@@ -1729,4 +2125,54 @@ select:focus {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.2); opacity: 0.7; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+:where(button, a, input, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 24px 16px;
+    gap: 24px;
+  }
+
+  .panel,
+  .quick-settings {
+    padding: 18px;
+  }
+
+  #input-canvas-container,
+  .js-result-canvas-container {
+    height: clamp(280px, 90vw, 400px);
+    min-height: 280px;
+  }
+
+  .settings-tabs {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .settings-tab {
+    flex: 1 0 max-content;
+  }
+
+  .image-list-header,
+  .batch-controls,
+  .status-bar,
+  .result-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

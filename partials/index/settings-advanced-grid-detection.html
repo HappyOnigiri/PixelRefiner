@@ -1,0 +1,419 @@
+<div class="settings-group">
+  <h3 class="settings-group-title" data-i18n="setting.grid_detection">
+    Grid Detection
+  </h3>
+  <div class="grid-settings">
+    <label class="setting-item full-width">
+      <span class="label-text">
+        <span data-i18n="setting.grid_mode">Grid Detection Mode</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.grid_mode"
+          data-tooltip="Select how grid detection behaves.&#10;&#10;Auto: Automatically detects the pixel grid (default).&#10;Pixel + Auto: Uses the specified pixel size as a hint and starts fine search near it.&#10;Pixel Only: Forces conversion to the specified size (no auto detection).&#10;Off: Skips grid detection and reduction (useful for 1:1 pixel art)."
+          >?</span
+        >
+      </span>
+      <div class="input-with-button">
+        <select id="grid-detection-mode">
+          <option value="auto" data-i18n="option.grid_mode_auto" selected>
+            Auto (Default)
+          </option>
+          <option value="hint" data-i18n="option.grid_mode_hint">
+            Pixel + Auto
+          </option>
+          <option value="force" data-i18n="option.grid_mode_force">
+            Pixel Only
+          </option>
+          <option value="off" data-i18n="option.grid_mode_off">Off</option>
+        </select>
+      </div>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.advanced_cell_scale">Pixel Size</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.advanced_cell_scale"
+          data-tooltip="Scales the detected cell size before downsampling, keeping the detected grid phase. Standard uses the detected cell size as is. Only applies when grid detection is Auto or Pixel + Auto and the result comes from grid restoration."
+          >?</span
+        >
+      </span>
+      <select id="advanced-cell-scale">
+        <option value="quarter" data-i18n="option.cell_scale_quarter">
+          Very small
+        </option>
+        <option value="half" data-i18n="option.cell_scale_half">Small</option>
+        <option value="same" data-i18n="option.cell_scale_same" selected>
+          Standard
+        </option>
+        <option value="double" data-i18n="option.cell_scale_double">
+          Large
+        </option>
+        <option value="quadruple" data-i18n="option.cell_scale_quadruple">
+          Very large
+        </option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.quant_step">Quantization Step</span>
+        <span
+          id="help-quant-step"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.quant_step"
+          data-tooltip="Sets the color reduction level for grid detection.&#10;&#10;High: Colors are grouped, making it resistant to noise, but subtle color differences may be lost.&#10;Low: Picks up fine color boundaries, but increases the risk of false noise detection.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <div class="input-with-slider">
+        <input id="quant-step-slider" type="range" />
+        <input id="quant-step" type="number" />
+      </div>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.sample_window">Grid Sampling Window</span>
+        <span
+          id="help-sample-window"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.sample_window"
+          data-tooltip="The reference range (in pixels) used to compare grid-size candidates in Auto and Hint modes.&#10;&#10;High: Grid detection is more resistant to noise, but fine boundaries may be overlooked.&#10;Low: Grid detection follows fine boundaries, but is more affected by misalignment and noise.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <div class="input-with-slider">
+        <input id="sample-window-slider" type="range" />
+        <div class="input-unit-wrapper">
+          <input id="sample-window" type="number" />
+          <span class="unit-text">px</span>
+        </div>
+      </div>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.cell_sampling_mode">Cell Color Sampling</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.cell_sampling_mode"
+          data-tooltip="How the representative colour of each logical pixel is chosen.&#10;&#10;Hard Alpha: Avoids keeping partial transparency introduced by interpolation.&#10;Alpha Aware: Preserves area-coverage alpha for intentionally soft edges.&#10;Compatible: The legacy median sampler, used automatically after watermark removal."
+          >?</span
+        >
+      </span>
+      <select id="cell-sampling-mode">
+        <option value="hard-alpha-medoid" data-i18n="option.cell_sampling_hard">
+          Hard Alpha (Default)
+        </option>
+        <option
+          value="alpha-aware-medoid"
+          data-i18n="option.cell_sampling_alpha_aware"
+        >
+          Alpha Aware
+        </option>
+        <option value="legacy-median" data-i18n="option.cell_sampling_legacy">
+          Compatible (Median)
+        </option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.force_width">Force Width (px)</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.force_width"
+          data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
+          >?</span
+        >
+      </span>
+      <input
+        id="force-pixels-w"
+        type="number"
+        placeholder="Auto"
+        data-i18n-attr="placeholder:attr.placeholder.auto"
+      />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.force_height">Force Height (px)</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.force_height"
+          data-tooltip="Forces conversion to the specified size.&#10;Automatic detection is not performed when a specific size is set.&#10;&#10;Range: 1 to 1024 (Default: Auto)"
+          >?</span
+        >
+      </span>
+      <input
+        id="force-pixels-h"
+        type="number"
+        placeholder="Auto"
+        data-i18n-attr="placeholder:attr.placeholder.auto"
+      />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.fast_mode">Fast Mode</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.fast_mode"
+          data-tooltip="When ON, uses an efficient algorithm to speed up the search.&#10;When OFF, performs a more comprehensive and precise search.&#10;&#10;If automatic detection results are misaligned or the image has a lot of noise/fine patterns, turning this OFF may improve accuracy."
+          >?</span
+        >
+      </span>
+      <input id="fast-auto-grid-from-trimmed" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.preserve_thin_features"
+          >Preserve Thin Features</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.preserve_thin_features"
+          data-tooltip="Protects minority colours that cross a cell so that thin lines and outlines survive downsampling."
+          >?</span
+        >
+      </span>
+      <input id="preserve-thin-features" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.auto_grid_from_trimmed"
+          >Estimate Grid From Content</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.auto_grid_from_trimmed"
+          data-tooltip="Estimates the output grid from the trimmed content area.&#10;When OFF, the fallback detector scans the whole canvas instead."
+          >?</span
+        >
+      </span>
+      <input id="auto-grid-from-trimmed" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.phase_aware_grid_search"
+          >Phase-aware Grid Search</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.phase_aware_grid_search"
+          data-tooltip="Also runs a phase-aware search and prefers it when both axes are confident enough."
+          >?</span
+        >
+      </span>
+      <input id="phase-aware-grid-search" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.boundary_contrast_override"
+          >Boundary Contrast Override</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.boundary_contrast_override"
+          data-tooltip="Switches the chosen grid to a coarser harmonic when its cell boundaries align clearly better with real edges."
+          >?</span
+        >
+      </span>
+      <input id="boundary-contrast-override" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.small_aspect_grid_alignment"
+          >Small Grid Alignment</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.small_aspect_grid_alignment"
+          data-tooltip="For small logical resolutions, uses the corner-seeded mask bounds as the grid reference area. Turning this off may cause Best Match to select Original Size Cleanup instead of a small grid."
+          >?</span
+        >
+      </span>
+      <select id="small-aspect-grid-alignment">
+        <option value="on" data-i18n="option.auto_behavior_on">
+          Always On
+        </option>
+        <option value="off" data-i18n="option.auto_behavior_off">
+          Always Off
+        </option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.max_samples_per_cell"
+          >Max Samples per Cell</span
+        >
+        <span
+          id="help-max-samples-per-cell"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.max_samples_per_cell"
+          data-tooltip="Upper bound on the pixels sampled from one cell when picking its colour.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <input id="max-samples-per-cell" type="number" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.cell_alpha_threshold"
+          >Cell Alpha Threshold</span
+        >
+        <span
+          id="help-cell-alpha-threshold"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.cell_alpha_threshold"
+          data-tooltip="Minimum alpha for a pixel to be considered a colour candidate inside a cell.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <input id="cell-alpha-threshold" type="number" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.auto_max_cells_w">Max Cells (Width)</span>
+        <span
+          id="help-auto-max-cells-w"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.auto_max_cells_w"
+          data-tooltip="Upper bound on the detected cell count for the fallback detector.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <input id="auto-max-cells-w" type="number" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.auto_max_cells_h">Max Cells (Height)</span>
+        <span
+          id="help-auto-max-cells-h"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.auto_max_cells_h"
+          data-tooltip="Upper bound on the detected cell count for the fallback detector.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <input id="auto-max-cells-h" type="number" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.detection_background_mask"
+          >Mask Background For Detection</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.detection_background_mask"
+          data-tooltip="Guesses the background colour and masks it before grid detection so that background noise does not bias the result."
+          >?</span
+        >
+      </span>
+      <input id="detection-background-mask" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.background_mask_tolerance"
+          >Detection Mask Tolerance</span
+        >
+        <span
+          id="help-background-mask-tolerance"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.background_mask_tolerance"
+          data-tooltip="Per-channel tolerance used by the detection background mask.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <input id="background-mask-tolerance" type="number" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.grid_signal_color_boundary"
+          >Signal: Colour Boundary</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.grid_signal_color_boundary"
+          data-tooltip="Includes the colour-boundary signal when scoring grid candidates."
+          >?</span
+        >
+      </span>
+      <input id="grid-signal-color-boundary" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.grid_signal_luminance_alpha"
+          >Signal: Luminance / Alpha</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.grid_signal_luminance_alpha"
+          data-tooltip="Includes the luminance and alpha gradient signals when scoring grid candidates."
+          >?</span
+        >
+      </span>
+      <input id="grid-signal-luminance-alpha" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.grid_signal_autocorrelation"
+          >Signal: Autocorrelation</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.grid_signal_autocorrelation"
+          data-tooltip="Includes the autocorrelation signal when scoring grid candidates."
+          >?</span
+        >
+      </span>
+      <input id="grid-signal-autocorrelation" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.grid_signal_reconstruction"
+          >Signal: Reconstruction</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.grid_signal_reconstruction"
+          data-tooltip="Includes the reconstruction-error signal when scoring grid candidates."
+          >?</span
+        >
+      </span>
+      <input id="grid-signal-reconstruction" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.grid_signal_local_phase"
+          >Signal: Local Phase</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.grid_signal_local_phase"
+          data-tooltip="Includes the local phase stability signal when scoring grid candidates."
+          >?</span
+        >
+      </span>
+      <input id="grid-signal-local-phase" type="checkbox" />
+    </label>
+  </div>
+</div>

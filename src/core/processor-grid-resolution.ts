@@ -1,0 +1,334 @@
+import {
+	CELL_SCALE_FACTORS,
+	GRID_SEARCH_LIMITS,
+	PROCESS_DEFAULTS,
+	TRIMMED_GRID_SEARCH_LIMITS,
+} from "../shared/config";
+import type { CellScale, PixelGrid, RawImage } from "../shared/types";
+import { getBackgroundTargets, removeBackground } from "./background-removal";
+import { detectGrid } from "./detector";
+import { getGeminiWatermarkDownsampleOptions } from "./gemini-watermark-preprocessing";
+import { resolveGridEstimate, searchPhaseAwareGrid } from "./grid-search";
+import {
+	cropRawImage,
+	type DownsampleOptions,
+	findOpaqueBounds,
+} from "./image-operations";
+import {
+	getBackgroundBehavior,
+	getDownsampleOptions,
+	type NormalizedProcessOptions,
+} from "./processor-options";
+import { getGridSearchFromTrimmedStrategy } from "./trimmed-grid-search";
+
+export type ResolveProcessingGridInput = {
+	o: NormalizedProcessOptions;
+	working: RawImage;
+	geometryImage: RawImage;
+	geometryWorking: RawImage;
+	maskedForDebugOrAuto: RawImage | null;
+	bgTargets: Array<[number, number, number]>;
+	trimAlphaThreshold: number;
+	watermarkRemovedFromGeometry: boolean;
+	log: (...args: unknown[]) => void;
+};
+
+export type ResolvedProcessingGrid = {
+	grid: PixelGrid;
+	gridMethod: string;
+	downsampleOptions: DownsampleOptions;
+	allowSmallTrimmedGrid: boolean;
+	gridAlignedToContent: boolean;
+};
+
+/** 被写体基準の格子位相とセル倍率を保ったまま、元キャンバス全体へ広げる。 */
+export const expandContentGridToCanvas = (
+	grid: PixelGrid,
+	source: Pick<RawImage, "width" | "height">,
+): PixelGrid => {
+	const baseCropX = grid.cropX ?? grid.offsetX;
+	const baseCropY = grid.cropY ?? grid.offsetY;
+	const leftCells = Math.max(0, Math.ceil(baseCropX / grid.cellW));
+	const topCells = Math.max(0, Math.ceil(baseCropY / grid.cellH));
+	const cropX = baseCropX - leftCells * grid.cellW;
+	const cropY = baseCropY - topCells * grid.cellH;
+	const outW = Math.max(1, Math.ceil((source.width - cropX) / grid.cellW));
+	const outH = Math.max(1, Math.ceil((source.height - cropY) / grid.cellH));
+	return {
+		...grid,
+		cropX,
+		cropY,
+		cropW: outW * grid.cellW,
+		cropH: outH * grid.cellH,
+		outW,
+		outH,
+	};
+};
+
+/**
+ * 検出した格子の位相を保ったまま、セル寸法だけを倍率で拡縮する。
+ *
+ * [Intended] 位相（cropX/cropY）を動かさないので、拡縮後のセル境界は必ず元の格子境界に乗る。
+ * 両軸へ同じ倍率が掛かるため、出力の縦横比は倍率によらず元の格子と同じになる
+ * （軸ごとに独立して分割する forcePixelsW/H とはここが決定的に違う）。
+ * [Policy] セル寸法は 1px 未満にしない。元画像を超える拡大は作らない方針に揃える。
+ * 下限に当てるのは軸ごとの寸法ではなく倍率そのものにする。軸ごとに丸めると
+ * 短い辺だけが先に止まって両軸の倍率が食い違い、縦横比が崩れる
+ * （縦横でセル寸法が違う格子ほど、細かい側の段階で目に見えて歪む）。
+ */
+export const scaleGridCells = (
+	grid: PixelGrid,
+	source: Pick<RawImage, "width" | "height">,
+	cellScale: CellScale,
+): PixelGrid => {
+	const shortestCell = Math.min(grid.cellW, grid.cellH);
+	// すでに 1px を下回るセルは、拡大方向の倍率だけを受け付ける。
+	const minFactor = Math.min(1, 1 / shortestCell);
+	const factor = Math.max(CELL_SCALE_FACTORS[cellScale], minFactor);
+	if (factor === 1) return grid;
+	const cellW = grid.cellW * factor;
+	const cellH = grid.cellH * factor;
+	const cropX = grid.cropX ?? grid.offsetX;
+	const cropY = grid.cropY ?? grid.offsetY;
+	const spanW = grid.cropW ?? source.width - cropX;
+	const spanH = grid.cropH ?? source.height - cropY;
+	const outW = Math.max(1, Math.floor(spanW / cellW));
+	const outH = Math.max(1, Math.floor(spanH / cellH));
+	return {
+		...grid,
+		cellW,
+		cellH,
+		outW,
+		outH,
+		...(grid.cropW === undefined ? {} : { cropW: outW * cellW }),
+		...(grid.cropH === undefined ? {} : { cropH: outH * cellH }),
+	};
+};
+
+/**
+ * 出力グリッドを決定する。背景トリミング後の領域からの推定（auto）を試し、
+ * 得られなければグリッド検出へ委ねる。
+ */
+export const resolveProcessingGrid = ({
+	o,
+	working,
+	geometryImage,
+	geometryWorking,
+	maskedForDebugOrAuto,
+	bgTargets,
+	trimAlphaThreshold,
+	watermarkRemovedFromGeometry,
+	log,
+}: ResolveProcessingGridInput): ResolvedProcessingGrid => {
+	const trimToContent = o.trimToContent;
+	let grid: PixelGrid | null = null;
+	let gridMethod = "detect-grid";
+	let downsampleOptions = getGeminiWatermarkDownsampleOptions(
+		o,
+		watermarkRemovedFromGeometry,
+	);
+	let allowSmallTrimmedGrid = false;
+	let gridAlignedToContent = false;
+
+	if (o.autoGridFromTrimmed && maskedForDebugOrAuto) {
+		log("Auto grid from trimmed mode");
+		const b = findOpaqueBounds(maskedForDebugOrAuto, trimAlphaThreshold);
+		if (b) {
+			const cropped = cropRawImage(working, b.x, b.y, b.w, b.h);
+			const croppedMask = cropRawImage(
+				maskedForDebugOrAuto,
+				b.x,
+				b.y,
+				b.w,
+				b.h,
+			);
+			o.debugHook?.("03-pre-downsample-bg-trimmed", cropped, {
+				bounds: b,
+			});
+
+			const sw = o.sampleWindow;
+			const searchStart = performance.now();
+			const hint =
+				o.hintPixelsW !== undefined && o.hintPixelsH !== undefined
+					? { outW: o.hintPixelsW, outH: o.hintPixelsH }
+					: undefined;
+			const est = getGridSearchFromTrimmedStrategy(
+				o.fastAutoGridFromTrimmed,
+			).search(
+				cropped,
+				croppedMask,
+				sw,
+				hint,
+				o.gridSignals,
+				o.boundaryContrastOverride,
+			);
+			const phaseAwareEstimate =
+				o.fastAutoGridFromTrimmed &&
+				o.phaseAwareGridSearch &&
+				hint === undefined
+					? searchPhaseAwareGrid(cropped, croppedMask, o.gridSignals)
+					: null;
+			log(
+				`Grid search from trimmed done in ${(performance.now() - searchStart).toFixed(2)}ms`,
+				est,
+			);
+			if (est) {
+				const phaseAwareReliable =
+					phaseAwareEstimate !== null &&
+					(phaseAwareEstimate.scoreX ?? 0) >=
+						GRID_SEARCH_LIMITS.axisConfidenceThreshold &&
+					(phaseAwareEstimate.scoreY ?? 0) >=
+						GRID_SEARCH_LIMITS.axisConfidenceThreshold;
+				const selectedEstimate = phaseAwareReliable ? phaseAwareEstimate : est;
+				const isSmallAspectAdjustedGrid =
+					!phaseAwareReliable &&
+					o.smallAspectGridAlignmentEnabled &&
+					(o.preserveProcessingScale ||
+						(o.bgExtractionMethod === "auto" &&
+							o.bgRemovalScope !== "off" &&
+							trimToContent)) &&
+					(selectedEstimate.outW ?? 0) <=
+						TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputWidth &&
+					(selectedEstimate.outH ?? 0) <=
+						TRIMMED_GRID_SEARCH_LIMITS.aspectAdjustedMaxOutputHeight &&
+					(selectedEstimate.outW ?? 0) !==
+						Math.max(
+							2,
+							Math.round(
+								(selectedEstimate.outH ?? 0) * (b.w / Math.max(1, b.h)),
+							),
+						);
+				// [Intended] この設定は格子の基準領域だけでなく Auto の経路判定にも効く。
+				// 「常に無効」にすると小さな格子が許可されず、refine から preserve へ
+				// フォールバックする場合がある（ツールチップにも同じ注意を書いている）。
+				allowSmallTrimmedGrid = isSmallAspectAdjustedGrid;
+				// [Intended] 寸法決定時は常に被写体境界へ揃える。キャンバス全体が必要な場合は
+				// 経路判定後に同じ格子位相のまま外側へ拡張し、倍率とディテールを変えない。
+				const alignToTrimmedBounds = isSmallAspectAdjustedGrid;
+				gridAlignedToContent = alignToTrimmedBounds;
+				let gridBounds = b;
+				let gridEstimate = selectedEstimate;
+				if (isSmallAspectAdjustedGrid) {
+					// [Intended] 自動背景推定が残す薄い外周は、論理セルのアスペクト比を
+					// 乱すため、角から得たマスクの境界を格子の基準領域に使用する。
+					const cornerMask = removeBackground(
+						geometryImage,
+						o.backgroundTolerance,
+						o.preserveProcessingScale
+							? PROCESS_DEFAULTS.bgRemovalScope
+							: o.bgRemovalScope,
+						o.bgConnectivity,
+						o.preserveProcessingScale
+							? getBackgroundTargets(geometryImage, "top-left", undefined, 16)
+							: bgTargets,
+						"top-left",
+						undefined,
+						getBackgroundBehavior(o),
+					);
+					const tightBounds = findOpaqueBounds(cornerMask, trimAlphaThreshold);
+					if (
+						tightBounds &&
+						tightBounds.x >= b.x &&
+						tightBounds.y >= b.y &&
+						tightBounds.x + tightBounds.w <= b.x + b.w &&
+						tightBounds.y + tightBounds.h <= b.y + b.h
+					) {
+						gridBounds = tightBounds;
+						gridEstimate = {
+							...selectedEstimate,
+							cellW: tightBounds.w / Math.max(1, selectedEstimate.outW),
+							cellH: tightBounds.h / Math.max(1, selectedEstimate.outH),
+						};
+						// [Intended] 角シードマスクを基準にすると末尾のセルが痩せるため、
+						// 既定のまま使っている場合だけ互換の中央値サンプラーへ切り替える。
+						// 利用者がサンプリング方式を明示して選んでいるときは上書きしない。
+						downsampleOptions =
+							o.cellSamplingMode === PROCESS_DEFAULTS.cellSamplingMode
+								? getDownsampleOptions({
+										...o,
+										cellSamplingMode: "legacy-median",
+									})
+								: downsampleOptions;
+					}
+				}
+				gridMethod = phaseAwareReliable
+					? "phase-aware-grid-search"
+					: o.fastAutoGridFromTrimmed
+						? "trimmed-reconstruction-fast"
+						: "trimmed-reconstruction";
+				// 注記:
+				// - トリミングが OFF でも、つぶれを防ぐため「コンテンツ BBox から推定したグリッド」を使用する。
+				// - ただしトリミング OFF は背景（余白）を残すだけなので、画像全体にダウンサンプリングを適用する。
+				//   これにより中央オブジェクトのセル数（見かけのサイズ）がより安定する。
+				const includeCandidates = hint === undefined;
+				const searchCandidates = [
+					...(phaseAwareEstimate && phaseAwareReliable
+						? (phaseAwareEstimate.candidates ?? []).map((candidate) => ({
+								candidate,
+								phaseAware: true,
+							}))
+						: []),
+					...(phaseAwareReliable ? [est] : []),
+					...(est.candidates ?? []),
+				];
+				grid = {
+					...resolveGridEstimate(
+						gridEstimate,
+						working,
+						gridBounds,
+						phaseAwareReliable,
+						alignToTrimmedBounds,
+					),
+					candidates: includeCandidates
+						? searchCandidates?.map((entry) => {
+								const c = "candidate" in entry ? entry.candidate : entry;
+								const phaseAware = "phaseAware" in entry;
+								const candidateEstimate =
+									isSmallAspectAdjustedGrid && !phaseAware
+										? {
+												...c,
+												cellW: gridBounds.w / Math.max(1, c.outW ?? 1),
+												cellH: gridBounds.h / Math.max(1, c.outH ?? 1),
+											}
+										: c;
+								return {
+									...resolveGridEstimate(
+										candidateEstimate,
+										working,
+										gridBounds,
+										phaseAware,
+										alignToTrimmedBounds && !phaseAware,
+									),
+								};
+							})
+						: undefined,
+				};
+				o.debugHook?.("04-grid-crop", working, {
+					grid,
+					autoFromTrimmed: true,
+					bounds: gridBounds,
+				});
+			}
+		}
+	}
+
+	if (!grid) {
+		const detectStart = performance.now();
+		grid = detectGrid(geometryWorking, { ...o.detect, debug: o.debug });
+		log(
+			`Grid detection done in ${(performance.now() - detectStart).toFixed(2)}ms`,
+			grid,
+		);
+		o.debugHook?.("04-grid-crop", working, {
+			grid,
+		});
+	}
+
+	return {
+		grid,
+		gridMethod,
+		downsampleOptions,
+		allowSmallTrimmedGrid,
+		gridAlignedToContent,
+	};
+};

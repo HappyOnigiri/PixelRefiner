@@ -1,201 +1,18 @@
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PNG } from "pngjs";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
+import { processImage } from "./processor";
 import {
-	FastGridSearchFromTrimmed,
-	LegacyGridSearchFromTrimmed,
-	processImage,
-} from "./processor";
-
-const DEBUG_IMAGES = Boolean(process.env.PIXELATE_DEBUG_IMAGES);
-const UPDATE_EXPECT = Boolean(process.env.UPDATE_EXPECT);
-const DEBUG_ROOT = path.resolve("tmp/debug/test");
-
-const readPngAsRawImage = async (filePath: string): Promise<RawImage> => {
-	const buf = await readFile(filePath);
-	const png = PNG.sync.read(buf);
-	return {
-		width: png.width,
-		height: png.height,
-		data: new Uint8ClampedArray(png.data),
-	};
-};
-
-const writeRawImageAsPngSync = (outPath: string, img: RawImage): void => {
-	const png = new PNG({ width: img.width, height: img.height });
-	png.data = Buffer.from(img.data);
-	const buf = PNG.sync.write(png);
-	writeFileSync(outPath, buf);
-};
-
-/**
- * RGB values of fully transparent pixels (alpha=0) in PNG do not affect visual appearance,
- * but depending on the generator tool, RGB might be zero-filled or retain original values, which can cause differences.
- * In tests, we normalize RGB to 0 when alpha=0 before comparison.
- */
-const normalizeTransparentRgb = (img: RawImage): Uint8ClampedArray => {
-	const out = new Uint8ClampedArray(img.data);
-	for (let i = 0; i < out.length; i += 4) {
-		const a = out[i + 3];
-		if (a === 0) {
-			out[i] = 0;
-			out[i + 1] = 0;
-			out[i + 2] = 0;
-		}
-	}
-	return out;
-};
-
-/**
- * Verify images match exactly (provides shorter messages to trace causes without heavy diffs on mismatch).
- *
- * Vitest's `toEqual(Buffer)` can be extremely slow on mismatch due to large diff generation,
- * so here we report truthiness evaluation by `Buffer.equals()` + coordinates of the first difference.
- */
-const expectSameImage = (
-	actual: RawImage,
-	expected: RawImage,
-	expectPath?: string,
-): void => {
-	if (UPDATE_EXPECT && expectPath) {
-		writeRawImageAsPngSync(expectPath, actual);
-		return;
-	}
-	expect(actual.width).toBe(expected.width);
-	expect(actual.height).toBe(expected.height);
-
-	const a = Buffer.from(normalizeTransparentRgb(actual));
-	const b = Buffer.from(normalizeTransparentRgb(expected));
-
-	if (a.equals(b)) return;
-
-	let first = -1;
-	for (let i = 0; i < a.length && i < b.length; i += 1) {
-		if (a[i] !== b[i]) {
-			first = i;
-			break;
-		}
-	}
-	if (first < 0) {
-		throw new Error(
-			`Image mismatch (length difference) actual=${a.length} expected=${b.length}`,
-		);
-	}
-
-	const pixel = (first / 4) | 0;
-	const ch = first % 4;
-	const x = pixel % actual.width;
-	const y = (pixel / actual.width) | 0;
-	throw new Error(
-		`Image mismatch: firstDiff=idx${first} (x=${x}, y=${y}, ch=${ch}) actual=${a[first]} expected=${b[first]}`,
-	);
-};
-
-const getExpectPath = (fixtureBase: string): string =>
-	fileURLToPath(
-		new URL(`../../test/fixtures/${fixtureBase}-expect.png`, import.meta.url),
-	);
-
-const sanitizeForPath = (s: string): string => {
-	const out = s
-		.trim()
-		.replace(/[\\/]/g, "_")
-		.replace(/[:*?"<>|]/g, "_")
-		.replace(/\s+/g, "_");
-	return out.length > 0 ? out.slice(0, 120) : "unnamed";
-};
-
-const cleanDebugDir = (testcaseName: string): void => {
-	if (!DEBUG_IMAGES) return;
-	// `make test-debug` runs `rm -rf tmp/debug` first, so recreate the root itself.
-	mkdirSync(DEBUG_ROOT, { recursive: true });
-	const dir = path.join(DEBUG_ROOT, sanitizeForPath(testcaseName));
-	rmSync(dir, { recursive: true, force: true });
-
-	// Cleanup for legacy format (from when currentTestName was used directly as directory name).
-	// e.g. prevents long directories like processImage___test6__... from remaining.
-	const legacyPrefix = `processImage___${sanitizeForPath(testcaseName)}__`;
-	try {
-		for (const e of readdirSync(DEBUG_ROOT, { withFileTypes: true })) {
-			if (!e.isDirectory()) continue;
-			if (!e.name.startsWith(legacyPrefix)) continue;
-			rmSync(path.join(DEBUG_ROOT, e.name), { recursive: true, force: true });
-		}
-	} catch {
-		// Just in case: skip cleanup if DEBUG_ROOT doesn't exist
-	}
-};
-
-const makeDebugHook = (testcaseName: string, testName: string) => {
-	if (!DEBUG_IMAGES) return undefined;
-
-	const dir = path.join(
-		DEBUG_ROOT,
-		sanitizeForPath(testcaseName),
-		sanitizeForPath(testName),
-	);
-	mkdirSync(dir, { recursive: true });
-
-	return (name: string, raw: RawImage) => {
-		const filename = `${sanitizeForPath(name)}.png`;
-		writeRawImageAsPngSync(path.join(dir, filename), raw);
-	};
-};
-
-declare global {
-	var __PIXEL_REFINER_DEBUG_HOOK__:
-		| ((name: string, img: RawImage, meta?: Record<string, unknown>) => void)
-		| undefined;
-}
-
-const fnv1a32Base36 = (s: string): string => {
-	let h = 0x811c9dc5;
-	for (let i = 0; i < s.length; i += 1) {
-		h ^= s.charCodeAt(i);
-		h = Math.imul(h, 0x01000193);
-	}
-	return (h >>> 0).toString(36);
-};
-
-const currentTestDebugDir = (): string => {
-	const current = expect.getState().currentTestName ?? "unknown-test";
-	const parts = current
-		.split(">")
-		.map((p) => p.trim())
-		.filter((p) => p.length > 0);
-
-	const groupCandidate =
-		parts.find((p) => /^test\d+\b/.test(p)) ??
-		parts[1] ??
-		parts[0] ??
-		"unknown";
-	const m = /^test(\d+)\b/.exec(groupCandidate);
-	const group = sanitizeForPath(m ? `test${m[1]}` : groupCandidate);
-
-	const caseCandidate = parts[parts.length - 1] ?? current;
-	const label = sanitizeForPath(caseCandidate).slice(0, 32);
-	const hash = fnv1a32Base36(current).slice(0, 6);
-	const caseDir = label.length > 0 ? `${label}__${hash}` : hash;
-
-	return path.join(DEBUG_ROOT, group, caseDir);
-};
-
-// When `processImage({ debug: true })`, ensure intermediate images/final result (99-result)
-// are output even if `debugHook` is not passed on the test side.
-if (DEBUG_IMAGES) {
-	globalThis.__PIXEL_REFINER_DEBUG_HOOK__ = (name, raw) => {
-		const dir = currentTestDebugDir();
-		mkdirSync(dir, { recursive: true });
-		const filename = `${sanitizeForPath(name)}.png`;
-		writeRawImageAsPngSync(path.join(dir, filename), raw);
-	};
-} else {
-	globalThis.__PIXEL_REFINER_DEBUG_HOOK__ = undefined;
-}
+	cleanDebugDir,
+	expectSameImage,
+	expectSameImageExcept,
+	getExpectPath,
+	makeDebugHook,
+	RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+	readPngAsRawImage,
+	UPDATE_EXPECT,
+	writeRawImageAsPngSync,
+} from "./processor-test-helpers";
 
 describe("processImage", () => {
 	describe("forcePixelsW/H", () => {
@@ -221,19 +38,19 @@ describe("processImage", () => {
 				data[idx + 2] = b;
 				data[idx + 3] = a;
 			};
-			// background (white)
+			// 背景（白）
 			for (let y = 0; y < h; y += 1) {
 				for (let x = 0; x < w; x += 1) {
 					set(x, y, 255, 255, 255, 255);
 				}
 			}
-			// main object: 4x4 black block at (1..4, 1..4)
+			// 主オブジェクト: (1..4, 1..4) の 4x4 黒ブロック
 			for (let y = 1; y <= 4; y += 1) {
 				for (let x = 1; x <= 4; x += 1) {
 					set(x, y, 0, 0, 0, 255);
 				}
 			}
-			// floating noise: 1px at (8, 8) (position that doesn't foul the corner seed)
+			// 浮遊ノイズ: (8, 8) の 1px（角のシードを妨げない位置）
 			set(8, 8, 0, 0, 0, 255);
 			return { width: w, height: h, data };
 		};
@@ -250,6 +67,7 @@ describe("processImage", () => {
 				bgRemovalScope: "selected",
 				backgroundTolerance: 0,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: false,
@@ -260,7 +78,7 @@ describe("processImage", () => {
 				floatingMaxPixels: 0,
 				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=0"),
 			});
-			// BBox including floating noise (8,8): x=1..8, y=1..8 => 8x8
+			// 浮遊ノイズ (8,8) を含む BBox: x=1..8、y=1..8 => 8x8
 			expect(gridNoIgnore.cropW).toBe(8);
 			expect(gridNoIgnore.cropH).toBe(8);
 
@@ -269,9 +87,136 @@ describe("processImage", () => {
 				floatingMaxPixels: 4,
 				debugHook: makeDebugHook("forcePixelsW_H", "floatingMaxPixels=4"),
 			});
-			// BBox after removing floating noise: x=1..4, y=1..4 => 4x4
+			// 浮遊ノイズ除去後の BBox: x=1..4、y=1..4 => 4x4
 			expect(gridIgnore.cropW).toBe(4);
 			expect(gridIgnore.cropH).toBe(4);
+		});
+
+		// 透明余白を持つ 4x4 スプライト。x=1..2 / y=1..2 だけが不透明。
+		const mkSprite = (): RawImage => {
+			const data = new Uint8ClampedArray(4 * 4 * 4);
+			for (let y = 1; y <= 2; y += 1) {
+				for (let x = 1; x <= 2; x += 1) {
+					const idx = (y * 4 + x) * 4;
+					data[idx] = 10 + x * 20;
+					data[idx + 1] = 30 + y * 20;
+					data[idx + 2] = 200;
+					data[idx + 3] = 255;
+				}
+			}
+			return { width: 4, height: 4, data };
+		};
+
+		const upscaleNearest = (img: RawImage, scale: number): RawImage => {
+			const width = img.width * scale;
+			const height = img.height * scale;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const src =
+						(Math.floor(y / scale) * img.width + Math.floor(x / scale)) * 4;
+					const dst = (y * width + x) * 4;
+					data[dst] = img.data[src];
+					data[dst + 1] = img.data[src + 1];
+					data[dst + 2] = img.data[src + 2];
+					data[dst + 3] = img.data[src + 3];
+				}
+			}
+			return { width, height, data };
+		};
+
+		const forceBase = {
+			bgExtractionMethod: "none",
+			bgRemovalScope: "off",
+			cellSamplingMode: "legacy-median",
+			sampleWindow: 1,
+			preRemoveBackground: false,
+			postRemoveBackground: false,
+			trimAlphaThreshold: 16,
+			floatingMaxPixels: 0,
+		} as const;
+
+		it.each([2, 3, 4, 8])(
+			"restores a nearest %ix upscale exactly when trimming is off",
+			(scale) => {
+				const sprite = mkSprite();
+				const { result, grid } = processImage(upscaleNearest(sprite, scale), {
+					...forceBase,
+					forcePixelsW: 4,
+					forcePixelsH: 4,
+					trimToContent: false,
+				});
+				// グリッドは元キャンバス基準（透明余白を含む全体）で分割される。
+				expect(grid.cellW).toBe(scale);
+				expect(grid.cellH).toBe(scale);
+				expect(grid.cropW).toBe(4 * scale);
+				expect(grid.cropH).toBe(4 * scale);
+				expect(Array.from(result.data)).toEqual(Array.from(sprite.data));
+			},
+		);
+
+		it("keeps forced cells aligned to the canvas for a non-integer upscale", () => {
+			// 4x4 -> 6x6 (1.5x) の最近傍拡大は、全キャンバス基準のセル分割で復元できる。
+			const sprite = mkSprite();
+			const width = 6;
+			const data = new Uint8ClampedArray(width * width * 4);
+			for (let y = 0; y < width; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const src =
+						(Math.min(3, Math.floor((y * 4) / width)) * 4 +
+							Math.min(3, Math.floor((x * 4) / width))) *
+						4;
+					const dst = (y * width + x) * 4;
+					data[dst] = sprite.data[src];
+					data[dst + 1] = sprite.data[src + 1];
+					data[dst + 2] = sprite.data[src + 2];
+					data[dst + 3] = sprite.data[src + 3];
+				}
+			}
+			const { result, grid } = processImage(
+				{ width, height: width, data },
+				{
+					...forceBase,
+					forcePixelsW: 4,
+					forcePixelsH: 4,
+					trimToContent: false,
+				},
+			);
+			expect(grid.cellW).toBe(1.5);
+			expect(grid.cropW).toBe(6);
+			expect(Array.from(result.data)).toEqual(Array.from(sprite.data));
+		});
+
+		it("still trims to the content bbox when trimToContent is on", () => {
+			const upscaled = upscaleNearest(mkSprite(), 4);
+			const { grid } = processImage(upscaled, {
+				...forceBase,
+				forcePixelsW: 4,
+				forcePixelsH: 4,
+				trimToContent: true,
+			});
+			// 不透明領域は x=4..11 / y=4..11 の 8x8 なので、セルは 2px になる。
+			expect(grid.cropW).toBe(8);
+			expect(grid.cropH).toBe(8);
+			expect(grid.cellW).toBe(2);
+			expect(grid.cellH).toBe(2);
+		});
+
+		it("keeps fully transparent cells transparent when trimming is off", () => {
+			const upscaled = upscaleNearest(mkSprite(), 4);
+			const { result } = processImage(upscaled, {
+				...forceBase,
+				forcePixelsW: 4,
+				forcePixelsH: 4,
+				trimToContent: false,
+			});
+			const alphaAt = (x: number, y: number): number =>
+				result.data[(y * 4 + x) * 4 + 3];
+			expect(alphaAt(0, 0)).toBe(0);
+			expect(alphaAt(3, 0)).toBe(0);
+			expect(alphaAt(0, 3)).toBe(0);
+			expect(alphaAt(3, 3)).toBe(0);
+			expect(alphaAt(1, 1)).toBe(255);
 		});
 	});
 
@@ -299,17 +244,19 @@ describe("processImage", () => {
 
 		it("should match expected image perfectly when fast mode OFF and floating noise OFF", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 				autoGridFromTrimmed: true,
-				fastAutoGridFromTrimmed: false, // Fast mode OFF
-				floatingMaxPixels: 0, // Floating noise OFF
+				fastAutoGridFromTrimmed: false, // 高速モード OFF
+				floatingMaxPixels: 0, // 浮遊ノイズ OFF
 				debugHook: makeDebugHook(
 					"resize_and_remove_bg",
 					"fastModeOFF(fastAutoGridFromTrimmed=false)_floatingNoiseOFF(floatingMaxPixels=0)_matchExpectedImage",
@@ -353,6 +300,7 @@ describe("processImage", () => {
 
 		it("should force convert to 46x13 when forcePixelsW/H=46/13 and match expected image perfectly", () => {
 			const baseOpts = {
+				bgExtractionMethod: "top-left",
 				forcePixelsW: 46,
 				forcePixelsH: 13,
 				detectionQuantStep: 64,
@@ -361,6 +309,7 @@ describe("processImage", () => {
 				bgRemovalScope: "all",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 64,
 
@@ -378,7 +327,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(46);
 			expect(result.height).toBe(13);
 			expect(result.width).toBe(expected.width);
@@ -399,6 +348,22 @@ describe("processImage", () => {
 			expect(resultTrim.height).toBe(13);
 			expect(gridTrim.outW).toBe(46);
 			expect(gridTrim.outH).toBe(13);
+		});
+
+		it("should make the same 46x13 result with Auto defaults", () => {
+			const { result, grid } = processImage(img, { debug: false });
+
+			expect(result.width).toBe(46);
+			expect(result.height).toBe(13);
+			expect(grid.outW).toBe(46);
+			expect(grid.outH).toBe(13);
+			// Auto は縁の背景色の汚染を落とすため、期待値画像にわずかな緑が残る 2 画素だけ
+			// 色が変わる。変わる画素を固定し、それ以外は完全一致を要求する。
+			expectSameImageExcept(
+				result,
+				expected,
+				RESIZE_WITH_TRIMMING_AUTO_EDGE_PIXELS,
+			);
 		});
 	});
 
@@ -422,15 +387,16 @@ describe("processImage", () => {
 			expected = await readPngAsRawImage(expPath);
 		});
 
-		// [Policy] Grid detection can exceed Vitest's 5s default under shared CI runner load.
 		it("should match expected image perfectly (size and pixels)", () => {
-			const { result, grid } = processImage(img, {
+			const { result, grid, analysis } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
-				bgRemovalScope: "all",
+				bgRemovalScope: "outer",
 				backgroundTolerance: 64,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 
@@ -442,7 +408,12 @@ describe("processImage", () => {
 				),
 			});
 
-			// Perfect match with expected PNG (size and pixels)
+			if (UPDATE_EXPECT) {
+				writeRawImageAsPngSync(getExpectPath("auto_grid_detection"), result);
+				return;
+			}
+
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(88);
 			expect(result.height).toBe(61);
 			expect(expected.width).toBe(88);
@@ -452,9 +423,10 @@ describe("processImage", () => {
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(88);
 			expect(grid.outH).toBe(61);
+			expect(analysis.warnings).not.toContain("LOW_GRID_CONFIDENCE");
 
 			expectSameImage(result, expected, getExpectPath("auto_grid_detection"));
-		}, 15_000);
+		});
 	});
 
 	describe("inner_background_removal", () => {
@@ -482,12 +454,14 @@ describe("processImage", () => {
 
 		it("should match expected image perfectly (size and pixels)", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
 				bgRemovalScope: "all",
 				backgroundTolerance: 96,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 
@@ -506,7 +480,7 @@ describe("processImage", () => {
 				);
 				return;
 			}
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
@@ -521,12 +495,14 @@ describe("processImage", () => {
 
 		it("should also remove background colors trapped inside (donut hole)", () => {
 			const { result } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
 				bgRemovalScope: "all",
 				backgroundTolerance: 96,
 				sampleWindow: 3,
+				cellSamplingMode: "legacy-median",
 				trimToContent: true,
 				trimAlphaThreshold: 16,
 
@@ -538,7 +514,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Verify that alpha near center (inner background) becomes 0
+			// 中心付近の alpha（内側の背景）が 0 になることを確認する
 			const cx = Math.floor(result.width / 2);
 			const cy = Math.floor(result.height / 2);
 			const alphas: number[] = [];
@@ -573,13 +549,15 @@ describe("processImage", () => {
 
 		it("should match expected image even when trimToContent is OFF", () => {
 			const { result, grid } = processImage(img, {
+				bgExtractionMethod: "top-left",
 				detectionQuantStep: 64,
 				preRemoveBackground: true,
 				postRemoveBackground: true,
 				bgRemovalScope: "all",
 				backgroundTolerance: 32,
 				sampleWindow: 3,
-				trimToContent: false, // Turn OFF auto trimming
+				cellSamplingMode: "legacy-median",
+				trimToContent: false, // 自動トリミングを OFF にする
 				trimAlphaThreshold: 16,
 
 				floatingMaxPixels: 50000,
@@ -590,7 +568,7 @@ describe("processImage", () => {
 				),
 			});
 
-			// Perfect match with expected PNG (size and pixels)
+			// 期待する PNG と完全一致すること（サイズとピクセル）
 			expect(result.width).toBe(expected.width);
 			expect(result.height).toBe(expected.height);
 			expect(grid.outW).toBe(expected.width);
@@ -598,410 +576,155 @@ describe("processImage", () => {
 
 			expectSameImage(result, expected, getExpectPath("no_trimming"));
 		});
-	});
 
-	describe("palette_conversion_gb: Palette Conversion (Game Boy)", () => {
-		let img: RawImage;
-		let expected: RawImage;
-
-		beforeAll(async () => {
-			cleanDebugDir("palette_conversion_gb");
-			const imgPath = fileURLToPath(
-				new URL(
-					"../../test/fixtures/palette_conversion_gb.png",
-					import.meta.url,
-				),
-			);
-			img = await readPngAsRawImage(imgPath);
-			const expPath = fileURLToPath(
-				new URL(
-					"../../test/fixtures/palette_conversion_gb-expect.png",
-					import.meta.url,
-				),
-			);
-			expected = await readPngAsRawImage(expPath);
-		});
-
-		it("should correctly convert to GB palette (4 colors) and match expected image", () => {
-			// Run in Game Boy (Legacy) mode
-			const { result } = processImage(img, {
-				reduceColors: true,
-				reduceColorMode: "gb_pocket",
-				ditherStrength: 0,
-				// Leave other processing OFF
-				enableGridDetection: false,
-				bgExtractionMethod: "none", // Background extraction OFF
-				preRemoveBackground: false,
+		it("should not report a skipped background removal while the output is transparent", () => {
+			// [Intended] 余白が広い入力では原寸の事前除去だけが消えすぎ判定に当たってロールバック
+			// するが、トリミング後の出力解像度で行う事後除去は成立する。出力に背景の透過が
+			// 入っている状態で「透過を中止した」と伝えないことを固定する。
+			// 事後除去を止めると中止の警告が出ることで、事前除去がロールバックするという
+			// 前提が崩れていない（この検証が空回りしていない）ことも同時に固定する。
+			const preRemovalOnly = processImage(img, {
 				postRemoveBackground: false,
-				bgRemovalScope: "selected",
-				trimToContent: false,
-				debug: true,
 			});
-
-			expect(result.width).toBe(expected.width);
-			expect(result.height).toBe(expected.height);
-			expectSameImage(result, expected, getExpectPath("palette_conversion_gb"));
-		});
-	});
-
-	describe("dithering_floyd_steinberg: Dithering (Floyd-Steinberg)", () => {
-		let img: RawImage;
-		let expected: RawImage;
-
-		beforeAll(async () => {
-			cleanDebugDir("dithering_floyd_steinberg");
-			const imgPath = fileURLToPath(
-				new URL(
-					"../../test/fixtures/dithering_floyd_steinberg.png",
-					import.meta.url,
-				),
+			expect(preRemovalOnly.analysis.warnings).toContain(
+				"BACKGROUND_REMOVAL_SKIPPED",
 			);
-			img = await readPngAsRawImage(imgPath);
-			const expPath = fileURLToPath(
-				new URL(
-					"../../test/fixtures/dithering_floyd_steinberg-expect.png",
-					import.meta.url,
-				),
-			);
-			expected = await readPngAsRawImage(expPath);
-		});
 
-		it("should process with dithering and match expected image", () => {
-			// 2 colors (Black & White) + Dithering
-			const { result } = processImage(img, {
-				reduceColors: true,
-				reduceColorMode: "mono", // Monochrome
-				ditherMode: "floyd-steinberg",
-				ditherStrength: 100,
-				enableGridDetection: false,
-				bgExtractionMethod: "none", // Background extraction OFF
-				preRemoveBackground: false,
-				postRemoveBackground: false,
-				bgRemovalScope: "selected",
-				trimToContent: false,
-				debug: true,
-			});
+			const { result, analysis } = processImage(img, {});
 
-			expect(result.width).toBe(expected.width);
-			expect(result.height).toBe(expected.height);
-			expectSameImage(
-				result,
-				expected,
-				getExpectPath("dithering_floyd_steinberg"),
-			);
-		});
-	});
-
-	describe("keepAspectRatio", () => {
-		let img: RawImage;
-
-		beforeAll(async () => {
-			cleanDebugDir("keepAspectRatio");
-			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/auto_grid_detection.png", import.meta.url),
-			);
-			img = await readPngAsRawImage(imgPath);
-		});
-
-		it("should match expected image when keepAspectRatio is enabled", async () => {
-			const { result, grid } = processImage(img, {
-				detectionQuantStep: 64,
-				preRemoveBackground: true,
-				postRemoveBackground: true,
-				bgRemovalScope: "all",
-				backgroundTolerance: 64,
-				sampleWindow: 3,
-				trimToContent: true,
-				trimAlphaThreshold: 16,
-				floatingMaxPixels: 0,
-				autoGridFromTrimmed: true,
-				keepAspectRatio: true,
-				debugHook: makeDebugHook("keepAspectRatio", "match_expected_image"),
-			});
-
-			const expPath = getExpectPath("keep_aspect_ratio");
-			if (UPDATE_EXPECT) {
-				writeRawImageAsPngSync(expPath, result);
-				return;
+			let transparent = 0;
+			for (let i = 3; i < result.data.length; i += 4) {
+				if (result.data[i] === 0) transparent += 1;
 			}
-
-			const expected = await readPngAsRawImage(expPath);
-			expect(result.width).toBe(expected.width);
-			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(result.width);
-			expect(grid.outH).toBe(result.height);
-
-			expectSameImage(result, expected, expPath);
+			expect(transparent).toBeGreaterThan(0);
+			expect(analysis.warnings).not.toContain("BACKGROUND_REMOVAL_SKIPPED");
 		});
 	});
 
-	describe("enableGridDetection", () => {
-		beforeAll(() => {
-			cleanDebugDir("enableGridDetection");
-		});
-
-		const mkImg = (): RawImage => {
-			const w = 10;
-			const h = 10;
-			const data = new Uint8ClampedArray(w * h * 4);
-			const set = (
-				x: number,
-				y: number,
-				r: number,
-				g: number,
-				b: number,
-				a: number,
-			) => {
-				const idx = (y * w + x) * 4;
-				data[idx] = r;
-				data[idx + 1] = g;
-				data[idx + 2] = b;
-				data[idx + 3] = a;
-			};
-			// background (white)
-			for (let y = 0; y < h; y += 1) {
-				for (let x = 0; x < w; x += 1) {
-					set(x, y, 255, 255, 255, 255);
+	describe("logical small-component removal", () => {
+		const createScaledInput = (
+			scale: number,
+			includeNoise = true,
+		): RawImage => {
+			const logicalSize = 8;
+			const width = logicalSize * scale;
+			const height = logicalSize * scale;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const logicalX = Math.floor(x / scale);
+					const logicalY = Math.floor(y / scale);
+					const main =
+						logicalX >= 2 && logicalX <= 4 && logicalY >= 2 && logicalY <= 4;
+					const noise = includeNoise && logicalX === 7 && logicalY === 7;
+					const offset = (y * width + x) * 4;
+					const value = main ? 20 : noise ? 240 : 255;
+					data[offset] = value;
+					data[offset + 1] = value;
+					data[offset + 2] = value;
+					data[offset + 3] = noise ? 32 : 255;
 				}
 			}
-			// object: 4x4 black block at (2, 2)
-			for (let y = 2; y < 6; y += 1) {
-				for (let x = 2; x < 6; x += 1) {
-					set(x, y, 0, 0, 0, 255);
-				}
-			}
-			return { width: w, height: h, data };
+			return { width, height, data };
 		};
 
-		it("should output at actual size without downsampling when enableGridDetection=false", () => {
-			const img = mkImg();
-			const { result, grid } = processImage(img, {
-				enableGridDetection: false,
-				trimToContent: false,
-				debugHook: makeDebugHook(
-					"enableGridDetection",
-					"enableGridDetection=false_output_at_actual_size",
-				),
-			});
-
-			expect(result.width).toBe(10);
-			expect(result.height).toBe(10);
-			expect(grid.cellW).toBe(1);
-			expect(grid.cellH).toBe(1);
-		});
-
-		it("should only perform trimming when enableGridDetection=false and trimToContent=true", () => {
-			const img = mkImg();
-			const { result, grid } = processImage(img, {
-				enableGridDetection: false,
-				trimToContent: true,
-				preRemoveBackground: true,
-				backgroundTolerance: 0,
-				debugHook: makeDebugHook(
-					"enableGridDetection",
-					"enableGridDetection=false_trimToContent=true_only_trimming",
-				),
-			});
-
-			// 4x4 black block at (2, 2)
-			expect(result.width).toBe(4);
-			expect(result.height).toBe(4);
-			expect(grid.cropX).toBe(2);
-			expect(grid.cropY).toBe(2);
-			expect(grid.cellW).toBe(1);
-			expect(grid.cellH).toBe(1);
-		});
-
-		it("should work with color reduction even when enableGridDetection=false", () => {
-			const img = mkImg();
-			const { result } = processImage(img, {
-				enableGridDetection: false,
-				reduceColors: true,
-				reduceColorMode: "auto",
-				colorCount: 2,
-				debugHook: makeDebugHook(
-					"enableGridDetection",
-					"enableGridDetection=false_reduceColors=true",
-				),
-			});
-
-			// Count colors
-			const colors = new Set<number>();
-			const data32 = new Uint32Array(result.data.buffer);
-			for (let i = 0; i < data32.length; i++) {
-				colors.add(data32[i]);
-			}
-			// Should be 2 colors: background (white) and object (black)
-			expect(colors.size).toBeLessThanOrEqual(2);
-		});
-	});
-	describe("makeSquare", () => {
-		beforeAll(() => {
-			cleanDebugDir("makeSquare");
-		});
-
-		it("should make wide image (landscape) square", async () => {
-			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/wide_red.png", import.meta.url),
-			);
-			const img = await readPngAsRawImage(imgPath);
-			const { result, grid } = processImage(img, {
-				trimToContent: false,
+		it("produces the same logical result for different source scales", () => {
+			const options = {
+				forcePixelsW: 8,
+				forcePixelsH: 8,
 				preRemoveBackground: false,
-				postRemoveBackground: false,
-				makeSquare: true,
-				enableGridDetection: false,
-				debugHook: makeDebugHook(
-					"makeSquare",
-					"make_wide_image_landscape_square",
-				),
-			});
-
-			expect(result.width).toBe(10);
-			expect(result.height).toBe(10);
-			expect(grid.outW).toBe(10);
-			expect(grid.outH).toBe(10);
-
-			// Red pixels exist at center (y=3 when 10x4 image centered), upper/lower margins (0,0 etc) should be transparent
-			const topAlpha = result.data[3]; // (0, 0). (0,0,0,0)
-			expect(topAlpha).toBe(0);
-			const centerAlpha = result.data[(3 * 10 + 0) * 4 + 3]; // (0, 3)
-			expect(centerAlpha).toBe(255);
-		});
-
-		it("should make tall image (portrait) square", async () => {
-			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/tall_red.png", import.meta.url),
-			);
-			const img = await readPngAsRawImage(imgPath);
-			const { result, grid } = processImage(img, {
-				trimToContent: false,
-				preRemoveBackground: false,
-				postRemoveBackground: false,
-				makeSquare: true,
-				enableGridDetection: false,
-				debugHook: makeDebugHook(
-					"makeSquare",
-					"make_tall_image_portrait_square",
-				),
-			});
-
-			expect(result.width).toBe(10);
-			expect(result.height).toBe(10);
-			expect(grid.outW).toBe(10);
-			expect(grid.outH).toBe(10);
-
-			// Red pixels exist at center (x=3 when 4x10 image centered), left/right margins (0,0 etc) should be transparent
-			const leftEdgeAlpha = result.data[3]; // (0, 0)
-			expect(leftEdgeAlpha).toBe(0);
-			const centerAlpha = result.data[(0 * 10 + 3) * 4 + 3]; // (3, 0)
-			expect(centerAlpha).toBe(255);
-		});
-	});
-
-	describe("high_resolution", () => {
-		let img: RawImage;
-		let expected: RawImage;
-
-		beforeAll(async () => {
-			cleanDebugDir("high_resolution");
-			const imgPath = fileURLToPath(
-				new URL("../../test/fixtures/high_resolution.png", import.meta.url),
-			);
-			img = await readPngAsRawImage(imgPath);
-
-			const expPath = fileURLToPath(
-				new URL(
-					"../../test/fixtures/high_resolution-expect.png",
-					import.meta.url,
-				),
-			);
-			expected = await readPngAsRawImage(expPath);
-		});
-
-		it("should correctly detect and process high-resolution images (small pixels)", () => {
-			const { result, grid } = processImage(img, {
-				detectionQuantStep: 64,
-				preRemoveBackground: true,
 				postRemoveBackground: true,
-				bgRemovalScope: "all",
-				backgroundTolerance: 64,
-				sampleWindow: 3,
+				bgExtractionMethod: "top-left" as const,
+				bgRemovalScope: "outer" as const,
+				backgroundTolerance: 0,
 				trimToContent: true,
-				trimAlphaThreshold: 16,
-				// Based on user feedback, verify that high-resolution grids are detected
-				// even with autoGridFromTrimmed: true by relaxing search range and adjusting penalties.
-				autoGridFromTrimmed: true,
-				debug: true,
-				debugHook: makeDebugHook("high_resolution", "for_verification"),
+				smallComponentMode: "auto" as const,
+				cellSamplingMode: "alpha-aware-medoid" as const,
+			};
+			const twoTimes = processImage(createScaledInput(2), options);
+			const fourTimes = processImage(createScaledInput(4), options);
+
+			expect(twoTimes.result.data).toEqual(fourTimes.result.data);
+			expect(twoTimes.analysis.smallComponentRemoval).toMatchObject({
+				applied: true,
+				removedComponents: 1,
+			});
+			expect(fourTimes.analysis.smallComponentRemoval).toEqual(
+				twoTimes.analysis.smallComponentRemoval,
+			);
+		});
+
+		it("excludes removed noise when deriving forced conversion bounds", () => {
+			const options = {
+				forcePixelsW: 8,
+				forcePixelsH: 8,
+				preRemoveBackground: false,
+				postRemoveBackground: true,
+				bgExtractionMethod: "top-left" as const,
+				bgRemovalScope: "outer" as const,
+				backgroundTolerance: 0,
+				trimToContent: true,
+				smallComponentMode: "auto" as const,
+				cellSamplingMode: "alpha-aware-medoid" as const,
+			};
+			const noisy = processImage(createScaledInput(2), options);
+			const clean = processImage(createScaledInput(2, false), options);
+
+			expect(noisy.result.data).toEqual(clean.result.data);
+			expect(noisy.grid.cellW).toBe(clean.grid.cellW);
+			expect(noisy.grid.cellH).toBe(clean.grid.cellH);
+		});
+
+		it("reports a skipped removal for an uncertain automatic background", () => {
+			const width = 20;
+			const height = 20;
+			const data = new Uint8ClampedArray(width * height * 4);
+			for (let y = 0; y < height; y += 1) {
+				for (let x = 0; x < width; x += 1) {
+					const offset = (y * width + x) * 4;
+					data[offset] = (x * 73 + y * 41) % 256;
+					data[offset + 1] = (x * 19 + y * 101) % 256;
+					data[offset + 2] = (x * 151 + y * 7) % 256;
+					data[offset + 3] = 255;
+				}
+			}
+			const processed = processImage(
+				{ width, height, data },
+				{
+					processingMode: "preserve",
+					preRemoveBackground: false,
+					postRemoveBackground: true,
+					trimToContent: false,
+					bgExtractionMethod: "auto",
+					bgRemovalScope: "outer",
+					smallComponentMode: "strong",
+				},
+			);
+
+			expect(processed.analysis.smallComponentRemoval).toMatchObject({
+				applied: false,
+				skippedReason: "low-background-confidence",
+				removedComponents: 0,
+				removedPixels: 0,
+			});
+		});
+
+		it("estimates automatic background for removal diagnostics alone", () => {
+			const processed = processImage(createScaledInput(2), {
+				processingMode: "preserve",
+				preRemoveBackground: false,
+				postRemoveBackground: false,
+				trimToContent: false,
+				bgExtractionMethod: "auto",
+				bgRemovalScope: "outer",
+				smallComponentMode: "auto",
 			});
 
-			// Verify detection results
-			expect(result.width).toBe(expected.width);
-			expect(result.height).toBe(expected.height);
-			expect(grid.outW).toBe(expected.width);
-			expect(grid.outH).toBe(expected.height);
-
-			// Image comparison
-			expectSameImage(result, expected, getExpectPath("high_resolution"));
-		});
-	});
-
-	describe("Grid Search Strategies Consistency", () => {
-		it("should yield same results for Fast and Legacy modes (simple image)", () => {
-			// Create 16x16 grid image (assuming 2x2 grid of 8x8 cells)
-			const width = 16;
-			const height = 16;
-			const data = new Uint8ClampedArray(width * height * 4);
-			for (let y = 0; y < height; y++) {
-				for (let x = 0; x < width; x++) {
-					const idx = (y * width + x) * 4;
-					const isCell1 = Math.floor(x / 8) % 2 === Math.floor(y / 8) % 2;
-					const color = isCell1 ? 255 : 0;
-					data[idx] = color;
-					data[idx + 1] = color;
-					data[idx + 2] = color;
-					data[idx + 3] = 255;
-				}
-			}
-			const img: RawImage = { width, height, data };
-			const mask: RawImage = {
-				width,
-				height,
-				data: new Uint8ClampedArray(data),
-			};
-
-			// Cast to access internal classes
-			const legacy = new (
-				LegacyGridSearchFromTrimmed as unknown as {
-					new (): {
-						search: (img: RawImage, mask: RawImage, sw: number) => unknown;
-					};
-				}
-			)();
-			const fast = new (
-				FastGridSearchFromTrimmed as unknown as {
-					new (): {
-						search: (img: RawImage, mask: RawImage, sw: number) => unknown;
-					};
-				}
-			)();
-
-			const resLegacy = legacy.search(img, mask, 3) as {
-				outW: number;
-				outH: number;
-			} | null;
-			const resFast = fast.search(img, mask, 3) as {
-				outW: number;
-				outH: number;
-			} | null;
-
-			expect(resLegacy).not.toBeNull();
-			expect(resFast).not.toBeNull();
-			if (resLegacy && resFast) {
-				expect(resFast.outW).toBe(resLegacy.outW);
-				expect(resFast.outH).toBe(resLegacy.outH);
-			}
+			expect(processed.analysis.backgroundConfidence).toBeDefined();
+			expect(processed.analysis.smallComponentRemoval).toMatchObject({
+				applied: true,
+				skippedReason: undefined,
+			});
 		});
 	});
 });

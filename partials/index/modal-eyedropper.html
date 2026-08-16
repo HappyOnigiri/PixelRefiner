@@ -1,0 +1,33 @@
+<!-- スポイトモーダル -->
+<div
+  id="eyedropper-modal"
+  class="modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="eyedropper-modal-title"
+  tabindex="-1"
+  style="display: none"
+>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="eyedropper-modal-title" data-i18n="modal.eyedropper.title">
+        Select Background Color
+      </h3>
+      <button
+        id="close-eyedropper-modal"
+        class="close-button"
+        data-i18n-attr="aria-label:ui.close"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-instruction" data-i18n="modal.eyedropper.instruction">
+        Click on the color in the image you want to set as background
+      </p>
+      <div class="modal-canvas-container">
+        <canvas id="eyedropper-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>

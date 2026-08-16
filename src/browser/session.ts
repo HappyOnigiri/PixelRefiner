@@ -1,4 +1,11 @@
-import type { PixelGrid, RawImage } from "../shared/types";
+import type {
+	CandidateSelection,
+	PixelGrid,
+	ProcessedImageResult,
+	ProcessingAnalysis,
+	RawImage,
+} from "../shared/types";
+import type { SettingsMode } from "./app-state";
 import { drawRawImageToCanvas } from "./io";
 
 export interface ImageItem {
@@ -10,6 +17,18 @@ export interface ImageItem {
 	thumbnail: string;
 	status: "pending" | "processing" | "done" | "error";
 	error?: string;
+	analysis?: ProcessingAnalysis;
+	outputFilename?: string;
+	/**
+	 * 候補プレビューで選んだ処理方針。設定変更で再処理しても自動判定へ戻らないよう保持する。
+	 * UI の設定値は書き換えないため、保持先はこの画像単位の状態になる。
+	 */
+	candidateSelection?: CandidateSelection;
+	/**
+	 * この結果を生成した設定タブ。
+	 * 解析結果の処理経路は、それを選んだ設定方式の文脈でしか意味を持たないため保持する。
+	 */
+	settingsMode?: SettingsMode;
 }
 
 export class ImageSession {
@@ -17,6 +36,12 @@ export class ImageSession {
 	private activeImageId: string | null = null;
 	private onUpdate: () => void;
 	private onActiveChange: (image: ImageItem | null) => void;
+	/**
+	 * 画像ごとの変換開始の通し番号。
+	 * 個別処理と一括処理は別々の Worker で並行しうるため、開始が古い処理の結果で
+	 * 新しい結果を上書きしないよう、書き込み側がこの番号で自分の順番を確かめる。
+	 */
+	private processingTokens = new Map<string, number>();
 
 	constructor(callbacks: {
 		onUpdate: () => void;
@@ -38,7 +63,7 @@ export class ImageSession {
 		};
 		this.images.push(item);
 
-		// If this is the first image or no active image, select it
+		// 最初の画像、またはアクティブな画像がない場合は選択する
 		if (!this.activeImageId) {
 			this.setActiveImage(id);
 		} else {
@@ -52,11 +77,12 @@ export class ImageSession {
 
 		const wasActive = this.activeImageId === id;
 		this.images.splice(idx, 1);
+		this.processingTokens.delete(id);
 
 		if (wasActive) {
-			// Select next available image, or null if empty
+			// 次に利用可能な画像を選択し、空なら null にする
 			if (this.images.length > 0) {
-				// Try to select the image at the same index, or the last one
+				// 同じインデックスの画像、または最後の画像を選択する
 				const nextIdx = Math.min(idx, this.images.length - 1);
 				this.setActiveImage(this.images[nextIdx].id);
 			} else {
@@ -69,7 +95,24 @@ export class ImageSession {
 
 	public clearAll(): void {
 		this.images = [];
+		this.processingTokens.clear();
 		this.setActiveImage(null);
+	}
+
+	/**
+	 * この画像の変換開始を記録し、結果を書き込んでよいかを判定するトークンを返す。
+	 * 状態を processing にする役割も兼ねる。
+	 */
+	public beginProcessing(id: string): number {
+		const token = (this.processingTokens.get(id) ?? 0) + 1;
+		this.processingTokens.set(id, token);
+		this.setImageStatus(id, "processing");
+		return token;
+	}
+
+	/** beginProcessing で得たトークンが、この画像の最新の変換のものかを返す。 */
+	public isProcessingCurrent(id: string, token: number): boolean {
+		return this.processingTokens.get(id) === token;
 	}
 
 	public setActiveImage(id: string | null): void {
@@ -92,31 +135,43 @@ export class ImageSession {
 
 	public updateImageResult(
 		id: string,
-		result: RawImage,
-		grid?: PixelGrid,
+		processed: ProcessedImageResult,
+		settingsMode?: SettingsMode,
 	): PixelGrid | undefined {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
-			img.result = result;
-			// Keep previous auto-detection candidates so they can be re-selected even if candidates are lost due to size specification (force), etc.
-			if (grid) {
-				const prevCandidates = img.grid?.candidates;
-				if (
-					(prevCandidates?.length ?? 0) > 0 &&
-					(grid.candidates?.length ?? 0) === 0
-				) {
-					img.grid = { ...grid, candidates: prevCandidates };
-				} else {
-					img.grid = grid;
-				}
-			} else {
-				img.grid = grid;
-			}
+			img.result = processed.result;
+			img.grid = processed.grid;
+			img.analysis = processed.analysis;
+			img.settingsMode = settingsMode;
 			img.status = "done";
+			img.error = undefined;
 			this.onUpdate();
 			return img.grid;
 		}
-		return grid;
+		return processed.grid;
+	}
+
+	public setOutputFilename(
+		id: string,
+		outputFilename: string | undefined,
+	): void {
+		const img = this.images.find((item) => item.id === id);
+		if (img) img.outputFilename = outputFilename;
+	}
+
+	public setCandidateSelection(
+		id: string,
+		selection: CandidateSelection | undefined,
+	): void {
+		const img = this.images.find((i) => i.id === id);
+		if (img) img.candidateSelection = selection;
+	}
+
+	public clearCandidateSelections(): void {
+		for (let index = 0; index < this.images.length; index += 1) {
+			this.images[index].candidateSelection = undefined;
+		}
 	}
 
 	public setImageStatus(
@@ -127,12 +182,16 @@ export class ImageSession {
 		const img = this.images.find((i) => i.id === id);
 		if (img) {
 			img.status = status;
-			if (error) img.error = error;
+			img.error = error;
+			if (status === "processing") {
+				img.analysis = undefined;
+				img.outputFilename = undefined;
+			}
 			this.onUpdate();
 		}
 	}
 
-	// Helper to create a small data URL for thumbnail
+	// サムネイル用の小さなデータ URL を作成するヘルパー
 	private createThumbnail(raw: RawImage, maxDim = 80): string {
 		const canvas = document.createElement("canvas");
 		let w = raw.width;
@@ -144,10 +203,10 @@ export class ImageSession {
 			h = Math.floor(h * ratio);
 		}
 
-		// Create a temp canvas for the full image first to resize cleanly
-		// Or just draw directly scaled. For pixel art, nearest neighbor is best,
-		// but for thumbnails, smooth might be better? Let's stick to default (smooth) for thumbnails
-		// or maybe nearest to keep pixel art look? Let's use nearest for consistency.
+		// きれいにリサイズするため、まずフル画像用の一時キャンバスを作成する
+		// 直接スケーリングして描画することもできる。ピクセルアートには最近傍法が最適だが、
+		// サムネイルにはスムージングの方がよい可能性がある。サムネイルは既定（スムージング）を使う。
+		// ピクセルアートらしさを保つため最近傍法も考えられるが、一貫性のため最近傍法を使用する。
 
 		const tempCanvas = document.createElement("canvas");
 		drawRawImageToCanvas(raw, tempCanvas);

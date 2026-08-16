@@ -1,26 +1,121 @@
+import {
+	type ColorTheme,
+	THEME_MEDIA_QUERY,
+	THEME_QUERY_PARAMETER,
+	THEME_STORAGE_KEY,
+} from "../../../src/shared/theme";
+
 interface TranslationTree {
 	[key: string]: string | TranslationTree;
 }
 
+export type QualityReportThemeConfig = {
+	storageKey: string;
+	queryParameter: string;
+	mediaQuery: string;
+};
+
+export const QUALITY_REPORT_THEME_CONFIG: QualityReportThemeConfig = {
+	storageKey: THEME_STORAGE_KEY,
+	queryParameter: THEME_QUERY_PARAMETER,
+	mediaQuery: THEME_MEDIA_QUERY,
+};
+
 declare global {
 	interface Window {
 		__QUALITY_REPORT_TRANSLATIONS__: Record<string, TranslationTree>;
+		__QUALITY_REPORT_THEME__?: {
+			theme: ColorTheme;
+			queryPinned: boolean;
+		};
 	}
 }
 
-// [Intended] This self-contained function is serialized into each static report.
-export const runQualityReportClient = (): void => {
+// [Intended] 本体の描画前にテーマを確定できるよう、この自己完結した関数だけを head へ埋め込む。
+export const applyInitialQualityReportTheme = (
+	config: QualityReportThemeConfig,
+): void => {
+	const isTheme = (value: string | null): value is ColorTheme =>
+		value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(
+		config.queryParameter,
+	);
+	let storedTheme: string | null = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {
+		// [Workaround] file:// など保存領域を利用できない環境でもレポートを表示する。
+	}
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const prefersDark =
+		typeof window.matchMedia === "function" &&
+		window.matchMedia(config.mediaQuery).matches;
+	const theme = queryTheme ?? savedTheme ?? (prefersDark ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+	window.__QUALITY_REPORT_THEME__ = {
+		theme,
+		queryPinned: queryTheme !== null,
+	};
+};
+
+// [Intended] この自己完結した関数は各静的レポートへシリアライズされる。
+export const runQualityReportClient = (
+	config: QualityReportThemeConfig,
+): void => {
+	const isTheme = (value: string | null): value is ColorTheme =>
+		value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(
+		config.queryParameter,
+	);
+	let storedTheme: string | null = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {
+		// [Workaround] 保存領域を利用できない環境でもテーマ切り替えを妨げない。
+	}
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const themeMediaQuery =
+		typeof window.matchMedia === "function"
+			? window.matchMedia(config.mediaQuery)
+			: null;
+	const themePinned =
+		window.__QUALITY_REPORT_THEME__?.queryPinned ?? queryTheme !== null;
+	let themeManuallySelected = themePinned || savedTheme !== null;
+	let theme =
+		window.__QUALITY_REPORT_THEME__?.theme ??
+		queryTheme ??
+		savedTheme ??
+		(themeMediaQuery?.matches === true ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+
 	const translations = window.__QUALITY_REPORT_TRANSLATIONS__;
 	const preferredLanguage = (
 		navigator.languages?.[0] ??
 		navigator.language ??
 		"en"
 	).toLowerCase();
-	let locale = preferredLanguage.startsWith("ja")
-		? "ja"
-		: preferredLanguage.startsWith("zh")
-			? "zh-CN"
-			: "en";
+	// [Intended] 言語切り替えは一覧のサイドバーにしかないので、選択結果をクエリで運んで
+	// ケース詳細へ引き継ぐ。ブラウザ言語のままなら遷移先でも同じ判定になるため、
+	// 明示的に選ばれた言語だけをクエリとリンクに残す。
+	const requestedLocale = new URLSearchParams(window.location.search).get(
+		"locale",
+	);
+	const pinnedLocale =
+		requestedLocale !== null && requestedLocale in translations
+			? requestedLocale
+			: null;
+	let localePinned = pinnedLocale !== null;
+	let locale =
+		pinnedLocale ??
+		(preferredLanguage.startsWith("ja")
+			? "ja"
+			: preferredLanguage.startsWith("zh")
+				? "zh-CN"
+				: "en");
 	let messages = translations[locale];
 
 	const translate = (key: string): string | undefined => {
@@ -64,6 +159,90 @@ export const runQualityReportClient = (): void => {
 	const localeButtons = [
 		...document.querySelectorAll<HTMLButtonElement>("[data-locale]"),
 	];
+	const localeLinks = [
+		...document.querySelectorAll<HTMLAnchorElement>(
+			"a.detail-link, a.back-link",
+		),
+	];
+	const setLinkParameter = (
+		link: HTMLAnchorElement,
+		name: string,
+		value: string,
+	): void => {
+		const href = link.getAttribute("href");
+		if (href === null) return;
+		// [Intended] 相対URLのままクエリだけを更新し、file:// レポートのリンクを維持する。
+		const [target, hash] = href.split("#");
+		const [pathOnly, query = ""] = target.split("?");
+		const params = new URLSearchParams(query);
+		params.set(name, value);
+		link.setAttribute(
+			"href",
+			`${pathOnly}?${params.toString()}` +
+				(hash === undefined ? "" : `#${hash}`),
+		);
+	};
+	const replaceCurrentParameter = (name: string, value: string): void => {
+		try {
+			const url = new URL(window.location.href);
+			url.searchParams.set(name, value);
+			window.history.replaceState(
+				null,
+				"",
+				`${url.pathname}${url.search}${url.hash}`,
+			);
+		} catch {
+			// [Workaround] URLを更新できない環境でも、画面上の切り替えは妨げない。
+		}
+	};
+	const themeToggle = document.querySelector<HTMLButtonElement>(
+		"[data-theme-toggle]",
+	);
+	const applyTheme = (nextTheme: ColorTheme): void => {
+		theme = nextTheme;
+		document.documentElement.dataset.theme = theme;
+		document.documentElement.style.colorScheme = theme;
+		window.__QUALITY_REPORT_THEME__ = { theme, queryPinned: themePinned };
+		if (!themeToggle) return;
+		themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+		for (const icon of themeToggle.querySelectorAll<SVGElement>(
+			"[data-theme-icon]",
+		)) {
+			icon.toggleAttribute("hidden", icon.dataset.themeIcon !== theme);
+		}
+	};
+	const persistThemeQuery = (): void => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		}
+		replaceCurrentParameter(config.queryParameter, theme);
+	};
+	applyTheme(theme);
+	if (themePinned) {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		}
+	}
+	themeToggle?.addEventListener("click", () => {
+		themeManuallySelected = true;
+		applyTheme(theme === "light" ? "dark" : "light");
+		try {
+			window.localStorage?.setItem(config.storageKey, theme);
+		} catch {
+			// [Workaround] 保存に失敗しても現在のレポートでは選択を維持する。
+		}
+		if (themePinned) persistThemeQuery();
+	});
+	themeMediaQuery?.addEventListener("change", (event) => {
+		if (!themeManuallySelected) applyTheme(event.matches ? "dark" : "light");
+	});
+
+	const persistLocale = (): void => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, "locale", locale);
+		}
+		replaceCurrentParameter("locale", locale);
+	};
 	let refreshFilter = (): void => {};
 	const setLocale = (nextLocale: string): void => {
 		if (!(nextLocale in translations)) return;
@@ -75,12 +254,14 @@ export const runQualityReportClient = (): void => {
 			button.classList.toggle("active", active);
 			button.setAttribute("aria-pressed", String(active));
 		}
+		if (localePinned) persistLocale();
 		refreshFilter();
 	};
 	for (const button of localeButtons) {
-		button.addEventListener("click", () =>
-			setLocale(button.dataset.locale ?? "en"),
-		);
+		button.addEventListener("click", () => {
+			localePinned = true;
+			setLocale(button.dataset.locale ?? "en");
+		});
 	}
 	setLocale(locale);
 
@@ -108,89 +289,119 @@ export const runQualityReportClient = (): void => {
 
 	const search = document.querySelector<HTMLInputElement>("#search");
 	if (search) {
-		const changeButtons = [
-			...document.querySelectorAll<HTMLButtonElement>("[data-change-filter]"),
-		];
-		const statusButtons = [
-			...document.querySelectorAll<HTMLButtonElement>("[data-status-filter]"),
-		];
 		const cards = [...document.querySelectorAll<HTMLElement>(".case")];
-		const changeLabel = document.querySelector<HTMLElement>(
-			"#active-change-label",
-		);
-		const statusLabel = document.querySelector<HTMLElement>(
-			"#active-status-label",
-		);
 		const visibleCount = document.querySelector<HTMLElement>("#visible-count");
-		let activeChange = "";
-		let activeStatus = "";
-
-		const updateButtons = (
-			buttons: HTMLButtonElement[],
-			attribute: "changeFilter" | "statusFilter",
-			value: string,
+		// [Intended] 絞り込みの軸はすべて同じ形（data-<name>-filter のボタン群 ×
+		// カードの data-<name>）なので、軸ごとに同じ処理を書かず名前だけで束ねる。
+		// 軸を増やすときはこの配列に名前を足すだけで済む。
+		const groups = ["quality", "change", "parameter"].map((name) => ({
+			name,
+			buttons: [
+				...document.querySelectorAll<HTMLButtonElement>(
+					`[data-${name}-filter]`,
+				),
+			],
+			label: document.querySelector<HTMLElement>(`#active-${name}-label`),
+			active: "",
+		}));
+		type FilterState = {
+			search: string;
+			groups: Record<string, string>;
+		};
+		const readFilterState = (): FilterState => {
+			const params = new URLSearchParams(window.location.search);
+			const savedGroups: Record<string, string> = {};
+			for (const group of groups) {
+				const active = params.get(group.name);
+				if (active !== null) savedGroups[group.name] = active;
+			}
+			return {
+				search: params.get("search") ?? "",
+				groups: savedGroups,
+			};
+		};
+		const initialFilterState = readFilterState();
+		search.value = initialFilterState.search;
+		const setGroupActive = (
+			group: (typeof groups)[number],
+			button: HTMLButtonElement,
 		): void => {
-			for (const button of buttons) {
-				const active = button.dataset[attribute] === value;
-				button.classList.toggle("active", active);
-				button.setAttribute("aria-pressed", String(active));
+			group.active = button.dataset[`${group.name}Filter`] ?? "";
+			for (const other of group.buttons) {
+				const active = other === button;
+				other.classList.toggle("active", active);
+				other.setAttribute("aria-pressed", String(active));
 			}
 		};
-		const selectedLabel = (
-			buttons: HTMLButtonElement[],
-			attribute: "changeFilter" | "statusFilter",
-			value: string,
-		): string =>
-			buttons
-				.find((button) => button.dataset[attribute] === value)
-				?.querySelector<HTMLElement>("[data-i18n]")?.textContent ?? "";
+		for (const group of groups) {
+			const savedActive = initialFilterState.groups[group.name];
+			const button =
+				group.buttons.find(
+					(candidate) =>
+						candidate.dataset[`${group.name}Filter`] === savedActive,
+				) ??
+				group.buttons.find(
+					(candidate) => candidate.dataset[`${group.name}Filter`] === "",
+				);
+			if (button) setGroupActive(group, button);
+		}
+		const saveFilterState = (): void => {
+			try {
+				const url = new URL(window.location.href);
+				url.searchParams.delete("search");
+				for (const group of groups) url.searchParams.delete(group.name);
+				if (search.value) url.searchParams.set("search", search.value);
+				for (const group of groups) {
+					if (group.active) url.searchParams.set(group.name, group.active);
+				}
+				// [Intended] URLに状態を残し、更新や共有リンクから同じ条件を復元する。
+				window.history.replaceState(
+					null,
+					"",
+					`${url.pathname}${url.search}${url.hash}`,
+				);
+			} catch {
+				// [Workaround] URLを更新できない環境でも、画面上の絞り込みは妨げない。
+			}
+		};
 
 		refreshFilter = (): void => {
 			const text = search.value.toLowerCase();
 			let visible = 0;
 			for (const card of cards) {
-				const changeMatches =
-					!activeChange ||
-					(activeChange === "changed"
-						? card.dataset.change !== "unchanged"
-						: card.dataset.change === activeChange);
-				card.hidden = !(
-					(card.dataset.search ?? "").toLowerCase().includes(text) &&
-					(!activeStatus || card.dataset.status === activeStatus) &&
-					changeMatches
+				const matchesText = (card.dataset.search ?? "")
+					.toLowerCase()
+					.includes(text);
+				const matchesGroups = groups.every(
+					(group) => !group.active || card.dataset[group.name] === group.active,
 				);
+				card.hidden = !(matchesText && matchesGroups);
 				if (!card.hidden) visible += 1;
 			}
-			if (changeLabel) {
-				changeLabel.textContent = selectedLabel(
-					changeButtons,
-					"changeFilter",
-					activeChange,
-				);
-			}
-			if (statusLabel) {
-				statusLabel.textContent = selectedLabel(
-					statusButtons,
-					"statusFilter",
-					activeStatus,
-				);
+			for (const group of groups) {
+				if (!group.label) continue;
+				group.label.textContent =
+					group.buttons
+						.find(
+							(button) =>
+								button.dataset[`${group.name}Filter`] === group.active,
+						)
+						?.querySelector<HTMLElement>("[data-i18n]")?.textContent ?? "";
 			}
 			if (visibleCount) visibleCount.textContent = String(visible);
 		};
-		search.addEventListener("input", refreshFilter);
-		for (const button of changeButtons) {
-			button.addEventListener("click", () => {
-				activeChange = button.dataset.changeFilter ?? "";
-				updateButtons(changeButtons, "changeFilter", activeChange);
-				refreshFilter();
-			});
-		}
-		for (const button of statusButtons) {
-			button.addEventListener("click", () => {
-				activeStatus = button.dataset.statusFilter ?? "";
-				updateButtons(statusButtons, "statusFilter", activeStatus);
-				refreshFilter();
-			});
+		search.addEventListener("input", () => {
+			saveFilterState();
+			refreshFilter();
+		});
+		for (const group of groups) {
+			for (const button of group.buttons) {
+				button.addEventListener("click", () => {
+					setGroupActive(group, button);
+					saveFilterState();
+					refreshFilter();
+				});
+			}
 		}
 		refreshFilter();
 	}

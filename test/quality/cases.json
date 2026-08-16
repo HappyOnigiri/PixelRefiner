@@ -1,12 +1,13 @@
 [
   {
     "id": "remove-background-trim-auto-grid",
-    "featureIds": ["PRF-001", "resize"],
+    "featureIds": ["PRF-001", "PRF-002", "resize"],
     "optionNames": ["fastAutoGridFromTrimmed", "bgRemovalScope"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -54,12 +55,13 @@
   },
   {
     "id": "remove-background-trim-resize-46x13",
-    "featureIds": ["PRF-001", "force-size"],
+    "featureIds": ["PRF-001", "PRF-002", "force-size"],
     "optionNames": ["forcePixelsW", "forcePixelsH", "trimToContent"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 46,
       "forcePixelsH": 13,
       "detectionQuantStep": 64,
@@ -114,10 +116,11 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
-      "bgRemovalScope": "all",
+      "bgRemovalScope": "outer",
       "backgroundTolerance": 64,
       "sampleWindow": 3,
       "trimToContent": true,
@@ -166,6 +169,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -222,6 +226,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -279,6 +284,7 @@
     "inputKind": "synthetic-many-color",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "reduceColors": true,
       "reduceColorMode": "auto",
       "colorCount": 8,
@@ -328,6 +334,7 @@
     "inputKind": "continuous-tone",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "reduceColors": true,
       "reduceColorMode": "gb_pocket",
       "ditherStrength": 0,
@@ -379,6 +386,7 @@
     "inputKind": "continuous-tone",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "reduceColors": true,
       "reduceColorMode": "mono",
       "ditherMode": "floyd-steinberg",
@@ -431,10 +439,11 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
-      "bgRemovalScope": "all",
+      "bgRemovalScope": "outer",
       "backgroundTolerance": 64,
       "sampleWindow": 3,
       "trimToContent": true,
@@ -484,6 +493,7 @@
     "inputKind": "pixel-art-1x",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "trimToContent": false,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -528,6 +538,7 @@
     "inputKind": "pixel-art-1x",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "trimToContent": false,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -566,12 +577,13 @@
   },
   {
     "id": "restore-high-resolution-pixel-grid",
-    "featureIds": ["PRF-001", "high-resolution-grid"],
-    "optionNames": ["autoGridFromTrimmed"],
+    "featureIds": ["PRF-001", "PRF-020", "high-resolution-grid"],
+    "optionNames": ["autoGridFromTrimmed", "floatingMaxPixels"],
     "profile": "full",
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": [],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "detectionQuantStep": 64,
       "preRemoveBackground": true,
       "postRemoveBackground": true,
@@ -580,7 +592,8 @@
       "sampleWindow": 3,
       "trimToContent": true,
       "trimAlphaThreshold": 16,
-      "autoGridFromTrimmed": true
+      "autoGridFromTrimmed": true,
+      "floatingMaxPixels": 1000
     },
     "input": "test/fixtures/high_resolution.png",
     "expected": "test/fixtures/high_resolution-expect.png",
@@ -617,7 +630,7 @@
   },
   {
     "id": "preserve-native-pixel-art",
-    "featureIds": ["PRF-001"],
+    "featureIds": ["PRF-001", "PRF-300"],
     "profile": "smoke",
     "inputKind": "pixel-art-1x",
     "degradationPatterns": [
@@ -626,7 +639,8 @@
       "low-color-subject"
     ],
     "options": {
-      "enableGridDetection": false,
+      "cellSamplingMode": "legacy-median",
+      "processingMode": "auto",
       "preRemoveBackground": false,
       "postRemoveBackground": false,
       "trimToContent": false
@@ -655,13 +669,13 @@
   },
   {
     "id": "restore-nearest-2x-to-8x8",
-    "featureIds": ["PRF-001", "auto-grid"],
+    "featureIds": ["PRF-001", "PRF-300", "auto-grid"],
     "profile": "smoke",
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-2x"],
     "options": {
-      "forcePixelsW": 8,
-      "forcePixelsH": 8,
+      "cellSamplingMode": "legacy-median",
+      "processingMode": "auto",
       "sampleWindow": 1,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
@@ -705,6 +719,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-3x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -746,6 +761,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-4x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -787,6 +803,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-8x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -828,6 +845,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-16x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -869,6 +887,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["nearest-32x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -910,6 +929,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["nearest-1.5x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -958,6 +978,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["nearest-2.5x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1006,6 +1027,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["nearest-3.2x"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1049,16 +1071,17 @@
   },
   {
     "id": "restore-bilinear-to-8x8",
-    "featureIds": ["PRF-001", "interpolation"],
+    "featureIds": ["PRF-001", "PRF-300", "interpolation"],
     "profile": "smoke",
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["bilinear"],
     "options": {
-      "forcePixelsW": 8,
-      "forcePixelsH": 8,
+      "processingMode": "auto",
       "sampleWindow": 3,
       "preRemoveBackground": false,
       "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
       "trimToContent": false
     },
     "input": "test/fixtures/quality_bilinear.png",
@@ -1107,6 +1130,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["bicubic-equivalent"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1155,6 +1179,7 @@
     "inputKind": "interpolated-pixel-art",
     "degradationPatterns": ["gaussian-blur-light"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1203,6 +1228,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["rgb-noise"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1303,6 +1329,7 @@
       "crop-shift-3px"
     ],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1421,6 +1448,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["background-black"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1471,6 +1499,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["background-solid"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1521,6 +1550,7 @@
     "inputKind": "padded-pixel-art",
     "degradationPatterns": ["background-gradient"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 3,
@@ -1571,6 +1601,7 @@
     "inputKind": "scaled-pixel-art",
     "degradationPatterns": ["anisotropic-scale"],
     "options": {
+      "cellSamplingMode": "legacy-median",
       "forcePixelsW": 8,
       "forcePixelsH": 8,
       "sampleWindow": 1,
@@ -1606,21 +1637,567 @@
     ]
   },
   {
-    "id": "preserve-continuous-tone",
-    "featureIds": ["PRF-001", "continuous-tone"],
+    "id": "discover-anisotropic-noninteger-grid",
+    "featureIds": ["PRF-110"],
     "profile": "smoke",
-    "inputKind": "continuous-tone",
-    "degradationPatterns": ["continuous-tone"],
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["anisotropic-scale", "non-integer-scale"],
     "options": {
-      "enableGridDetection": false,
+      "cellSamplingMode": "legacy-median",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf110_anisotropic_noninteger.png",
+    "expected": "test/fixtures/quality_reference.png",
+    "assertions": [
+      "independent axis scale",
+      "non-integer scale candidate",
+      "determinism"
+    ],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf110_anisotropic_noninteger.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_reference.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "restore-transparent-rgb-padding-to-8x8",
+    "featureIds": ["PRF-020", "auto-grid", "alpha-background"],
+    "optionNames": ["backgroundMask", "backgroundMaskTolerance"],
+    "profile": "full",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["transparent-rgb-garbage"],
+    "options": {
+      "cellSamplingMode": "legacy-median",
+      "autoGridFromTrimmed": false,
+      "backgroundMask": true,
+      "backgroundMaskTolerance": 0,
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": true
+    },
+    "input": "test/fixtures/quality_transparent_rgb_padding.png",
+    "expected": "test/fixtures/quality_transparent_rgb_expected.png",
+    "assertions": [
+      "exact image",
+      "transparent RGB independence",
+      "determinism"
+    ],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_transparent_rgb_padding.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_transparent_rgb_expected.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "withhold-ambiguous-axis-grid",
+    "featureIds": ["PRF-100"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["one-axis-periodicity"],
+    "options": {
+      "processingMode": "refine",
+      "cellSamplingMode": "legacy-median",
+      "autoGridFromTrimmed": false,
+      "backgroundMask": false,
+      "bgRemovalScope": "off",
       "preRemoveBackground": false,
       "postRemoveBackground": false,
       "trimToContent": false
     },
-    "input": "test/fixtures/quality_continuous_tone.png",
-    "expected": "test/fixtures/quality_continuous_tone.png",
-    "assertions": ["exact image", "preserve route", "determinism"],
+    "input": "test/fixtures/quality_ambiguous_axis_grid.png",
+    "expected": "test/fixtures/quality_ambiguous_axis_grid-expect.png",
+    "assertions": [
+      "multiple ranked candidates",
+      "preserve fallback candidate",
+      "low-confidence selection withheld",
+      "determinism"
+    ],
     "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_ambiguous_axis_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_ambiguous_axis_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "show-ui-default-candidates",
+    "featureIds": ["PRF-400"],
+    "optionNames": ["processingMode", "floatingMaxPixels"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["ambiguous-detail"],
+    "options": {
+      "processingMode": "auto",
+      "floatingMaxPixels": 123
+    },
+    "input": "test/fixtures/quality_prf400_ui_low_confidence.png",
+    "expected": "test/fixtures/quality_prf400_ui_low_confidence-expect.png",
+    "assertions": [
+      "UI-default low grid confidence",
+      "candidate preview includes original size",
+      "no background removal rollback",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_ui_low_confidence.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_ui_low_confidence-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
+    "id": "restore-soft-edged-sprite-to-34x47",
+    "featureIds": ["PRF-400", "force-size"],
+    "optionNames": [
+      "processingMode",
+      "bgExtractionMethod",
+      "forcePixelsW",
+      "forcePixelsH"
+    ],
+    "profile": "full",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "options": {
+      "processingMode": "refine",
+      "bgExtractionMethod": "auto",
+      "forcePixelsW": 34,
+      "forcePixelsH": 47
+    },
+    "input": "test/fixtures/quality_prf400_soft_edged_sprite.png",
+    "expected": "test/fixtures/quality_prf400_soft_edged_sprite-expect.png",
+    "assertions": [
+      "hand-given grid scale",
+      "output size",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_soft_edged_sprite.png",
+        "sourceType": "generated-ai",
+        "provider": "OpenAI (ChatGPT)",
+        "prompt": "16×16 ドット相当のレトロなドット絵風キャラクター（正面向きの騎士）を、1024×1024 の大きな画像として描いてください。ピクセルの境界がぼやけ、輪郭にアンチエイリアスがかかった「ドット絵っぽいイラスト」にしてください。背景はキャラクターに使わない単色の緑、文字は入れないでください。",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_soft_edged_sprite-expect.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/quality_prf400_soft_edged_sprite.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      }
+    ]
+  },
+  {
+    "id": "restore-blocky-sprite-to-20x18",
+    "featureIds": ["PRF-400", "force-size"],
+    "optionNames": [
+      "processingMode",
+      "bgExtractionMethod",
+      "forcePixelsW",
+      "forcePixelsH"
+    ],
+    "profile": "full",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["ambiguous-grid-scale"],
+    "options": {
+      "processingMode": "refine",
+      "bgExtractionMethod": "auto",
+      "forcePixelsW": 20,
+      "forcePixelsH": 18
+    },
+    "input": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
+    "expected": "test/fixtures/quality_prf400_ambiguous_grid_scale-expect.png",
+    "assertions": [
+      "hand-given coarse grid scale",
+      "output size",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
+        "sourceType": "generated-ai",
+        "provider": "OpenAI (ChatGPT)",
+        "prompt": "ドット絵のキャラクター（丸い顔のスライム）を描いてください。すべてのドットがちょうど 2×2 の同じ色の塊で構成されているように塗ってください。1024×1024、背景はキャラクターに使わない緑一色、文字なし。",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      },
+      {
+        "file": "test/fixtures/quality_prf400_ambiguous_grid_scale-expect.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "test/fixtures/quality_prf400_ambiguous_grid_scale.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-11",
+        "termsCheckedAt": "2026-08-11"
+      }
+    ]
+  },
+  {
+    "id": "restore-alpha-only-grid-to-8x8",
+    "featureIds": ["PRF-120"],
+    "optionNames": ["gridSignals"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["weak-color-boundaries", "alpha-periodicity"],
+    "options": {
+      "cellSamplingMode": "legacy-median",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "gridSignals": {
+        "colorBoundary": true,
+        "luminanceAlphaGradient": true,
+        "autocorrelation": true,
+        "reconstruction": true,
+        "localPhaseStability": true
+      },
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf120_alpha_grid.png",
+    "expected": "test/fixtures/quality_prf120_alpha_grid-expect.png",
+    "assertions": [
+      "alpha gradient signal",
+      "weak RGB boundary grid",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf120_alpha_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_prf120_alpha_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "restore-diagonal-grid-to-8x8",
+    "featureIds": ["PRF-120"],
+    "optionNames": ["gridSignals"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["diagonal-dominant"],
+    "options": {
+      "cellSamplingMode": "legacy-median",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "gridSignals": {
+        "colorBoundary": true,
+        "luminanceAlphaGradient": true,
+        "autocorrelation": true,
+        "reconstruction": true,
+        "localPhaseStability": true
+      },
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf120_diagonal_grid.png",
+    "expected": "test/fixtures/quality_prf120_diagonal_grid-expect.png",
+    "assertions": ["top-3 grid size", "diagonal edge recovery", "determinism"],
+    "expectation": {
+      "maxMeanRgbaError": 9,
+      "minEdgeF1": 1,
+      "minBackgroundMaskIou": 1,
+      "minSmallComponentRetention": 1,
+      "expectedWidth": 8,
+      "expectedHeight": 8
+    },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf120_diagonal_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_prf120_diagonal_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "prefer-base-grid-over-doubled-period",
+    "featureIds": ["PRF-120"],
+    "optionNames": ["gridSignals"],
+    "profile": "smoke",
+    "inputKind": "scaled-pixel-art",
+    "degradationPatterns": ["same-color-runs", "doubled-period"],
+    "options": {
+      "cellSamplingMode": "legacy-median",
+      "autoGridFromTrimmed": true,
+      "fastAutoGridFromTrimmed": true,
+      "gridSignals": {
+        "colorBoundary": true,
+        "luminanceAlphaGradient": true,
+        "autocorrelation": true,
+        "reconstruction": true,
+        "localPhaseStability": true
+      },
+      "sampleWindow": 1,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf120_harmonic_grid.png",
+    "expected": "test/fixtures/quality_prf120_harmonic_grid-expect.png",
+    "assertions": [
+      "base period selected",
+      "doubled-period rejection",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 8, "expectedHeight": 8 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf120_harmonic_grid.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      },
+      {
+        "file": "test/fixtures/quality_prf120_harmonic_grid-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-02"
+      }
+    ]
+  },
+  {
+    "id": "restore-thin-features-and-alpha-coverage",
+    "featureIds": ["PRF-130"],
+    "optionNames": [
+      "cellSamplingMode",
+      "maxSamplesPerCell",
+      "cellAlphaThreshold",
+      "preserveThinFeatures"
+    ],
+    "profile": "smoke",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["thin-features", "transparent-rgb"],
+    "options": {
+      "forcePixelsW": 6,
+      "forcePixelsH": 6,
+      "cellSamplingMode": "alpha-aware-medoid",
+      "maxSamplesPerCell": 64,
+      "cellAlphaThreshold": 16,
+      "preserveThinFeatures": true,
+      "sampleWindow": 3,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_prf130_cell_sampling.png",
+    "expected": "test/fixtures/quality_prf130_cell_sampling-expect.png",
+    "assertions": [
+      "input RGB medoid",
+      "thin line and highlight retention",
+      "alpha coverage",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 6, "expectedHeight": 6 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf130_cell_sampling.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf130_cell_sampling-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
+    "id": "convert-continuous-tone-balanced",
+    "featureIds": ["PRF-001", "PRF-002", "PRF-300", "PRF-310"],
+    "optionNames": ["processingMode", "detailLevel"],
+    "profile": "smoke",
+    "inputKind": "continuous-tone",
+    "degradationPatterns": ["continuous-tone"],
+    "options": {
+      "cellSamplingMode": "legacy-median",
+      "processingMode": "auto",
+      "detailLevel": "balanced",
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_continuous_tone.png",
+    "expected": "test/fixtures/quality_continuous_tone-convert-expect.png",
+    "assertions": [
+      "exact image",
+      "three convert candidates",
+      "balanced detail output size",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 24, "expectedHeight": 16 },
     "assets": [
       {
         "file": "test/fixtures/quality_continuous_tone.png",
@@ -1631,6 +2208,562 @@
         "redistributionAllowed": true,
         "commercialUseAllowed": true,
         "acquiredOrGeneratedAt": "2026-08-01"
+      },
+      {
+        "file": "test/fixtures/quality_continuous_tone-convert-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
+    "id": "convert-illustration-detailed",
+    "featureIds": ["PRF-310"],
+    "optionNames": [
+      "processingMode",
+      "detailLevel",
+      "colorCount",
+      "ditherStrength"
+    ],
+    "profile": "smoke",
+    "inputKind": "continuous-illustration",
+    "degradationPatterns": [],
+    "options": {
+      "processingMode": "convert",
+      "detailLevel": "detailed",
+      "colorCount": 40,
+      "ditherStrength": 10,
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "bgRemovalScope": "off",
+      "bgExtractionMethod": "none",
+      "trimToContent": false
+    },
+    "input": "test/fixtures/quality_convert_illustration.png",
+    "expected": "test/fixtures/quality_convert_illustration-expect.png",
+    "assertions": [
+      "exact image",
+      "three convert candidates",
+      "detailed output size",
+      "transparent edge handling",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 54, "expectedHeight": 36 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_convert_illustration.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_convert_illustration-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
+    "id": "remove-gradient-background-with-border-model",
+    "featureIds": ["PRF-200"],
+    "optionNames": ["bgExtractionMethod", "backgroundTolerance"],
+    "profile": "smoke",
+    "inputKind": "padded-pixel-art",
+    "degradationPatterns": ["background-gradient"],
+    "options": {
+      "enableGridDetection": false,
+      "preRemoveBackground": true,
+      "postRemoveBackground": false,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "auto",
+      "backgroundTolerance": 64
+    },
+    "input": "test/fixtures/quality_prf200_gradient_background.png",
+    "expected": "test/fixtures/quality_prf200_gradient_background-expect.png",
+    "assertions": [
+      "automatic border model selected",
+      "four-corner gradient transparency",
+      "subject retention",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 24, "expectedHeight": 24 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf200_gradient_background.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      },
+      {
+        "file": "test/fixtures/quality_prf200_gradient_background-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-03"
+      }
+    ]
+  },
+  {
+    "id": "share-balanced-palette-across-batch",
+    "featureIds": ["PRF-420"],
+    "optionNames": ["sharedPalette", "colorCount"],
+    "profile": "smoke",
+    "inputKind": "native-pixel-art",
+    "degradationPatterns": ["low-color-subject"],
+    "options": {
+      "processingMode": "preserve",
+      "enableGridDetection": false,
+      "bgExtractionMethod": "none",
+      "preRemoveBackground": false,
+      "postRemoveBackground": false,
+      "trimToContent": false
+    },
+    "sharedPalette": {
+      "inputs": ["test/fixtures/quality_prf420_shared_palette_companion.png"],
+      "colorCount": 4,
+      "ditherMode": "none",
+      "ditherStrength": 0
+    },
+    "input": "test/fixtures/quality_prf420_shared_palette_target.png",
+    "expected": "test/fixtures/quality_prf420_shared_palette_target-expect.png",
+    "assertions": [
+      "equal per-image palette contribution",
+      "small accent color retained",
+      "transparent colors excluded",
+      "exact image",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 16, "expectedHeight": 16 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf420_shared_palette_target.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf420_shared_palette_companion.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf420_shared_palette_target-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "retain-protected-small-details",
+    "featureIds": ["PRF-210"],
+    "optionNames": ["smallComponentMode"],
+    "profile": "smoke",
+    "inputKind": "native-pixel-art",
+    "degradationPatterns": ["disconnected-small-component"],
+    "options": {
+      "processingMode": "preserve",
+      "preRemoveBackground": false,
+      "postRemoveBackground": true,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "top-left",
+      "backgroundTolerance": 0,
+      "smallComponentMode": "auto"
+    },
+    "input": "test/fixtures/quality_prf210_protected_details.png",
+    "expected": "test/fixtures/quality_prf210_protected_details-expect.png",
+    "assertions": [
+      "exact image",
+      "paired eyes retained",
+      "dakuten retained",
+      "star and spark retained",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 16, "expectedHeight": 16 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf210_protected_details.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf210_protected_details-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "remove-isolated-small-noise",
+    "featureIds": ["PRF-210"],
+    "optionNames": ["smallComponentMode"],
+    "profile": "smoke",
+    "inputKind": "native-pixel-art",
+    "degradationPatterns": ["isolated-noise"],
+    "options": {
+      "processingMode": "preserve",
+      "preRemoveBackground": false,
+      "postRemoveBackground": true,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "top-left",
+      "backgroundTolerance": 0,
+      "smallComponentMode": "auto"
+    },
+    "input": "test/fixtures/quality_prf210_isolated_noise.png",
+    "expected": "test/fixtures/quality_prf210_isolated_noise-expect.png",
+    "assertions": [
+      "exact image",
+      "isolated weak noise removed",
+      "subject retained",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 16, "expectedHeight": 16 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf210_isolated_noise.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf210_isolated_noise-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "skip-small-removal-on-uncertain-background",
+    "featureIds": ["PRF-210"],
+    "optionNames": ["smallComponentMode", "bgExtractionMethod"],
+    "profile": "smoke",
+    "inputKind": "uncertain",
+    "degradationPatterns": ["low-background-confidence"],
+    "options": {
+      "processingMode": "preserve",
+      "preRemoveBackground": false,
+      "postRemoveBackground": true,
+      "trimToContent": false,
+      "bgRemovalScope": "outer",
+      "bgExtractionMethod": "auto",
+      "backgroundTolerance": 64,
+      "smallComponentMode": "strong"
+    },
+    "input": "test/fixtures/quality_prf210_uncertain_background.png",
+    "expected": "test/fixtures/quality_prf210_uncertain_background-expect.png",
+    "assertions": [
+      "exact image",
+      "low background confidence",
+      "small-component removal skipped",
+      "determinism"
+    ],
+    "expectation": { "exact": true, "expectedWidth": 20, "expectedHeight": 20 },
+    "assets": [
+      {
+        "file": "test/fixtures/quality_prf210_uncertain_background.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      },
+      {
+        "file": "test/fixtures/quality_prf210_uncertain_background-expect.png",
+        "sourceType": "generated-code",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-04"
+      }
+    ]
+  },
+  {
+    "id": "guide-recipe1-knight-sprite",
+    "featureIds": ["guide-recipes", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "presetId": "auto",
+    "options": {},
+    "input": "public/guide/recipe1-input-full.png",
+    "expected": "public/guide/recipe1-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 60,
+      "expectedHeight": 85
+    },
+    "assets": [
+      {
+        "file": "public/guide/recipe1-input-full.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art sprite of a knight character, full body, front view, standing pose,\n16-bit retro game style, chunky pixels, limited color palette, flat shading,\ncentered with margin around the character,\nfull frame edge-to-edge solid magenta background (#FF00FF), no drop shadow, no outer glow, no gradient",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe1-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "public/guide/recipe1-input-full.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
+  },
+  {
+    "id": "guide-recipe2-potion-icon",
+    "featureIds": ["guide-recipes", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "presetId": "transparent-icon",
+    "options": {},
+    "input": "public/guide/recipe2-input-full.png",
+    "expected": "public/guide/recipe2-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 16,
+      "expectedHeight": 23
+    },
+    "assets": [
+      {
+        "file": "public/guide/recipe2-input-full.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art of a red potion bottle, single centered object, low resolution,\nflat colors, limited palette, full frame edge-to-edge solid bright green background (#00FF00),\nchroma key background fills entire canvas, completely green from edge to edge,\nno borders, no margins, no frame, no white background, no shadow, no reflection",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe2-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "public/guide/recipe2-input-full.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
+  },
+  {
+    "id": "guide-recipe3-dragon-sprite",
+    "featureIds": ["guide-recipes", "palette-conversion", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "presetId": "retro-game",
+    "options": {},
+    "input": "public/guide/recipe3-input-full.png",
+    "expected": "public/guide/recipe3-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 44,
+      "expectedHeight": 47
+    },
+    "assets": [
+      {
+        "file": "public/guide/recipe3-input-full.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art sprite of a small dragon, Game Boy style, 4-color monochrome green palette,\nlow resolution, chunky pixels, full frame edge-to-edge solid red background (#FF0000)",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe3-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "public/guide/recipe3-input-full.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
+  },
+  {
+    "id": "guide-recipe4-landscape",
+    "featureIds": ["guide-recipes", "PRF-400"],
+    "profile": "full",
+    "inputKind": "soft-pixel-art",
+    "degradationPatterns": ["soft-cell-boundaries"],
+    "presetId": "background-art",
+    "options": {},
+    "input": "public/guide/recipe4-input-full.png",
+    "expected": "public/guide/recipe4-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 256,
+      "expectedHeight": 144
+    },
+    "assets": [
+      {
+        "file": "public/guide/recipe4-input-full.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Pixel art background illustration for an 8-bit retro JRPG, NES style, wide grassland with distant mountains under a clear morning sky, scenery only, no characters, no creatures, no objects, no buildings, no items, ultra low-res 64x64 pixel art scaled up, extremely chunky visible square pixels, simple composition, strict limited 8-color palette, strict retro pixel grid, sharp square edges, hard dithering, absolutely no anti-aliasing, no smooth gradients, no blur, no text, no UI, no frame",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe4-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "public/guide/recipe4-input-full.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      }
+    ]
+  },
+  {
+    "id": "guide-recipe5-chibi-character",
+    "featureIds": ["guide-recipes", "PRF-310", "PRF-400"],
+    "profile": "full",
+    "inputKind": "continuous-illustration",
+    "degradationPatterns": [],
+    "presetId": "illustration-to-pixel-art",
+    "options": {},
+    "input": "public/guide/recipe5-input-full.png",
+    "expected": "public/guide/recipe5-output.png",
+    "assertions": ["exact image", "output size", "determinism"],
+    "expectation": {
+      "exact": true,
+      "expectedWidth": 60,
+      "expectedHeight": 81
+    },
+    "assets": [
+      {
+        "file": "public/guide/recipe5-input-full.png",
+        "sourceType": "generated-ai",
+        "provider": "Google (Gemini)",
+        "prompt": "Cute chibi character illustration, cel shading, flat colors, thick outlines,\nfull frame edge-to-edge solid blue background, no gradients, no drop shadow",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
+      },
+      {
+        "file": "public/guide/recipe5-output.png",
+        "sourceType": "generated-code",
+        "sourceUrl": "public/guide/recipe5-input-full.png",
+        "author": "PixelRefiner contributors",
+        "license": "MIT",
+        "licenseUrl": "https://github.com/HappyOnigiri/PixelRefiner/blob/main/LICENSE",
+        "modificationAllowed": true,
+        "redistributionAllowed": true,
+        "commercialUseAllowed": true,
+        "acquiredOrGeneratedAt": "2026-08-15",
+        "termsCheckedAt": "2026-08-15"
       }
     ]
   }

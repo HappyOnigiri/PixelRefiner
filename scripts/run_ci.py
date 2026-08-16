@@ -4,16 +4,17 @@ import sys
 import concurrent.futures
 import time
 
-def run_task(name, command):
+def run_task(name, command, show_success_output=False):
     """
-    Execute the specified command and return success/failure and output.
-    :param name: Task name
-    :param command: Command to execute (list format)
-    :return: (is_success, name, output, duration)
+    指定したコマンドを実行し、成否と出力を返す。
+    :param name: タスク名
+    :param command: 実行するコマンド（リスト形式）
+    :param show_success_output: 成功時に取得した出力を表示するか
+    :return: (is_success, name, output, duration, show_success_output)
     """
     start_time = time.time()
     try:
-        # Capture output and execute
+        # 出力を取得しながら実行する
         result = subprocess.run(
             command,
             check=True,
@@ -22,17 +23,17 @@ def run_task(name, command):
             text=True
         )
         duration = time.time() - start_time
-        return True, name, result.stdout, duration
+        return True, name, result.stdout, duration, show_success_output
     except subprocess.CalledProcessError as e:
         duration = time.time() - start_time
-        return False, name, e.stdout, duration
+        return False, name, e.stdout, duration, show_success_output
 
 def execute_phase(phase_name, tasks):
     """
-    Execute a list of tasks in parallel.
-    :param phase_name: Phase name (for logging)
-    :param tasks: List of (name, command) tuples
-    :return: Whether successful (bool)
+    タスクのリストを並列実行する。
+    :param phase_name: フェーズ名（ログ用）
+    :param tasks: (name, command, show_success_output) タプルのリスト
+    :return: 成功したか（bool）
     """
     if phase_name:
         print(f"--- {phase_name} ---")
@@ -40,24 +41,26 @@ def execute_phase(phase_name, tasks):
     failed = False
     failure_details = []
 
-    # The number of parallel workers is automatically adjusted according to the number of tasks.
-    # ThreadPoolExecutor is sufficient since it's mostly I/O bound or lightweight wrappers.
+    # 並列ワーカー数はタスク数に合わせて自動調整する。
+    # 主に I/O 待ちや軽量なラッパー処理なので ThreadPoolExecutor で十分である。
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(tasks)) as executor:
         future_to_name = {
-            executor.submit(run_task, name, cmd): name
-            for name, cmd in tasks
+            executor.submit(run_task, name, cmd, show_output): name
+            for name, cmd, show_output in tasks
         }
 
         for future in concurrent.futures.as_completed(future_to_name):
-            success, name, output, duration = future.result()
+            success, name, output, duration, show_output = future.result()
             if success:
                 print(f"✅ {name} ({duration:.2f}s)")
+                if show_output and output.strip():
+                    print(output.rstrip())
             else:
                 print(f"❌ {name} ({duration:.2f}s)")
                 failed = True
                 failure_details.append((name, output))
 
-    # Display failure details
+    # 失敗の詳細を表示する
     if failed:
         print("\n=== FAILURE DETAILS ===")
         for name, output in failure_details:
@@ -69,31 +72,21 @@ def execute_phase(phase_name, tasks):
     return True
 
 def main():
-    # Phase 1: Fix (Fixing tasks)
-    # These may modify code, so run them before checks
-    fix_tasks = [
-        ("TS Fix", ["make", "ts-fix-diff"]),
-        ("HTML Fix", ["make", "html-fix-diff"]),
-    ]
-
-    # The fix phase is often empty, but display it explicitly for clarity.
-    if not execute_phase("Auto Fix Phase", fix_tasks):
-        print("Fix phase failed. Stopping.")
-        sys.exit(1)
-
-    # Phase 2: Check (Verification tasks)
-    # Perform checks on the fixed code
+    # [Policy] CI は読み取り専用とし、ファイルを変更する処理は make fix に分離する。
     check_tasks = [
-        ("TS Check", ["make", "ts-check-diff"]),
-        ("HTML Check", ["make", "html-check-diff"]),
-        ("Type Check", ["make", "type-check"]),
-        ("Custom Rules", ["make", "check-ts-rules"]),
-        ("TS Line Length", ["make", "check-ts-line-length"]),
-        ("Tests", ["make", "test"]),
+        ("TS Check", ["make", "ts-check-diff"], False),
+        ("HTML Check", ["make", "html-check-diff"], False),
+        ("Type Check", ["make", "type-check"], False),
+        ("Custom Rules", ["make", "check-ts-rules"], False),
+        ("Architecture Check", ["make", "check-architecture"], False),
+        ("TS Line Length", ["make", "check-ts-line-length"], False),
+        ("File Line Count", ["make", "check-file-line-count"], True),
+        ("Unit Tests", ["make", "test-unit"], False),
+        ("Production Build", ["make", "build"], False),
     ]
 
     if not execute_phase("Check Phase", check_tasks):
-        print("Check phase failed.")
+        print("Check phase failed. If formatting changes are needed, run 'make fix' and retry 'make ci'.")
         sys.exit(1)
 
     print("\n[DONE] All CI tasks passed!")
