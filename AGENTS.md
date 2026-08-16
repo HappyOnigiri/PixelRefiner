@@ -15,9 +15,11 @@
 
 ## Localization
 
-When adding or changing `data-i18n` or `data-i18n-attr` attributes in the app UI (`index.html` and `src/browser`), register their keys in the `ja`, `en`, and `zh-CN` resources in `src/browser/i18n.ts`.
+Keys for `data-i18n` and `data-i18n-attr` in the app UI (`index.html` and `src/browser`) live in `src/browser/i18n/messages/`, one module per group of related key prefixes (a module owns several prefixes, e.g. `ui.ts` holds `app.` / `section.` / `ui.` and more), with the three languages written together in a single entry per key. `src/browser/i18n/messages.test.ts` checks the prefix-to-module mapping, keys referenced from HTML but never defined, and keys that nothing references anymore. When you introduce a new key prefix, add it to `MODULE_OF_PREFIX` in that test as well, naming the module that owns it.
 
-The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in the `en`, `ja`, and `zh-CN` resources in `test/quality/report/translations.ts` instead. Do not add report-only keys to `src/browser/i18n.ts`.
+`guide.*` belongs to `messages/guide.ts` and is deliberately left out of `appMessages`, so the recipe copy stays out of the app bundle; `src/browser/guide.ts` registers it with `i18n.registerMessages()`.
+
+The quality report generated under `test/quality/report` is a standalone artifact with its own self-contained resource, so register the keys of its `data-i18n`, `data-i18n-alt`, and `data-i18n-placeholder` attributes in `test/quality/report/translations.ts` instead, writing the three languages together in a single entry per key as the app messages do. Do not add report-only keys to `src/browser/i18n/`. `test/quality/report/translations.test.ts` checks the same things for the report, but the report builds its markup in TypeScript, so keys it assembles at run time cannot be found by reading the source: when you add one, register where its value comes from in `GROUP_VALUES` (for `<group>.<value>` keys) or `DYNAMIC_FLAT_KEYS` (for flat keys) in that test, preferring a type or a constant the report already exports over a hand-written list.
 
 ## Guide Page
 

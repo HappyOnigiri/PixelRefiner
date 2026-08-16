@@ -10,9 +10,20 @@ from pathlib import Path
 WARNING_LINE_LIMIT = 600
 HARD_LINE_LIMIT = 1000
 
-# [Policy] 翻訳リソースはすべてのロケールをまとめて保持し、キーの追加と
-# 翻訳変更を同期した一単位としてレビューできるようにする。
-EXCLUDED_FILES = {Path("src/browser/i18n.ts")}
+# [Policy] 翻訳リソースはキーごとにすべてのロケールをまとめて保持し、キーの追加と
+# 翻訳変更を同期した一単位としてレビューできるようにする。行数はこの単位を
+# 分割する理由にならないので、メッセージ定義のディレクトリごと対象外にする。
+EXCLUDED_DIRECTORIES = {Path("src/browser/i18n/messages")}
+
+# [Policy] 品質レポートの訳文も同じ理由で対象外にする。同じディレクトリにある描画
+# コードは行数を抑える対象のままにしたいので、ファイル単位で指定する。
+EXCLUDED_FILES = {Path("test/quality/report/translations.ts")}
+
+
+def is_excluded(path: Path) -> bool:
+    if path in EXCLUDED_FILES:
+        return True
+    return any(directory in path.parents for directory in EXCLUDED_DIRECTORIES)
 
 
 @dataclass(frozen=True)
@@ -101,7 +112,7 @@ def find_typescript_files() -> list[Path]:
         ],
     )
     return sorted(
-        path for path in paths if path not in EXCLUDED_FILES and path.is_file()
+        path for path in paths if not is_excluded(path) and path.is_file()
     )
 
 

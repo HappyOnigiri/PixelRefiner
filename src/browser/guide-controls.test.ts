@@ -5,6 +5,10 @@ import {
 	setupPromptCopyButtons,
 } from "./guide-controls";
 import { i18n, type Language } from "./i18n";
+import { guideMessages } from "./i18n/messages/guide";
+
+// guide.html のエントリと同じく、レシピ集の文言を登録してから検証する
+i18n.registerMessages(guideMessages);
 
 type FakeElement = {
 	attributes: Map<string, string>;

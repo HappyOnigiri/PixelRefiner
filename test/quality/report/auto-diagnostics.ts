@@ -6,7 +6,7 @@ import type {
 import type { QualityCandidateOption, QualityCaseResult } from "../types";
 import { escapeHtml, formatConfidence, formatImageSize } from "./format";
 
-const CANDIDATE_SUGGESTION_DECISION_KEYS: Record<
+export const CANDIDATE_SUGGESTION_DECISION_KEYS: Record<
 	CandidateSuggestionDecision,
 	string
 > = {
@@ -15,7 +15,7 @@ const CANDIDATE_SUGGESTION_DECISION_KEYS: Record<
 	"not-applicable": "candidateSuggestionNotApplicable",
 };
 
-const WARNING_PRESENTATION_KEYS: Record<WarningPresentation, string> = {
+export const WARNING_PRESENTATION_KEYS: Record<WarningPresentation, string> = {
 	"candidate-list": "warningPresentationCandidateList",
 	indicator: "warningPresentationIndicator",
 	none: "warningPresentationNone",

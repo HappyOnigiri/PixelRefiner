@@ -2,6 +2,7 @@ import type { ProcessOptions } from "../core/processor";
 import { createDefaultProcessOptions } from "../core/processor-options";
 import { PROCESS_DEFAULTS } from "../shared/config";
 import type { CellScale, DetailLevel, ProcessingMode } from "../shared/types";
+import type { ResourceKey } from "./i18n";
 
 export type QuickReductionMode =
 	| "auto"
@@ -37,7 +38,9 @@ export type QuickSettingsState = {
 
 export type BuiltInPreset = {
 	id: string;
-	labelKey: string;
+	// [Intended] 訳文キーの型に縛る。string だと未登録キーやタイプミスが
+	// 型検査もテストも通り、画面にキー文字列がそのまま出る。
+	labelKey: ResourceKey;
 	quickSettings: QuickSettingsState;
 };
 
