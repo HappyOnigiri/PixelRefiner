@@ -81,14 +81,20 @@ const CELL_SCALES = fromType<CellScale>({
 	quadruple: true,
 });
 
-const DITHER_MODES = fromType<DitherMode>({
+/**
+ * [Intended] fromType は SelectSpec を返して型引数を落とすため、同じ型に別の
+ * withheld を付けるには値集合の側を使い回す必要がある。列挙を 1 か所に保つ。
+ */
+const DITHER_MODE_VALUES: Record<DitherMode, true> = {
 	none: true,
 	"floyd-steinberg": true,
 	"bayer-2x2": true,
 	"bayer-4x4": true,
 	"bayer-8x8": true,
 	ordered: true,
-});
+};
+
+const DITHER_MODES = fromType<DitherMode>(DITHER_MODE_VALUES);
 
 /**
  * 色削減モードの選択肢。レトロパレットの一覧に、パレットを使わない 3 択を足したもの。
@@ -108,17 +114,11 @@ const REDUCE_COLOR_MODES = fromValues([
  */
 const SELECT_SPECS: Record<string, SelectSpec> = {
 	// バッチ設定は共通パレット向けの簡易 UI なので、ベイヤーの各サイズは出さない
-	"batch-dither-mode": fromType<DitherMode>(
-		{
-			none: true,
-			"floyd-steinberg": true,
-			"bayer-2x2": true,
-			"bayer-4x4": true,
-			"bayer-8x8": true,
-			ordered: true,
-		},
-		["bayer-2x2", "bayer-4x4", "bayer-8x8"],
-	),
+	"batch-dither-mode": fromType<DitherMode>(DITHER_MODE_VALUES, [
+		"bayer-2x2",
+		"bayer-4x4",
+		"bayer-8x8",
+	]),
 	"quick-processing-mode": PROCESSING_MODES,
 	"quick-detail-level": DETAIL_LEVELS,
 	"quick-cell-scale": CELL_SCALES,
@@ -231,20 +231,20 @@ const SELECT_SPECS: Record<string, SelectSpec> = {
 type ExcludedSelect = {
 	/** 突き合わせ先を用意しない理由 */
 	reason: string;
-	/** index.html に静的な option を持つか。宣言が実態とずれたら落とす */
-	hasStaticOptions: boolean;
 };
 
 /**
  * option 値を突き合わせない select と、その理由。
  * [Policy] 検証対象から外すときは必ずここへ理由付きで書く。未対応のまま素通りしている
  * select と区別できなくなるため、「一覧に載っていない select」は常にテストで落とす。
+ * [Intended] 除外できるのは index.html に静的な option を持たない select だけ。
+ * 静的 option があるなら値を突き合わせられるはずなので、理由を書けば検証を丸ごと
+ * 外せる、という抜け道を作らないようテスト側で 0 件であることを確かめる。
  */
 const EXCLUDED_SELECTS: Record<string, ExcludedSelect> = {
 	"built-in-preset": {
 		reason:
 			"index.html は空の select だけを置き、preset-controls.ts が BUILT_IN_PRESETS から option を生成する",
-		hasStaticOptions: false,
 	},
 };
 
@@ -255,6 +255,11 @@ type HtmlSelect = {
 	optionValues: string[];
 };
 
+/**
+ * [Intended] 属性名の手前は `\b` ではなく空白かタグ先頭で区切る。`\b` は
+ * `data-legacy-id` や `data-value` のハイフンの直後でも境界として成立するため、
+ * 別の属性の値を id や value として拾ってしまう。
+ */
 const collectSelects = (source: string): HtmlSelect[] => {
 	const selects: HtmlSelect[] = [];
 	for (const [, attributes, body] of source.matchAll(
@@ -263,12 +268,12 @@ const collectSelects = (source: string): HtmlSelect[] => {
 		const values: string[] = [];
 		let optionsWithoutValue = 0;
 		for (const [tag] of body.matchAll(/<option\b[^>]*>/g)) {
-			const value = /\bvalue="([^"]*)"/.exec(tag)?.[1];
+			const value = /(?:^|\s)value="([^"]*)"/.exec(tag)?.[1];
 			if (value === undefined) optionsWithoutValue += 1;
 			else values.push(value);
 		}
 		selects.push({
-			id: /\bid="([^"]*)"/.exec(attributes)?.[1] ?? "",
+			id: /(?:^|\s)id="([^"]*)"/.exec(attributes)?.[1] ?? "",
 			optionsWithoutValue,
 			optionValues: values,
 		});
@@ -333,14 +338,12 @@ describe("index.html の select", () => {
 		}
 	});
 
-	it("除外した select の宣言が実態と合っている", () => {
+	it("除外した select が静的な option を持たない", () => {
 		for (const select of selects) {
 			const excluded = EXCLUDED_SELECTS[select.id];
 			if (!excluded) continue;
 			expect(excluded.reason, select.id).not.toBe("");
-			expect(select.optionValues.length > 0, select.id).toBe(
-				excluded.hasStaticOptions,
-			);
+			expect(select.optionValues.length, select.id).toBe(0);
 		}
 	});
 });

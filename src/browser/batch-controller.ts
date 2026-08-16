@@ -88,7 +88,9 @@ export const setupBatchController = ({
 
 		els.downloadAllButton.disabled = true;
 		els.downloadAllDropdownButton.disabled = true;
-		loadingOverlay.showProgress(0, images.length);
+		// [Intended] 枚数は添えない。processBatch は途中経過を通知しないため、
+		// 添えても開始時と完了時の 2 値しか動かず、進捗として意味をなさない。
+		loadingOverlay.show();
 
 		try {
 			const processingTokens = new Map<string, number>();
@@ -143,7 +145,8 @@ export const setupBatchController = ({
 			processingCompleted = true;
 			const activeId = imageSession.getActiveImage()?.id;
 			if (activeId) imageSession.setActiveImage(activeId);
-			loadingOverlay.showProgress(images.length, images.length);
+			// [Intended] 表示の更新が同じオーバーレイを閉じるため、ZIP を作る間は開き直す。
+			loadingOverlay.show();
 
 			// [Intended] 処理開始後に追加・個別処理された画像を混ぜず、
 			// 開始時の入力と今回の Worker 結果だけで ZIP を構成する。
