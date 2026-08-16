@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 
@@ -122,6 +122,20 @@ export const resolveHtmlIncludes = (
 export const readHtmlWithIncludes = (root: string, entry: string): string =>
 	resolveHtmlIncludes(readFileSync(resolve(root, entry), "utf8"), { root });
 
+/** パーシャルディレクトリ配下の HTML を、絶対パスで列挙する */
+const listPartialFiles = (directory: string): string[] => {
+	let names: string[];
+	try {
+		names = readdirSync(directory, { recursive: true, encoding: "utf8" });
+	} catch {
+		// [Intended] パーシャルが 1 つも無い構成でもビルドは成立させる
+		return [];
+	}
+	return names
+		.filter((name) => name.endsWith(".html"))
+		.map((name) => resolve(directory, name));
+};
+
 /**
  * パーシャル取り込みを行う Vite プラグイン。
  * [Intended] `order: "pre"` にして、Vite が script や asset の URL を解決する前に
@@ -134,6 +148,17 @@ export const htmlIncludes = (): Plugin => {
 		name: "pixel-refiner:html-includes",
 		configResolved(config) {
 			root = config.root;
+		},
+		buildStart() {
+			// [Intended] パーシャルはモジュールグラフに載らないので、監視対象へ明示的に
+			// 登録しないと `vite build --watch` がパーシャルだけの変更を拾わず、出力が
+			// 古いまま残る。取り込み済みの分だけでなくディレクトリ配下すべてを登録して、
+			// 新しいパーシャルを足した場合も拾えるようにする。
+			for (const path of listPartialFiles(
+				resolve(root, HTML_PARTIALS_DIRECTORY),
+			)) {
+				this.addWatchFile(path);
+			}
 		},
 		transformIndexHtml: {
 			order: "pre",
