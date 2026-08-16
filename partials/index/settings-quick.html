@@ -1,0 +1,193 @@
+<div
+  id="quick-settings-panel"
+  class="settings-tab-panel"
+  role="tabpanel"
+  aria-labelledby="settings-tab-quick"
+  hidden
+>
+  <div class="settings-group primary-settings-group">
+    <h3 class="settings-group-title" data-i18n="setting.quick">
+      Quick Settings
+    </h3>
+    <div class="quick-settings-grid">
+      <label class="setting-item">
+        <span class="label-text">
+          <span data-i18n="setting.quick_finish">Finish</span>
+          <span
+            class="help"
+            data-i18n-attr="data-tooltip:tooltip.help.quick_processing_mode"
+            data-tooltip="Chooses the intended finish. Best Match selects a suitable result automatically. Crisp Edges removes blur, Detailed Pixel Art keeps gradients and thin lines, and Original Size Cleanup avoids downscaling."
+            >?</span
+          >
+        </span>
+        <select id="quick-processing-mode">
+          <option value="auto" data-i18n="option.quick_processing_auto">
+            Best Match
+          </option>
+          <option value="refine" data-i18n="option.quick_processing_refine">
+            Crisp Edges
+          </option>
+          <option value="convert" data-i18n="option.quick_processing_convert">
+            Detailed Pixel Art
+          </option>
+          <option value="preserve" data-i18n="option.quick_processing_preserve">
+            Original Size Cleanup
+          </option>
+        </select>
+      </label>
+      <label class="setting-item">
+        <span class="label-text">
+          <span data-i18n="setting.quick_pixel_detail">Pixel Detail</span>
+          <span
+            class="help"
+            data-i18n-attr="data-tooltip:tooltip.help.quick_detail"
+            data-tooltip="Chooses how coarse or fine the pixels look for Detailed Pixel Art. Coarser settings produce a smaller output with larger-looking pixels. Fine never upscales beyond the original image. In Best Match, this applies only when Detailed Pixel Art is selected automatically."
+            >?</span
+          >
+        </span>
+        <select id="quick-detail-level">
+          <option value="smallest" data-i18n="option.size_very_small">
+            Very coarse
+          </option>
+          <option value="small" data-i18n="option.size_small">Coarse</option>
+          <option value="coarse" data-i18n="option.size_slightly_small">
+            Slightly coarse
+          </option>
+          <option value="balanced" data-i18n="option.size_standard">
+            Balanced
+          </option>
+          <option value="detailed" data-i18n="option.size_large">Fine</option>
+        </select>
+      </label>
+      <label class="setting-item">
+        <span class="label-text">
+          <span data-i18n="setting.quick_cell_scale">Pixel Size</span>
+          <span
+            class="help"
+            data-i18n-attr="data-tooltip:tooltip.help.quick_cell_scale"
+            data-tooltip="Chooses the size of the pixels restored by Crisp Edges, in five steps relative to the detected pixel size (1/4x to 4x). When grid detection misses and the result looks too coarse or too fine, pick another step to restore it again. In Best Match, this applies only when Crisp Edges is selected automatically."
+            >?</span
+          >
+        </span>
+        <select id="quick-cell-scale">
+          <option value="quarter" data-i18n="option.cell_scale_quarter">
+            Very small
+          </option>
+          <option value="half" data-i18n="option.cell_scale_half">Small</option>
+          <option value="same" data-i18n="option.cell_scale_same" selected>
+            Standard
+          </option>
+          <option value="double" data-i18n="option.cell_scale_double">
+            Large
+          </option>
+          <option value="quadruple" data-i18n="option.cell_scale_quadruple">
+            Very large
+          </option>
+        </select>
+      </label>
+      <label class="setting-item">
+        <span class="label-text">
+          <span data-i18n="setting.quick_colors">Color Reduction</span>
+          <span
+            class="help"
+            data-i18n-attr="data-tooltip:tooltip.help.quick_reduction_mode"
+            data-tooltip="Chooses color reduction. Best Match keeps original colors for Crisp Edges and Original Size Cleanup, and selects 24 colors for Detailed Pixel Art. Custom color counts and imported palettes are available in Advanced Settings."
+            >?</span
+          >
+        </span>
+        <select id="quick-reduction-mode">
+          <option value="auto" data-i18n="option.quick_colors_auto">
+            Best Match
+          </option>
+          <option value="none" data-i18n="option.quick_colors_original">
+            Keep original colors
+          </option>
+          <option value="8" data-i18n="option.colors_8">8 colors</option>
+          <option value="16" data-i18n="option.colors_16">16 colors</option>
+          <option value="24" data-i18n="option.colors_24">24 colors</option>
+          <option value="32" data-i18n="option.colors_32">32 colors</option>
+          <option value="mono" data-i18n="option.mono">Monochrome</option>
+          <option value="gb_legacy" data-i18n="option.gb_legacy">
+            Game Boy (Original)
+          </option>
+          <option value="gb_pocket" data-i18n="option.gb_pocket">
+            Game Boy (Pocket)
+          </option>
+          <option value="gb_light" data-i18n="option.gb_light">
+            Game Boy (Light)
+          </option>
+          <option value="pico8" data-i18n="option.pico8">PICO-8</option>
+          <option value="nes" data-i18n="option.nes">NES</option>
+          <option value="pc98" data-i18n="option.pc98">PC-9801</option>
+          <option value="msx" data-i18n="option.msx">MSX1</option>
+          <option value="c64" data-i18n="option.c64">Commodore 64</option>
+          <option value="arne16" data-i18n="option.arne16">Arne 16</option>
+          <option value="sfc_sprite" data-i18n="option.sfc_sprite">
+            SFC Style (16 colors/Sprite)
+          </option>
+          <option value="sfc_bg" data-i18n="option.sfc_bg">
+            SFC Style (256 colors/BG)
+          </option>
+        </select>
+      </label>
+      <label class="setting-item">
+        <span class="label-text">
+          <span data-i18n="setting.quick_background">Background</span>
+          <span
+            class="help"
+            data-i18n-attr="data-tooltip:tooltip.help.quick_background"
+            data-tooltip="Chooses whether to keep the background, remove it automatically, or remove a selected color. Keeping the background preserves the full canvas; removing it also trims transparent margins."
+            >?</span
+          >
+        </span>
+        <select id="quick-background">
+          <option value="keep" data-i18n="option.background_keep">
+            Keep background
+          </option>
+          <option value="auto" data-i18n="option.background_auto">
+            Remove automatically
+          </option>
+          <option value="pick" data-i18n="option.background_pick">
+            Remove selected color
+          </option>
+        </select>
+        <div id="quick-background-picker" class="quick-background-picker">
+          <input
+            id="quick-background-color"
+            type="color"
+            value="#ffffff"
+            data-i18n-attr="aria-label:attr.aria.background_color"
+          />
+          <button
+            type="button"
+            id="quick-eyedropper-button"
+            class="action-button small-button outline-button"
+            data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
+          >
+            ◉
+          </button>
+        </div>
+      </label>
+      <label class="setting-item">
+        <span class="label-text">
+          <span data-i18n="setting.quick_gradient">Gradient Texture</span>
+          <span
+            class="help"
+            data-i18n-attr="data-tooltip:tooltip.help.quick_dithering"
+            data-tooltip="Adds a pixel pattern during color reduction to preserve gradients. Stronger settings retain more tonal variation but make the texture more visible."
+            >?</span
+          >
+        </span>
+        <select id="quick-dithering">
+          <option value="off" data-i18n="option.dithering_off">None</option>
+          <option value="subtle" data-i18n="option.dithering_subtle">
+            Subtle
+          </option>
+          <option value="strong" data-i18n="option.dithering_strong">
+            Strong
+          </option>
+        </select>
+      </label>
+    </div>
+  </div>
+</div>

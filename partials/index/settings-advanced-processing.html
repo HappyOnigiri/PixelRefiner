@@ -1,0 +1,99 @@
+<div class="settings-group">
+  <h3 class="settings-group-title" data-i18n="setting.processing">
+    Processing
+  </h3>
+  <div class="grid-settings">
+    <label id="advanced-processing-mode-setting" class="setting-item">
+      <span class="label-text" data-i18n="setting.processing_mode">Finish</span>
+      <select
+        id="advanced-processing-mode"
+        aria-describedby="advanced-processing-mode-notice"
+      >
+        <option value="auto" data-i18n="option.processing_auto">
+          Best Match
+        </option>
+        <option value="refine" data-i18n="option.processing_refine">
+          Crisp Edges
+        </option>
+        <option value="convert" data-i18n="option.processing_convert">
+          Detailed Pixel Art
+        </option>
+        <option value="preserve" data-i18n="option.processing_preserve">
+          Original Size Cleanup
+        </option>
+      </select>
+    </label>
+    <p
+      id="advanced-processing-mode-notice"
+      class="processing-mode-notice"
+      role="status"
+      data-i18n="notice.processing_mode_forced_size"
+      hidden
+    >
+      Pixel Only takes priority, so Finish is not used.
+    </p>
+    <label id="advanced-convert-size-mode-setting" class="setting-item" hidden>
+      <span class="label-text">
+        <span data-i18n="setting.convert_output_size">Pixel Detail</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.convert_output_size"
+          data-tooltip="Choose one of five detail levels, or specify the Convert resampling width, height, or both. When only one dimension is specified, the other follows the image aspect ratio."
+          >?</span
+        >
+      </span>
+      <select id="advanced-convert-size-mode">
+        <option value="smallest" data-i18n="option.size_very_small">
+          Very coarse
+        </option>
+        <option value="small" data-i18n="option.size_small">Coarse</option>
+        <option value="coarse" data-i18n="option.size_slightly_small">
+          Slightly coarse
+        </option>
+        <option value="balanced" data-i18n="option.size_standard">
+          Balanced
+        </option>
+        <option value="detailed" data-i18n="option.size_large">Fine</option>
+        <option value="custom-width" data-i18n="option.size_custom_width">
+          Specify width
+        </option>
+        <option value="custom-height" data-i18n="option.size_custom_height">
+          Specify height
+        </option>
+        <option value="custom-both" data-i18n="option.size_custom_both">
+          Specify width and height
+        </option>
+      </select>
+    </label>
+    <label id="advanced-convert-width-setting" class="setting-item" hidden>
+      <span class="label-text">
+        <span data-i18n="setting.convert_output_width">Output Width</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.convert_output_dimension"
+          data-tooltip="Sets the resampling width used by Convert. Trimming, outlines, and padding can change the final canvas size."
+          >?</span
+        >
+      </span>
+      <div class="input-unit-wrapper">
+        <input id="advanced-convert-width" type="number" required />
+        <span class="unit-text">px</span>
+      </div>
+    </label>
+    <label id="advanced-convert-height-setting" class="setting-item" hidden>
+      <span class="label-text">
+        <span data-i18n="setting.convert_output_height">Output Height</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.convert_output_dimension"
+          data-tooltip="Sets the resampling height used by Convert. Trimming, outlines, and padding can change the final canvas size."
+          >?</span
+        >
+      </span>
+      <div class="input-unit-wrapper">
+        <input id="advanced-convert-height" type="number" required />
+        <span class="unit-text">px</span>
+      </div>
+    </label>
+  </div>
+</div>

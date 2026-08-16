@@ -1,0 +1,342 @@
+<div class="settings-group">
+  <h3 class="settings-group-title" data-i18n="setting.bg_removal">
+    Background Removal
+  </h3>
+  <div class="grid-settings">
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.bg_method">Extraction Method</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.bg_method"
+          data-tooltip="Select where to extract the background color from. When background transparency is enabled, transparent margins are also trimmed automatically; None preserves the full canvas.&#10;&#10;Auto: Estimates the background from the full image border.&#10;Corners: Uses the pixel at the specified corner as the background color.&#10;RGB: Uses the specified color as the background color."
+          >?</span
+        >
+      </span>
+      <select id="bg-extraction-method">
+        <option value="none" data-i18n="option.bg_none">None</option>
+        <option value="auto" data-i18n="option.bg_auto" selected>
+          Auto (Default)
+        </option>
+        <option value="top-left" data-i18n="option.bg_top_left">
+          Top-Left
+        </option>
+        <option value="bottom-left" data-i18n="option.bg_bottom_left">
+          Bottom-Left
+        </option>
+        <option value="top-right" data-i18n="option.bg_top_right">
+          Top-Right
+        </option>
+        <option value="bottom-right" data-i18n="option.bg_bottom_right">
+          Bottom-Right
+        </option>
+        <option value="rgb" data-i18n="option.bg_rgb">RGB Specification</option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.bg_removal_scope"
+          >Background Removal Scope</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.bg_removal_scope"
+          data-tooltip="Range of background to make transparent."
+          >?</span
+        >
+      </span>
+      <select id="advanced-bg-removal-scope">
+        <option value="auto" data-i18n="option.bg_scope_auto">Auto</option>
+        <option value="selected" data-i18n="option.bg_scope_selected">
+          Selected only
+        </option>
+        <option value="outer" data-i18n="option.bg_scope_outer">
+          Outer all
+        </option>
+        <option value="all" data-i18n="option.bg_scope_all">All</option>
+      </select>
+    </label>
+
+    <div id="rgb-picker-container" class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.bg_rgb">Background Color (RGB)</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.bg_rgb"
+          data-tooltip="Specify the color to be treated as the background in hex format (e.g., #ffffff).&#10;When a corner is specified, the color is automatically set. You can also pick a color from the image using the eyedropper button."
+          >?</span
+        >
+      </span>
+      <div class="rgb-input-group">
+        <input id="bg-rgb-input" type="text" placeholder="#ffffff" />
+        <input
+          id="bg-color-input"
+          type="color"
+          style="
+            width: 40px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            background: none;
+          "
+        />
+        <button
+          id="eyedropper-button"
+          type="button"
+          class="icon-button"
+          data-i18n-attr="title:attr.title.eyedropper,aria-label:attr.title.eyedropper"
+          title="Pick color from image"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m2 22 1-1h3l9-9"></path>
+            <path d="M3 21v-3l9-9"></path>
+            <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l-3-3Z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.bg_tolerance">Color Tolerance</span>
+        <span
+          id="help-tolerance"
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.bg_tolerance"
+          data-tooltip="The similarity (error range) for determining the background color.&#10;&#10;High: Can remove background even if colors are slightly distorted by compression noise, but may also remove intended colors.&#10;Low: Strictly removes only the exact background color, but noise may remain.&#10;&#10;Range: {min} to {max} (Default: {default})"
+          >?</span
+        >
+      </span>
+      <div class="input-with-slider">
+        <input id="tolerance-slider" type="range" />
+        <input id="tolerance" type="number" />
+      </div>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.pre_remove">Pre-process Transparency</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.pre_remove"
+          data-tooltip="Ignores the background color BEFORE performing grid detection.&#10;&#10;Benefit: Makes it easier to correctly detect the grid for the main subject even in images with large margins.&#10;Note: If the background color exists within the character, detection accuracy may decrease."
+          >?</span
+        >
+      </span>
+      <input id="pre-remove" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.post_remove">Post-process Transparency</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.post_remove"
+          data-tooltip="Replaces the background color with transparency AFTER processing is complete.&#10;&#10;Benefit: Allows saving as a PNG with a transparent background.&#10;Note: Does not affect the grid detection process itself."
+          >?</span
+        >
+      </span>
+      <input id="post-remove" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.bg_connectivity">Connectivity</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.bg_connectivity"
+          data-tooltip="Whether diagonal neighbors are considered connected.&#10;&#10;4-way: Strict (no diagonals).&#10;8-way: Includes diagonals."
+          >?</span
+        >
+      </span>
+      <select id="bg-connectivity">
+        <option value="4" data-i18n="option.bg_connectivity_4" selected>
+          4-way
+        </option>
+        <option value="8" data-i18n="option.bg_connectivity_8">8-way</option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.gemini_watermark_removal"
+          >Gemini Watermark Removal</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.gemini_watermark_removal"
+          data-tooltip="Automatically removes a Gemini watermark only when background transparency leaves it as an isolated bright diamond in the bottom-right corner. Marks touching the subject are kept."
+          >?</span
+        >
+      </span>
+      <select id="gemini-watermark-removal">
+        <option value="auto" data-i18n="option.gemini_watermark_auto" selected>
+          Auto
+        </option>
+        <option value="off" data-i18n="option.gemini_watermark_off">Off</option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.small_component_mode"
+          >Small Detail Cleanup</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.small_component_mode"
+          data-tooltip="Removes isolated noise using the restored logical pixel grid while protecting repeated, symmetric, nearby, outlined, and high-confidence details."
+          >?</span
+        >
+      </span>
+      <select id="small-component-mode">
+        <option value="off" data-i18n="option.small_component_off">Off</option>
+        <option value="light" data-i18n="option.small_component_light">
+          Light (Keep Details)
+        </option>
+        <option value="auto" data-i18n="option.small_component_auto" selected>
+          Auto
+        </option>
+        <option value="strong" data-i18n="option.small_component_strong">
+          Strong
+        </option>
+      </select>
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.background_dehalo">Reduce Edge Halo</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.background_dehalo"
+          data-tooltip="Pushes anti-aliased edge pixels away from the background colour after removal."
+          >?</span
+        >
+      </span>
+      <input id="background-dehalo" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.background_edge_cleanup"
+          >Clean Contaminated Edges</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.background_edge_cleanup"
+          data-tooltip="Replaces edge pixels that still carry the background colour after downscaling with their original colour."
+          >?</span
+        >
+      </span>
+      <input id="background-edge-cleanup" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.background_ramp_follow"
+          >Follow Gradient Background</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.background_ramp_follow"
+          data-tooltip="Follows a smooth gradient background as a chain of small steps instead of an absolute colour difference."
+          >?</span
+        >
+      </span>
+      <input id="background-ramp-follow" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.background_removal_rollback"
+          >Roll Back Over-removal</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.background_removal_rollback"
+          data-tooltip="Discards the whole background removal when it would erase almost all of the visible pixels."
+          >?</span
+        >
+      </span>
+      <input id="background-removal-rollback" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.alpha_border_background_guard"
+          >Trust Existing Transparency</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.alpha_border_background_guard"
+          data-tooltip="Skips colour-cluster estimation when most of the border band is already transparent."
+          >?</span
+        >
+      </span>
+      <input id="alpha-border-background-guard" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.background_confidence_gate"
+          >Require Confident Background</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.background_confidence_gate"
+          data-tooltip="Skips background removal when the estimated background model is not confident enough."
+          >?</span
+        >
+      </span>
+      <input id="background-confidence-gate" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.small_component_background_gate"
+          >Gate Cleanup On Background</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.small_component_background_gate"
+          data-tooltip="Skips small-detail cleanup when the estimated background model is not confident enough."
+          >?</span
+        >
+      </span>
+      <input id="small-component-background-gate" type="checkbox" />
+    </label>
+
+    <label class="setting-item">
+      <span class="label-text">
+        <span data-i18n="setting.watermark_sampling_compat"
+          >Watermark Sampling Fallback</span
+        >
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.watermark_sampling_compat"
+          data-tooltip="Switches to the compatible median sampler once a watermark has been removed, which prevents the last row from being dropped."
+          >?</span
+        >
+      </span>
+      <select id="watermark-sampling-compat">
+        <option value="on" data-i18n="option.auto_behavior_on">
+          Always On
+        </option>
+        <option value="off" data-i18n="option.auto_behavior_off">
+          Always Off
+        </option>
+      </select>
+    </label>
+  </div>
+</div>

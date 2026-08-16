@@ -1,0 +1,90 @@
+<div class="quick-settings">
+  <div
+    class="settings-tabs"
+    role="tablist"
+    data-i18n-attr="aria-label:setting.mode"
+    aria-label="Settings mode"
+  >
+    <button
+      id="settings-tab-preset"
+      class="settings-tab is-active"
+      type="button"
+      role="tab"
+      aria-selected="true"
+      aria-controls="preset-settings-panel"
+      data-settings-mode="preset"
+      data-i18n="setting.preset"
+    >
+      Preset
+    </button>
+    <button
+      id="settings-tab-quick"
+      class="settings-tab"
+      type="button"
+      role="tab"
+      aria-selected="false"
+      aria-controls="quick-settings-panel"
+      tabindex="-1"
+      data-settings-mode="quick"
+      data-i18n="setting.quick"
+    >
+      Quick Settings
+    </button>
+    <button
+      id="settings-tab-advanced"
+      class="settings-tab"
+      type="button"
+      role="tab"
+      aria-selected="false"
+      aria-controls="advanced-settings-panel"
+      tabindex="-1"
+      data-settings-mode="advanced"
+      data-i18n="setting.advanced"
+    >
+      Advanced Settings
+    </button>
+  </div>
+
+  <div
+    id="preset-settings-panel"
+    class="settings-tab-panel"
+    role="tabpanel"
+    aria-labelledby="settings-tab-preset"
+  >
+    <div class="settings-group primary-settings-group">
+      <div class="quick-settings-grid">
+        <label class="setting-item quick-preset-setting">
+          <span class="label-text">
+            <span data-i18n="setting.preset">Preset</span>
+            <span
+              class="help"
+              data-i18n-attr="data-tooltip:tooltip.help.quick_preset"
+              data-tooltip="Selects a coordinated set of settings for a purpose. Only values in the preset affect processing."
+              >?</span
+            >
+          </span>
+          <select id="built-in-preset"></select>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- @include partials/index/settings-quick.html -->
+
+  <!-- @include partials/index/settings-advanced.html -->
+
+  <div class="settings-common-controls">
+    <label class="setting-item full-width">
+      <span class="label-text">
+        <span data-i18n="setting.auto_process">Auto Process</span>
+        <span
+          class="help"
+          data-i18n-attr="data-tooltip:tooltip.help.auto_process"
+          data-tooltip="Automatically runs processing when settings are changed.&#10;&#10;Turn OFF if you prefer to manually click the Process button."
+          >?</span
+        >
+      </span>
+      <input id="auto-process-toggle" type="checkbox" checked />
+    </label>
+  </div>
+</div>

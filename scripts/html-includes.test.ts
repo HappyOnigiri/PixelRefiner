@@ -1,8 +1,17 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { resolveHtmlIncludes } from "./html-includes";
+import { HTML_PARTIALS_DIRECTORY, resolveHtmlIncludes } from "./html-includes";
+
+const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../..");
 
 /** 取り込み対象を書いた一時的なプロジェクトルートを作る */
 const createRoot = (files: Record<string, string>): string => {
@@ -97,5 +106,24 @@ describe("resolveHtmlIncludes", () => {
 		expect(() =>
 			resolveHtmlIncludes("<!-- @include partials/a.html -->\n", { root }),
 		).toThrow(/循環参照/);
+	});
+});
+
+describe("エントリ HTML のパーシャル", () => {
+	it("すべてどれかのエントリから取り込まれている", () => {
+		// 取り込み忘れのパーシャルは、編集しても画面に出ないまま気づけない
+		const included = new Set<string>();
+		for (const entry of ["index.html", "guide.html"]) {
+			resolveHtmlIncludes(readFileSync(join(REPO_ROOT, entry), "utf8"), {
+				root: REPO_ROOT,
+				onInclude: (path) => included.add(path),
+			});
+		}
+		const directory = join(REPO_ROOT, HTML_PARTIALS_DIRECTORY);
+		const files = readdirSync(directory, { recursive: true, encoding: "utf8" })
+			.filter((name) => name.endsWith(".html"))
+			.map((name) => join(directory, name));
+		expect(files.filter((path) => !included.has(path))).toEqual([]);
+		expect(files.length).toBeGreaterThan(0);
 	});
 });

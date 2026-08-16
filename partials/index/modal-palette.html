@@ -1,0 +1,55 @@
+<!-- パレットモーダル -->
+<div
+  id="palette-modal"
+  class="modal-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="palette-modal-title"
+  tabindex="-1"
+  style="display: none"
+>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="palette-modal-title" data-i18n="section.palette">Palette</h3>
+      <button
+        id="close-palette-modal"
+        class="close-button"
+        data-i18n-attr="aria-label:ui.close"
+      >
+        &times;
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div id="palette-colors" class="palette-colors"></div>
+
+      <!-- パレットのインポート用に隠したファイル入力 -->
+      <input
+        id="palette-file-input"
+        type="file"
+        accept=".gpl,image/*"
+        style="display: none"
+      />
+    </div>
+    <div class="modal-footer">
+      <div class="palette-actions">
+        <button
+          id="export-gpl-button"
+          type="button"
+          class="action-button small-button"
+          data-i18n="ui.export_gpl"
+        >
+          Export .GPL
+        </button>
+        <button
+          id="export-png-button"
+          type="button"
+          class="action-button small-button"
+          data-i18n="ui.export_png"
+        >
+          Export .PNG
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

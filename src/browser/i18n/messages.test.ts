@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { readHtmlWithIncludes } from "../../../scripts/html-includes";
 import type {
 	CandidateKind,
 	CellScale,
@@ -36,7 +37,9 @@ const collectHtmlKeys = (html: string): string[] => {
 	return keys;
 };
 
-const readHtml = (name: string) => readFileSync(join(REPO_ROOT, name), "utf8");
+// [Intended] index.html は partials/ へ分割されているので、ビルドと同じ取り込みを
+// 済ませてから走査する。パーシャル側のキーを取りこぼさないため。
+const readHtml = (name: string) => readHtmlWithIncludes(REPO_ROOT, name);
 
 // メッセージ定義とテストを除く全 TS ソースを、キーの参照検索用に連結する
 const collectSourceText = (): string => {

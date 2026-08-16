@@ -13,6 +13,12 @@
 - 「かんたん設定」は「詳細設定」の組み合わせだけで再現できるようにする。
 - 再現先に同名の「おまかせ」は不要。自動選択で確定した具体的な選択肢や値を手動指定して同じ結果を得られれば、再現可能とみなす。
 
+## HTML Partials
+
+`index.html` and `guide.html` hold only the page skeleton. Their sections live in `partials/index/` and `partials/guide/`, pulled in by `<!-- @include partials/<entry>/<name>.html -->`, which `scripts/html-includes.ts` resolves both in the Vite build and in tests. Edit the partial that owns a section rather than the entry file, and name a new partial after the section it holds — one settings group, one modal, one page section per file. Write partials with no leading indentation; the include re-indents them, leaving the contents of `<pre>` and `<textarea>` untouched. The include directive must occupy a whole line, or resolution fails instead of silently dropping the section.
+
+Anything reading these pages as a single document — the i18n key check, the ResultViewer hook check, the select option check — must call `readHtmlWithIncludes()` from that module, not `readFileSync()`. HTML counts toward the same file-line limits as TypeScript, so keep partials small enough that a section stays readable on its own.
+
 ## Localization
 
 Keys for `data-i18n` and `data-i18n-attr` in the app UI (`index.html` and `src/browser`) live in `src/browser/i18n/messages/`, one module per group of related key prefixes (a module owns several prefixes, e.g. `ui.ts` holds `app.` / `section.` / `ui.` and more), with the three languages written together in a single entry per key. `src/browser/i18n/messages.test.ts` checks the prefix-to-module mapping, keys referenced from HTML but never defined, and keys that nothing references anymore. When you introduce a new key prefix, add it to `MODULE_OF_PREFIX` in that test as well, naming the module that owns it.

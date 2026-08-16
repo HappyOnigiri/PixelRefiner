@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { readHtmlWithIncludes } from "../../scripts/html-includes";
 import { ResultViewer } from "./result-viewer";
 
 const HERE = resolve(fileURLToPath(import.meta.url), "..");
@@ -113,9 +114,10 @@ describe("ResultViewer のクラスフック", () => {
 	 * 片方だけにフックを足しても型検査もテストも落ちないため、ここで機械的に縛る。
 	 */
 	const source = readFileSync(join(HERE, "result-viewer.ts"), "utf8");
-	const html = stripComments(
-		readFileSync(join(REPO_ROOT, "index.html"), "utf8"),
-	);
+	// [Intended] index.html は partials/ へ分割されているので、ビルドと同じ取り込みを
+	// 済ませた 1 つのマークアップとして読む。両ブロックが別のパーシャルにあっても、
+	// 検査の対象はブラウザが受け取るマークアップのままにするため。
+	const html = stripComments(readHtmlWithIncludes(REPO_ROOT, "index.html"));
 	const hooks = collectSourceHooks(source);
 
 	it("ソースからフックを抽出できている", () => {

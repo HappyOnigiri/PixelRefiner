@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { readHtmlWithIncludes } from "../../scripts/html-includes";
 import type { CellSamplingMode } from "../core/cell-sampler";
 import type { ProcessOptions } from "../core/processor";
 import { RETRO_PALETTES } from "../shared/config";
@@ -27,7 +27,9 @@ import type { GridDetectionMode } from "./settings-options";
 
 const REPO_ROOT = resolve(fileURLToPath(import.meta.url), "../../..");
 
-const html = readFileSync(resolve(REPO_ROOT, "index.html"), "utf8");
+// [Intended] index.html は partials/ へ分割されているので、ビルドと同じ取り込みを
+// 済ませてから走査する。どのパーシャルにある select も検査対象に残すため。
+const html = readHtmlWithIncludes(REPO_ROOT, "index.html");
 
 // 型の値集合をそのまま列挙する。値の増減が型エラーになるので取りこぼさない。
 const valuesOf = <T extends string>(values: Record<T, true>): string[] =>
