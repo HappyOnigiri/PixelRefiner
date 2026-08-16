@@ -10,6 +10,12 @@ from pathlib import Path
 WARNING_LINE_LIMIT = 600
 HARD_LINE_LIMIT = 1000
 
+# [Policy] HTML も同じ上限で扱う。ファイル種別ごとに上限を変えると、どの数字が
+# 効くのかを毎回確かめることになるうえ、上限に届いた側へ合わせて緩める口実にも
+# なる。index.html と guide.html は partials/ のパーシャルへ分割済みで、最大でも
+# 520 行なので、TypeScript と同じ 600 / 1000 で無理なく収まる。
+TARGET_PATTERNS = ("*.ts", "*.tsx", "*.html")
+
 # [Policy] 翻訳リソースはキーごとにすべてのロケールをまとめて保持し、キーの追加と
 # 翻訳変更を同期した一単位としてレビューできるようにする。行数はこの単位を
 # 分割する理由にならないので、メッセージ定義のディレクトリごと対象外にする。
@@ -98,7 +104,7 @@ def list_git_paths(args: Sequence[str]) -> set[Path]:
     return parse_git_paths(result.stdout)
 
 
-def find_typescript_files() -> list[Path]:
+def find_target_files() -> list[Path]:
     paths = list_git_paths(
         [
             "ls-files",
@@ -107,8 +113,7 @@ def find_typescript_files() -> list[Path]:
             "--exclude-standard",
             "-z",
             "--",
-            "*.ts",
-            "*.tsx",
+            *TARGET_PATTERNS,
         ],
     )
     return sorted(
@@ -124,8 +129,7 @@ def find_nonignored_untracked_files() -> set[Path]:
             "--exclude-standard",
             "-z",
             "--",
-            "*.ts",
-            "*.tsx",
+            *TARGET_PATTERNS,
         ],
     )
 
@@ -214,7 +218,7 @@ def resolve_diff_base() -> DiffBase:
         # 狭めると変更を見落としうるため、全ファイルを変更扱いにする。
         return DiffBase(
             None,
-            "fallback: all TypeScript files treated as changed; "
+            "fallback: all checked files treated as changed; "
             + " | ".join(attempts),
         )
 
@@ -230,7 +234,7 @@ def resolve_diff_base() -> DiffBase:
         # 推定した別の参照で対象を狭めず、全ファイルを変更扱いにする。
         return DiffBase(
             None,
-            "fallback: all TypeScript files treated as changed; "
+            "fallback: all checked files treated as changed; "
             + " | ".join(attempts),
         )
     attempts.append("gh PR base is unavailable")
@@ -266,7 +270,7 @@ def resolve_diff_base() -> DiffBase:
     reason = "; ".join(attempts) if attempts else "no valid comparison base"
     return DiffBase(
         None,
-        "fallback: all TypeScript files treated as changed; " + reason,
+        "fallback: all checked files treated as changed; " + reason,
     )
 
 
@@ -285,14 +289,13 @@ def find_changed_files(
             "--diff-filter=ACMRTUXB",
             base.commit,
             "--",
-            "*.ts",
-            "*.tsx",
+            *TARGET_PATTERNS,
         ],
     )
     if result.returncode != 0:
         return (
             set(all_paths),
-            "git diff failed; all TypeScript files treated as changed",
+            "git diff failed; all checked files treated as changed",
         )
 
     try:
@@ -300,7 +303,7 @@ def find_changed_files(
     except subprocess.CalledProcessError:
         return (
             set(all_paths),
-            "untracked file listing failed; all TypeScript files treated as changed",
+            "untracked file listing failed; all checked files treated as changed",
         )
 
     changed = parse_git_paths(result.stdout)
@@ -377,23 +380,23 @@ def print_scopes(
     change_fallback: str | None,
 ) -> None:
     print(
-        "Hard-limit scope: all TypeScript files "
+        "Hard-limit scope: all checked files "
         f"(>{HARD_LINE_LIMIT} lines and read errors)",
     )
     if all_warnings:
         print(
-            "Warning scope: all TypeScript files "
+            "Warning scope: all checked files "
             f"({WARNING_LINE_LIMIT + 1}-{HARD_LINE_LIMIT} lines; --all-warnings)",
         )
         return
 
     if base is None or base.commit is None:
-        print("Warning scope: all TypeScript files (no valid comparison base)")
+        print("Warning scope: all checked files (no valid comparison base)")
     elif change_fallback is not None:
-        print("Warning scope: all TypeScript files (change detection fallback)")
+        print("Warning scope: all checked files (change detection fallback)")
     else:
         print(
-            "Warning scope: changed TypeScript files "
+            "Warning scope: changed files "
             f"({WARNING_LINE_LIMIT + 1}-{HARD_LINE_LIMIT} lines; "
             f"{changed_count} changed file(s))",
         )
@@ -421,9 +424,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     read_errors = []
 
     try:
-        paths = find_typescript_files()
+        paths = find_target_files()
     except subprocess.CalledProcessError as error:
-        print(f"Failed to list TypeScript files: {error}", file=sys.stderr)
+        print(f"Failed to list checked files: {error}", file=sys.stderr)
         return 1
 
     if all_warnings:
@@ -468,7 +471,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("\n".join(read_errors), file=sys.stderr)
 
     print(
-        f"\nChecked {len(paths)} TypeScript files: "
+        f"\nChecked {len(paths)} files: "
         f"{len(warnings)} warning(s), {len(errors)} line-count error(s), "
         f"{len(read_errors)} read error(s).",
     )

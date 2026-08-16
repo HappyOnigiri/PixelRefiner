@@ -176,7 +176,21 @@ describe("check_file_line_count.py", () => {
 		);
 	});
 
-	it("ignores excluded and non-TypeScript files on the zero-violation path", () => {
+	it("checks HTML files with the same limits", () => {
+		// [Policy] 上限は TypeScript と共通。種別ごとに数字を分けない
+		const result = runChecker({
+			"partials/index/warning.html": 601,
+			"partials/index/error.html": 1001,
+			"at-limit.html": 600,
+		});
+
+		expect(result.status).toBe(1);
+		expect(result.stdout).toContain("WARNING: partials/index/warning.html");
+		expect(result.stdout).toContain("ERROR: partials/index/error.html");
+		expect(result.stdout).not.toContain("at-limit.html has");
+	});
+
+	it("ignores excluded and unchecked file types on the zero-violation path", () => {
 		const result = runChecker({
 			".gitignore": "ignored/\n",
 			"ignored/large.ts": 1001,
@@ -187,7 +201,7 @@ describe("check_file_line_count.py", () => {
 		expect(result.status).toBe(0);
 		expect(result.stdout).not.toContain("large.ts");
 		expect(result.stdout).not.toContain("notes.txt");
-		expect(result.stdout).toContain("Checked 1 TypeScript files");
+		expect(result.stdout).toContain("Checked 1 files");
 	});
 
 	it("warns only changed warning-range files, including reduced files", () => {
@@ -211,7 +225,7 @@ describe("check_file_line_count.py", () => {
 		expect(result.stdout).not.toContain("unchanged.ts has");
 		expect(result.stdout).toContain("WARNING: reduced.ts has 601 lines");
 		expect(result.stdout).toContain("WARNING: increased.ts has 601 lines");
-		expect(result.stdout).toContain("Warning scope: changed TypeScript files");
+		expect(result.stdout).toContain("Warning scope: changed files");
 	});
 
 	it("fails for an unchanged hard-limit violation", () => {
@@ -290,7 +304,7 @@ describe("check_file_line_count.py", () => {
 		expect(result.status).toBe(0);
 		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
 		expect(result.stdout).toContain(
-			"Warning scope: all TypeScript files (601-1000 lines; --all-warnings)",
+			"Warning scope: all checked files (601-1000 lines; --all-warnings)",
 		);
 	});
 
@@ -336,7 +350,7 @@ describe("check_file_line_count.py", () => {
 		expect(result.status).toBe(0);
 		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
 		expect(result.stdout).toContain(
-			"fallback: all TypeScript files treated as changed",
+			"fallback: all checked files treated as changed",
 		);
 	});
 
@@ -412,7 +426,7 @@ describe("check_file_line_count.py", () => {
 		expect(result.status).toBe(0);
 		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
 		expect(result.stdout).toContain(
-			"fallback: all TypeScript files treated as changed",
+			"fallback: all checked files treated as changed",
 		);
 	});
 
@@ -466,7 +480,7 @@ describe("check_file_line_count.py", () => {
 		expect(result.status).toBe(0);
 		expect(result.stdout).toContain("WARNING: unchanged.ts has 601 lines");
 		expect(result.stdout).toContain(
-			"fallback: all TypeScript files treated as changed",
+			"fallback: all checked files treated as changed",
 		);
 	});
 
