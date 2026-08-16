@@ -6,7 +6,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { HTML_PARTIALS_DIRECTORY, resolveHtmlIncludes } from "./html-includes";
@@ -110,20 +110,28 @@ describe("resolveHtmlIncludes", () => {
 });
 
 describe("エントリ HTML のパーシャル", () => {
-	it("すべてどれかのエントリから取り込まれている", () => {
-		// 取り込み忘れのパーシャルは、編集しても画面に出ないまま気づけない
-		const included = new Set<string>();
+	it("すべてどれかのエントリからちょうど 1 回取り込まれている", () => {
+		// [Intended] 取り込み回数で数える。取り込み忘れのパーシャルは編集しても
+		// 画面に出ないまま気づけず、逆に 2 か所から取り込むと id が重複して
+		// getElementById が先勝ちで片方しか掴まないまま出荷される。
+		const counts = new Map<string, number>();
 		for (const entry of ["index.html", "guide.html"]) {
 			resolveHtmlIncludes(readFileSync(join(REPO_ROOT, entry), "utf8"), {
 				root: REPO_ROOT,
-				onInclude: (path) => included.add(path),
+				onInclude: (path) => counts.set(path, (counts.get(path) ?? 0) + 1),
 			});
 		}
 		const directory = join(REPO_ROOT, HTML_PARTIALS_DIRECTORY);
 		const files = readdirSync(directory, { recursive: true, encoding: "utf8" })
 			.filter((name) => name.endsWith(".html"))
 			.map((name) => join(directory, name));
-		expect(files.filter((path) => !included.has(path))).toEqual([]);
+		expect(
+			files
+				.filter((path) => (counts.get(path) ?? 0) !== 1)
+				.map(
+					(path) => `${relative(REPO_ROOT, path)}: ${counts.get(path) ?? 0}`,
+				),
+		).toEqual([]);
 		expect(files.length).toBeGreaterThan(0);
 	});
 });
