@@ -15,7 +15,7 @@
 
 ## Localization
 
-Translation keys are registered per directory: app UI keys in [src/browser/i18n/AGENTS.md](src/browser/i18n/AGENTS.md), quality report keys in [test/quality/report/AGENTS.md](test/quality/report/AGENTS.md).
+Before adding, renaming, or removing a translation key, read the `AGENTS.md` of the directory that owns it: app UI keys in [src/browser/i18n/AGENTS.md](src/browser/i18n/AGENTS.md), quality report keys in [test/quality/report/AGENTS.md](test/quality/report/AGENTS.md).
 
 ## Guide Page
 
