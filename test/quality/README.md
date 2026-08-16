@@ -10,6 +10,7 @@ APIs.
 ```sh
 pnpm test:quality          # lightweight smoke profile for local checks
 pnpm test:quality:full     # all cases used by the pull-request quality gate
+make quality               # same as pnpm test:quality:full
 make report                # only generate tmp/quality-report/latest
 pnpm test:quality:update   # intentionally replace the stored baseline
 ```
