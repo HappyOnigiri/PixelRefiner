@@ -127,9 +127,9 @@ export const uiMessages = defineMessages({
 		"zh-CN": "原图",
 	},
 	"ui.compare_before_sanitized": {
-		ja: "サニタイズ",
-		en: "Sanitized",
-		"zh-CN": "预处理",
+		ja: "縮小のみ",
+		en: "Downscaled only",
+		"zh-CN": "仅缩小",
 	},
 	"ui.compare_preparing": {
 		ja: "比較画像を準備中...",
