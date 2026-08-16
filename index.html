@@ -2419,6 +2419,8 @@
                     - 結果モーダル（#result-modal）
                     ResultViewer はこれらのクラスフック（例: .js-bg-selector/.js-zoom-output/.js-grid-output）に依存している。
                     ボタンや構造を編集する場合は、動作と i18n の整合性を保つため両方を更新する。
+                    ResultViewer が参照するフックが両方に揃っていることは
+                    src/browser/result-viewer.test.ts が検証する。
                   -->
                   <div class="bg-selector js-bg-selector" id="bg-selector">
                     <button
@@ -2784,6 +2786,8 @@
           <!-- 注:
             この表示コントロールのマークアップは、ResultViewer 用に出力パネル（#output-panel）から意図的に複製している。
             ボタンや構造を編集する場合は、両方を更新する。
+            ResultViewer が参照するフックが両方に揃っていることは
+            src/browser/result-viewer.test.ts が検証する。
           -->
           <div class="status-bar">
             <div class="status-text">
