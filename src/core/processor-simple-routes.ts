@@ -411,6 +411,8 @@ export const processForcedRoute = (
 		compareBeforeSanitized,
 		finalGridForForce,
 		adjustments.steps,
+		// [Intended] この経路の compareBefore は原寸なので、セル寸法で引き伸ばして丸める。
+		// compareBeforeSanitized は出力と同じ論理解像度なので共通処理側でそのまま足される。
 		"source",
 	));
 
@@ -604,6 +606,7 @@ export const processGridDisabledRoute = (
 		compareBeforeSanitized,
 		finalGridForNoGrid,
 		adjustments.steps,
+		// [Intended] この経路はセルサイズが 1 なので、比較画像のパディング量は出力と同じで済む。
 		"logical",
 	));
 

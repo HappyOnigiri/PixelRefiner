@@ -702,6 +702,8 @@ const processImageCore = (
 		compareBeforeSanitized,
 		trimmedGrid,
 		adjustments.steps,
+		// [Intended] この経路の compareBefore は原寸のまま持っている。アウトラインだけは
+		// 統合前からセル寸法を掛けた値を丸めずに使っており、他の 2 種別とは扱いが違う。
 		"source",
 		(kind) => kind !== "outline",
 	));

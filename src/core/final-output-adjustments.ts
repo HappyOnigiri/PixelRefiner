@@ -103,6 +103,9 @@ export const applyFinalOutputAdjustments = (
 	return { image, steps };
 };
 
+// [Intended] 出力の論理解像度で数えたパディング量を、原寸（セル寸法倍）の画素数へ直す。
+// 丸めの有無は呼び出し元ごとに違い、揃っていないのは書き間違いではない。詳細は
+// padFinalOutputCompanions の shouldRoundSourcePadding を参照。
 const scalePadding = (
 	step: AdjustmentStep,
 	grid: PixelGrid,
@@ -117,6 +120,17 @@ const scalePadding = (
 	};
 };
 
+/**
+ * [Intended] 比較用の 2 枚は解像度が違う。compareBeforeSanitized は出力と同じ論理解像度な
+ * ので step をそのまま足すが、compareBefore がどちらの座標系で保持されているかは経路ごとに
+ * 異なるため compareBeforeCoordinates で切り替える（"source" ならセル寸法で引き伸ばす）。
+ * grid の cropX/cropY は常に原寸座標なので、座標系の指定にかかわらず原寸のパディング量を引く。
+ *
+ * [Intended] shouldRoundSourcePadding は、原寸へ引き伸ばすときに Math.round を通すかどうかを
+ * 調整種別ごとに決める。統合前の各経路が種別ごとに違う扱いをしていたのをそのまま写しており、
+ * 呼び出し元で揃っていないのは意図的。一律に丸める／丸めないへ統一すると比較ビューの座標対応
+ * とグリッドのクロップ位置が静かにずれる。
+ */
 export const padFinalOutputCompanions = (
 	compareBeforeInput: RawImage,
 	compareBeforeSanitizedInput: RawImage,

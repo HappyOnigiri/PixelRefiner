@@ -359,6 +359,8 @@ export const processConvertRoute = (
 		compareBeforeSanitized,
 		grid,
 		adjustments.steps,
+		// [Intended] この経路の compareBefore は出力と同じ論理解像度で持っている。crop 座標へ
+		// 掛けるセル寸法も統合前から丸めていないので、どの種別も丸めない。
 		"logical",
 		() => false,
 	));
