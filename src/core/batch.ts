@@ -24,7 +24,7 @@ export type BatchProcessingOptions = {
 	ditherStrength: number;
 };
 
-export type BatchProcessSuccess = {
+type BatchProcessSuccess = {
 	id: string;
 	status: "done";
 	/**
@@ -34,7 +34,7 @@ export type BatchProcessSuccess = {
 	processResult: ProcessedImageResult;
 };
 
-export type BatchProcessFailure = {
+type BatchProcessFailure = {
 	id: string;
 	status: "error";
 	error: string;

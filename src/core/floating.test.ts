@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RawImage } from "../shared/types";
-import { _removeSmallFloatingComponentsInPlace as removeSmallFloatingComponentsInPlace } from "./processor";
+import { removeSmallFloatingComponentsInPlace } from "./background-removal";
 
 describe("Floating Content Removal", () => {
 	const createTestImage = (

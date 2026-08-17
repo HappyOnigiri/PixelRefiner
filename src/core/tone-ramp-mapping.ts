@@ -224,7 +224,7 @@ const mapLightness = (
 /**
  * 写像に従って各画素の L だけを移す。色相と彩度は元の値を保つ。
  */
-export const applyToneRampMapping = (
+const applyToneRampMapping = (
 	pixels: PixelData[],
 	mapping: ToneRampMapping,
 ): PixelData[] => {

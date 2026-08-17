@@ -1,6 +1,6 @@
 import type { DitherMode, Oklab, PixelData, RGB } from "../shared/types";
 import { oklabToRgb, rgbToOklab } from "./colorUtils";
-import { getDitherMatrix } from "./dither-matrix";
+import { applyPaletteDithering } from "./palette-dithering";
 import {
 	type PreparedWeightedColor,
 	prepareWeightedColors,
@@ -77,24 +77,6 @@ export class OklabKMeans {
 	}
 
 	/**
-	 * K-means の重心をパレットとして使用する Floyd-Steinberg ディザリング
-	 */
-	dither(
-		pixels: PixelData[],
-		width: number,
-		height: number,
-		strength = 1.0,
-	): PixelData[] {
-		return this.applyDithering(
-			pixels,
-			width,
-			height,
-			"floyd-steinberg",
-			strength,
-		);
-	}
-
-	/**
 	 * 各種モードでディザリングを適用する
 	 */
 	applyDithering(
@@ -119,221 +101,35 @@ export class OklabKMeans {
 		const palette = fittedPalette.rgb;
 		const paletteLabs = fittedPalette.labs;
 
-		if (mode === "none" || strength <= 0) {
-			return this.quantizeWithPalette(pixels, palette, paletteLabs);
-		}
-
-		if (mode === "floyd-steinberg") {
-			return this.applyFloydSteinberg(
-				pixels,
-				width,
-				height,
-				palette,
-				paletteLabs,
-				strength,
-			);
-		}
-
-		return this.applyOrderedDithering(
+		return applyPaletteDithering(
 			pixels,
 			width,
 			height,
-			palette,
-			paletteLabs,
 			mode,
 			strength,
+			palette,
+			(red, green, blue) =>
+				this.findClosestPaletteIndex(red, green, blue, paletteLabs),
 		);
 	}
 
-	private quantizeWithPalette(
-		pixels: PixelData[],
-		palette: RGB[],
+	private findClosestPaletteIndex(
+		red: number,
+		green: number,
+		blue: number,
 		paletteLabs: Oklab[],
-	): PixelData[] {
-		const memo = new Map<number, number>();
-		return pixels.map((p) => {
-			if (p.alpha === 0) return p;
-			const key = (p.r << 16) | (p.g << 8) | p.b;
-			let bestIdx = memo.get(key);
-			if (bestIdx === undefined) {
-				const lab = rgbToOklab(p);
-				let minDist = Number.MAX_VALUE;
-				bestIdx = 0;
-				for (let i = 0; i < paletteLabs.length; i++) {
-					const dist = this.colorDistanceSq(lab, paletteLabs[i]);
-					if (dist < minDist) {
-						minDist = dist;
-						bestIdx = i;
-					}
-				}
-				memo.set(key, bestIdx);
-			}
-			const rgb = palette[bestIdx];
-			return { ...rgb, alpha: p.alpha };
-		});
-	}
-
-	private applyFloydSteinberg(
-		pixels: PixelData[],
-		width: number,
-		height: number,
-		palette: RGB[],
-		paletteLabs: Oklab[],
-		strength: number,
-	): PixelData[] {
-		const out = pixels.map((p) => ({ ...p }));
-
-		for (let y = 0; y < height; y++) {
-			for (let x = 0; x < width; x++) {
-				const idx = y * width + x;
-				const p = out[idx];
-				if (p.alpha === 0) continue;
-
-				const lab = rgbToOklab(p);
-				let minDist = Number.MAX_VALUE;
-				let bestIdx = 0;
-
-				for (let i = 0; i < paletteLabs.length; i++) {
-					const dist = this.colorDistanceSq(lab, paletteLabs[i]);
-					if (dist < minDist) {
-						minDist = dist;
-						bestIdx = i;
-					}
-				}
-
-				const closest = palette[bestIdx];
-				const errR = (p.r - closest.r) * strength;
-				const errG = (p.g - closest.g) * strength;
-				const errB = (p.b - closest.b) * strength;
-
-				out[idx].r = closest.r;
-				out[idx].g = closest.g;
-				out[idx].b = closest.b;
-
-				// 誤差を分配する
-				this.distributeError(
-					out,
-					x + 1,
-					y,
-					width,
-					height,
-					errR,
-					errG,
-					errB,
-					7 / 16,
-				);
-				this.distributeError(
-					out,
-					x - 1,
-					y + 1,
-					width,
-					height,
-					errR,
-					errG,
-					errB,
-					3 / 16,
-				);
-				this.distributeError(
-					out,
-					x,
-					y + 1,
-					width,
-					height,
-					errR,
-					errG,
-					errB,
-					5 / 16,
-				);
-				this.distributeError(
-					out,
-					x + 1,
-					y + 1,
-					width,
-					height,
-					errR,
-					errG,
-					errB,
-					1 / 16,
-				);
+	): number {
+		const lab = rgbToOklab({ r: red, g: green, b: blue });
+		let minimumDistance = Number.MAX_VALUE;
+		let bestIndex = 0;
+		for (let index = 0; index < paletteLabs.length; index += 1) {
+			const distance = this.colorDistanceSq(lab, paletteLabs[index]);
+			if (distance < minimumDistance) {
+				minimumDistance = distance;
+				bestIndex = index;
 			}
 		}
-
-		return out;
-	}
-
-	private applyOrderedDithering(
-		pixels: PixelData[],
-		width: number,
-		height: number,
-		palette: RGB[],
-		paletteLabs: Oklab[],
-		mode: DitherMode,
-		strength: number,
-	): PixelData[] {
-		const matrix = getDitherMatrix(mode);
-		const size = Math.sqrt(matrix.length);
-		const out = new Array<PixelData>(pixels.length);
-
-		for (let y = 0; y < height; y++) {
-			for (let x = 0; x < width; x++) {
-				const idx = y * width + x;
-				const p = pixels[idx];
-				if (p.alpha === 0) {
-					out[idx] = p;
-					continue;
-				}
-
-				const threshold = matrix[(y % size) * size + (x % size)];
-				// しきい値を -0.5〜0.5 の範囲へ変換し、強度を掛ける
-				const bias = (threshold - 0.5) * strength * 255;
-
-				const biasedR = Math.max(0, Math.min(255, p.r + bias));
-				const biasedG = Math.max(0, Math.min(255, p.g + bias));
-				const biasedB = Math.max(0, Math.min(255, p.b + bias));
-
-				const lab = rgbToOklab({
-					r: biasedR,
-					g: biasedG,
-					b: biasedB,
-				});
-				let minDist = Number.MAX_VALUE;
-				let bestIdx = 0;
-
-				for (let i = 0; i < paletteLabs.length; i++) {
-					const dist = this.colorDistanceSq(lab, paletteLabs[i]);
-					if (dist < minDist) {
-						minDist = dist;
-						bestIdx = i;
-					}
-				}
-
-				const closest = palette[bestIdx];
-				out[idx] = { ...closest, alpha: p.alpha };
-			}
-		}
-
-		return out;
-	}
-
-	private distributeError(
-		pixels: PixelData[],
-		x: number,
-		y: number,
-		width: number,
-		height: number,
-		errR: number,
-		errG: number,
-		errB: number,
-		weight: number,
-	): void {
-		if (x < 0 || x >= width || y < 0 || y >= height) return;
-		const idx = y * width + x;
-		const p = pixels[idx];
-		if (p.alpha === 0) return;
-
-		p.r = Math.max(0, Math.min(255, p.r + errR * weight));
-		p.g = Math.max(0, Math.min(255, p.g + errG * weight));
-		p.b = Math.max(0, Math.min(255, p.b + errB * weight));
+		return bestIndex;
 	}
 
 	private collectUniqueColors(pixels: PixelData[]): {

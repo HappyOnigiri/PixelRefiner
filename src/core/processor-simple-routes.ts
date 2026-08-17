@@ -21,15 +21,16 @@ import {
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { removeSmallComponents } from "./components";
 import {
+	applyFinalOutputAdjustments,
+	padFinalOutputCompanions,
+} from "./final-output-adjustments";
+import {
 	cropRawImage,
 	cropRawImageNearestFromGrid,
 	downsample,
 	findOpaqueBounds,
 	getAspectRatio,
-	padImageToAspectRatio,
-	padRawImage,
 } from "./image-operations";
-import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
 import { applyPostRemovalOutcome } from "./processor-background";
 import {
@@ -395,89 +396,23 @@ export const processForcedRoute = (
 	// [Intended] 元画像座標へ対応付ける後処理が切り抜き原点を失わないよう、返却グリッドにも保持する。
 	let finalGridForForce = forcedTrimmedGridForOriginal;
 
-	// [Intended] 比較用の 2 枚は解像度が違う。compareBefore は原寸なのでセル寸法で
-	// 引き伸ばし、compareBeforeSanitized は出力と同じ論理解像度でそのまま足す。
-	const padCompanions = (
-		padLeft: number,
-		padTop: number,
-		padRight: number,
-		padBottom: number,
-	): void => {
-		const padLeftPx = Math.round(padLeft * finalGridForForce.cellW);
-		const padTopPx = Math.round(padTop * finalGridForForce.cellH);
-		const padRightPx = Math.round(padRight * finalGridForForce.cellW);
-		const padBottomPx = Math.round(padBottom * finalGridForForce.cellH);
-		compareBefore = padRawImage(
-			compareBefore,
-			padLeftPx,
-			padTopPx,
-			padRightPx,
-			padBottomPx,
-		);
-		compareBeforeSanitized = padRawImage(
-			compareBeforeSanitized,
-			padLeft,
-			padTop,
-			padRight,
-			padBottom,
-		);
-		const baseCropX = finalGridForForce.cropX ?? finalGridForForce.offsetX;
-		const baseCropY = finalGridForForce.cropY ?? finalGridForForce.offsetY;
-		finalGridForForce = {
-			...finalGridForForce,
-			outW: finalResult.width,
-			outH: finalResult.height,
-			cropX: baseCropX - padLeftPx,
-			cropY: baseCropY - padTopPx,
-			cropW: finalResult.width * finalGridForForce.cellW,
-			cropH: finalResult.height * finalGridForForce.cellH,
-		};
-	};
-
-	if (o.outlineStyle !== "none") {
-		const previousWidth = finalResult.width;
-		const previousHeight = finalResult.height;
-		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
-		const widthDifference = finalResult.width - previousWidth;
-		const heightDifference = finalResult.height - previousHeight;
-		if (widthDifference !== 0 || heightDifference !== 0) {
-			const left = Math.floor(widthDifference / 2);
-			const top = Math.floor(heightDifference / 2);
-			padCompanions(left, top, widthDifference - left, heightDifference - top);
-		}
-	}
-
-	if (o.keepAspectRatio && !o.makeSquare) {
-		const { image: padded, padding } = padImageToAspectRatio(
-			finalResult,
-			getAspectRatio(img),
-		);
-		if (padded !== finalResult) {
-			finalResult = padded;
-			padCompanions(padding.left, padding.top, padding.right, padding.bottom);
-		}
-	}
-
-	if (o.makeSquare && finalResult.width !== finalResult.height) {
-		const size = Math.max(finalResult.width, finalResult.height);
-		const widthDifference = size - finalResult.width;
-		const heightDifference = size - finalResult.height;
-		const padLeft = Math.floor(widthDifference / 2);
-		const padTop = Math.floor(heightDifference / 2);
-		finalResult = padRawImage(
-			finalResult,
-			padLeft,
-			padTop,
-			widthDifference - padLeft,
-			heightDifference - padTop,
-		);
-		padCompanions(
-			padLeft,
-			padTop,
-			widthDifference - padLeft,
-			heightDifference - padTop,
-		);
-	}
+	const adjustments = applyFinalOutputAdjustments(
+		finalResult,
+		getAspectRatio(img),
+		o,
+	);
+	finalResult = adjustments.image;
+	({
+		compareBefore,
+		compareBeforeSanitized,
+		grid: finalGridForForce,
+	} = padFinalOutputCompanions(
+		compareBefore,
+		compareBeforeSanitized,
+		finalGridForForce,
+		adjustments.steps,
+		"source",
+	));
 
 	o.debugHook?.("99-result", finalResult, {
 		postRemoveBackground: o.postRemoveBackground,
@@ -639,7 +574,7 @@ export const processGridDisabledRoute = (
 		}
 	}
 
-	let finalGridForNoGrid = {
+	let finalGridForNoGrid: PixelGrid = {
 		cellW: 1,
 		cellH: 1,
 		offsetX: 0,
@@ -653,115 +588,24 @@ export const processGridDisabledRoute = (
 		score: 0,
 	};
 
-	// この経路はセルサイズが 1 なので、比較画像のパディング量は出力と同じで済む。
-	const padCompanions = (
-		padLeft: number,
-		padTop: number,
-		padRight: number,
-		padBottom: number,
-	) => {
-		compareBefore = padRawImage(
-			compareBefore,
-			padLeft,
-			padTop,
-			padRight,
-			padBottom,
-		);
-		compareBeforeSanitized = padRawImage(
-			compareBeforeSanitized,
-			padLeft,
-			padTop,
-			padRight,
-			padBottom,
-		);
-		const baseCropX = finalGridForNoGrid.cropX ?? finalGridForNoGrid.offsetX;
-		const baseCropY = finalGridForNoGrid.cropY ?? finalGridForNoGrid.offsetY;
-		finalGridForNoGrid = {
-			...finalGridForNoGrid,
-			outW: finalResult.width,
-			outH: finalResult.height,
-			cropX: baseCropX - padLeft,
-			cropY: baseCropY - padTop,
-			cropW: finalResult.width,
-			cropH: finalResult.height,
-		};
-	};
-
-	if (context.applyFinalAdjustments && o.outlineStyle !== "none") {
-		const prevW = finalResult.width;
-		const prevH = finalResult.height;
-		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
-		const dw = finalResult.width - prevW;
-		const dh = finalResult.height - prevH;
-		if (dw !== 0 || dh !== 0) {
-			const padLeft = Math.floor(dw / 2);
-			const padTop = Math.floor(dh / 2);
-			padCompanions(padLeft, padTop, dw - padLeft, dh - padTop);
-		}
-	}
-
-	if (context.applyFinalAdjustments && o.keepAspectRatio && !o.makeSquare) {
-		const { image: paddedResult, padding } = padImageToAspectRatio(
-			finalResult,
-			getAspectRatio(img),
-		);
-		if (paddedResult !== finalResult) {
-			finalResult = paddedResult;
-			padCompanions(padding.left, padding.top, padding.right, padding.bottom);
-		}
-	}
-
-	if (o.makeSquare) {
-		const w = finalResult.width;
-		const h = finalResult.height;
-		if (w !== h) {
-			const size = Math.max(w, h);
-			const dw = size - w;
-			const dh = size - h;
-			const padLeft = Math.floor(dw / 2);
-			const padTop = Math.floor(dh / 2);
-			const padRight = dw - padLeft;
-			const padBottom = dh - padTop;
-
-			const padLeftPx = Math.round(padLeft * finalGridForNoGrid.cellW);
-			const padTopPx = Math.round(padTop * finalGridForNoGrid.cellH);
-			const padRightPx = Math.round(padRight * finalGridForNoGrid.cellW);
-			const padBottomPx = Math.round(padBottom * finalGridForNoGrid.cellH);
-
-			finalResult = padRawImage(
-				finalResult,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-			compareBefore = padRawImage(
-				compareBefore,
-				padLeftPx,
-				padTopPx,
-				padRightPx,
-				padBottomPx,
-			);
-			compareBeforeSanitized = padRawImage(
-				compareBeforeSanitized,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-			const baseCropX = finalGridForNoGrid.cropX ?? finalGridForNoGrid.offsetX;
-			const baseCropY = finalGridForNoGrid.cropY ?? finalGridForNoGrid.offsetY;
-			finalGridForNoGrid = {
-				...finalGridForNoGrid,
-				outW: size,
-				outH: size,
-				cropX: baseCropX - padLeftPx,
-				cropY: baseCropY - padTopPx,
-				cropW: size * finalGridForNoGrid.cellW,
-				cropH: size * finalGridForNoGrid.cellH,
-			};
-		}
-	}
+	const adjustments = applyFinalOutputAdjustments(
+		finalResult,
+		getAspectRatio(img),
+		o,
+		context.applyFinalAdjustments,
+	);
+	finalResult = adjustments.image;
+	({
+		compareBefore,
+		compareBeforeSanitized,
+		grid: finalGridForNoGrid,
+	} = padFinalOutputCompanions(
+		compareBefore,
+		compareBeforeSanitized,
+		finalGridForNoGrid,
+		adjustments.steps,
+		"logical",
+	));
 
 	o.debugHook?.("99-result", finalResult, {
 		noGridDetection: true,

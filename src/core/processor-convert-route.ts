@@ -19,14 +19,15 @@ import {
 	selectConvertCandidate,
 } from "./converter";
 import {
+	applyFinalOutputAdjustments,
+	padFinalOutputCompanions,
+} from "./final-output-adjustments";
+import {
 	cropRawImage,
 	findOpaqueBounds,
 	getAspectRatio,
-	padImageToAspectRatio,
-	padRawImage,
 	resizeRawImageNearest,
 } from "./image-operations";
-import { applyOutline } from "./outline";
 import { createProcessingAnalysis } from "./processing-analysis";
 import { applyPostRemovalOutcome } from "./processor-background";
 import { getBackgroundBehavior } from "./processor-options";
@@ -347,68 +348,20 @@ export const processConvertRoute = (
 		}
 	}
 
-	const padCompanions = (
-		left: number,
-		top: number,
-		right: number,
-		bottom: number,
-	): void => {
-		compareBefore = padRawImage(compareBefore, left, top, right, bottom);
-		compareBeforeSanitized = padRawImage(
-			compareBeforeSanitized,
-			left,
-			top,
-			right,
-			bottom,
-		);
-		const cropX = grid.cropX ?? grid.offsetX;
-		const cropY = grid.cropY ?? grid.offsetY;
-		grid = {
-			...grid,
-			outW: finalResult.width,
-			outH: finalResult.height,
-			cropX: cropX - left * grid.cellW,
-			cropY: cropY - top * grid.cellH,
-			cropW: finalResult.width * grid.cellW,
-			cropH: finalResult.height * grid.cellH,
-		};
-	};
-
-	if (o.outlineStyle !== "none") {
-		const previousWidth = finalResult.width;
-		const previousHeight = finalResult.height;
-		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
-		const widthDifference = finalResult.width - previousWidth;
-		const heightDifference = finalResult.height - previousHeight;
-		if (widthDifference !== 0 || heightDifference !== 0) {
-			const left = Math.floor(widthDifference / 2);
-			const top = Math.floor(heightDifference / 2);
-			padCompanions(left, top, widthDifference - left, heightDifference - top);
-		}
-	}
-
-	if (o.keepAspectRatio && !o.makeSquare) {
-		const { image: padded, padding } = padImageToAspectRatio(
-			finalResult,
-			getAspectRatio(img),
-		);
-		if (padded !== finalResult) {
-			finalResult = padded;
-			padCompanions(padding.left, padding.top, padding.right, padding.bottom);
-		}
-	}
-
-	if (o.makeSquare && finalResult.width !== finalResult.height) {
-		const size = Math.max(finalResult.width, finalResult.height);
-		const widthDifference = size - finalResult.width;
-		const heightDifference = size - finalResult.height;
-		const left = Math.floor(widthDifference / 2);
-		const top = Math.floor(heightDifference / 2);
-		const right = widthDifference - left;
-		const bottom = heightDifference - top;
-		finalResult = padRawImage(finalResult, left, top, right, bottom);
-		padCompanions(left, top, right, bottom);
-	}
+	const adjustments = applyFinalOutputAdjustments(
+		finalResult,
+		getAspectRatio(img),
+		o,
+	);
+	finalResult = adjustments.image;
+	({ compareBefore, compareBeforeSanitized, grid } = padFinalOutputCompanions(
+		compareBefore,
+		compareBeforeSanitized,
+		grid,
+		adjustments.steps,
+		"logical",
+		() => false,
+	));
 
 	o.debugHook?.("99-result", finalResult, {
 		convertCandidate: selected,
