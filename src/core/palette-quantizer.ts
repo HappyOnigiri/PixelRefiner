@@ -11,8 +11,8 @@ export class PaletteQuantizer {
 	}
 
 	quantize(pixels: PixelData[]): PixelData[] {
-		return quantizeToPalette(pixels, this.palette, (red, green, blue) =>
-			this.findClosestPaletteIndex(red, green, blue),
+		return quantizeToPalette(pixels, this.palette, (color) =>
+			this.findClosestPaletteIndex(color),
 		);
 	}
 
@@ -31,16 +31,12 @@ export class PaletteQuantizer {
 			mode,
 			strength,
 			this.palette,
-			(red, green, blue) => this.findClosestPaletteIndex(red, green, blue),
+			(color) => this.findClosestPaletteIndex(color),
 		);
 	}
 
-	private findClosestPaletteIndex(
-		red: number,
-		green: number,
-		blue: number,
-	): number {
-		const lab = rgbToOklab({ r: red, g: green, b: blue });
+	private findClosestPaletteIndex(color: RGB): number {
+		const lab = rgbToOklab(color);
 		let minimumDistance = Number.MAX_VALUE;
 		let bestIndex = 0;
 
@@ -61,9 +57,9 @@ export class PaletteQuantizer {
 			}
 
 			if (lab.L < 0.1) {
-				const deltaRed = (red - targetRgb.r) / 255;
-				const deltaGreen = (green - targetRgb.g) / 255;
-				const deltaBlue = (blue - targetRgb.b) / 255;
+				const deltaRed = (color.r - targetRgb.r) / 255;
+				const deltaGreen = (color.g - targetRgb.g) / 255;
+				const deltaBlue = (color.b - targetRgb.b) / 255;
 				const rgbDistance =
 					deltaRed * deltaRed + deltaGreen * deltaGreen + deltaBlue * deltaBlue;
 				distance += rgbDistance * (0.5 - lab.L);

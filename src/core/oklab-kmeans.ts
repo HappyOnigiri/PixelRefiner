@@ -108,18 +108,12 @@ export class OklabKMeans {
 			mode,
 			strength,
 			palette,
-			(red, green, blue) =>
-				this.findClosestPaletteIndex(red, green, blue, paletteLabs),
+			(color) => this.findClosestPaletteIndex(color, paletteLabs),
 		);
 	}
 
-	private findClosestPaletteIndex(
-		red: number,
-		green: number,
-		blue: number,
-		paletteLabs: Oklab[],
-	): number {
-		const lab = rgbToOklab({ r: red, g: green, b: blue });
+	private findClosestPaletteIndex(color: RGB, paletteLabs: Oklab[]): number {
+		const lab = rgbToOklab(color);
 		let minimumDistance = Number.MAX_VALUE;
 		let bestIndex = 0;
 		for (let index = 0; index < paletteLabs.length; index += 1) {

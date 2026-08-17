@@ -1,7 +1,9 @@
 import type { DitherMode, PixelData, RGB } from "../shared/types";
 import { getDitherMatrix } from "./dither-matrix";
 
-export type PaletteIndexSelector = (r: number, g: number, b: number) => number;
+// [Intended] 引数を数値 3 つではなく色オブジェクトで受ける。量子化と誤差拡散は既存の
+// ピクセルをそのまま渡せるので、画素ごとの一時オブジェクト確保が発生しない。
+export type PaletteIndexSelector = (color: RGB) => number;
 
 const FLOYD_STEINBERG_NEIGHBORS = [
 	[1, 0, 7 / 16],
@@ -26,7 +28,7 @@ export const quantizeToPalette = (
 		const key = (pixel.r << 16) | (pixel.g << 8) | pixel.b;
 		let paletteIndex = memo.get(key);
 		if (paletteIndex === undefined) {
-			paletteIndex = selectPaletteIndex(pixel.r, pixel.g, pixel.b);
+			paletteIndex = selectPaletteIndex(pixel);
 			memo.set(key, paletteIndex);
 		}
 		output[index] = { ...palette[paletteIndex], alpha: pixel.alpha };
@@ -73,7 +75,7 @@ const applyFloydSteinberg = (
 			const pixel = output[index];
 			if (pixel.alpha === 0) continue;
 
-			const closest = palette[selectPaletteIndex(pixel.r, pixel.g, pixel.b)];
+			const closest = palette[selectPaletteIndex(pixel)];
 			const errorR = (pixel.r - closest.r) * strength;
 			const errorG = (pixel.g - closest.g) * strength;
 			const errorB = (pixel.b - closest.b) * strength;
@@ -129,10 +131,12 @@ const applyOrderedDithering = (
 
 			const threshold = matrix[(y % size) * size + (x % size)];
 			const bias = (threshold - 0.5) * strength * 255;
-			const red = Math.max(0, Math.min(255, pixel.r + bias));
-			const green = Math.max(0, Math.min(255, pixel.g + bias));
-			const blue = Math.max(0, Math.min(255, pixel.b + bias));
-			const closest = palette[selectPaletteIndex(red, green, blue)];
+			const biased = {
+				r: Math.max(0, Math.min(255, pixel.r + bias)),
+				g: Math.max(0, Math.min(255, pixel.g + bias)),
+				b: Math.max(0, Math.min(255, pixel.b + bias)),
+			};
+			const closest = palette[selectPaletteIndex(biased)];
 			output[index] = { ...closest, alpha: pixel.alpha };
 		}
 	}
