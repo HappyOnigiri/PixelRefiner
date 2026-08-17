@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/browser/guide.ts",
+    "src/**/*.test.ts",
+    "test/**/*.test.ts",
+    "test/quality/quality-reporter.ts",
+    "scripts/**/*.test.ts"
+  ],
+  "project": ["src/**/*.ts", "test/**/*.ts", "scripts/**/*.ts", "*.config.ts"],
+  "ignoreDependencies": ["prettier", "repomix"],
+  "ignoreIssues": {
+    "test/quality/**": ["exports", "types"]
+  }
+}

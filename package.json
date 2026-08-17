@@ -11,6 +11,10 @@
   "scripts": {
     "dev": "pnpm exec vite",
     "build": "pnpm exec vite build",
+    "check:dead-code": "pnpm exec knip --config knip.json --no-progress --include files,exports,types,duplicates,dependencies,unlisted,unresolved,cycles",
+    "check:unused-members": "pnpm exec fallow dead-code --unused-class-members --type-aware --type-aware-project tsconfig.json --format compact --no-cache",
+    "check:duplicates": "pnpm exec jscpd --min-lines 20 --min-tokens 60 --reporters console --exit-code 1 --no-colors --no-tips --format typescript --ignore '**/*.test.ts' src",
+    "check:empty-blocks": "pnpm exec biome lint --only=lint/suspicious/noEmptyBlock --error-on-warnings src --reporter=summary",
     "preview": "pnpm exec vite preview",
     "test": "pnpm exec vitest run",
     "test:unit": "pnpm exec vitest run --exclude 'test/quality/shards/**' --exclude 'tmp/**'",
@@ -28,9 +32,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
-    "@types/jszip": "3.4.1",
     "@types/node": "24.13.3",
     "@types/pngjs": "6.0.5",
+    "fallow": "3.17.0",
+    "jscpd": "5.0.15",
+    "knip": "6.32.2",
     "pngjs": "7.0.0",
     "prettier": "3.9.5",
     "repomix": "1.18.0",
