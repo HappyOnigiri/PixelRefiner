@@ -57,7 +57,7 @@ check-unused-members:
 	pnpm run check:unused-members
 
 check-duplicates:
-	pnpm run check:duplicates
+	python3 scripts/check_duplicates.py
 
 check-empty-blocks:
 	pnpm run check:empty-blocks
