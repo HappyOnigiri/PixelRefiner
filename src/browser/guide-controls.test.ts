@@ -39,7 +39,11 @@ const createElement = (
 		addEventListener: (type, listener) => {
 			if (type === "click") listeners.push(listener);
 		},
-		classList: { toggle: () => {} },
+		classList: {
+			toggle: () => {
+				// クラスの切り替えは検証しないので何もしない
+			},
+		},
 		// プロンプト本体はボタンの祖先にある [data-prompt-block] の <code> に入っている
 		closest: (selector) => (selector === "[data-prompt-block]" ? block : null),
 		querySelector: () => null,

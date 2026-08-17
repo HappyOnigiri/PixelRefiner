@@ -14,7 +14,9 @@ class MockSettingItem {
 		},
 		contains: (name: string) => this.classes.has(name),
 	};
-	setAttribute() {}
+	setAttribute() {
+		// 属性は検証しないので何もしない
+	}
 }
 
 class MockControl extends EventTarget {
