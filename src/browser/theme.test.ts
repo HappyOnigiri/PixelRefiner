@@ -21,8 +21,12 @@ const createPage = (savedTheme: string | null, prefersDark: boolean) => {
 			},
 		},
 	];
-	let clickListener = (): void => {};
-	let mediaListener: ThemeListener = () => {};
+	let clickListener = (): void => {
+		// 登録前の初期値。実際のリスナーで置き換わる
+	};
+	let mediaListener: ThemeListener = () => {
+		// 登録前の初期値。実際のリスナーで置き換わる
+	};
 	const themeToggle = {
 		setAttribute: vi.fn(),
 		querySelectorAll: () => icons,

@@ -19,6 +19,10 @@ import { classifyInput, selectAutoProcessingRoute } from "./classifier";
 import { applyColorReduction, extractUsedColors } from "./color-reduction";
 import { removeSmallComponents } from "./components";
 import {
+	applyFinalOutputAdjustments,
+	padFinalOutputCompanions,
+} from "./final-output-adjustments";
+import {
 	downsampleGeminiWatermarkGeometry,
 	prepareGeminiWatermarkAwareAutoMask,
 	prepareGeminiWatermarkGeometry,
@@ -31,10 +35,7 @@ import {
 	downsample,
 	findOpaqueBounds,
 	getAspectRatio,
-	padImageToAspectRatio,
-	padRawImage,
 } from "./image-operations";
-import { applyOutline } from "./outline";
 import {
 	createProcessingAnalysis,
 	detectedGridConfidenceWarnings,
@@ -63,29 +64,6 @@ import {
 	type SimpleRouteContext,
 } from "./processor-simple-routes";
 
-export type { ProcessResult } from "../shared/types";
-export type { BackgroundCluster, BackgroundModel } from "./background";
-export {
-	estimateBackgroundModel,
-	removeAutomaticBackground,
-} from "./background";
-export { _removeSmallFloatingComponentsInPlace } from "./background-removal";
-export type {
-	CellSampler,
-	CellSamplerOptions,
-	CellSamplingMode,
-} from "./cell-sampler";
-export {
-	createConvertCandidates,
-	edgeAwareAreaResample,
-} from "./converter";
-export { searchPhaseAwareGrid } from "./grid-search";
-export {
-	downsample,
-	padImageToAspectRatio,
-	resizeRawImageNearest,
-	sampleRawImage,
-} from "./image-operations";
 export type { ProcessOptions } from "./processor-options";
 export {
 	FastGridSearchFromTrimmed,
@@ -709,147 +687,26 @@ const processImageCore = (
 		);
 	}
 
-	// アウトライン処理
-	if (o.outlineStyle !== "none") {
-		const prevW = finalResult.width;
-		const prevH = finalResult.height;
-		finalResult = applyOutline(finalResult, o.outlineColor, o.outlineStyle);
-
-		// 画像サイズを拡張した場合はグリッド情報を更新する
-		if (finalResult.width !== prevW || finalResult.height !== prevH) {
-			const dw = finalResult.width - prevW;
-			const dh = finalResult.height - prevH;
-			const padLeft = Math.floor(dw / 2);
-			const padTop = Math.floor(dh / 2);
-			const padRight = dw - padLeft;
-			const padBottom = dh - padTop;
-
-			// compareBefore を拡張後の結果（透明パディング）に合わせる。
-			// compareBefore は高解像度のため、パディングをセルサイズで拡大する。
-			compareBefore = padRawImage(
-				compareBefore,
-				padLeft * trimmedGrid.cellW,
-				padTop * trimmedGrid.cellH,
-				padRight * trimmedGrid.cellW,
-				padBottom * trimmedGrid.cellH,
-			);
-			compareBeforeSanitized = padRawImage(
-				compareBeforeSanitized,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-
-			const cellDw = (finalResult.width - prevW) / 2;
-			const cellDh = (finalResult.height - prevH) / 2;
-			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
-			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
-
-			trimmedGrid = {
-				...trimmedGrid,
-				outW: finalResult.width,
-				outH: finalResult.height,
-				cropX: baseCropX - cellDw * trimmedGrid.cellW,
-				cropY: baseCropY - cellDh * trimmedGrid.cellH,
-				cropW: finalResult.width * trimmedGrid.cellW,
-				cropH: finalResult.height * trimmedGrid.cellH,
-			};
-		}
-	}
-
-	if (o.keepAspectRatio && !o.makeSquare) {
-		const { image: paddedResult, padding } = padImageToAspectRatio(
-			finalResult,
-			sourceAspectRatio,
-		);
-		if (paddedResult !== finalResult) {
-			const padLeftPx = Math.round(padding.left * trimmedGrid.cellW);
-			const padTopPx = Math.round(padding.top * trimmedGrid.cellH);
-			const padRightPx = Math.round(padding.right * trimmedGrid.cellW);
-			const padBottomPx = Math.round(padding.bottom * trimmedGrid.cellH);
-
-			finalResult = paddedResult;
-			compareBefore = padRawImage(
-				compareBefore,
-				padLeftPx,
-				padTopPx,
-				padRightPx,
-				padBottomPx,
-			);
-			compareBeforeSanitized = padRawImage(
-				compareBeforeSanitized,
-				padding.left,
-				padding.top,
-				padding.right,
-				padding.bottom,
-			);
-
-			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
-			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
-			trimmedGrid = {
-				...trimmedGrid,
-				outW: finalResult.width,
-				outH: finalResult.height,
-				cropX: baseCropX - padLeftPx,
-				cropY: baseCropY - padTopPx,
-				cropW: finalResult.width * trimmedGrid.cellW,
-				cropH: finalResult.height * trimmedGrid.cellH,
-			};
-		}
-	}
-
-	if (o.makeSquare) {
-		const w = finalResult.width;
-		const h = finalResult.height;
-		if (w !== h) {
-			const size = Math.max(w, h);
-			const dw = size - w;
-			const dh = size - h;
-			const padLeft = Math.floor(dw / 2);
-			const padTop = Math.floor(dh / 2);
-			const padRight = dw - padLeft;
-			const padBottom = dh - padTop;
-
-			const padLeftPx = Math.round(padLeft * trimmedGrid.cellW);
-			const padTopPx = Math.round(padTop * trimmedGrid.cellH);
-			const padRightPx = Math.round(padRight * trimmedGrid.cellW);
-			const padBottomPx = Math.round(padBottom * trimmedGrid.cellH);
-
-			finalResult = padRawImage(
-				finalResult,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-			compareBefore = padRawImage(
-				compareBefore,
-				padLeftPx,
-				padTopPx,
-				padRightPx,
-				padBottomPx,
-			);
-			compareBeforeSanitized = padRawImage(
-				compareBeforeSanitized,
-				padLeft,
-				padTop,
-				padRight,
-				padBottom,
-			);
-			const baseCropX = trimmedGrid.cropX ?? trimmedGrid.offsetX;
-			const baseCropY = trimmedGrid.cropY ?? trimmedGrid.offsetY;
-			trimmedGrid = {
-				...trimmedGrid,
-				outW: size,
-				outH: size,
-				cropX: baseCropX - padLeftPx,
-				cropY: baseCropY - padTopPx,
-				cropW: size * trimmedGrid.cellW,
-				cropH: size * trimmedGrid.cellH,
-			};
-		}
-	}
+	const adjustments = applyFinalOutputAdjustments(
+		finalResult,
+		sourceAspectRatio,
+		o,
+	);
+	finalResult = adjustments.image;
+	({
+		compareBefore,
+		compareBeforeSanitized,
+		grid: trimmedGrid,
+	} = padFinalOutputCompanions(
+		compareBefore,
+		compareBeforeSanitized,
+		trimmedGrid,
+		adjustments.steps,
+		// [Intended] この経路の compareBefore は原寸のまま持っている。アウトラインだけは
+		// 統合前からセル寸法を掛けた値を丸めずに使っており、他の 2 種別とは扱いが違う。
+		"source",
+		(kind) => kind !== "outline",
+	));
 
 	o.debugHook?.("99-result", finalResult, {
 		postRemoveBackground: o.postRemoveBackground,

@@ -201,7 +201,9 @@ describe("grid search behavior flags", () => {
 				maskedForDebugOrAuto: image,
 				trimAlphaThreshold: 16,
 				watermarkRemovedFromGeometry: false,
-				log: () => {},
+				log: () => {
+					// ログ出力は検証しないので何もしない
+				},
 			});
 
 		expect(resolve(true).gridMethod).toBe("phase-aware-grid-search");

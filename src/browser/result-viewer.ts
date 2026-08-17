@@ -436,33 +436,6 @@ export class ResultViewer {
 		ctx.stroke();
 	}
 
-	public clear() {
-		this.currentImage = null;
-		this.closeDownloadMenu();
-		const ctx = this.canvas.getContext("2d");
-		ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		const gridCtx = this.gridCanvas.getContext("2d");
-		gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
-
-		const canvasContainer = this.canvas.parentElement;
-		if (canvasContainer) {
-			canvasContainer.classList.remove("has-image");
-			canvasContainer.classList.remove("grid-enabled");
-			const placeholder = canvasContainer.querySelector(".placeholder");
-			if (placeholder) (placeholder as HTMLElement).style.display = "flex";
-			this.canvas.style.display = "none";
-			this.gridCanvas.style.display = "none";
-		}
-		this.sizeLabel.textContent = "-";
-		this.sizeLabel.style.cursor = "default";
-		this.sizeLabel.style.textDecoration = "none";
-		this.sizeLabel.onclick = null;
-		this.updateAnalysis("");
-		this.updateWarnings([]);
-		this.downloadBtn.style.display = "none";
-		this.downloadDropdownBtn.style.display = "none";
-	}
-
 	private updateSizeLabel() {
 		if (!this.currentImage) {
 			this.sizeLabel.textContent = "-";

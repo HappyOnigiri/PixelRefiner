@@ -36,7 +36,7 @@ type Component = {
 	touchesOutsideRegion: boolean;
 };
 
-export type GeminiWatermarkBounds = {
+type GeminiWatermarkBounds = {
 	x: number;
 	y: number;
 	w: number;

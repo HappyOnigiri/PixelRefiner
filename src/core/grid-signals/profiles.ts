@@ -26,7 +26,7 @@ const linearChannel = (value: number): number => {
 		: ((normalized + 0.055) / 1.055) ** 2.4;
 };
 
-export const createLinearLuminance = (image: RawImage): Float32Array => {
+const createLinearLuminance = (image: RawImage): Float32Array => {
 	const luminance = new Float32Array(image.width * image.height);
 	for (let pixel = 0; pixel < luminance.length; pixel += 1) {
 		const index = pixel * 4;
@@ -38,7 +38,7 @@ export const createLinearLuminance = (image: RawImage): Float32Array => {
 	return luminance;
 };
 
-export const createAxisSignalProfile = (
+const createAxisSignalProfile = (
 	image: RawImage,
 	mask: RawImage,
 	axis: Axis,

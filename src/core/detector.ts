@@ -452,74 +452,15 @@ export const detectGrid = (
 		targetWeight = 2.0,
 		maxCell = 256,
 	): Estimate | null => {
-		const { runLengths, boundaries } = collectBoundaryData(segLists);
-		if (runLengths.length < 2 || boundaries.length < 2) {
-			return null;
-		}
-		const maxLen = Math.min(maxCell, Math.max(...runLengths));
-		if (maxLen < 2) return null;
-
-		const counts = new Array(maxLen + 1).fill(0);
-		for (const rl of runLengths) {
-			const v = Math.min(maxLen, Math.max(0, Math.floor(rl)));
-			counts[v] += 1;
-		}
-
-		const candidateSizes = new Set<number>();
-		for (let s = 2; s <= maxLen; s += 1) {
-			if (counts[s] > 0) candidateSizes.add(s);
-		}
-		for (let cells = expectedCellsMin; cells <= expectedCellsMax; cells += 1) {
-			const s = Math.round(length / cells);
-			if (s >= 2 && s <= maxCell) candidateSizes.add(s);
-			if (s - 1 >= 2 && s - 1 <= maxCell) candidateSizes.add(s - 1);
-			if (s + 1 >= 2 && s + 1 <= maxCell) candidateSizes.add(s + 1);
-		}
-		const candidates = Array.from(candidateSizes).filter(
-			(s) => s >= 2 && s <= maxCell,
+		return estimateFromBoundaryData(
+			collectBoundaryData(segLists),
+			length,
+			expectedCellsMin,
+			expectedCellsMax,
+			targetCells,
+			targetWeight,
+			maxCell,
 		);
-		if (candidates.length === 0) return null;
-
-		let best: Estimate | null = null;
-		for (const s of candidates) {
-			let bestOff = 0;
-			let bestFit = Number.POSITIVE_INFINITY;
-			for (let off = 0; off < s; off += 1) {
-				const deviations = boundaries.map((b) => {
-					const r = (((b - off) % s) + s) % s;
-					return Math.min(r, s - r);
-				});
-				const fit = computeMedian(deviations);
-				if (fit < bestFit) {
-					bestFit = fit;
-					bestOff = off;
-				}
-			}
-
-			const deviations = boundaries.map((b) => {
-				const r = (((b - bestOff) % s) + s) % s;
-				return Math.min(r, s - r);
-			});
-			const p50 = computeMedian(deviations);
-			const p90 = computePercentile(deviations, 90);
-			const cells = Math.floor((length - bestOff) / s);
-			if (cells <= 0) continue;
-
-			let penalty = 0;
-			if (cells < expectedCellsMin) penalty += (expectedCellsMin - cells) * 5;
-			if (cells > expectedCellsMax) penalty += (cells - expectedCellsMax) * 5;
-			let targetPenalty = 0;
-			if (targetCells !== undefined) {
-				targetPenalty = Math.abs(cells - targetCells) * targetWeight;
-			}
-			const countBonus = -0.25 * Math.log1p(counts[s] ?? 0);
-			const total = p50 + 0.35 * p90 + penalty + targetPenalty + countBonus;
-
-			if (!best || total < best.score) {
-				best = { cellSize: s, offset: bestOff, score: total };
-			}
-		}
-		return best;
 	};
 
 	const estimateFromBoundaryData = (

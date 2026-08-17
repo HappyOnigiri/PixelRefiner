@@ -106,12 +106,6 @@ export type DitherMode =
 	| "bayer-8x8"
 	| "ordered";
 
-export interface Palette {
-	id: string;
-	name: string;
-	colors: RGB[];
-}
-
 export type ProcessingRoute = "refine" | "convert" | "preserve";
 
 export type ProcessingMode = "auto" | ProcessingRoute;
@@ -166,7 +160,7 @@ export type ClassificationFeatures = {
 	gridScale: number;
 };
 
-export type ClassificationReason =
+type ClassificationReason =
 	| "EMPTY_OR_TINY_INPUT"
 	| "NATIVE_PIXEL_STRUCTURE"
 	| "INTEGER_GRID_STRUCTURE"

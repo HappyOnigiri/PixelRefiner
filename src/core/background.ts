@@ -12,7 +12,7 @@ import {
 } from "./enclosed-background";
 import { cloneImage } from "./image-operations";
 
-export type BackgroundCluster = {
+type BackgroundCluster = {
 	color: Oklab;
 	rgb: RGB;
 	weight: number;

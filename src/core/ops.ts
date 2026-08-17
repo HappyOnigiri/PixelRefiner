@@ -62,21 +62,6 @@ export const posterize = (img: RawImage, step: number): RawImage => {
 	return { width: img.width, height: img.height, data: out };
 };
 
-/**
- * 色をスーパーファミコンの 15 ビットカラー仕様（RGB 各 5 ビット）に丸める。
- * 0〜255 を 0〜31（5 ビット相当）へ変換し、さらに 0〜248（8 ビット相当）へ戻す。
- */
-export const roundTo15bitColor = (img: RawImage): RawImage => {
-	const out = new Uint8ClampedArray(img.data.length);
-	for (let i = 0; i < img.data.length; i += 4) {
-		out[i] = Math.round(img.data[i] / 8) * 8;
-		out[i + 1] = Math.round(img.data[i + 1] / 8) * 8;
-		out[i + 2] = Math.round(img.data[i + 2] / 8) * 8;
-		out[i + 3] = img.data[i + 3];
-	}
-	return { width: img.width, height: img.height, data: out };
-};
-
 export const extractStrip = (
 	img: RawImage,
 	axis: Axis,

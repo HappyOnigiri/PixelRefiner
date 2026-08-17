@@ -4,7 +4,7 @@ import {
 } from "../shared/config";
 import type { PixelGrid, RawImage } from "../shared/types";
 
-export type RGBA = [number, number, number, number];
+type RGBA = [number, number, number, number];
 
 export type CellSamplingMode =
 	| "legacy-median"
@@ -20,14 +20,14 @@ export type CellSamplerOptions = {
 	preserveThinFeatures: boolean;
 };
 
-export type CellBounds = {
+type CellBounds = {
 	x0: number;
 	y0: number;
 	x1: number;
 	y1: number;
 };
 
-export type CellSamplingContext = {
+type CellSamplingContext = {
 	cellX: number;
 	cellY: number;
 	grid: PixelGrid;

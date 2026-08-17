@@ -366,8 +366,6 @@ main {
   border-color: var(--panel-hover-border);
 }
 
-.input-panel {}
-
 .input-panel.drag-over {
   border-color: var(--primary);
   background: color-mix(in srgb, var(--primary) 7%, var(--bg-panel));

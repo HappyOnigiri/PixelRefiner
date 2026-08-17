@@ -36,7 +36,7 @@ export const isProcessingCancelledError = (
 ): error is ProcessingCancelledError =>
 	error instanceof ProcessingCancelledError;
 
-export const createProcessorEndpoint = (): ProcessorEndpoint => {
+const createProcessorEndpoint = (): ProcessorEndpoint => {
 	const worker = new Worker(new URL("../core/worker.ts", import.meta.url), {
 		type: "module",
 	});

@@ -5,10 +5,8 @@ import { appMessages } from "./messages";
 // guide.html 専用の文言を本体バンドルへ持ち込まずに、キー名だけを型へ通す。
 import type { guideMessages } from "./messages/guide";
 
-export type { MessageCatalog, MessageEntry } from "./define-messages";
-export { defineMessages } from "./define-messages";
+export type { MessageCatalog } from "./define-messages";
 export type { Language } from "./language";
-export { LANGUAGES } from "./language";
 
 export type ResourceKey = keyof typeof appMessages | keyof typeof guideMessages;
 

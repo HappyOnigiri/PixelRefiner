@@ -635,6 +635,3 @@ export const removeSmallFloatingComponentsInPlace = (
 	}
 	return { removedComponents, removedPixels };
 };
-
-export const _removeSmallFloatingComponentsInPlace =
-	removeSmallFloatingComponentsInPlace;

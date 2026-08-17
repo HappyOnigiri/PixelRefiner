@@ -67,14 +67,26 @@ export const resolveGridEstimate = (
 	phaseAware: boolean,
 	alignToBounds = false,
 ): PixelGrid => {
+	const sharedGrid = {
+		cellW: estimate.cellW,
+		cellH: estimate.cellH,
+		score: estimate.score ?? 0,
+		scoreX: estimate.scoreX,
+		scoreY: estimate.scoreY,
+		// [Intended] 計測済みのアンサンブル信号を捨てない。ここで落ちると候補評価が
+		// 未計測扱いになり、せっかく測った証拠が中立値へ丸められる。
+		signalScores: estimate.signalScores,
+		gridEvidence: estimate.gridEvidence,
+		gridEvidenceMax: estimate.gridEvidenceMax,
+		gridEvidenceContested: estimate.gridEvidenceContested,
+	};
 	// [Intended] コンテンツ BBox 基準の候補は、元キャンバスの左上へ投影せず
 	// BBox 内のセル数・位相をそのまま採用する。
 	if (alignToBounds) {
 		const outW = Math.max(1, estimate.outW ?? 1);
 		const outH = Math.max(1, estimate.outH ?? 1);
 		return {
-			cellW: estimate.cellW,
-			cellH: estimate.cellH,
+			...sharedGrid,
 			offsetX: 0,
 			offsetY: 0,
 			cropX: bboxOrigin.x,
@@ -83,15 +95,6 @@ export const resolveGridEstimate = (
 			cropH: outH * estimate.cellH,
 			outW,
 			outH,
-			score: estimate.score ?? 0,
-			scoreX: estimate.scoreX,
-			scoreY: estimate.scoreY,
-			// [Intended] 計測済みのアンサンブル信号を捨てない。ここで落ちると候補評価が
-			// 未計測扱いになり、せっかく測った証拠が中立値へ丸められる。
-			signalScores: estimate.signalScores,
-			gridEvidence: estimate.gridEvidence,
-			gridEvidenceMax: estimate.gridEvidenceMax,
-			gridEvidenceContested: estimate.gridEvidenceContested,
 		};
 	}
 	// [Intended] 位相を実測した推定（境界コントラストで位相を詰めた再構成ベースの探索）は、
@@ -123,8 +126,7 @@ export const resolveGridEstimate = (
 			: Math.floor(source.height / estimate.cellH),
 	);
 	return {
-		cellW: estimate.cellW,
-		cellH: estimate.cellH,
+		...sharedGrid,
 		offsetX,
 		offsetY,
 		cropX,
@@ -133,13 +135,6 @@ export const resolveGridEstimate = (
 		cropH: outH * estimate.cellH,
 		outW,
 		outH,
-		score: estimate.score ?? 0,
-		scoreX: estimate.scoreX,
-		scoreY: estimate.scoreY,
-		signalScores: estimate.signalScores,
-		gridEvidence: estimate.gridEvidence,
-		gridEvidenceMax: estimate.gridEvidenceMax,
-		gridEvidenceContested: estimate.gridEvidenceContested,
 	};
 };
 

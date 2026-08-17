@@ -26,7 +26,9 @@ class MockTab extends EventTarget {
 	setAttribute(name: string, value: string) {
 		this.attributes.set(name, value);
 	}
-	focus() {}
+	focus() {
+		// フォーカス移動は検証しないので何もしない
+	}
 }
 
 describe("settings tabs", () => {

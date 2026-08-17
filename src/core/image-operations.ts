@@ -184,49 +184,6 @@ export const downsample = (
 };
 
 /**
- * 比較用に画像をリサイズする単純な点サンプリング（最近傍法）。
- * `downsample` と異なり中央値フィルタリングを行わないため、
- * 視覚比較用に元のアンチエイリアスとノイズを保持する。
- */
-export const sampleRawImage = (img: RawImage, grid: PixelGrid): RawImage => {
-	const cellW = grid.cellW;
-	const cellH = grid.cellH;
-	const cropX = grid.cropX ?? grid.offsetX;
-	const cropY = grid.cropY ?? grid.offsetY;
-	const outW =
-		grid.outW ?? Math.max(1, Math.floor((img.width - cropX) / cellW));
-	const outH =
-		grid.outH ?? Math.max(1, Math.floor((img.height - cropY) / cellH));
-	const out = new Uint8ClampedArray(outW * outH * 4);
-
-	const imgData = img.data;
-	const imgW = img.width;
-	const imgH = img.height;
-
-	for (let j = 0; j < outH; j += 1) {
-		const cy = Math.floor(cropY + (j + 0.5) * cellH);
-		if (cy < 0 || cy >= imgH) continue;
-		const rowOffset = cy * imgW;
-		const outRowOffset = j * outW;
-
-		for (let i = 0; i < outW; i += 1) {
-			const cx = Math.floor(cropX + (i + 0.5) * cellW);
-			if (cx < 0 || cx >= imgW) continue;
-
-			const srcIdx = (rowOffset + cx) * 4;
-			const dstIdx = (outRowOffset + i) * 4;
-
-			out[dstIdx] = imgData[srcIdx];
-			out[dstIdx + 1] = imgData[srcIdx + 1];
-			out[dstIdx + 2] = imgData[srcIdx + 2];
-			out[dstIdx + 3] = imgData[srcIdx + 3];
-		}
-	}
-
-	return { width: outW, height: outH, data: out };
-};
-
-/**
  * 比較表示用に、切り抜いた領域を最近傍法でリサイズする。
  * 平滑化や中央値・色の集約を避ける
  * （つまり「ドット補正」は行わない）。

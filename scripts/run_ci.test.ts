@@ -16,9 +16,13 @@ const RUN_CI_PATH = fileURLToPath(new URL("./run_ci.py", import.meta.url));
 const CHECK_TASKS = [
 	"build",
 	"check-architecture",
+	"check-dead-code",
+	"check-duplicates",
+	"check-empty-blocks",
 	"check-file-line-count",
 	"check-ts-line-length",
 	"check-ts-rules",
+	"check-unused-members",
 	"html-check-diff",
 	"test-unit",
 	"ts-check-diff",
