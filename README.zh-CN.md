@@ -2,7 +2,7 @@
 
 [English version](./README.md) | [日本語版](./README.ja.md)
 
-![Pixel Refiner Demo](.github/assets/demo.png)
+![Pixel Refiner Demo](.github/assets/demo.webp)
 
 ### 立即使用：<a href="https://pixel-refiner.app/" target="_blank">pixel-refiner.app</a>
 
