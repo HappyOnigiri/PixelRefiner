@@ -28,6 +28,9 @@ export class CandidateChooser {
 	private reasons: HTMLElement;
 	private callbacks: CandidateChooserCallbacks | null = null;
 	private sourceImageId: string | null = null;
+	private candidates: CandidatePreview[] = [];
+	private warnings: ProcessingWarningCode[] = [];
+	private selectedId: string | undefined;
 
 	constructor(section: HTMLElement) {
 		this.section = section;
@@ -60,13 +63,28 @@ export class CandidateChooser {
 		// ライブリージョンで、hidden のまま書き換えても読み上げられない。候補が現れた
 		// ことを支援技術へ伝える手段がこれしかないので、順序を入れ替えない。
 		this.section.hidden = candidates.length === 0;
-		this.list.replaceChildren();
-		this.reasons.textContent = translateProcessingWarnings(warnings).join(" ");
-		for (let index = 0; index < candidates.length; index += 1) {
-			this.list.appendChild(this.createCard(candidates[index]));
-		}
+		this.candidates = candidates;
+		this.warnings = warnings;
 		this.sourceImageId = sourceImageId;
-		this.setSelected(selectedId);
+		this.selectedId = selectedId;
+		this.renderContent();
+	}
+
+	/** 言語切替後に、表示中の候補文言を現在の言語で描き直す。 */
+	public updateLanguage(): void {
+		if (this.candidates.length === 0) return;
+		this.renderContent();
+	}
+
+	private renderContent(): void {
+		this.list.replaceChildren();
+		this.reasons.textContent = translateProcessingWarnings(this.warnings).join(
+			" ",
+		);
+		for (let index = 0; index < this.candidates.length; index += 1) {
+			this.list.appendChild(this.createCard(this.candidates[index]));
+		}
+		this.setSelected(this.selectedId);
 	}
 
 	/**
@@ -74,6 +92,7 @@ export class CandidateChooser {
 	 * [Intended] 未選択のときは Auto 結果がメイン画像に出ているので、その候補を選択中にする。
 	 */
 	public setSelected(selectedId?: string): void {
+		this.selectedId = selectedId;
 		const cards = this.list.querySelectorAll<HTMLButtonElement>(
 			"button[data-candidate-id]",
 		);
@@ -94,6 +113,9 @@ export class CandidateChooser {
 		this.list.replaceChildren();
 		this.reasons.textContent = "";
 		this.sourceImageId = null;
+		this.candidates = [];
+		this.warnings = [];
+		this.selectedId = undefined;
 	}
 
 	public setCallbacks(callbacks: CandidateChooserCallbacks): void {

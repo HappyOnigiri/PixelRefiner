@@ -278,8 +278,10 @@ export const initApp = (): void => {
 		runProcessing,
 		onAutoProcessScheduledChange: processingController.setAutoProcessScheduled,
 		saveSettings,
-		onLanguageChange: () =>
-			updateProcessingAnalysis(imageSession.getActiveImage()),
+		onLanguageChange: () => {
+			candidateChooser.updateLanguage();
+			updateProcessingAnalysis(imageSession.getActiveImage());
+		},
 	});
 	const updateGrid = () => {
 		mainResultViewer.drawGrid();
