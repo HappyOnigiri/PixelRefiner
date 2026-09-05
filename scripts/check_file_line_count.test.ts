@@ -15,6 +15,13 @@ const CHECKER_PATH = fileURLToPath(
 	new URL("./check_file_line_count.py", import.meta.url),
 );
 
+// [Intended] 子プロセスへ GIT_* を渡さない。GIT_DIR や GIT_INDEX_FILE は cwd より優先されるため、
+// 引き継ぐと一時リポジトリではなく呼び出し元のリポジトリ（pre-commit hook から make ci を
+// 実行した場合など）の設定・インデックス・作業ツリーを書き換えてしまう。
+const GIT_FREE_ENV: NodeJS.ProcessEnv = Object.fromEntries(
+	Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_")),
+);
+
 interface CheckerResult {
 	status: number | null;
 	stdout: string;
@@ -34,6 +41,7 @@ function git(repository: string, args: string[]): string {
 	return execFileSync("git", args, {
 		cwd: repository,
 		encoding: "utf8",
+		env: GIT_FREE_ENV,
 	}).trim();
 }
 
@@ -58,7 +66,10 @@ function runChecker(
 ): CheckerResult {
 	const repository = mkdtempSync(join(tmpdir(), "file-line-count-test-"));
 	try {
-		execFileSync("git", ["init", "--quiet"], { cwd: repository });
+		execFileSync("git", ["init", "--quiet"], {
+			cwd: repository,
+			env: GIT_FREE_ENV,
+		});
 		git(repository, ["config", "user.name", "File line count test"]);
 		git(repository, ["config", "user.email", "file-line-count@example.test"]);
 		git(repository, ["config", "commit.gpgsign", "false"]);
@@ -88,7 +99,7 @@ function runChecker(
 			cwd: repository,
 			encoding: "utf8",
 			env: {
-				...process.env,
+				...GIT_FREE_ENV,
 				GITHUB_ACTIONS: options.githubActions ? "true" : "false",
 				PATH: `${testBin}:${process.env.PATH ?? ""}`,
 				PIXEL_REFINER_DIFF_BASE: options.diffBase ?? "",
@@ -168,6 +179,7 @@ describe("check_file_line_count.py", () => {
 	it("rejects unsupported arguments", () => {
 		const result = spawnSync("python3", [CHECKER_PATH, "--unknown"], {
 			encoding: "utf8",
+			env: GIT_FREE_ENV,
 		});
 
 		expect(result.status).toBe(2);
