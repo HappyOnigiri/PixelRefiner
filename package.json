@@ -1,6 +1,6 @@
 {
   "name": "pixel-refiner",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engines": {
     "node": "24.x"
   },
