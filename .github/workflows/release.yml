@@ -4,12 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 1.3.0)"
-        required: true
+        description: "Release version (e.g. 1.3.0)。bump を使う場合は空にする"
+        required: false
         type: string
+      bump:
+        description: "バージョンの上げ方。version を指定する場合は none にする"
+        required: false
+        default: none
+        type: choice
+        options:
+          - none
+          - auto
+          - major
+          - minor
+          - patch
 
+# バージョンは実行後に確定するため、リリース同士は常に直列化する
 concurrency:
-  group: release-${{ inputs.version }}
+  group: release
   cancel-in-progress: false
 
 permissions:
@@ -20,8 +32,9 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
-      - uses: HappyOnigiri/ShareSettings/actions/prepare-release@main
+      - uses: HappyOnigiri/ReleaseActions/actions/prepare-release@main
         with:
           version: ${{ inputs.version }}
+          bump: ${{ inputs.bump }}
           version-bump-type: npm
           github-token: ${{ secrets.GH_TOKEN }}
