@@ -15,7 +15,7 @@ jobs:
       startsWith(github.event.pull_request.head.ref, 'release/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: HappyOnigiri/ShareSettings/actions/publish-release@main
+      - uses: HappyOnigiri/ReleaseActions/actions/publish-release@main
         with:
           branch: ${{ github.event.pull_request.head.ref }}
           pr-body: ${{ github.event.pull_request.body }}
