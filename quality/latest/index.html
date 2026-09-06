@@ -1,0 +1,1859 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title data-i18n="title">PixelRefiner quality report</title>
+	<script>((config) => {
+	const isTheme = (value) => value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(config.queryParameter);
+	let storedTheme = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {};
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const prefersDark = typeof window.matchMedia === "function" && window.matchMedia(config.mediaQuery).matches;
+	const theme = queryTheme ?? savedTheme ?? (prefersDark ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+	window.__QUALITY_REPORT_THEME__ = {
+		theme,
+		queryPinned: queryTheme !== null
+	};
+})({"storageKey":"pixel-refiner-theme","queryParameter":"theme","mediaQuery":"(prefers-color-scheme: dark)"});</script>
+	<style>
+
+:root {
+	color-scheme: light;
+	font-family: system-ui, sans-serif;
+	background: #f7f8fc;
+	color: #172033;
+	--report-bg: #f7f8fc;
+	--report-panel: #ffffff;
+	--report-panel-muted: #f0f3f8;
+	--report-control: #eef2f7;
+	--report-border: #ccd4e0;
+	--report-border-strong: #8995a7;
+	--report-text: #172033;
+	--report-text-muted: #526077;
+	--report-text-dim: #687386;
+	--report-link: #4f46e5;
+	--report-focus: #6d5bd0;
+	--report-active-outline: #4f46e5;
+	--report-active-shadow: #4f46e522;
+	--report-hover: #e4e8ef;
+	--report-badge: #e5e7eb;
+	--report-purple: #e5def8;
+	--report-danger: #f8d4d7;
+	--report-success: #ccebd9;
+	--report-neutral: #dce4f1;
+	--report-warning: #f8e4ad;
+	--report-auto: #d3e7f8;
+	--report-explicit: #e4dff0;
+	--report-orange: #f7ddc3;
+	--report-cyan: #ccebed;
+	--report-danger-border: #d64550;
+	--report-danger-text: #b4232f;
+	--report-success-text: #18713f;
+}
+:root[data-theme="dark"] {
+	color-scheme: dark;
+	background: #15131a;
+	color: #f4efff;
+	--report-bg: #15131a;
+	--report-panel: #1d1923;
+	--report-panel-muted: #25212d;
+	--report-control: #302a39;
+	--report-border: #494151;
+	--report-border-strong: #635a70;
+	--report-text: #f4efff;
+	--report-text-muted: #d6cce4;
+	--report-text-dim: #aaa0b8;
+	--report-link: #b9a7ff;
+	--report-focus: #c2b4ff;
+	--report-active-outline: #ffffff;
+	--report-active-shadow: #ffffff22;
+	--report-hover: #3b3346;
+	--report-badge: #393241;
+	--report-purple: #59458a;
+	--report-danger: #7a2930;
+	--report-success: #236044;
+	--report-neutral: #48536b;
+	--report-warning: #725b20;
+	--report-auto: #2d4a6b;
+	--report-explicit: #3d3550;
+	--report-orange: #8a4b16;
+	--report-cyan: #1f5f6b;
+	--report-danger-border: #ff6b6b;
+	--report-danger-text: #ffb0b0;
+	--report-success-text: #85e6a9;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme]) {
+		color-scheme: dark;
+		background: #15131a;
+		color: #f4efff;
+		--report-bg: #15131a;
+		--report-panel: #1d1923;
+		--report-panel-muted: #25212d;
+		--report-control: #302a39;
+		--report-border: #494151;
+		--report-border-strong: #635a70;
+		--report-text: #f4efff;
+		--report-text-muted: #d6cce4;
+		--report-text-dim: #aaa0b8;
+		--report-link: #b9a7ff;
+		--report-focus: #c2b4ff;
+		--report-active-outline: #ffffff;
+		--report-active-shadow: #ffffff22;
+		--report-hover: #3b3346;
+		--report-badge: #393241;
+		--report-purple: #59458a;
+		--report-danger: #7a2930;
+		--report-success: #236044;
+		--report-neutral: #48536b;
+		--report-warning: #725b20;
+		--report-auto: #2d4a6b;
+		--report-explicit: #3d3550;
+		--report-orange: #8a4b16;
+		--report-cyan: #1f5f6b;
+		--report-danger-border: #ff6b6b;
+		--report-danger-text: #ffb0b0;
+		--report-success-text: #85e6a9;
+	}
+}
+body { background: var(--report-bg); color: var(--report-text); }
+a { color: var(--report-link); }
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+.theme-toggle-row { display: flex; justify-content: flex-end; margin-top: auto; }
+.theme-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	color: var(--report-text-muted);
+	background: var(--report-control);
+	border: 1px solid var(--report-border-strong);
+	border-radius: 50%;
+	cursor: pointer;
+}
+.theme-toggle:hover { color: var(--report-link); border-color: var(--report-focus); }
+.theme-toggle:focus-visible { outline: 2px solid var(--report-focus); outline-offset: 2px; }
+.theme-toggle [hidden] { display: none; }
+
+body { margin: 0 auto; max-width: 1800px; padding: 20px; }
+.report-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; grid-template-areas: "main sidebar"; gap: 24px; align-items: start; }
+.sidebar {
+	grid-area: sidebar;
+	position: sticky;
+	top: 16px;
+	margin-bottom: 20px;
+	display: grid;
+	gap: 14px;
+	max-height: calc(100vh - 32px);
+	overflow: auto;
+	padding: 16px;
+	border: 1px solid var(--report-border);
+	border-radius: 10px;
+	background: var(--report-panel);
+}
+.report-main { grid-area: main; }
+.sidebar h1 { margin: 0; font-size: 1.2rem; }
+.report-overview { display: grid; gap: 4px; }
+.report-overview p { margin: 0; font-size: .88rem; }
+.report-meta h2 { margin: 0 0 6px; font-size: .85rem; color: var(--report-text-muted); }
+.report-meta dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 8px; margin: 0; font-size: .78rem; }
+.report-meta dt { color: var(--report-text-dim); }
+.report-meta dd { margin: 0; overflow-wrap: anywhere; }
+.report-meta code { font-size: inherit; }
+.previous-run-note { margin: 6px 0 0; font-size: .75rem; color: var(--report-text-dim); }
+.filter-panel { display: grid; gap: 10px; }
+.filter-group { margin: 0; padding: 8px; border: 1px solid var(--report-border); border-radius: 8px; background: var(--report-panel-muted); }
+.filter-group legend { padding: 0 4px; font-size: .82rem; font-weight: 700; }
+.filter-row { display: grid; gap: 5px; }
+.locale-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.locale-button {
+	padding: 6px;
+	background: var(--report-control);
+	color: inherit;
+	border: 1px solid var(--report-border-strong);
+	border-radius: 6px;
+	cursor: pointer;
+}
+.locale-button:hover { border-color: var(--report-focus); }
+.locale-button.active { background: var(--report-purple); border-color: var(--report-active-outline); }
+.search-row { display: grid; gap: 5px; font-size: .82rem; }
+.search-row input {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 7px;
+	background: var(--report-panel-muted);
+	color: inherit;
+	border: 1px solid var(--report-border-strong);
+}
+.filter-summary { margin: 0; font-size: .78rem; color: var(--report-text-muted); }
+.filter-button {
+	width: 100%;
+	padding: 7px 8px;
+	background: var(--report-control);
+	color: inherit;
+	border: 1px solid var(--report-border-strong);
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: left;
+	transition: transform .12s, border-color .12s, background .12s;
+}
+.filter-button:hover { transform: translateX(2px); border-color: var(--report-focus); }
+.filter-button.active { border-color: var(--report-active-outline); box-shadow: 0 0 0 2px var(--report-active-shadow); }
+.filter-button.active[data-change-filter=""], .filter-button.active[data-quality-filter=""] { background: var(--report-purple); }
+.filter-button.active[data-change-filter="changed"], .filter-button.active[data-change-filter="new"] { background: var(--report-warning); }
+.filter-button.active[data-quality-filter="unmet"] { background: var(--report-danger); }
+.filter-button.active[data-quality-filter="met"] { background: var(--report-success); }
+.filter-button.active[data-quality-filter="missing"],
+.filter-button.active[data-change-filter="unchanged"],
+.filter-button.active[data-parameter-filter=""] {
+	background: var(--report-neutral);
+}
+.filter-button.active[data-parameter-filter="explicit"] { background: var(--report-explicit); }
+.filter-button.active[data-parameter-filter="auto"] { background: var(--report-auto); }
+.case { border: 1px solid var(--report-border); border-radius: 8px; padding: 16px; margin: 0 0 16px; }
+.case.target-unmet { border-color: var(--report-danger-border); }
+.case h2 { margin-top: 0; }
+.case-metrics { font-size: .62rem; font-weight: 400; color: var(--report-text-muted); white-space: nowrap; }
+.target-failures { margin: -6px 0 12px; color: var(--report-danger-text); }
+.detail-link {
+	display: inline-block;
+	padding: 8px 12px;
+	border: 1px solid var(--report-border-strong);
+	border-radius: 6px;
+	background: var(--report-control);
+	text-decoration: none;
+}
+.detail-link:hover { border-color: var(--report-focus); background: var(--report-hover); }
+.badge { display: inline-block; padding: 3px 7px; border-radius: 999px; font-size: .75em; background: var(--report-badge); }
+.badge.failed, .badge.target-unmet { background: var(--report-danger); }
+.badge.passed, .badge.target-met { background: var(--report-success); }
+.badge.target-missing, .badge.unchanged { background: var(--report-neutral); }
+.badge.changed, .badge.new { background: var(--report-warning); }
+.badge.parameter-auto { background: var(--report-auto); }
+.badge.parameter-explicit { background: var(--report-explicit); }
+.badge.has-warnings { background: var(--report-orange); }
+.badge.has-candidate-selection { background: var(--report-cyan); }
+.images { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.images figure { margin: 0; }
+.image-size { color: var(--report-text-muted); font-weight: 400; }
+.image-size.size-mismatch { color: var(--report-danger-text); font-weight: 700; }
+.image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 220px; }
+.image-stage img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	cursor: zoom-in;
+	image-rendering: pixelated;
+	background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px;
+}
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 7px; text-align: right; border-bottom: 1px solid var(--report-border); }
+th:first-child { text-align: left; }
+tr.metric-regressed { color: var(--report-danger-text); }
+tr.metric-improved { color: var(--report-success-text); }
+details { margin-top: 16px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; }
+dd { margin: 0; overflow-wrap: anywhere; }
+code { font-size: .8em; }
+dialog { width: min(90vw, 1000px); color: var(--report-text); background: var(--report-bg); border: 1px solid var(--report-border-strong); }
+.dialog-stage { height: 85vh; }
+.dialog-stage img { display: block; image-rendering: pixelated; background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px; }
+@media (max-width: 800px) {
+	body { padding: 12px; }
+	.report-layout { grid-template-columns: 1fr; grid-template-areas: "sidebar" "main"; }
+	.sidebar { position: static; max-height: none; overflow: visible; }
+	.filter-row { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+	.filter-button:hover { transform: translateY(-1px); }
+}
+	</style>
+</head>
+<body>
+	<div class="report-layout">
+<aside class="sidebar">
+	<h1 data-i18n="title">PixelRefiner quality report</h1>
+	<div class="report-overview">
+		<p><span data-i18n="targetUnmet">Target unmet</span>: <strong>2</strong></p>
+		<p><span data-i18n="targetMissing">Cannot assess</span>: <strong>0</strong></p>
+	</div>
+	<section class="report-meta" aria-labelledby="report-meta-title">
+		<h2 id="report-meta-title" data-i18n="releaseReport">Release report</h2>
+		<dl><dt data-i18n="headCommit">Head</dt>
+			<dd><a href="https://github.com/HappyOnigiri/PixelRefiner/commit/c70aafe6bc41d3db5255af7a11e9426d1f029bfd"
+				title="c70aafe6bc41d3db5255af7a11e9426d1f029bfd"><code>c70aafe</code></a></dd>
+			<dt data-i18n="previousVersion">Previous version</dt>
+			<dd><a href="https://github.com/HappyOnigiri/PixelRefiner/releases/tag/v1.0.0"
+				><code>v1.0.0</code></a></dd>
+			<dt data-i18n="generatedAt">Generated</dt>
+			<dd><time datetime="2026-09-06T01:09:30.677Z">2026-09-06 10:09:30 JST</time></dd>
+			<dt data-i18n="workflow">Workflow</dt>
+			<dd><a href="https://github.com/HappyOnigiri/PixelRefiner/actions/runs/34002918119" data-i18n="workflow">workflow</a></dd></dl>
+		
+	</section>
+	<div class="filter-panel">
+		<fieldset class="filter-group">
+			<legend data-i18n="qualityStatus">Target quality</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-quality-filter="" aria-pressed="true">
+					<span data-i18n="allStatuses">All</span>: 63
+				</button>
+				<button class="filter-button" type="button" data-quality-filter="unmet" aria-pressed="false">
+					<span data-i18n="targetUnmet">Target unmet</span>: 2
+				</button>
+				<button class="filter-button" type="button" data-quality-filter="met" aria-pressed="false">
+					<span data-i18n="targetMet">Target met</span>: 61
+				</button>
+				<button class="filter-button" type="button" data-quality-filter="missing" aria-pressed="false">
+					<span data-i18n="targetMissing">Cannot assess</span>: 0
+				</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
+			<legend data-i18n="changeStatus">Change from previous run</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-change-filter="" aria-pressed="true">
+					<span data-i18n="allChanges">All</span>: 63
+				</button>
+				<button class="filter-button" type="button" data-change-filter="changed" aria-pressed="false">
+					<span data-i18n="changed">changed</span>: 0
+				</button>
+				<button class="filter-button" type="button" data-change-filter="unchanged" aria-pressed="false">
+					<span data-i18n="unchanged">unchanged</span>: 63
+				</button>
+				<button class="filter-button" type="button" data-change-filter="new" aria-pressed="false">
+					<span data-i18n="new">new</span>: 0
+				</button>
+			</div>
+		</fieldset>
+		<fieldset class="filter-group">
+			<legend data-i18n="parameterMode">Parameters</legend>
+			<div class="filter-row">
+				<button class="filter-button active" type="button" data-parameter-filter="" aria-pressed="true">
+					<span data-i18n="allParameters">All</span>
+				</button>
+				<button class="filter-button" type="button" data-parameter-filter="explicit" aria-pressed="false">
+					<span data-i18n="explicitParameters">explicit options</span>: 55
+				</button>
+				<button class="filter-button" type="button" data-parameter-filter="auto" aria-pressed="false">
+					<span data-i18n="autoParameters">auto detection</span>: 8
+				</button>
+			</div>
+		</fieldset>
+		<label class="search-row" for="search">
+			<span data-i18n="filterCases">Filter cases</span>
+			<input id="search" placeholder="Filter cases" data-i18n-placeholder="filterCases">
+		</label>
+		<p class="filter-summary" aria-live="polite">
+			<span data-i18n="displayConditions">Showing</span>:
+			<strong id="active-quality-label"></strong> &times;
+			<strong id="active-change-label"></strong> &times;
+			<strong id="active-parameter-label"></strong> &mdash;
+			<strong id="visible-count">0</strong> / 63
+			<span data-i18n="casesShown">cases</span>
+		</p>
+		<fieldset class="filter-group">
+			<legend data-i18n="language">Language</legend>
+			<div class="locale-row">
+				<button class="locale-button" type="button" data-locale="ja" aria-pressed="false">日本語</button>
+				<button class="locale-button" type="button" data-locale="en" aria-pressed="false">English</button>
+				<button class="locale-button" type="button" data-locale="zh-CN" aria-pressed="false">简体中文</button>
+			</div>
+		</fieldset>
+	</div>
+	<div class="theme-toggle-row">
+	<button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+		<span class="visually-hidden" data-i18n="toggleTheme">Toggle color theme</span>
+		<svg data-theme-icon="light" aria-hidden="true" width="20" height="20"
+			viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+			stroke-linecap="round" stroke-linejoin="round">
+			<circle cx="12" cy="12" r="4"></circle>
+			<path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+		</svg>
+		<svg data-theme-icon="dark" aria-hidden="true" width="20" height="20"
+			viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+			stroke-linecap="round" stroke-linejoin="round" hidden>
+			<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+		</svg>
+	</button>
+</div>
+</aside>
+		<main class="report-main"><article class="case target-unmet"
+			data-quality="unmet" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-crop-shifts-to-8x8 PRF-001 grid-phase explicit unmet unchanged cropped-pixel-art convert Correct crop-shift-1px, crop-shift-2px, crop-shift-3px and restore the image to 8 x 8 pixels. crop-shift-1px, crop-shift-2px, crop-shift-3pxの劣化を補正し、8 x 8ピクセルへ復元します。 crop-shift-1px crop-shift-2px crop-shift-3px">
+			<h2>
+				restore-crop-shifts-to-8x8
+				<span class="badge target-unmet" data-i18n="targetUnmet">unmet</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetUnmet">unmet</span> 34.484 &middot; <strong data-i18n="processingTime">Time</strong> 0.66ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			<p class="target-failures"><strong data-i18n="targetUnmet">Target unmet</strong>: <span data-i18n="assertions.background-mask-iou">background-mask-iou</span></p>
+			<p class="case-description" data-description-en="Correct crop-shift-1px, crop-shift-2px, crop-shift-3px and restore the image to 8 x 8 pixels."
+				data-description-ja="crop-shift-1px, crop-shift-2px, crop-shift-3pxの劣化を補正し、8 x 8ピクセルへ復元します。">Correct crop-shift-1px, crop-shift-2px, crop-shift-3px and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-crop-shifts-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-crop-shifts-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-crop-shifts-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-crop-shifts-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-unmet"
+			data-quality="unmet" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-quality-prf400-soft-edged-sprite PRF-400 auto unmet unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。 LOW_GRID_CONFIDENCE">
+			<h2>
+				auto-quality-prf400-soft-edged-sprite
+				<span class="badge target-unmet" data-i18n="targetUnmet">unmet</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<span class="badge has-candidate-selection" data-i18n="hasCandidateSelection">candidate selection</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetUnmet">unmet</span> 12.676 &middot; <strong data-i18n="processingTime">Time</strong> 20837.13ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5027</small>
+			</h2>
+			<p class="target-failures"><strong data-i18n="targetUnmet">Target unmet</strong>: <span data-i18n="assertions.exact-image-match">exact-image-match</span>, <span data-i18n="assertions.output-size">output-size</span></p>
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(34x47px)</small></figcaption><div class="image-stage"><img src="cases/auto-quality-prf400-soft-edged-sprite/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size size-mismatch">(33x47px)</small></figcaption><div class="image-stage"><img src="cases/auto-quality-prf400-soft-edged-sprite/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(34x47px)</small></figcaption><div class="image-stage"><img src="cases/auto-quality-prf400-soft-edged-sprite/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-quality-prf400-soft-edged-sprite/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-background-trim-auto-grid PRF-001 PRF-002 resize explicit met unchanged scaled-pixel-art refine remove the background, trim transparent margins, restore the detected pixel grid. 背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">
+			<h2>
+				remove-background-trim-auto-grid
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1320.46ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.6061</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, trim transparent margins, restore the detected pixel grid."
+				data-description-ja="背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">remove the background, trim transparent margins, restore the detected pixel grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(22x22px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-trim-auto-grid/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(22x22px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-trim-auto-grid/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(22x22px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-trim-auto-grid/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-background-trim-auto-grid/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-background-trim-resize-46x13 PRF-001 PRF-002 force-size explicit met unchanged scaled-pixel-art convert remove the background, trim transparent margins, restore the detected pixel grid, then resize it to 46 x 13 pixels. 背景除去、透明余白のトリミング、検出したピクセルグリッドの復元後、46 x 13ピクセルへ変換します。">
+			<h2>
+				remove-background-trim-resize-46x13
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 55.84ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, trim transparent margins, restore the detected pixel grid, then resize it to 46 x 13 pixels."
+				data-description-ja="背景除去、透明余白のトリミング、検出したピクセルグリッドの復元後、46 x 13ピクセルへ変換します。">remove the background, trim transparent margins, restore the detected pixel grid, then resize it to 46 x 13 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(46x13px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-trim-resize-46x13/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(46x13px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-trim-resize-46x13/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(46x13px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-trim-resize-46x13/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-background-trim-resize-46x13/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="trim-auto-grid PRF-001 auto-grid explicit met unchanged scaled-pixel-art refine remove the background, trim transparent margins, restore the detected pixel grid. 背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">
+			<h2>
+				trim-auto-grid
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 18054.30ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4907</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, trim transparent margins, restore the detected pixel grid."
+				data-description-ja="背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">remove the background, trim transparent margins, restore the detected pixel grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(88x61px)</small></figcaption><div class="image-stage"><img src="cases/trim-auto-grid/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(88x61px)</small></figcaption><div class="image-stage"><img src="cases/trim-auto-grid/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(88x61px)</small></figcaption><div class="image-stage"><img src="cases/trim-auto-grid/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/trim-auto-grid/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-inner-background-auto-grid PRF-001 background-removal explicit met unchanged scaled-pixel-art refine remove the background, trim transparent margins, restore the detected pixel grid. 背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">
+			<h2>
+				remove-inner-background-auto-grid
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 8322.31ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5278</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, trim transparent margins, restore the detected pixel grid."
+				data-description-ja="背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">remove the background, trim transparent margins, restore the detected pixel grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(22x21px)</small></figcaption><div class="image-stage"><img src="cases/remove-inner-background-auto-grid/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(22x21px)</small></figcaption><div class="image-stage"><img src="cases/remove-inner-background-auto-grid/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(22x21px)</small></figcaption><div class="image-stage"><img src="cases/remove-inner-background-auto-grid/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-inner-background-auto-grid/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-background-preserve-canvas PRF-001 trim-control explicit met unchanged scaled-pixel-art refine remove the background, restore the detected pixel grid. 背景除去、検出したピクセルグリッドの復元します。 CONTENT_LOSS_RISK">
+			<h2>
+				remove-background-preserve-canvas
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 12233.90ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5193</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, restore the detected pixel grid."
+				data-description-ja="背景除去、検出したピクセルグリッドの復元します。">remove the background, restore the detected pixel grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(120x66px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-preserve-canvas/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(120x66px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-preserve-canvas/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(120x66px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-preserve-canvas/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-background-preserve-canvas/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="convert-deterministic-auto-palette PRF-010 color-quantization explicit met unchanged synthetic-many-color preserve Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering. 画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、強度100%のOrderedディザリングを適用します。">
+			<h2>
+				convert-deterministic-auto-palette
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 29.28ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering."
+				data-description-ja="画像を32×32ピクセルの原寸に保ち、完全透明な画素を維持したまま、947色ある不透明な入力色をAutoで選択した8色のパレットへ減色し、強度100%のOrderedディザリングを適用します。">Keep the image at its original 32 x 32 pixel dimensions and preserve fully transparent pixels while reducing its 947 opaque input colors to an automatically selected eight-color palette with full-strength Ordered dithering.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(32x32px)</small></figcaption><div class="image-stage"><img src="cases/convert-deterministic-auto-palette/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(32x32px)</small></figcaption><div class="image-stage"><img src="cases/convert-deterministic-auto-palette/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(32x32px)</small></figcaption><div class="image-stage"><img src="cases/convert-deterministic-auto-palette/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/convert-deterministic-auto-palette/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="convert-game-boy-pocket-palette PRF-001 palette-conversion explicit met unchanged continuous-tone preserve Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering. 連続階調画像をディザリングなしでゲームボーイポケットの4色パレットへ変換します。">
+			<h2>
+				convert-game-boy-pocket-palette
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 272.35ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering."
+				data-description-ja="連続階調画像をディザリングなしでゲームボーイポケットの4色パレットへ変換します。">Convert a continuous-tone image to the four-color Game Boy Pocket palette without dithering.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(512x512px)</small></figcaption><div class="image-stage"><img src="cases/convert-game-boy-pocket-palette/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(512x512px)</small></figcaption><div class="image-stage"><img src="cases/convert-game-boy-pocket-palette/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(512x512px)</small></figcaption><div class="image-stage"><img src="cases/convert-game-boy-pocket-palette/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/convert-game-boy-pocket-palette/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="convert-monochrome-floyd-steinberg PRF-001 dithering explicit met unchanged continuous-tone preserve Convert the image to monochrome using full-strength Floyd-Steinberg dithering. Floyd-Steinbergディザリングを強度100%で適用し、画像をモノクロへ変換します。">
+			<h2>
+				convert-monochrome-floyd-steinberg
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 171.34ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Convert the image to monochrome using full-strength Floyd-Steinberg dithering."
+				data-description-ja="Floyd-Steinbergディザリングを強度100%で適用し、画像をモノクロへ変換します。">Convert the image to monochrome using full-strength Floyd-Steinberg dithering.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(330x325px)</small></figcaption><div class="image-stage"><img src="cases/convert-monochrome-floyd-steinberg/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(330x325px)</small></figcaption><div class="image-stage"><img src="cases/convert-monochrome-floyd-steinberg/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(330x325px)</small></figcaption><div class="image-stage"><img src="cases/convert-monochrome-floyd-steinberg/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/convert-monochrome-floyd-steinberg/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-background-auto-grid-keep-aspect PRF-001 aspect-ratio explicit met unchanged scaled-pixel-art refine remove the background, trim transparent margins, restore the detected pixel grid. 背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">
+			<h2>
+				remove-background-auto-grid-keep-aspect
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 19624.15ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4907</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, trim transparent margins, restore the detected pixel grid."
+				data-description-ja="背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">remove the background, trim transparent margins, restore the detected pixel grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(108x61px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-auto-grid-keep-aspect/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(108x61px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-auto-grid-keep-aspect/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(108x61px)</small></figcaption><div class="image-stage"><img src="cases/remove-background-auto-grid-keep-aspect/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-background-auto-grid-keep-aspect/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="pad-wide-image-to-square PRF-001 make-square explicit met unchanged pixel-art-1x preserve Pad the image to a square canvas without trimming or background removal. 画像をトリミングや背景除去なしで正方形キャンバスへ拡張します。">
+			<h2>
+				pad-wide-image-to-square
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1.53ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Pad the image to a square canvas without trimming or background removal."
+				data-description-ja="画像をトリミングや背景除去なしで正方形キャンバスへ拡張します。">Pad the image to a square canvas without trimming or background removal.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(10x10px)</small></figcaption><div class="image-stage"><img src="cases/pad-wide-image-to-square/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(10x10px)</small></figcaption><div class="image-stage"><img src="cases/pad-wide-image-to-square/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(10x10px)</small></figcaption><div class="image-stage"><img src="cases/pad-wide-image-to-square/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/pad-wide-image-to-square/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="pad-tall-image-to-square PRF-001 make-square explicit met unchanged pixel-art-1x preserve Pad the image to a square canvas without trimming or background removal. 画像をトリミングや背景除去なしで正方形キャンバスへ拡張します。">
+			<h2>
+				pad-tall-image-to-square
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.20ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Pad the image to a square canvas without trimming or background removal."
+				data-description-ja="画像をトリミングや背景除去なしで正方形キャンバスへ拡張します。">Pad the image to a square canvas without trimming or background removal.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(10x10px)</small></figcaption><div class="image-stage"><img src="cases/pad-tall-image-to-square/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(10x10px)</small></figcaption><div class="image-stage"><img src="cases/pad-tall-image-to-square/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(10x10px)</small></figcaption><div class="image-stage"><img src="cases/pad-tall-image-to-square/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/pad-tall-image-to-square/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-high-resolution-pixel-grid PRF-001 PRF-020 high-resolution-grid explicit met unchanged scaled-pixel-art refine remove the background, trim transparent margins, restore the detected pixel grid. 背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">
+			<h2>
+				restore-high-resolution-pixel-grid
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 16722.63ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4695</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="remove the background, trim transparent margins, restore the detected pixel grid."
+				data-description-ja="背景除去、透明余白のトリミング、検出したピクセルグリッドの復元します。">remove the background, trim transparent margins, restore the detected pixel grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(140x212px)</small></figcaption><div class="image-stage"><img src="cases/restore-high-resolution-pixel-grid/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(140x212px)</small></figcaption><div class="image-stage"><img src="cases/restore-high-resolution-pixel-grid/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(140x212px)</small></figcaption><div class="image-stage"><img src="cases/restore-high-resolution-pixel-grid/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-high-resolution-pixel-grid/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="preserve-native-pixel-art PRF-001 PRF-300 explicit met unchanged pixel-art-1x preserve Preserve native-resolution pixel art, including small disconnected components and its limited palette. 小さな分離パーツや少色パレットを含む等倍のドット絵をそのまま保持します。 pixel-art-1x disconnected-small-component low-color-subject">
+			<h2>
+				preserve-native-pixel-art
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 4.62ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Preserve native-resolution pixel art, including small disconnected components and its limited palette."
+				data-description-ja="小さな分離パーツや少色パレットを含む等倍のドット絵をそのまま保持します。">Preserve native-resolution pixel art, including small disconnected components and its limited palette.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/preserve-native-pixel-art/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/preserve-native-pixel-art/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/preserve-native-pixel-art/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/preserve-native-pixel-art/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-2x-to-8x8 PRF-001 PRF-300 auto-grid explicit met unchanged scaled-pixel-art refine Correct nearest-2x. nearest-2xの劣化を補正しします。 nearest-2x">
+			<h2>
+				restore-nearest-2x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 20.63ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.7146</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-2x."
+				data-description-ja="nearest-2xの劣化を補正しします。">Correct nearest-2x.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-2x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-2x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-2x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-2x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-3x-to-8x8 PRF-001 auto-grid explicit met unchanged scaled-pixel-art convert Correct nearest-3x and restore the image to 8 x 8 pixels. nearest-3xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-3x">
+			<h2>
+				restore-nearest-3x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.67ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-3x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-3xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-3x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-3x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-3x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-3x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-3x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-4x-to-8x8 PRF-001 auto-grid explicit met unchanged scaled-pixel-art convert Correct nearest-4x and restore the image to 8 x 8 pixels. nearest-4xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-4x">
+			<h2>
+				restore-nearest-4x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.67ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-4x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-4xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-4x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-4x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-4x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-4x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-4x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-8x-to-8x8 PRF-001 auto-grid explicit met unchanged scaled-pixel-art convert Correct nearest-8x and restore the image to 8 x 8 pixels. nearest-8xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-8x">
+			<h2>
+				restore-nearest-8x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.59ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-8x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-8xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-8x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-8x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-8x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-8x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-8x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-16x-to-8x8 PRF-001 auto-grid explicit met unchanged scaled-pixel-art convert Correct nearest-16x and restore the image to 8 x 8 pixels. nearest-16xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-16x">
+			<h2>
+				restore-nearest-16x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1.00ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-16x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-16xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-16x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-16x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-16x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-16x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-16x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-32x-to-8x8 PRF-001 auto-grid explicit met unchanged scaled-pixel-art convert Correct nearest-32x and restore the image to 8 x 8 pixels. nearest-32xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-32x">
+			<h2>
+				restore-nearest-32x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1.66ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-32x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-32xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-32x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-32x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-32x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-32x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-32x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-1-5x-to-8x8 PRF-001 non-integer-scale explicit met unchanged interpolated-pixel-art convert Correct nearest-1.5x and restore the image to 8 x 8 pixels. nearest-1.5xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-1.5x">
+			<h2>
+				restore-nearest-1-5x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.21ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-1.5x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-1.5xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-1.5x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-1-5x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-1-5x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-1-5x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-1-5x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-2-5x-to-8x8 PRF-001 non-integer-scale explicit met unchanged interpolated-pixel-art convert Correct nearest-2.5x and restore the image to 8 x 8 pixels. nearest-2.5xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-2.5x">
+			<h2>
+				restore-nearest-2-5x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.70ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-2.5x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-2.5xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-2.5x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-2-5x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-2-5x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-2-5x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-2-5x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-nearest-3-2x-to-8x8 PRF-001 non-integer-scale explicit met unchanged interpolated-pixel-art convert Correct nearest-3.2x and restore the image to 8 x 8 pixels. nearest-3.2xの劣化を補正し、8 x 8ピクセルへ復元します。 nearest-3.2x">
+			<h2>
+				restore-nearest-3-2x-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.25ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct nearest-3.2x and restore the image to 8 x 8 pixels."
+				data-description-ja="nearest-3.2xの劣化を補正し、8 x 8ピクセルへ復元します。">Correct nearest-3.2x and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-3-2x-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-3-2x-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-nearest-3-2x-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-nearest-3-2x-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-bilinear-to-8x8 PRF-001 PRF-300 interpolation explicit met unchanged interpolated-pixel-art refine Correct bilinear. bilinearの劣化を補正しします。 bilinear">
+			<h2>
+				restore-bilinear-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 76.33ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4475</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct bilinear."
+				data-description-ja="bilinearの劣化を補正しします。">Correct bilinear.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-bilinear-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-bilinear-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-bilinear-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-bilinear-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-bicubic-to-8x8 PRF-001 interpolation explicit met unchanged interpolated-pixel-art convert Correct bicubic-equivalent and restore the image to 8 x 8 pixels. bicubic-equivalentの劣化を補正し、8 x 8ピクセルへ復元します。 bicubic-equivalent">
+			<h2>
+				restore-bicubic-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.63ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct bicubic-equivalent and restore the image to 8 x 8 pixels."
+				data-description-ja="bicubic-equivalentの劣化を補正し、8 x 8ピクセルへ復元します。">Correct bicubic-equivalent and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-bicubic-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-bicubic-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-bicubic-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-bicubic-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-gaussian-blur-to-8x8 PRF-001 blur-recovery explicit met unchanged interpolated-pixel-art convert Correct gaussian-blur-light and restore the image to 8 x 8 pixels. gaussian-blur-lightの劣化を補正し、8 x 8ピクセルへ復元します。 gaussian-blur-light">
+			<h2>
+				restore-gaussian-blur-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1.14ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct gaussian-blur-light and restore the image to 8 x 8 pixels."
+				data-description-ja="gaussian-blur-lightの劣化を補正し、8 x 8ピクセルへ復元します。">Correct gaussian-blur-light and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-gaussian-blur-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-gaussian-blur-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-gaussian-blur-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-gaussian-blur-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-rgb-noise-to-8x8 PRF-001 noise-recovery explicit met unchanged scaled-pixel-art convert Correct rgb-noise and restore the image to 8 x 8 pixels. rgb-noiseの劣化を補正し、8 x 8ピクセルへ復元します。 rgb-noise">
+			<h2>
+				restore-rgb-noise-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.39ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct rgb-noise and restore the image to 8 x 8 pixels."
+				data-description-ja="rgb-noiseの劣化を補正し、8 x 8ピクセルへ復元します。">Correct rgb-noise and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-rgb-noise-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-rgb-noise-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-rgb-noise-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-rgb-noise-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-alpha-edge-blur-to-8x8 PRF-001 alpha-boundary explicit met unchanged interpolated-pixel-art convert Correct alpha-edge-blur and restore the image to 8 x 8 pixels. alpha-edge-blurの劣化を補正し、8 x 8ピクセルへ復元します。 alpha-edge-blur">
+			<h2>
+				restore-alpha-edge-blur-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.80ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct alpha-edge-blur and restore the image to 8 x 8 pixels."
+				data-description-ja="alpha-edge-blurの劣化を補正し、8 x 8ピクセルへ復元します。">Correct alpha-edge-blur and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-alpha-edge-blur-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-alpha-edge-blur-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-alpha-edge-blur-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-alpha-edge-blur-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-white-padding-to-8x8 PRF-001 background-removal explicit met unchanged padded-pixel-art convert Correct padding, background-white and restore the image to 8 x 8 pixels. padding, background-whiteの劣化を補正し、8 x 8ピクセルへ復元します。 padding background-white">
+			<h2>
+				remove-white-padding-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1.79ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct padding, background-white and restore the image to 8 x 8 pixels."
+				data-description-ja="padding, background-whiteの劣化を補正し、8 x 8ピクセルへ復元します。">Correct padding, background-white and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-white-padding-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-white-padding-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-white-padding-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-white-padding-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-black-padding-to-8x8 PRF-001 background-removal explicit met unchanged padded-pixel-art convert Correct background-black and restore the image to 8 x 8 pixels. background-blackの劣化を補正し、8 x 8ピクセルへ復元します。 background-black">
+			<h2>
+				remove-black-padding-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.99ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct background-black and restore the image to 8 x 8 pixels."
+				data-description-ja="background-blackの劣化を補正し、8 x 8ピクセルへ復元します。">Correct background-black and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-black-padding-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-black-padding-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-black-padding-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-black-padding-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-solid-padding-to-8x8 PRF-001 background-removal explicit met unchanged padded-pixel-art convert Correct background-solid and restore the image to 8 x 8 pixels. background-solidの劣化を補正し、8 x 8ピクセルへ復元します。 background-solid">
+			<h2>
+				remove-solid-padding-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.99ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct background-solid and restore the image to 8 x 8 pixels."
+				data-description-ja="background-solidの劣化を補正し、8 x 8ピクセルへ復元します。">Correct background-solid and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-solid-padding-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-solid-padding-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-solid-padding-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-solid-padding-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-gradient-padding-to-8x8 PRF-001 background-removal explicit met unchanged padded-pixel-art convert Correct background-gradient and restore the image to 8 x 8 pixels. background-gradientの劣化を補正し、8 x 8ピクセルへ復元します。 background-gradient">
+			<h2>
+				remove-gradient-padding-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 3.87ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct background-gradient and restore the image to 8 x 8 pixels."
+				data-description-ja="background-gradientの劣化を補正し、8 x 8ピクセルへ復元します。">Correct background-gradient and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-gradient-padding-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-gradient-padding-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/remove-gradient-padding-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-gradient-padding-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-anisotropic-scale-to-8x8 PRF-001 anisotropic-grid explicit met unchanged scaled-pixel-art convert Correct anisotropic-scale and restore the image to 8 x 8 pixels. anisotropic-scaleの劣化を補正し、8 x 8ピクセルへ復元します。 anisotropic-scale">
+			<h2>
+				restore-anisotropic-scale-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.38ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct anisotropic-scale and restore the image to 8 x 8 pixels."
+				data-description-ja="anisotropic-scaleの劣化を補正し、8 x 8ピクセルへ復元します。">Correct anisotropic-scale and restore the image to 8 x 8 pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-anisotropic-scale-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-anisotropic-scale-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-anisotropic-scale-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-anisotropic-scale-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="discover-anisotropic-noninteger-grid PRF-110 explicit met unchanged scaled-pixel-art refine Correct anisotropic-scale, non-integer-scale. anisotropic-scale, non-integer-scaleの劣化を補正しします。 anisotropic-scale non-integer-scale">
+			<h2>
+				discover-anisotropic-noninteger-grid
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 28.37ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5775</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct anisotropic-scale, non-integer-scale."
+				data-description-ja="anisotropic-scale, non-integer-scaleの劣化を補正しします。">Correct anisotropic-scale, non-integer-scale.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/discover-anisotropic-noninteger-grid/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/discover-anisotropic-noninteger-grid/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/discover-anisotropic-noninteger-grid/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/discover-anisotropic-noninteger-grid/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-transparent-rgb-padding-to-8x8 PRF-020 auto-grid alpha-background explicit met unchanged scaled-pixel-art refine Correct transparent-rgb-garbage. transparent-rgb-garbageの劣化を補正しします。 transparent-rgb-garbage">
+			<h2>
+				restore-transparent-rgb-padding-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 15.78ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4587</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct transparent-rgb-garbage."
+				data-description-ja="transparent-rgb-garbageの劣化を補正しします。">Correct transparent-rgb-garbage.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-transparent-rgb-padding-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-transparent-rgb-padding-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-transparent-rgb-padding-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-transparent-rgb-padding-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="withhold-ambiguous-axis-grid PRF-100 explicit met unchanged uncertain refine Correct one-axis-periodicity. one-axis-periodicityの劣化を補正しします。 ONE_AXIS_DETECTION_FAILED LOW_GRID_CONFIDENCE one-axis-periodicity">
+			<h2>
+				withhold-ambiguous-axis-grid
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 2.66ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct one-axis-periodicity."
+				data-description-ja="one-axis-periodicityの劣化を補正しします。">Correct one-axis-periodicity.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/withhold-ambiguous-axis-grid/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/withhold-ambiguous-axis-grid/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/withhold-ambiguous-axis-grid/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/withhold-ambiguous-axis-grid/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="show-ui-default-candidates PRF-400 explicit met unchanged uncertain refine Correct ambiguous-detail. ambiguous-detailの劣化を補正しします。 LOW_GRID_CONFIDENCE EXTREME_OUTPUT_SIZE ambiguous-detail">
+			<h2>
+				show-ui-default-candidates
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<span class="badge has-candidate-selection" data-i18n="hasCandidateSelection">candidate selection</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 155.99ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.3241</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct ambiguous-detail."
+				data-description-ja="ambiguous-detailの劣化を補正しします。">Correct ambiguous-detail.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(2x2px)</small></figcaption><div class="image-stage"><img src="cases/show-ui-default-candidates/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(2x2px)</small></figcaption><div class="image-stage"><img src="cases/show-ui-default-candidates/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(2x2px)</small></figcaption><div class="image-stage"><img src="cases/show-ui-default-candidates/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/show-ui-default-candidates/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-soft-edged-sprite-to-34x47 PRF-400 force-size explicit met unchanged scaled-pixel-art convert Restore a 1254 x 1254 AI-generated pixel-art-style knight, whose cell boundaries carry antialiasing instead of hard edges, to the hand-given 34 x 47 logical grid, keeping the sword tip, the helmet slits, and the cross on the shield readable as single cells. This output is the target that the Auto case for the same fixture is measured against. セル境界がアンチエイリアスで鈍った1254×1254の生成AI製ドット絵風の騎士を、人手で与えた34×47の論理グリッドへ復元し、剣先、兜のスリット、盾の十字を1セルとして判読できる状態に保ちます。この出力は、同じfixtureのAutoケースが目標として比較される画像です。 soft-cell-boundaries">
+			<h2>
+				restore-soft-edged-sprite-to-34x47
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1253.04ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Restore a 1254 x 1254 AI-generated pixel-art-style knight, whose cell boundaries carry antialiasing instead of hard edges, to the hand-given 34 x 47 logical grid, keeping the sword tip, the helmet slits, and the cross on the shield readable as single cells. This output is the target that the Auto case for the same fixture is measured against."
+				data-description-ja="セル境界がアンチエイリアスで鈍った1254×1254の生成AI製ドット絵風の騎士を、人手で与えた34×47の論理グリッドへ復元し、剣先、兜のスリット、盾の十字を1セルとして判読できる状態に保ちます。この出力は、同じfixtureのAutoケースが目標として比較される画像です。">Restore a 1254 x 1254 AI-generated pixel-art-style knight, whose cell boundaries carry antialiasing instead of hard edges, to the hand-given 34 x 47 logical grid, keeping the sword tip, the helmet slits, and the cross on the shield readable as single cells. This output is the target that the Auto case for the same fixture is measured against.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(34x47px)</small></figcaption><div class="image-stage"><img src="cases/restore-soft-edged-sprite-to-34x47/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(34x47px)</small></figcaption><div class="image-stage"><img src="cases/restore-soft-edged-sprite-to-34x47/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(34x47px)</small></figcaption><div class="image-stage"><img src="cases/restore-soft-edged-sprite-to-34x47/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-soft-edged-sprite-to-34x47/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-blocky-sprite-to-20x18 PRF-400 force-size explicit met unchanged scaled-pixel-art convert Restore a 1254 x 1254 AI-generated slime drawn in 39.7 px blocks to the hand-given 20 x 18 logical grid, keeping the single-cell eye highlight and the one-cell-thick mouth line intact. Reconstruction error alone also accepts a roughly 5x finer reading of the same image, so this output records which of the two scales is the intended one. 39.7pxのブロックで描かれた1254×1254の生成AI製スライムを、人手で与えた20×18の論理グリッドへ復元し、1セルぶんの目のハイライトと1セル幅の口の線を保ちます。再構成誤差だけでは同じ画像を約5倍細かく読む解釈も成り立つため、この出力はどちらの倍率が意図された方かを記録します。 ambiguous-grid-scale">
+			<h2>
+				restore-blocky-sprite-to-20x18
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1342.77ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Restore a 1254 x 1254 AI-generated slime drawn in 39.7 px blocks to the hand-given 20 x 18 logical grid, keeping the single-cell eye highlight and the one-cell-thick mouth line intact. Reconstruction error alone also accepts a roughly 5x finer reading of the same image, so this output records which of the two scales is the intended one."
+				data-description-ja="39.7pxのブロックで描かれた1254×1254の生成AI製スライムを、人手で与えた20×18の論理グリッドへ復元し、1セルぶんの目のハイライトと1セル幅の口の線を保ちます。再構成誤差だけでは同じ画像を約5倍細かく読む解釈も成り立つため、この出力はどちらの倍率が意図された方かを記録します。">Restore a 1254 x 1254 AI-generated slime drawn in 39.7 px blocks to the hand-given 20 x 18 logical grid, keeping the single-cell eye highlight and the one-cell-thick mouth line intact. Reconstruction error alone also accepts a roughly 5x finer reading of the same image, so this output records which of the two scales is the intended one.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(20x18px)</small></figcaption><div class="image-stage"><img src="cases/restore-blocky-sprite-to-20x18/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(20x18px)</small></figcaption><div class="image-stage"><img src="cases/restore-blocky-sprite-to-20x18/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(20x18px)</small></figcaption><div class="image-stage"><img src="cases/restore-blocky-sprite-to-20x18/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-blocky-sprite-to-20x18/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-alpha-only-grid-to-8x8 PRF-120 explicit met unchanged scaled-pixel-art refine Correct weak-color-boundaries, alpha-periodicity. weak-color-boundaries, alpha-periodicityの劣化を補正しします。 weak-color-boundaries alpha-periodicity">
+			<h2>
+				restore-alpha-only-grid-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 49.30ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.6213</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct weak-color-boundaries, alpha-periodicity."
+				data-description-ja="weak-color-boundaries, alpha-periodicityの劣化を補正しします。">Correct weak-color-boundaries, alpha-periodicity.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-alpha-only-grid-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-alpha-only-grid-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-alpha-only-grid-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-alpha-only-grid-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-diagonal-grid-to-8x8 PRF-120 explicit met unchanged scaled-pixel-art refine Correct diagonal-dominant. diagonal-dominantの劣化を補正しします。 diagonal-dominant">
+			<h2>
+				restore-diagonal-grid-to-8x8
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 61.85ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4401</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct diagonal-dominant."
+				data-description-ja="diagonal-dominantの劣化を補正しします。">Correct diagonal-dominant.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-diagonal-grid-to-8x8/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-diagonal-grid-to-8x8/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/restore-diagonal-grid-to-8x8/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-diagonal-grid-to-8x8/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="prefer-base-grid-over-doubled-period PRF-120 explicit met unchanged scaled-pixel-art refine Correct same-color-runs, doubled-period. same-color-runs, doubled-periodの劣化を補正しします。 same-color-runs doubled-period">
+			<h2>
+				prefer-base-grid-over-doubled-period
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 61.23ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.6661</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct same-color-runs, doubled-period."
+				data-description-ja="same-color-runs, doubled-periodの劣化を補正しします。">Correct same-color-runs, doubled-period.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/prefer-base-grid-over-doubled-period/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/prefer-base-grid-over-doubled-period/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="cases/prefer-base-grid-over-doubled-period/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/prefer-base-grid-over-doubled-period/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="restore-thin-features-and-alpha-coverage PRF-130 explicit met unchanged soft-pixel-art convert Restore area-coverage alpha from enlarged artwork containing thin lines and highlights, while selecting an input RGB without mixing in hidden colors from transparent pixels. 細線とハイライトを含む拡大画像から面積被覆アルファを復元し、透明画素の隠れた色を混入させずに入力に存在するRGBを選択します。 thin-features transparent-rgb">
+			<h2>
+				restore-thin-features-and-alpha-coverage
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 4.31ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Restore area-coverage alpha from enlarged artwork containing thin lines and highlights, while selecting an input RGB without mixing in hidden colors from transparent pixels."
+				data-description-ja="細線とハイライトを含む拡大画像から面積被覆アルファを復元し、透明画素の隠れた色を混入させずに入力に存在するRGBを選択します。">Restore area-coverage alpha from enlarged artwork containing thin lines and highlights, while selecting an input RGB without mixing in hidden colors from transparent pixels.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(6x6px)</small></figcaption><div class="image-stage"><img src="cases/restore-thin-features-and-alpha-coverage/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(6x6px)</small></figcaption><div class="image-stage"><img src="cases/restore-thin-features-and-alpha-coverage/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(6x6px)</small></figcaption><div class="image-stage"><img src="cases/restore-thin-features-and-alpha-coverage/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/restore-thin-features-and-alpha-coverage/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="convert-continuous-tone-balanced PRF-001 PRF-002 PRF-300 PRF-310 explicit met unchanged continuous-tone convert Route a 48 x 32 continuous-tone image through Auto to the Convert pipeline, derive three candidate resolutions from its aspect ratio and information density, and emit the balanced candidate at 24 x 16 with edge-aware resampling instead of restoring an original grid. 48×32の連続階調画像をAuto判定からConvertパイプラインへ流し、縦横比と情報量から3つの候補解像度を導出したうえで、元グリッドの復元ではなく標準候補の24×16へエッジ考慮のリサンプルで変換します。 continuous-tone">
+			<h2>
+				convert-continuous-tone-balanced
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 131.97ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Route a 48 x 32 continuous-tone image through Auto to the Convert pipeline, derive three candidate resolutions from its aspect ratio and information density, and emit the balanced candidate at 24 x 16 with edge-aware resampling instead of restoring an original grid."
+				data-description-ja="48×32の連続階調画像をAuto判定からConvertパイプラインへ流し、縦横比と情報量から3つの候補解像度を導出したうえで、元グリッドの復元ではなく標準候補の24×16へエッジ考慮のリサンプルで変換します。">Route a 48 x 32 continuous-tone image through Auto to the Convert pipeline, derive three candidate resolutions from its aspect ratio and information density, and emit the balanced candidate at 24 x 16 with edge-aware resampling instead of restoring an original grid.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(24x16px)</small></figcaption><div class="image-stage"><img src="cases/convert-continuous-tone-balanced/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(24x16px)</small></figcaption><div class="image-stage"><img src="cases/convert-continuous-tone-balanced/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(24x16px)</small></figcaption><div class="image-stage"><img src="cases/convert-continuous-tone-balanced/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/convert-continuous-tone-balanced/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="convert-illustration-detailed PRF-310 explicit met unchanged continuous-illustration convert Convert a 72 x 48 illustration with transparent margins and thin high-contrast lines to the detailed candidate at 54 x 36, keeping fully transparent pixels transparent and never picking the RGB of a nearly transparent pixel as a cell&#039;s representative color. 透明余白と高コントラストの細線を含む72×48のイラストを細かめ候補の54×36へ変換し、完全透明な画素を透明に保ったまま、ほぼ透明な画素のRGBをセルの代表色に選ばないことを確認します。">
+			<h2>
+				convert-illustration-detailed
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 46.52ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Convert a 72 x 48 illustration with transparent margins and thin high-contrast lines to the detailed candidate at 54 x 36, keeping fully transparent pixels transparent and never picking the RGB of a nearly transparent pixel as a cell&#039;s representative color."
+				data-description-ja="透明余白と高コントラストの細線を含む72×48のイラストを細かめ候補の54×36へ変換し、完全透明な画素を透明に保ったまま、ほぼ透明な画素のRGBをセルの代表色に選ばないことを確認します。">Convert a 72 x 48 illustration with transparent margins and thin high-contrast lines to the detailed candidate at 54 x 36, keeping fully transparent pixels transparent and never picking the RGB of a nearly transparent pixel as a cell&#039;s representative color.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(54x36px)</small></figcaption><div class="image-stage"><img src="cases/convert-illustration-detailed/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(54x36px)</small></figcaption><div class="image-stage"><img src="cases/convert-illustration-detailed/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(54x36px)</small></figcaption><div class="image-stage"><img src="cases/convert-illustration-detailed/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/convert-illustration-detailed/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-gradient-background-with-border-model PRF-200 explicit met unchanged padded-pixel-art preserve Correct background-gradient. background-gradientの劣化を補正しします。 CONTENT_LOSS_RISK background-gradient">
+			<h2>
+				remove-gradient-background-with-border-model
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 5.20ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct background-gradient."
+				data-description-ja="background-gradientの劣化を補正しします。">Correct background-gradient.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(24x24px)</small></figcaption><div class="image-stage"><img src="cases/remove-gradient-background-with-border-model/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(24x24px)</small></figcaption><div class="image-stage"><img src="cases/remove-gradient-background-with-border-model/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(24x24px)</small></figcaption><div class="image-stage"><img src="cases/remove-gradient-background-with-border-model/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-gradient-background-with-border-model/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="share-balanced-palette-across-batch PRF-420 explicit met unchanged native-pixel-art preserve Correct low-color-subject. low-color-subjectの劣化を補正しします。 low-color-subject">
+			<h2>
+				share-balanced-palette-across-batch
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 13.55ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Correct low-color-subject."
+				data-description-ja="low-color-subjectの劣化を補正しします。">Correct low-color-subject.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/share-balanced-palette-across-batch/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/share-balanced-palette-across-batch/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/share-balanced-palette-across-batch/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/share-balanced-palette-across-batch/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="retain-protected-small-details PRF-210 explicit met unchanged native-pixel-art preserve Remove isolated background noise while retaining paired eyes, dakuten, and disconnected star and spark details in native-resolution pixel art. 等倍のドット絵から孤立した背景ノイズを除去しつつ、対になった目、濁点、分離した星と光の細部を保持します。 CONTENT_LOSS_RISK disconnected-small-component">
+			<h2>
+				retain-protected-small-details
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 1.08ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Remove isolated background noise while retaining paired eyes, dakuten, and disconnected star and spark details in native-resolution pixel art."
+				data-description-ja="等倍のドット絵から孤立した背景ノイズを除去しつつ、対になった目、濁点、分離した星と光の細部を保持します。">Remove isolated background noise while retaining paired eyes, dakuten, and disconnected star and spark details in native-resolution pixel art.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/retain-protected-small-details/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/retain-protected-small-details/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/retain-protected-small-details/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/retain-protected-small-details/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="remove-isolated-small-noise PRF-210 explicit met unchanged native-pixel-art preserve Remove a weak isolated one-pixel noise component from a uniform background without changing the main native-resolution subject. 一様な背景にある弱い1ピクセルの孤立ノイズを除去し、等倍の主被写体を変化させずに保持します。 CONTENT_LOSS_RISK isolated-noise">
+			<h2>
+				remove-isolated-small-noise
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 0.53ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Remove a weak isolated one-pixel noise component from a uniform background without changing the main native-resolution subject."
+				data-description-ja="一様な背景にある弱い1ピクセルの孤立ノイズを除去し、等倍の主被写体を変化させずに保持します。">Remove a weak isolated one-pixel noise component from a uniform background without changing the main native-resolution subject.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/remove-isolated-small-noise/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/remove-isolated-small-noise/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="cases/remove-isolated-small-noise/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/remove-isolated-small-noise/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="skip-small-removal-on-uncertain-background PRF-210 explicit met unchanged uncertain preserve Keep every pixel unchanged when automatic background confidence is too low to safely classify disconnected details as removable noise. 自動背景の信頼度が低く、分離した細部を除去可能なノイズと安全に判定できない場合は、すべての画素を変更せずに保持します。 BACKGROUND_UNCERTAIN low-background-confidence">
+			<h2>
+				skip-small-removal-on-uncertain-background
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 2.39ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Keep every pixel unchanged when automatic background confidence is too low to safely classify disconnected details as removable noise."
+				data-description-ja="自動背景の信頼度が低く、分離した細部を除去可能なノイズと安全に判定できない場合は、すべての画素を変更せずに保持します。">Keep every pixel unchanged when automatic background confidence is too low to safely classify disconnected details as removable noise.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(20x20px)</small></figcaption><div class="image-stage"><img src="cases/skip-small-removal-on-uncertain-background/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(20x20px)</small></figcaption><div class="image-stage"><img src="cases/skip-small-removal-on-uncertain-background/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(20x20px)</small></figcaption><div class="image-stage"><img src="cases/skip-small-removal-on-uncertain-background/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/skip-small-removal-on-uncertain-background/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="guide-recipe1-knight-sprite guide-recipes PRF-400 explicit met unchanged soft-pixel-art refine Process the 2048 x 2048 AI-generated knight published in the recipes guide, whose cell boundaries are antialiased over a magenta background, with the Best Match preset the page tells the reader to select, and reproduce the published 60 x 85 result pixel for pixel. A mismatch means the published image no longer follows from the published steps. レシピ集ページが掲載しているマゼンタ背景・2048×2048の生成AI製の騎士（セル境界はアンチエイリアス）を、ページが案内するとおり「おまかせ」プリセットのまま処理し、掲載している60×85の変換結果と1画素も違わないことを確認します。一致しなくなった場合は、掲載画像が掲載手順の結果ではなくなっています。 soft-cell-boundaries">
+			<h2>
+				guide-recipe1-knight-sprite
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 16435.84ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5468</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the 2048 x 2048 AI-generated knight published in the recipes guide, whose cell boundaries are antialiased over a magenta background, with the Best Match preset the page tells the reader to select, and reproduce the published 60 x 85 result pixel for pixel. A mismatch means the published image no longer follows from the published steps."
+				data-description-ja="レシピ集ページが掲載しているマゼンタ背景・2048×2048の生成AI製の騎士（セル境界はアンチエイリアス）を、ページが案内するとおり「おまかせ」プリセットのまま処理し、掲載している60×85の変換結果と1画素も違わないことを確認します。一致しなくなった場合は、掲載画像が掲載手順の結果ではなくなっています。">Process the 2048 x 2048 AI-generated knight published in the recipes guide, whose cell boundaries are antialiased over a magenta background, with the Best Match preset the page tells the reader to select, and reproduce the published 60 x 85 result pixel for pixel. A mismatch means the published image no longer follows from the published steps.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(60x85px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe1-knight-sprite/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(60x85px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe1-knight-sprite/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(60x85px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe1-knight-sprite/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/guide-recipe1-knight-sprite/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="guide-recipe2-potion-icon guide-recipes PRF-400 explicit met unchanged soft-pixel-art refine Process the 2752 x 1536 AI-generated potion bottle published in the recipes guide, drawn over a chroma-key green background, with the Transparent Icon preset the page tells the reader to select, and reproduce the published 16 x 23 result pixel for pixel, including the transparent background. レシピ集ページが掲載している緑背景・2752×1536の生成AI製のポーション瓶を、ページが案内するとおり「透過アイコン」プリセットのまま処理し、背景を透過した掲載中の16×23の変換結果と1画素も違わないことを確認します。 soft-cell-boundaries">
+			<h2>
+				guide-recipe2-potion-icon
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 21586.82ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5570</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the 2752 x 1536 AI-generated potion bottle published in the recipes guide, drawn over a chroma-key green background, with the Transparent Icon preset the page tells the reader to select, and reproduce the published 16 x 23 result pixel for pixel, including the transparent background."
+				data-description-ja="レシピ集ページが掲載している緑背景・2752×1536の生成AI製のポーション瓶を、ページが案内するとおり「透過アイコン」プリセットのまま処理し、背景を透過した掲載中の16×23の変換結果と1画素も違わないことを確認します。">Process the 2752 x 1536 AI-generated potion bottle published in the recipes guide, drawn over a chroma-key green background, with the Transparent Icon preset the page tells the reader to select, and reproduce the published 16 x 23 result pixel for pixel, including the transparent background.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(16x23px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe2-potion-icon/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(16x23px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe2-potion-icon/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(16x23px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe2-potion-icon/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/guide-recipe2-potion-icon/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="guide-recipe3-dragon-sprite guide-recipes palette-conversion PRF-400 explicit met unchanged soft-pixel-art refine Process the 2816 x 1536 AI-generated green dragon published in the recipes guide, drawn over a red background, with the Retro Game Style preset the page tells the reader to select, and reproduce the published 44 x 47 result pixel for pixel, including the four-tone palette the conversion replaces the generated colors with. レシピ集ページが掲載している赤背景・2816×1536の生成AI製の緑のドラゴンを、ページが案内するとおり「レトロゲーム風」プリセットで処理し、生成時の色を置き換えた4階調のパレットを含めて、掲載している44×47の変換結果と1画素も違わないことを確認します。 soft-cell-boundaries">
+			<h2>
+				guide-recipe3-dragon-sprite
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 30189.53ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5362</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the 2816 x 1536 AI-generated green dragon published in the recipes guide, drawn over a red background, with the Retro Game Style preset the page tells the reader to select, and reproduce the published 44 x 47 result pixel for pixel, including the four-tone palette the conversion replaces the generated colors with."
+				data-description-ja="レシピ集ページが掲載している赤背景・2816×1536の生成AI製の緑のドラゴンを、ページが案内するとおり「レトロゲーム風」プリセットで処理し、生成時の色を置き換えた4階調のパレットを含めて、掲載している44×47の変換結果と1画素も違わないことを確認します。">Process the 2816 x 1536 AI-generated green dragon published in the recipes guide, drawn over a red background, with the Retro Game Style preset the page tells the reader to select, and reproduce the published 44 x 47 result pixel for pixel, including the four-tone palette the conversion replaces the generated colors with.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(44x47px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe3-dragon-sprite/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(44x47px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe3-dragon-sprite/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(44x47px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe3-dragon-sprite/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/guide-recipe3-dragon-sprite/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="guide-recipe4-landscape guide-recipes PRF-400 explicit met unchanged soft-pixel-art refine Process the 2752 x 1536 AI-generated mountain landscape published in the recipes guide, whose pixel cells are softened by generation, with the Background Artwork preset the page tells the reader to select, and reproduce the published 256 x 144 result pixel for pixel without making any part of the full-frame scenery transparent. レシピ集ページが掲載している2752×1536の生成AI製の山岳風景（生成時にセル境界がぼけたドット絵）を、ページが案内するとおり「背景用の一枚絵」プリセットで処理し、風景のどの部分も透過せず、掲載している256×144の変換結果と1画素も違わないことを確認します。 soft-cell-boundaries">
+			<h2>
+				guide-recipe4-landscape
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 19386.70ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5272</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the 2752 x 1536 AI-generated mountain landscape published in the recipes guide, whose pixel cells are softened by generation, with the Background Artwork preset the page tells the reader to select, and reproduce the published 256 x 144 result pixel for pixel without making any part of the full-frame scenery transparent."
+				data-description-ja="レシピ集ページが掲載している2752×1536の生成AI製の山岳風景（生成時にセル境界がぼけたドット絵）を、ページが案内するとおり「背景用の一枚絵」プリセットで処理し、風景のどの部分も透過せず、掲載している256×144の変換結果と1画素も違わないことを確認します。">Process the 2752 x 1536 AI-generated mountain landscape published in the recipes guide, whose pixel cells are softened by generation, with the Background Artwork preset the page tells the reader to select, and reproduce the published 256 x 144 result pixel for pixel without making any part of the full-frame scenery transparent.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(256x144px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe4-landscape/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(256x144px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe4-landscape/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(256x144px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe4-landscape/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/guide-recipe4-landscape/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="explicit"
+			data-search="guide-recipe5-chibi-character guide-recipes PRF-310 PRF-400 explicit met unchanged continuous-illustration convert Process the 2816 x 1536 AI-generated chibi character published in the recipes guide, an ordinary flat-colored illustration rather than pixel art, with the Convert Illustration to Pixel Art preset the page tells the reader to select, and reproduce the published 60 x 81 result pixel for pixel, including the transparent background and the thick outlines carried over from the illustration. レシピ集ページが掲載している青背景・2816×1536の生成AI製のデフォルメキャラクターを、ドット絵ではないフラットな塗りのイラストのまま、ページが案内するとおり「イラストをドット絵に変換」プリセットで処理し、背景の透過とイラストから引き継いだ太い輪郭線を含めて、掲載している60×81の変換結果と1画素も違わないことを確認します。">
+			<h2>
+				guide-recipe5-chibi-character
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-explicit"
+					data-i18n="explicitParameters">explicit</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 2250.03ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 1.0000</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the 2816 x 1536 AI-generated chibi character published in the recipes guide, an ordinary flat-colored illustration rather than pixel art, with the Convert Illustration to Pixel Art preset the page tells the reader to select, and reproduce the published 60 x 81 result pixel for pixel, including the transparent background and the thick outlines carried over from the illustration."
+				data-description-ja="レシピ集ページが掲載している青背景・2816×1536の生成AI製のデフォルメキャラクターを、ドット絵ではないフラットな塗りのイラストのまま、ページが案内するとおり「イラストをドット絵に変換」プリセットで処理し、背景の透過とイラストから引き継いだ太い輪郭線を含めて、掲載している60×81の変換結果と1画素も違わないことを確認します。">Process the 2816 x 1536 AI-generated chibi character published in the recipes guide, an ordinary flat-colored illustration rather than pixel art, with the Convert Illustration to Pixel Art preset the page tells the reader to select, and reproduce the published 60 x 81 result pixel for pixel, including the transparent background and the thick outlines carried over from the illustration.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(60x81px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe5-chibi-character/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(60x81px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe5-chibi-character/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(60x81px)</small></figcaption><div class="image-stage"><img src="cases/guide-recipe5-chibi-character/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/guide-recipe5-chibi-character/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-auto-grid-detection PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">
+			<h2>
+				auto-auto-grid-detection
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 19347.45ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4961</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(88x61px)</small></figcaption><div class="image-stage"><img src="cases/auto-auto-grid-detection/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(88x61px)</small></figcaption><div class="image-stage"><img src="cases/auto-auto-grid-detection/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(88x61px)</small></figcaption><div class="image-stage"><img src="cases/auto-auto-grid-detection/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-auto-grid-detection/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-high-resolution PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">
+			<h2>
+				auto-high-resolution
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 16978.72ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4691</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(140x212px)</small></figcaption><div class="image-stage"><img src="cases/auto-high-resolution/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(140x212px)</small></figcaption><div class="image-stage"><img src="cases/auto-high-resolution/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(140x212px)</small></figcaption><div class="image-stage"><img src="cases/auto-high-resolution/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-high-resolution/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-inner-background-removal PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。 LOW_GRID_CONFIDENCE">
+			<h2>
+				auto-inner-background-removal
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				<span class="badge has-warnings" data-i18n="hasWarnings">WARNING</span>
+				<span class="badge has-candidate-selection" data-i18n="hasCandidateSelection">candidate selection</span>
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 12131.28ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5334</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(22x21px)</small></figcaption><div class="image-stage"><img src="cases/auto-inner-background-removal/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(22x21px)</small></figcaption><div class="image-stage"><img src="cases/auto-inner-background-removal/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(22x21px)</small></figcaption><div class="image-stage"><img src="cases/auto-inner-background-removal/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-inner-background-removal/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-no-trimming PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">
+			<h2>
+				auto-no-trimming
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 13418.47ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5285</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(24x33px)</small></figcaption><div class="image-stage"><img src="cases/auto-no-trimming/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(24x33px)</small></figcaption><div class="image-stage"><img src="cases/auto-no-trimming/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(24x33px)</small></figcaption><div class="image-stage"><img src="cases/auto-no-trimming/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-no-trimming/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-quality-prf400-ambiguous-grid-scale PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">
+			<h2>
+				auto-quality-prf400-ambiguous-grid-scale
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 16632.25ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.5819</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(20x18px)</small></figcaption><div class="image-stage"><img src="cases/auto-quality-prf400-ambiguous-grid-scale/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(20x18px)</small></figcaption><div class="image-stage"><img src="cases/auto-quality-prf400-ambiguous-grid-scale/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(20x18px)</small></figcaption><div class="image-stage"><img src="cases/auto-quality-prf400-ambiguous-grid-scale/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-quality-prf400-ambiguous-grid-scale/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-resize-and-remove-bg PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">
+			<h2>
+				auto-resize-and-remove-bg
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 5990.41ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.6268</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(22x22px)</small></figcaption><div class="image-stage"><img src="cases/auto-resize-and-remove-bg/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(22x22px)</small></figcaption><div class="image-stage"><img src="cases/auto-resize-and-remove-bg/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(22x22px)</small></figcaption><div class="image-stage"><img src="cases/auto-resize-and-remove-bg/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-resize-and-remove-bg/index.html" data-i18n="details">Details</a></p>
+		</article>
+<article class="case target-met"
+			data-quality="met" data-change="unchanged"
+			data-parameter="auto"
+			data-search="auto-resize-with-trimming PRF-400 auto met unchanged unclassified refine Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image. ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">
+			<h2>
+				auto-resize-with-trimming
+				<span class="badge target-met" data-i18n="targetMet">met</span>
+				<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+				<span class="badge parameter-auto"
+					data-i18n="autoParameters">auto</span>
+				
+				<small class="case-metrics"><strong data-i18n="qualityStatus">Target quality</strong> <span data-i18n="targetMet">met</span> &middot; <strong data-i18n="processingTime">Time</strong> 2021.08ms &middot; <strong data-i18n="gridConfidence">Grid confidence</strong> 0.4538</small>
+			</h2>
+			
+			<p class="case-description" data-description-en="Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image."
+				data-description-ja="ケース固有のオプションを与えず、Autoと既定設定のみでfixtureを処理し、自動判定の分類、route、出力グリッドを承認済みベースラインから変化させないことを確認します。あわせて、固定した目標画像までの残りの差を目標との比較で測ります。">Process the fixture with Auto and the default settings only, with no case-specific options, and keep the automatic classification, route, and output grid identical to the approved baseline. The target comparison additionally measures how far the output still is from the fixed target image.</p>
+			<div class="images primary"><figure><figcaption><span data-i18n="groundTruth">Target</span> <small class="image-size">(46x13px)</small></figcaption><div class="image-stage"><img src="cases/auto-resize-with-trimming/ground-truth.png" alt="Target" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(46x13px)</small></figcaption><div class="image-stage"><img src="cases/auto-resize-with-trimming/result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Target difference</span> <small class="image-size">(46x13px)</small></figcaption><div class="image-stage"><img src="cases/auto-resize-with-trimming/diff.png" alt="Target difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure></div><p><a class="detail-link"
+				href="cases/auto-resize-with-trimming/index.html" data-i18n="details">Details</a></p>
+		</article></main>
+	</div>
+
+<dialog id="image-dialog">
+	<button id="dialog-close">&times;</button>
+	<div class="image-stage dialog-stage"><img alt=""></div>
+</dialog>
+	<script>window.__QUALITY_REPORT_TRANSLATIONS__={"en":{"title":"PixelRefiner quality report","groundTruth":"Target","input":"Input","baseline":"Previous run","result":"Current run","groundTruthDifference":"Target difference","baselineDifference":"Previous-run difference","backgroundMask":"Background mask","targetComparison":"Target comparison","targetSource":"Target source","targetUnregistered":"No target registered for this case","sizeMatches":"Size matches","inputKind":"Input kind","route":"Route","classificationConfidence":"Classification confidence","gridConfidence":"Grid confidence","notAvailable":"not available","metricReferenceUnavailable":"No reference output is available for this case, so its metrics cannot be measured.","hasWarnings":"WARNING present","hasCandidateSelection":"candidate selection shown","warningDetails":"WARNING details","warningTrigger":"Raised by","candidateDiagnostics":"Auto candidate diagnostic","candidateSuggestion":"Candidate list","candidateSuggestionWouldShow":"expected to show","candidateSuggestionWouldNotShow":"not expected to show","candidateSuggestionNotApplicable":"not applicable","warningPresentation":"WARNING presentation","warningPresentationCandidateList":"candidate list","warningPresentationIndicator":"warning indicator","warningPresentationNone":"none","candidateSuggestionReason":"Decision reason","candidatePlanCount":"Candidate plans","candidateOptions":"Candidate options","candidateOptionsUnavailable":"No candidate option was generated","candidateOptionFailed":"generation failed","candidateRecommended":"Recommended","colorCount":"Colors","none":"none","topCandidates":"Top candidates","metrics":"Metrics","options":"Options","filterCases":"Filter cases","language":"Language","toggleTheme":"Toggle color theme","allStatuses":"All","passed":"passed","failed":"expectation unmet","targetMet":"target met","targetUnmet":"target unmet","targetMissing":"cannot assess","preserve":"preserve","refine":"refine","convert":"convert","workflow":"workflow","changed":"changed from previous run / base branch","unchanged":"unchanged from previous run / base branch","new":"new case","allChanges":"All","qualityStatus":"Target quality","parameterMode":"Parameters","allParameters":"All","explicitParameters":"explicit options","autoParameters":"auto detection","changeStatus":"Change from previous run","reportDetails":"Report details","localReport":"Viewing locally","releaseReport":"Release report","previousVersion":"Previous version","previousRunUnavailable":"The previous run is unavailable, so comparisons with it are omitted.","pullRequest":"Pull request","headCommit":"Head","baseCommit":"PR base","baselineCommit":"Baseline snapshot","generatedAt":"Generated","displayConditions":"Showing","casesShown":"cases","changedPixels":"Changed pixels","comparison":"Metric comparison","metric":"Metric","target":"Target","current":"Current","delta":"Delta","verdict":"Verdict","metricImproved":"metric improved against baseline","metricRegressed":"metric regressed against baseline","metricUnchanged":"metric unchanged against baseline","regressedMetrics":"Regressed metrics","catastrophicFailure":"Catastrophic failure","status":"Expectation status","outputSize":"Output size","meanRgbaError":"Mean RGBA error","processingTime":"Time","exactMatch":"Exact match","yes":"yes","no":"no","edgeF1":"Edge F1","backgroundMaskIou":"Background mask IoU","smallComponentRetention":"Small component retention","diagnostics":"All images and settings","details":"Details","backToReport":"Back to report","assertions":{"exact-image-match":"exact image match","mean-rgba-error":"mean RGBA error","edge-f1":"edge retention","background-mask-iou":"background mask","small-component-retention":"small component retention","expected-width":"expected width","expected-height":"expected height","deterministic-output":"deterministic output","catastrophic-failure":"catastrophic failure","output-size":"output size"},"processingWarnings":{"LOW_GRID_CONFIDENCE":"Grid confidence is low. Please check the result.","BACKGROUND_UNCERTAIN":"The background detection is uncertain.","BACKGROUND_REMOVAL_SKIPPED":"Background removal was skipped because too much would have been removed.","CONTENT_LOSS_RISK":"Processing may have removed a large amount of content.","ONE_AXIS_DETECTION_FAILED":"The grid could not be detected on one axis.","EXTREME_OUTPUT_SIZE":"The output size is extremely large.","NO_CONTENT":"No processable content was detected.","FALLBACK_TO_PRESERVE":"The original size was preserved for safety."},"warningTriggers":{"LOW_GRID_CONFIDENCE":"The selected grid candidate's confidence is below the threshold, the two axis scores disagree, the output would be degenerate or extremely small, or one axis failed detection.","BACKGROUND_UNCERTAIN":"The automatic background model's confidence is below the minimum.","BACKGROUND_REMOVAL_SKIPPED":"Background removal was rolled back because too much would have been removed.","CONTENT_LOSS_RISK":"The foreground ratio dropped more than the allowed limit between input and output.","ONE_AXIS_DETECTION_FAILED":"Grid detection failed on exactly one of the two axes.","EXTREME_OUTPUT_SIZE":"The output would be degenerate or extremely small, or its width or height exceeds the limit.","NO_CONTENT":"The input had no foreground pixel to process.","FALLBACK_TO_PRESERVE":"Auto fell back to keeping the original size because its decision was low confidence or the detected grid was degenerate."},"candidateSuggestionReasons":{"LOW_GRID_CONFIDENCE":"Grid confidence is low and candidates can be offered","NO_WARNING":"No warning was raised","NO_LOW_GRID_CONFIDENCE":"A warning was raised, but not about low grid confidence","NO_CANDIDATE_PREVIEW":"No candidate could be offered","CANDIDATE_SELECTION_EXISTS":"A candidate has already been selected","SHOW_CANDIDATES_DISABLED":"Candidate selection is disabled in the settings","NOT_INITIAL":"This is not the initial processing run","NOT_AUTO":"The processing mode is not Auto"},"candidateKinds":{"auto-result":"Auto result","cell-scale":"Pixel size","preserve":"Keep original size","convert":"Convert option"},"candidateCellScales":{"quarter":"Much smaller pixels (1/4x)","half":"Smaller pixels (1/2x)","same":"Detected pixel size (1x)","double":"Larger pixels (2x)","quadruple":"Much larger pixels (4x)"}},"ja":{"title":"品質レポート","groundTruth":"目標","input":"入力","baseline":"前回生成","result":"今回生成","groundTruthDifference":"目標差分","baselineDifference":"前回差分","backgroundMask":"背景マスク","targetComparison":"目標との比較","targetSource":"目標の由来","targetUnregistered":"このケースには目標が登録されていません","sizeMatches":"サイズ一致","inputKind":"入力種別","route":"処理ルート","classificationConfidence":"自動分類信頼度","gridConfidence":"グリッド信頼度","notAvailable":"取得不可","metricReferenceUnavailable":"このケースは比較の基準になる出力が無いため、指標を測定できません。","hasWarnings":"WARNINGあり","hasCandidateSelection":"候補選択あり","warningDetails":"WARNINGの詳細","warningTrigger":"判定条件","candidateDiagnostics":"Auto候補リスト診断","candidateSuggestion":"候補リスト","candidateSuggestionWouldShow":"表示される想定","candidateSuggestionWouldNotShow":"表示されない","candidateSuggestionNotApplicable":"対象外","warningPresentation":"WARNINGの表示先","warningPresentationCandidateList":"候補リスト","warningPresentationIndicator":"警告アイコン","warningPresentationNone":"なし","candidateSuggestionReason":"判定理由","candidatePlanCount":"候補プラン数","candidateOptions":"候補選択の選択肢","candidateOptionsUnavailable":"生成された選択肢はありません","candidateOptionFailed":"選択肢の生成に失敗","candidateRecommended":"おすすめ","colorCount":"色数","none":"なし","topCandidates":"上位候補","metrics":"評価指標","options":"処理設定","filterCases":"ケースを絞り込む","language":"表示言語","toggleTheme":"表示テーマを切り替える","allStatuses":"すべて","passed":"合格","failed":"基準未達","targetMet":"目標達成","targetUnmet":"目標未達","targetMissing":"判定不能","preserve":"保持","refine":"復元","convert":"変換","workflow":"実行ログ","changed":"差分あり","unchanged":"差分なし","new":"新規追加","allChanges":"すべて","qualityStatus":"目標品質","parameterMode":"パラメータ","allParameters":"すべて","explicitParameters":"オプション指定あり","autoParameters":"自動判定","changeStatus":"前回比較","reportDetails":"レポート情報","localReport":"ローカルで表示中","releaseReport":"リリースレポート","previousVersion":"前回バージョン","previousRunUnavailable":"前回生成を取得できないため、前回との比較は表示していません。","pullRequest":"プルリクエスト","headCommit":"HEAD","baseCommit":"PRのベース","baselineCommit":"比較基準","generatedAt":"生成日時","displayConditions":"表示条件","casesShown":"件","changedPixels":"変更画素","comparison":"指標の比較","metric":"指標","target":"合格条件","current":"今回","delta":"変化量","verdict":"判定","metricImproved":"指標が前回基準より改善","metricRegressed":"指標が前回基準より悪化","metricUnchanged":"指標が前回基準と同じ","regressedMetrics":"悪化した指標","catastrophicFailure":"致命的な失敗","status":"合格判定","outputSize":"出力サイズ","meanRgbaError":"RGBA平均誤差","processingTime":"時間","exactMatch":"完全一致","yes":"はい","no":"いいえ","edgeF1":"輪郭F1","backgroundMaskIou":"背景マスクIoU","smallComponentRetention":"小要素保持率","diagnostics":"すべての画像と処理設定","details":"詳細","backToReport":"レポートに戻る","assertions":{"exact-image-match":"画像の完全一致","mean-rgba-error":"RGBA平均誤差","edge-f1":"輪郭の保持","background-mask-iou":"背景マスク","small-component-retention":"小要素の保持","expected-width":"期待する幅","expected-height":"期待する高さ","deterministic-output":"出力の再現性","catastrophic-failure":"致命的な失敗","output-size":"出力サイズ"},"processingWarnings":{"LOW_GRID_CONFIDENCE":"グリッド判定の信頼度が低いため、結果を確認してください。","BACKGROUND_UNCERTAIN":"背景の判定が不確かです。","BACKGROUND_REMOVAL_SKIPPED":"背景が消えすぎると判定したため、背景の透過を中止しました。","CONTENT_LOSS_RISK":"処理によって内容が大きく失われた可能性があります。","ONE_AXIS_DETECTION_FAILED":"片方向のグリッドを検出できませんでした。","EXTREME_OUTPUT_SIZE":"出力サイズが非常に大きくなっています。","NO_CONTENT":"処理対象の内容を検出できませんでした。","FALLBACK_TO_PRESERVE":"安全のため元のサイズを維持しました。"},"warningTriggers":{"LOW_GRID_CONFIDENCE":"採用したグリッド候補の信頼度が閾値未満、縦横のスコアが食い違う、出力が退化または極小になる、片軸の検出に失敗した、のいずれかを検出した。","BACKGROUND_UNCERTAIN":"自動背景モデルの信頼度が下限を下回った。","BACKGROUND_REMOVAL_SKIPPED":"背景が消えすぎると判定し、背景除去をロールバックした。","CONTENT_LOSS_RISK":"処理の前後で前景の割合が上限を超えて減った。","ONE_AXIS_DETECTION_FAILED":"グリッド検出で縦横のうち片方だけ失敗した。","EXTREME_OUTPUT_SIZE":"出力が退化または極小になる、あるいは出力の幅か高さが上限を超えた。","NO_CONTENT":"処理前の前景画素が無く、処理対象が存在しない。","FALLBACK_TO_PRESERVE":"Autoの判定が低信頼、または検出したグリッドが縮退したため、原寸維持へ退避した。"},"candidateSuggestionReasons":{"LOW_GRID_CONFIDENCE":"グリッド信頼度が低く、候補を提示できる","NO_WARNING":"WARNINGが無い","NO_LOW_GRID_CONFIDENCE":"WARNINGはあるが、グリッド信頼度の低下ではない","NO_CANDIDATE_PREVIEW":"提示できる候補が無い","CANDIDATE_SELECTION_EXISTS":"すでに候補を選択済み","SHOW_CANDIDATES_DISABLED":"候補選択の表示が設定で無効","NOT_INITIAL":"初回処理ではない","NOT_AUTO":"Auto以外の処理モード"},"candidateKinds":{"auto-result":"Auto結果","cell-scale":"ドットの大きさ","preserve":"原寸維持","convert":"Convert候補"},"candidateCellScales":{"quarter":"ドットをとても小さく（1/4倍）","half":"ドットを小さく（1/2倍）","same":"検出したドットのまま（1倍）","double":"ドットを大きく（2倍）","quadruple":"ドットをとても大きく（4倍）"}},"zh-CN":{"title":"PixelRefiner 质量报告","groundTruth":"目标","input":"输入","baseline":"上次生成","result":"本次生成","groundTruthDifference":"与目标的差异","baselineDifference":"与上次生成的差异","backgroundMask":"背景蒙版","targetComparison":"与目标的比较","targetSource":"目标来源","targetUnregistered":"此用例未登记目标","sizeMatches":"尺寸一致","inputKind":"输入类型","route":"处理路径","classificationConfidence":"自动分类置信度","gridConfidence":"网格置信度","notAvailable":"不可用","metricReferenceUnavailable":"该用例没有可作为比较基准的输出，因此无法测量指标。","hasWarnings":"存在 WARNING","hasCandidateSelection":"有候选选择","warningDetails":"WARNING 详情","warningTrigger":"判定条件","candidateDiagnostics":"Auto 候选列表诊断","candidateSuggestion":"候选列表","candidateSuggestionWouldShow":"预计显示","candidateSuggestionWouldNotShow":"预计不显示","candidateSuggestionNotApplicable":"不适用","warningPresentation":"WARNING 显示位置","warningPresentationCandidateList":"候选列表","warningPresentationIndicator":"警告图标","warningPresentationNone":"无","candidateSuggestionReason":"判定原因","candidatePlanCount":"候选方案数","candidateOptions":"候选选择项","candidateOptionsUnavailable":"未生成候选项","candidateOptionFailed":"候选项生成失败","candidateRecommended":"推荐","colorCount":"色数","none":"无","topCandidates":"候选前三名","metrics":"指标","options":"处理设置","filterCases":"筛选用例","language":"显示语言","toggleTheme":"切换显示主题","allStatuses":"全部","passed":"通过","failed":"未达标准","targetMet":"达到目标","targetUnmet":"未达目标","targetMissing":"无法判定","preserve":"保留","refine":"优化","convert":"转换","workflow":"工作流","changed":"与上次运行 / 基础分支不同","unchanged":"与上次运行 / 基础分支相同","new":"新增用例","allChanges":"全部","qualityStatus":"目标质量","parameterMode":"参数","allParameters":"全部","explicitParameters":"指定选项","autoParameters":"自动判定","changeStatus":"与上次运行的比较","reportDetails":"报告信息","localReport":"正在本地查看","releaseReport":"版本报告","previousVersion":"上一版本","previousRunUnavailable":"无法获取上次运行结果，因此不显示与上次的比较。","pullRequest":"拉取请求","headCommit":"HEAD","baseCommit":"PR 基础提交","baselineCommit":"比较基准","generatedAt":"生成时间","displayConditions":"显示条件","casesShown":"个用例","changedPixels":"变更像素","comparison":"指标比较","metric":"指标","target":"目标","current":"当前","delta":"变化量","verdict":"判定","metricImproved":"指标优于基准","metricRegressed":"指标劣于基准","metricUnchanged":"指标与基准相同","regressedMetrics":"劣化的指标","catastrophicFailure":"灾难性失败","status":"达标判定","outputSize":"输出尺寸","meanRgbaError":"RGBA 平均误差","processingTime":"时间","exactMatch":"完全匹配","yes":"是","no":"否","edgeF1":"边缘 F1","backgroundMaskIou":"背景蒙版 IoU","smallComponentRetention":"小组件保留率","diagnostics":"所有图像和处理设置","details":"详情","backToReport":"返回报告","assertions":{"exact-image-match":"图像完全匹配","mean-rgba-error":"RGBA 平均误差","edge-f1":"边缘保留","background-mask-iou":"背景蒙版","small-component-retention":"小组件保留","expected-width":"预期宽度","expected-height":"预期高度","deterministic-output":"输出可重复性","catastrophic-failure":"灾难性失败","output-size":"输出尺寸"},"processingWarnings":{"LOW_GRID_CONFIDENCE":"网格置信度较低，请检查结果。","BACKGROUND_UNCERTAIN":"背景判断存在不确定性。","BACKGROUND_REMOVAL_SKIPPED":"检测到背景可能被过度移除，已中止背景透明化。","CONTENT_LOSS_RISK":"处理可能导致大量内容丢失。","ONE_AXIS_DETECTION_FAILED":"无法检测一个方向的网格。","EXTREME_OUTPUT_SIZE":"输出尺寸非常大。","NO_CONTENT":"未检测到可处理的内容。","FALLBACK_TO_PRESERVE":"为安全起见，已保留原始尺寸。"},"warningTriggers":{"LOW_GRID_CONFIDENCE":"采用的网格方案置信度低于阈值、两轴评分不一致、输出会退化或极小、或某一轴检测失败。","BACKGROUND_UNCERTAIN":"自动背景模型的置信度低于下限。","BACKGROUND_REMOVAL_SKIPPED":"判断背景会被过度移除，已回滚背景透明化。","CONTENT_LOSS_RISK":"处理前后前景比例的下降超过上限。","ONE_AXIS_DETECTION_FAILED":"网格检测仅在一个方向上失败。","EXTREME_OUTPUT_SIZE":"输出会退化或极小，或输出的宽或高超过上限。","NO_CONTENT":"处理前不存在前景像素，没有可处理的内容。","FALLBACK_TO_PRESERVE":"Auto 的判定置信度低，或检测到的网格退化，因此退回保持原尺寸。"},"candidateSuggestionReasons":{"LOW_GRID_CONFIDENCE":"网格置信度低，可以提供候选","NO_WARNING":"没有 WARNING","NO_LOW_GRID_CONFIDENCE":"有 WARNING，但不是网格置信度低","NO_CANDIDATE_PREVIEW":"没有可提供的候选","CANDIDATE_SELECTION_EXISTS":"已经选择过候选","SHOW_CANDIDATES_DISABLED":"设置中已关闭候选选择","NOT_INITIAL":"不是首次处理","NOT_AUTO":"处理模式不是 Auto"},"candidateKinds":{"auto-result":"Auto结果","cell-scale":"像素大小","preserve":"保持原尺寸","convert":"转换方案"},"candidateCellScales":{"quarter":"像素小很多（1/4 倍）","half":"像素更小（1/2 倍）","same":"保持检测到的像素（1 倍）","double":"像素更大（2 倍）","quadruple":"像素大很多（4 倍）"}}};((config) => {
+	const isTheme = (value) => value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(config.queryParameter);
+	let storedTheme = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {};
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const themeMediaQuery = typeof window.matchMedia === "function" ? window.matchMedia(config.mediaQuery) : null;
+	const themePinned = window.__QUALITY_REPORT_THEME__?.queryPinned ?? queryTheme !== null;
+	let themeManuallySelected = themePinned || savedTheme !== null;
+	let theme = window.__QUALITY_REPORT_THEME__?.theme ?? queryTheme ?? savedTheme ?? (themeMediaQuery?.matches === true ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+	const translations = window.__QUALITY_REPORT_TRANSLATIONS__;
+	const preferredLanguage = (navigator.languages?.[0] ?? navigator.language ?? "en").toLowerCase();
+	// [Intended] 言語切り替えは一覧のサイドバーにしかないので、選択結果をクエリで運んで
+	// ケース詳細へ引き継ぐ。ブラウザ言語のままなら遷移先でも同じ判定になるため、
+	// 明示的に選ばれた言語だけをクエリとリンクに残す。
+	const requestedLocale = new URLSearchParams(window.location.search).get("locale");
+	const pinnedLocale = requestedLocale !== null && requestedLocale in translations ? requestedLocale : null;
+	let localePinned = pinnedLocale !== null;
+	let locale = pinnedLocale ?? (preferredLanguage.startsWith("ja") ? "ja" : preferredLanguage.startsWith("zh") ? "zh-CN" : "en");
+	let messages = translations[locale];
+	const translate = (key) => {
+		let value = messages;
+		for (const part of key.split(".")) {
+			if (typeof value !== "object" || value === null) return undefined;
+			value = value[part];
+		};
+		return typeof value === "string" ? value : undefined;
+	};
+	const applyTranslations = () => {
+		document.documentElement.lang = locale;
+		for (const element of document.querySelectorAll("[data-i18n]")) {
+			element.textContent = translate(element.dataset.i18n ?? "") ?? element.textContent;
+		};
+		for (const element of document.querySelectorAll("[data-i18n-alt]")) {
+			element.alt = translate(element.dataset.i18nAlt ?? "") ?? element.alt;
+		};
+		for (const element of document.querySelectorAll("[data-i18n-placeholder]")) {
+			element.placeholder = translate(element.dataset.i18nPlaceholder ?? "") ?? element.placeholder;
+		};
+		for (const element of document.querySelectorAll("[data-description-en]")) {
+			element.textContent = locale === "ja" ? element.dataset.descriptionJa ?? element.textContent : element.dataset.descriptionEn ?? element.textContent;
+		}
+	};
+	const localeButtons = [...document.querySelectorAll("[data-locale]")];
+	const localeLinks = [...document.querySelectorAll("a.detail-link, a.back-link")];
+	const setLinkParameter = (link, name, value) => {
+		const href = link.getAttribute("href");
+		if (href === null) return;
+		// [Intended] 相対URLのままクエリだけを更新し、file:// レポートのリンクを維持する。
+		const [target, hash] = href.split("#");
+		const [pathOnly, query = ""] = target.split("?");
+		const params = new URLSearchParams(query);
+		params.set(name, value);
+		link.setAttribute("href", `${pathOnly}?${params.toString()}` + (hash === undefined ? "" : `#${hash}`));
+	};
+	const replaceCurrentParameter = (name, value) => {
+		try {
+			const url = new URL(window.location.href);
+			url.searchParams.set(name, value);
+			window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+		} catch {}
+	};
+	const themeToggle = document.querySelector("[data-theme-toggle]");
+	const applyTheme = (nextTheme) => {
+		theme = nextTheme;
+		document.documentElement.dataset.theme = theme;
+		document.documentElement.style.colorScheme = theme;
+		window.__QUALITY_REPORT_THEME__ = {
+			theme,
+			queryPinned: themePinned
+		};
+		if (!themeToggle) return;
+		themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+		for (const icon of themeToggle.querySelectorAll("[data-theme-icon]")) {
+			icon.toggleAttribute("hidden", icon.dataset.themeIcon !== theme);
+		}
+	};
+	const persistThemeQuery = () => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		};
+		replaceCurrentParameter(config.queryParameter, theme);
+	};
+	applyTheme(theme);
+	if (themePinned) {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		}
+	};
+	themeToggle?.addEventListener("click", () => {
+		themeManuallySelected = true;
+		applyTheme(theme === "light" ? "dark" : "light");
+		try {
+			window.localStorage?.setItem(config.storageKey, theme);
+		} catch {};
+		if (themePinned) persistThemeQuery();
+	});
+	themeMediaQuery?.addEventListener("change", (event) => {
+		if (!themeManuallySelected) applyTheme(event.matches ? "dark" : "light");
+	});
+	const persistLocale = () => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, "locale", locale);
+		};
+		replaceCurrentParameter("locale", locale);
+	};
+	let refreshFilter = () => {};
+	const setLocale = (nextLocale) => {
+		if (!(nextLocale in translations)) return;
+		locale = nextLocale;
+		messages = translations[locale];
+		applyTranslations();
+		for (const button of localeButtons) {
+			const active = button.dataset.locale === locale;
+			button.classList.toggle("active", active);
+			button.setAttribute("aria-pressed", String(active));
+		};
+		if (localePinned) persistLocale();
+		refreshFilter();
+	};
+	for (const button of localeButtons) {
+		button.addEventListener("click", () => {
+			localePinned = true;
+			setLocale(button.dataset.locale ?? "en");
+		});
+	};
+	setLocale(locale);
+	const fitImage = (image) => {
+		if (!image.naturalWidth || !image.naturalHeight) return;
+		const stage = image.parentElement;
+		if (!stage) return;
+		const scale = Math.min(stage.clientWidth / image.naturalWidth, stage.clientHeight / image.naturalHeight);
+		image.style.width = `${image.naturalWidth * scale}px`;
+		image.style.height = `${image.naturalHeight * scale}px`;
+	};
+	const reportImages = [...document.querySelectorAll(".images img")];
+	for (const image of reportImages) {
+		image.addEventListener("load", () => fitImage(image));
+		if (image.complete) fitImage(image);
+	};
+	window.addEventListener("resize", () => {
+		for (const image of reportImages) fitImage(image);
+	});
+	const search = document.querySelector("#search");
+	if (search) {
+		const cards = [...document.querySelectorAll(".case")];
+		const visibleCount = document.querySelector("#visible-count");
+		// [Intended] 絞り込みの軸はすべて同じ形（data-<name>-filter のボタン群 ×
+		// カードの data-<name>）なので、軸ごとに同じ処理を書かず名前だけで束ねる。
+		// 軸を増やすときはこの配列に名前を足すだけで済む。
+		const groups = [
+			"quality",
+			"change",
+			"parameter"
+		].map((name) => ({
+			name,
+			buttons: [...document.querySelectorAll(`[data-${name}-filter]`)],
+			label: document.querySelector(`#active-${name}-label`),
+			active: ""
+		}));
+		const readFilterState = () => {
+			const params = new URLSearchParams(window.location.search);
+			const savedGroups = {};
+			for (const group of groups) {
+				const active = params.get(group.name);
+				if (active !== null) savedGroups[group.name] = active;
+			};
+			return {
+				search: params.get("search") ?? "",
+				groups: savedGroups
+			};
+		};
+		const initialFilterState = readFilterState();
+		search.value = initialFilterState.search;
+		const setGroupActive = (group, button) => {
+			group.active = button.dataset[`${group.name}Filter`] ?? "";
+			for (const other of group.buttons) {
+				const active = other === button;
+				other.classList.toggle("active", active);
+				other.setAttribute("aria-pressed", String(active));
+			}
+		};
+		for (const group of groups) {
+			const savedActive = initialFilterState.groups[group.name];
+			const button = group.buttons.find((candidate) => candidate.dataset[`${group.name}Filter`] === savedActive) ?? group.buttons.find((candidate) => candidate.dataset[`${group.name}Filter`] === "");
+			if (button) setGroupActive(group, button);
+		};
+		const saveFilterState = () => {
+			try {
+				const url = new URL(window.location.href);
+				url.searchParams.delete("search");
+				for (const group of groups) url.searchParams.delete(group.name);
+				if (search.value) url.searchParams.set("search", search.value);
+				for (const group of groups) {
+					if (group.active) url.searchParams.set(group.name, group.active);
+				};
+				// [Intended] URLに状態を残し、更新や共有リンクから同じ条件を復元する。
+				window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+			} catch {}
+		};
+		refreshFilter = () => {
+			const text = search.value.toLowerCase();
+			let visible = 0;
+			for (const card of cards) {
+				const matchesText = (card.dataset.search ?? "").toLowerCase().includes(text);
+				const matchesGroups = groups.every((group) => !group.active || card.dataset[group.name] === group.active);
+				card.hidden = !(matchesText && matchesGroups);
+				if (!card.hidden) visible += 1;
+			};
+			for (const group of groups) {
+				if (!group.label) continue;
+				group.label.textContent = group.buttons.find((button) => button.dataset[`${group.name}Filter`] === group.active)?.querySelector("[data-i18n]")?.textContent ?? "";
+			};
+			if (visibleCount) visibleCount.textContent = String(visible);
+		};
+		search.addEventListener("input", () => {
+			saveFilterState();
+			refreshFilter();
+		});
+		for (const group of groups) {
+			for (const button of group.buttons) {
+				button.addEventListener("click", () => {
+					setGroupActive(group, button);
+					saveFilterState();
+					refreshFilter();
+				});
+			}
+		};
+		refreshFilter();
+	};
+	const dialog = document.querySelector("#image-dialog");
+	const dialogImage = dialog?.querySelector("img");
+	if (dialog && dialogImage) {
+		dialogImage.addEventListener("load", () => fitImage(dialogImage));
+		for (const source of reportImages) {
+			source.addEventListener("click", () => {
+				dialogImage.src = source.src;
+				dialogImage.alt = source.alt;
+				dialog.showModal();
+				requestAnimationFrame(() => fitImage(dialogImage));
+			});
+		};
+		dialog.addEventListener("click", (event) => {
+			if (event.target === dialog) dialog.close();
+		});
+		document.querySelector("#dialog-close")?.addEventListener("click", () => dialog.close());
+	}
+})({"storageKey":"pixel-refiner-theme","queryParameter":"theme","mediaQuery":"(prefers-color-scheme: dark)"});</script>
+</body>
+</html>

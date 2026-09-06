@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>restore-nearest-2x-to-8x8 - PixelRefiner quality report</title>
+	<script>((config) => {
+	const isTheme = (value) => value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(config.queryParameter);
+	let storedTheme = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {};
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const prefersDark = typeof window.matchMedia === "function" && window.matchMedia(config.mediaQuery).matches;
+	const theme = queryTheme ?? savedTheme ?? (prefersDark ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+	window.__QUALITY_REPORT_THEME__ = {
+		theme,
+		queryPinned: queryTheme !== null
+	};
+})({"storageKey":"pixel-refiner-theme","queryParameter":"theme","mediaQuery":"(prefers-color-scheme: dark)"});</script>
+	<style>
+
+:root {
+	color-scheme: light;
+	font-family: system-ui, sans-serif;
+	background: #f7f8fc;
+	color: #172033;
+	--report-bg: #f7f8fc;
+	--report-panel: #ffffff;
+	--report-panel-muted: #f0f3f8;
+	--report-control: #eef2f7;
+	--report-border: #ccd4e0;
+	--report-border-strong: #8995a7;
+	--report-text: #172033;
+	--report-text-muted: #526077;
+	--report-text-dim: #687386;
+	--report-link: #4f46e5;
+	--report-focus: #6d5bd0;
+	--report-active-outline: #4f46e5;
+	--report-active-shadow: #4f46e522;
+	--report-hover: #e4e8ef;
+	--report-badge: #e5e7eb;
+	--report-purple: #e5def8;
+	--report-danger: #f8d4d7;
+	--report-success: #ccebd9;
+	--report-neutral: #dce4f1;
+	--report-warning: #f8e4ad;
+	--report-auto: #d3e7f8;
+	--report-explicit: #e4dff0;
+	--report-orange: #f7ddc3;
+	--report-cyan: #ccebed;
+	--report-danger-border: #d64550;
+	--report-danger-text: #b4232f;
+	--report-success-text: #18713f;
+}
+:root[data-theme="dark"] {
+	color-scheme: dark;
+	background: #15131a;
+	color: #f4efff;
+	--report-bg: #15131a;
+	--report-panel: #1d1923;
+	--report-panel-muted: #25212d;
+	--report-control: #302a39;
+	--report-border: #494151;
+	--report-border-strong: #635a70;
+	--report-text: #f4efff;
+	--report-text-muted: #d6cce4;
+	--report-text-dim: #aaa0b8;
+	--report-link: #b9a7ff;
+	--report-focus: #c2b4ff;
+	--report-active-outline: #ffffff;
+	--report-active-shadow: #ffffff22;
+	--report-hover: #3b3346;
+	--report-badge: #393241;
+	--report-purple: #59458a;
+	--report-danger: #7a2930;
+	--report-success: #236044;
+	--report-neutral: #48536b;
+	--report-warning: #725b20;
+	--report-auto: #2d4a6b;
+	--report-explicit: #3d3550;
+	--report-orange: #8a4b16;
+	--report-cyan: #1f5f6b;
+	--report-danger-border: #ff6b6b;
+	--report-danger-text: #ffb0b0;
+	--report-success-text: #85e6a9;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme]) {
+		color-scheme: dark;
+		background: #15131a;
+		color: #f4efff;
+		--report-bg: #15131a;
+		--report-panel: #1d1923;
+		--report-panel-muted: #25212d;
+		--report-control: #302a39;
+		--report-border: #494151;
+		--report-border-strong: #635a70;
+		--report-text: #f4efff;
+		--report-text-muted: #d6cce4;
+		--report-text-dim: #aaa0b8;
+		--report-link: #b9a7ff;
+		--report-focus: #c2b4ff;
+		--report-active-outline: #ffffff;
+		--report-active-shadow: #ffffff22;
+		--report-hover: #3b3346;
+		--report-badge: #393241;
+		--report-purple: #59458a;
+		--report-danger: #7a2930;
+		--report-success: #236044;
+		--report-neutral: #48536b;
+		--report-warning: #725b20;
+		--report-auto: #2d4a6b;
+		--report-explicit: #3d3550;
+		--report-orange: #8a4b16;
+		--report-cyan: #1f5f6b;
+		--report-danger-border: #ff6b6b;
+		--report-danger-text: #ffb0b0;
+		--report-success-text: #85e6a9;
+	}
+}
+body { background: var(--report-bg); color: var(--report-text); }
+a { color: var(--report-link); }
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+.theme-toggle-row { display: flex; justify-content: flex-end; margin-top: auto; }
+.theme-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	color: var(--report-text-muted);
+	background: var(--report-control);
+	border: 1px solid var(--report-border-strong);
+	border-radius: 50%;
+	cursor: pointer;
+}
+.theme-toggle:hover { color: var(--report-link); border-color: var(--report-focus); }
+.theme-toggle:focus-visible { outline: 2px solid var(--report-focus); outline-offset: 2px; }
+.theme-toggle [hidden] { display: none; }
+
+body { margin: 0 auto; max-width: 1500px; padding: 24px; }
+.back-link {
+	display: inline-block;
+	margin-bottom: 16px;
+	padding: 9px 13px;
+	border: 1px solid var(--report-border-strong);
+	border-radius: 6px;
+	background: var(--report-control);
+	color: var(--report-text);
+	text-decoration: none;
+	transition: border-color .12s, background .12s, transform .12s;
+}
+.back-link:hover { border-color: var(--report-focus); background: var(--report-hover); transform: translateX(-2px); }
+.back-link:focus-visible { outline: 2px solid var(--report-focus); outline-offset: 2px; }
+.badge, .tag { display: inline-block; padding: 3px 7px; border-radius: 999px; font-size: .75em; background: var(--report-badge); }
+.badge.failed, .badge.target-unmet { background: var(--report-danger); }
+.badge.passed, .badge.target-met, .badge.candidate-recommended { background: var(--report-success); }
+.badge.target-missing, .badge.unchanged { background: var(--report-neutral); }
+.badge.changed, .badge.new { background: var(--report-warning); }
+.badge.parameter-auto { background: var(--report-auto); }
+.badge.parameter-explicit { background: var(--report-explicit); }
+.images { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.images figure { margin: 0; }
+.image-size { color: var(--report-text-muted); font-weight: 400; }
+.image-size.size-mismatch { color: var(--report-danger-text); font-weight: 700; }
+.image-stage { display: flex; align-items: center; justify-content: center; width: 100%; height: 280px; }
+.image-stage img {
+	display: block;
+	max-width: 100%;
+	max-height: 100%;
+	cursor: zoom-in;
+	image-rendering: pixelated;
+	background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px;
+}
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 8px; text-align: right; border-bottom: 1px solid var(--report-border); }
+th:first-child { text-align: left; }
+tr.metric-regressed { color: var(--report-danger-text); }
+tr.metric-improved { color: var(--report-success-text); }
+.metric-reference-note { margin: 6px 0 0; font-size: .85em; color: var(--report-text-dim); }
+section { margin-top: 28px; }
+.warning-details, .candidate-diagnostics { padding: 12px; border: 1px solid var(--report-border); border-radius: 8px; }
+.warning-details h2, .candidate-diagnostics h2 { margin-top: 0; }
+.warning-list { display: grid; gap: 10px; margin: 0; padding-left: 20px; }
+.warning-item { line-height: 1.6; }
+.warning-message { display: block; }
+.warning-trigger { display: block; color: var(--report-text-muted); font-size: .85em; }
+.candidate-options { margin-top: 12px; }
+.candidate-options figcaption { line-height: 1.5; }
+.candidate-metadata { display: block; color: var(--report-text-muted); }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 12px; }
+dd { margin: 0; overflow-wrap: anywhere; }
+code { font-size: .8em; }
+dialog { width: min(90vw, 1000px); color: var(--report-text); background: var(--report-bg); border: 1px solid var(--report-border-strong); }
+.dialog-stage { height: 85vh; }
+.dialog-stage img { display: block; image-rendering: pixelated; background: repeating-conic-gradient(#777 0 25%, #aaa 0 50%) 50% / 16px 16px; }
+	</style>
+</head>
+<body>
+	<a class="back-link" href="../../index.html" data-i18n="backToReport">Back to report</a>
+	<main>
+		<h1>
+			restore-nearest-2x-to-8x8
+			<span class="badge target-met" data-i18n="targetMet">met</span>
+			<span class="badge unchanged" data-i18n="unchanged">unchanged</span>
+			<span class="badge parameter-explicit"
+				data-i18n="explicitParameters">explicit</span>
+		</h1>
+		<p class="case-description" data-description-en="Correct nearest-2x."
+			data-description-ja="nearest-2xの劣化を補正しします。">Correct nearest-2x.</p>
+		<p><span class="tag">nearest-2x</span></p>
+		<p><strong data-i18n="changedPixels">Changed pixels</strong>: 0 (0.00%)</p>
+		<p><strong data-i18n="processingTime">Time</strong>: 20.63ms</p>
+		<section>
+			<h2 data-i18n="diagnostics">All images and settings</h2>
+			<div class="images"><figure><figcaption><span data-i18n="input">Input</span> <small class="image-size">(16x16px)</small></figcaption><div class="image-stage"><img src="input.png" alt="Input" data-i18n-alt="input" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruth">Ground truth</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="ground-truth.png" alt="Ground truth" data-i18n-alt="groundTruth" loading="lazy"></div></figure><figure><figcaption><span data-i18n="baseline">Baseline</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="baseline.png" alt="Baseline" data-i18n-alt="baseline" loading="lazy"></div></figure><figure><figcaption><span data-i18n="result">Result</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="result.png" alt="Result" data-i18n-alt="result" loading="lazy"></div></figure><figure><figcaption><span data-i18n="groundTruthDifference">Ground-truth difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="diff.png" alt="Ground-truth difference" data-i18n-alt="groundTruthDifference" loading="lazy"></div></figure><figure><figcaption><span data-i18n="baselineDifference">Baseline difference</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="baseline-diff.png" alt="Baseline difference" data-i18n-alt="baselineDifference" loading="lazy"></div></figure><figure><figcaption><span data-i18n="backgroundMask">Background mask</span> <small class="image-size">(8x8px)</small></figcaption><div class="image-stage"><img src="background-mask.png" alt="Background mask" data-i18n-alt="backgroundMask" loading="lazy"></div></figure></div>
+		</section>
+		<section>
+			<h2 data-i18n="comparison">Metric comparison</h2>
+			<div class="table-scroll">
+				<table>
+					<thead>
+						<tr>
+							<th data-i18n="metric">Metric</th>
+							<th data-i18n="target">Target</th>
+							<th data-i18n="baseline">Baseline</th>
+							<th data-i18n="current">Current</th>
+							<th data-i18n="delta">Delta</th>
+							<th data-i18n="verdict">Verdict</th>
+						</tr>
+					</thead>
+					<tbody><tr class="passed">
+		<th data-i18n="outputSize">Output size</th>
+		<td>8x8px</td>
+		<td>8x8px</td>
+		<td>8x8px</td>
+		<td>-</td>
+		<td data-i18n="passed">passed</td>
+	</tr>
+<tr class="metric-unchanged">
+			<th data-i18n="meanRgbaError">meanRgbaError</th>
+			<td>-</td>
+			<td>0</td>
+			<td>0</td>
+			<td>0</td>
+			<td data-i18n="metricUnchanged">metric unchanged</td>
+		</tr>
+<tr class="metric-unchanged">
+			<th data-i18n="edgeF1">edgeF1</th>
+			<td>-</td>
+			<td>1</td>
+			<td>1</td>
+			<td>0</td>
+			<td data-i18n="metricUnchanged">metric unchanged</td>
+		</tr>
+<tr class="metric-unchanged">
+			<th data-i18n="backgroundMaskIou">backgroundMaskIou</th>
+			<td>-</td>
+			<td>1</td>
+			<td>1</td>
+			<td>0</td>
+			<td data-i18n="metricUnchanged">metric unchanged</td>
+		</tr>
+<tr class="metric-unchanged">
+			<th data-i18n="smallComponentRetention">smallComponentRetention</th>
+			<td>-</td>
+			<td>1</td>
+			<td>1</td>
+			<td>0</td>
+			<td data-i18n="metricUnchanged">metric unchanged</td>
+		</tr></tbody>
+				</table>
+			</div>
+			<p class="metric-regression-summary"><strong data-i18n="regressedMetrics">Regressed metrics</strong>: <span data-i18n="none">none</span></p>
+			
+		</section>
+		<section>
+		<h2 data-i18n="targetComparison">Target comparison</h2>
+		<p><span class="badge target-met" data-i18n="targetMet">met</span></p>
+		
+		
+		<div class="table-scroll">
+			<table>
+				<tbody><tr><th data-i18n="outputSize">Output size</th><td>8x8px</td></tr>
+<tr><th data-i18n="sizeMatches">Size matches</th><td><span data-i18n="yes">yes</span></td></tr>
+<tr><th data-i18n="exactMatch">Exact match</th><td><span data-i18n="yes">yes</span></td></tr>
+<tr><th data-i18n="meanRgbaError">Mean RGBA error</th><td>0</td></tr>
+<tr><th data-i18n="edgeF1">Edge F1</th><td>1</td></tr>
+<tr><th data-i18n="backgroundMaskIou">Background mask IoU</th><td>1</td></tr>
+<tr><th data-i18n="smallComponentRetention">Small component retention</th><td>1</td></tr></tbody>
+			</table>
+		</div>
+	</section>
+		<section class="warning-details">
+		<h2 data-i18n="warningDetails">WARNING details</h2>
+		<p><strong data-i18n="warningPresentation">WARNING presentation</strong>:
+			<span data-i18n="warningPresentationNone">none</span></p>
+		<p data-i18n="none">none</p>
+	</section>
+		<section class="candidate-diagnostics">
+		<h2 data-i18n="candidateDiagnostics">Auto candidate diagnostic</h2>
+		<dl>
+			<dt data-i18n="candidateSuggestion">Candidate list</dt>
+			<dd><span data-i18n="candidateSuggestionWouldNotShow">would-not-show</span></dd>
+			<dt data-i18n="candidateSuggestionReason">Decision reason</dt>
+			<dd><code>NO_WARNING</code>
+				<span data-i18n="candidateSuggestionReasons.NO_WARNING">NO_WARNING</span></dd>
+			<dt data-i18n="classificationConfidence">Classification confidence</dt>
+			<dd>0.6667</dd>
+			<dt data-i18n="gridConfidence">Grid confidence</dt>
+			<dd>0.7146</dd>
+			<dt data-i18n="candidatePlanCount">Candidate plans</dt>
+			<dd>5</dd>
+		</dl>
+		<h3 data-i18n="candidateOptions">Candidate options</h3>
+		<p data-i18n="candidateOptionsUnavailable">No candidate option was generated</p>
+	</section>
+		<section>
+			<h2 data-i18n="options">Options</h2>
+			<dl>
+				<dt data-i18n="inputKind">Input kind</dt><dd>scaled-pixel-art</dd>
+				<dt data-i18n="route">Route</dt><dd data-i18n="refine">refine</dd>
+				<dt data-i18n="gridConfidence">Grid confidence</dt><dd>0.7146</dd>
+				<dt data-i18n="topCandidates">Top candidates</dt><dd><code>[{&quot;width&quot;:8,&quot;height&quot;:8,&quot;score&quot;:0.8903652866346189,&quot;confidence&quot;:0.7146396330179505},{&quot;width&quot;:11,&quot;height&quot;:8,&quot;score&quot;:0.858216701435451,&quot;confidence&quot;:0.6763828267770332},{&quot;width&quot;:8,&quot;height&quot;:12,&quot;score&quot;:0.8334801195087952,&quot;confidence&quot;:0.6503917746653627}]</code></dd>
+				<dt data-i18n="metrics">Metrics</dt><dd><code>{&quot;outputWidth&quot;:8,&quot;outputHeight&quot;:8,&quot;sizeCorrect&quot;:true,&quot;top3SizeCorrect&quot;:true,&quot;gridPhaseError&quot;:0,&quot;meanRgbaError&quot;:0,&quot;edgeF1&quot;:1,&quot;backgroundMaskIou&quot;:1,&quot;smallComponentRetention&quot;:1,&quot;byteIdentical&quot;:true,&quot;catastrophicFailure&quot;:false,&quot;runtimeMs&quot;:20.625489999998535,&quot;approxPeakBytes&quot;:1536}</code></dd>
+				<dt data-i18n="options">Options</dt><dd><code>{&quot;bgExtractionMethod&quot;:&quot;top-left&quot;,&quot;processingMode&quot;:&quot;auto&quot;,&quot;cellSamplingMode&quot;:&quot;legacy-median&quot;,&quot;sampleWindow&quot;:1,&quot;preRemoveBackground&quot;:false,&quot;postRemoveBackground&quot;:false,&quot;trimToContent&quot;:false}</code></dd>
+			</dl>
+		</section>
+	</main>
+
+<dialog id="image-dialog">
+	<button id="dialog-close">&times;</button>
+	<div class="image-stage dialog-stage"><img alt=""></div>
+</dialog>
+	<script>window.__QUALITY_REPORT_TRANSLATIONS__={"en":{"title":"PixelRefiner quality report","groundTruth":"Target","input":"Input","baseline":"Previous run","result":"Current run","groundTruthDifference":"Target difference","baselineDifference":"Previous-run difference","backgroundMask":"Background mask","targetComparison":"Target comparison","targetSource":"Target source","targetUnregistered":"No target registered for this case","sizeMatches":"Size matches","inputKind":"Input kind","route":"Route","classificationConfidence":"Classification confidence","gridConfidence":"Grid confidence","notAvailable":"not available","metricReferenceUnavailable":"No reference output is available for this case, so its metrics cannot be measured.","hasWarnings":"WARNING present","hasCandidateSelection":"candidate selection shown","warningDetails":"WARNING details","warningTrigger":"Raised by","candidateDiagnostics":"Auto candidate diagnostic","candidateSuggestion":"Candidate list","candidateSuggestionWouldShow":"expected to show","candidateSuggestionWouldNotShow":"not expected to show","candidateSuggestionNotApplicable":"not applicable","warningPresentation":"WARNING presentation","warningPresentationCandidateList":"candidate list","warningPresentationIndicator":"warning indicator","warningPresentationNone":"none","candidateSuggestionReason":"Decision reason","candidatePlanCount":"Candidate plans","candidateOptions":"Candidate options","candidateOptionsUnavailable":"No candidate option was generated","candidateOptionFailed":"generation failed","candidateRecommended":"Recommended","colorCount":"Colors","none":"none","topCandidates":"Top candidates","metrics":"Metrics","options":"Options","filterCases":"Filter cases","language":"Language","toggleTheme":"Toggle color theme","allStatuses":"All","passed":"passed","failed":"expectation unmet","targetMet":"target met","targetUnmet":"target unmet","targetMissing":"cannot assess","preserve":"preserve","refine":"refine","convert":"convert","workflow":"workflow","changed":"changed from previous run / base branch","unchanged":"unchanged from previous run / base branch","new":"new case","allChanges":"All","qualityStatus":"Target quality","parameterMode":"Parameters","allParameters":"All","explicitParameters":"explicit options","autoParameters":"auto detection","changeStatus":"Change from previous run","reportDetails":"Report details","localReport":"Viewing locally","releaseReport":"Release report","previousVersion":"Previous version","previousRunUnavailable":"The previous run is unavailable, so comparisons with it are omitted.","pullRequest":"Pull request","headCommit":"Head","baseCommit":"PR base","baselineCommit":"Baseline snapshot","generatedAt":"Generated","displayConditions":"Showing","casesShown":"cases","changedPixels":"Changed pixels","comparison":"Metric comparison","metric":"Metric","target":"Target","current":"Current","delta":"Delta","verdict":"Verdict","metricImproved":"metric improved against baseline","metricRegressed":"metric regressed against baseline","metricUnchanged":"metric unchanged against baseline","regressedMetrics":"Regressed metrics","catastrophicFailure":"Catastrophic failure","status":"Expectation status","outputSize":"Output size","meanRgbaError":"Mean RGBA error","processingTime":"Time","exactMatch":"Exact match","yes":"yes","no":"no","edgeF1":"Edge F1","backgroundMaskIou":"Background mask IoU","smallComponentRetention":"Small component retention","diagnostics":"All images and settings","details":"Details","backToReport":"Back to report","assertions":{"exact-image-match":"exact image match","mean-rgba-error":"mean RGBA error","edge-f1":"edge retention","background-mask-iou":"background mask","small-component-retention":"small component retention","expected-width":"expected width","expected-height":"expected height","deterministic-output":"deterministic output","catastrophic-failure":"catastrophic failure","output-size":"output size"},"processingWarnings":{"LOW_GRID_CONFIDENCE":"Grid confidence is low. Please check the result.","BACKGROUND_UNCERTAIN":"The background detection is uncertain.","BACKGROUND_REMOVAL_SKIPPED":"Background removal was skipped because too much would have been removed.","CONTENT_LOSS_RISK":"Processing may have removed a large amount of content.","ONE_AXIS_DETECTION_FAILED":"The grid could not be detected on one axis.","EXTREME_OUTPUT_SIZE":"The output size is extremely large.","NO_CONTENT":"No processable content was detected.","FALLBACK_TO_PRESERVE":"The original size was preserved for safety."},"warningTriggers":{"LOW_GRID_CONFIDENCE":"The selected grid candidate's confidence is below the threshold, the two axis scores disagree, the output would be degenerate or extremely small, or one axis failed detection.","BACKGROUND_UNCERTAIN":"The automatic background model's confidence is below the minimum.","BACKGROUND_REMOVAL_SKIPPED":"Background removal was rolled back because too much would have been removed.","CONTENT_LOSS_RISK":"The foreground ratio dropped more than the allowed limit between input and output.","ONE_AXIS_DETECTION_FAILED":"Grid detection failed on exactly one of the two axes.","EXTREME_OUTPUT_SIZE":"The output would be degenerate or extremely small, or its width or height exceeds the limit.","NO_CONTENT":"The input had no foreground pixel to process.","FALLBACK_TO_PRESERVE":"Auto fell back to keeping the original size because its decision was low confidence or the detected grid was degenerate."},"candidateSuggestionReasons":{"LOW_GRID_CONFIDENCE":"Grid confidence is low and candidates can be offered","NO_WARNING":"No warning was raised","NO_LOW_GRID_CONFIDENCE":"A warning was raised, but not about low grid confidence","NO_CANDIDATE_PREVIEW":"No candidate could be offered","CANDIDATE_SELECTION_EXISTS":"A candidate has already been selected","SHOW_CANDIDATES_DISABLED":"Candidate selection is disabled in the settings","NOT_INITIAL":"This is not the initial processing run","NOT_AUTO":"The processing mode is not Auto"},"candidateKinds":{"auto-result":"Auto result","cell-scale":"Pixel size","preserve":"Keep original size","convert":"Convert option"},"candidateCellScales":{"quarter":"Much smaller pixels (1/4x)","half":"Smaller pixels (1/2x)","same":"Detected pixel size (1x)","double":"Larger pixels (2x)","quadruple":"Much larger pixels (4x)"}},"ja":{"title":"品質レポート","groundTruth":"目標","input":"入力","baseline":"前回生成","result":"今回生成","groundTruthDifference":"目標差分","baselineDifference":"前回差分","backgroundMask":"背景マスク","targetComparison":"目標との比較","targetSource":"目標の由来","targetUnregistered":"このケースには目標が登録されていません","sizeMatches":"サイズ一致","inputKind":"入力種別","route":"処理ルート","classificationConfidence":"自動分類信頼度","gridConfidence":"グリッド信頼度","notAvailable":"取得不可","metricReferenceUnavailable":"このケースは比較の基準になる出力が無いため、指標を測定できません。","hasWarnings":"WARNINGあり","hasCandidateSelection":"候補選択あり","warningDetails":"WARNINGの詳細","warningTrigger":"判定条件","candidateDiagnostics":"Auto候補リスト診断","candidateSuggestion":"候補リスト","candidateSuggestionWouldShow":"表示される想定","candidateSuggestionWouldNotShow":"表示されない","candidateSuggestionNotApplicable":"対象外","warningPresentation":"WARNINGの表示先","warningPresentationCandidateList":"候補リスト","warningPresentationIndicator":"警告アイコン","warningPresentationNone":"なし","candidateSuggestionReason":"判定理由","candidatePlanCount":"候補プラン数","candidateOptions":"候補選択の選択肢","candidateOptionsUnavailable":"生成された選択肢はありません","candidateOptionFailed":"選択肢の生成に失敗","candidateRecommended":"おすすめ","colorCount":"色数","none":"なし","topCandidates":"上位候補","metrics":"評価指標","options":"処理設定","filterCases":"ケースを絞り込む","language":"表示言語","toggleTheme":"表示テーマを切り替える","allStatuses":"すべて","passed":"合格","failed":"基準未達","targetMet":"目標達成","targetUnmet":"目標未達","targetMissing":"判定不能","preserve":"保持","refine":"復元","convert":"変換","workflow":"実行ログ","changed":"差分あり","unchanged":"差分なし","new":"新規追加","allChanges":"すべて","qualityStatus":"目標品質","parameterMode":"パラメータ","allParameters":"すべて","explicitParameters":"オプション指定あり","autoParameters":"自動判定","changeStatus":"前回比較","reportDetails":"レポート情報","localReport":"ローカルで表示中","releaseReport":"リリースレポート","previousVersion":"前回バージョン","previousRunUnavailable":"前回生成を取得できないため、前回との比較は表示していません。","pullRequest":"プルリクエスト","headCommit":"HEAD","baseCommit":"PRのベース","baselineCommit":"比較基準","generatedAt":"生成日時","displayConditions":"表示条件","casesShown":"件","changedPixels":"変更画素","comparison":"指標の比較","metric":"指標","target":"合格条件","current":"今回","delta":"変化量","verdict":"判定","metricImproved":"指標が前回基準より改善","metricRegressed":"指標が前回基準より悪化","metricUnchanged":"指標が前回基準と同じ","regressedMetrics":"悪化した指標","catastrophicFailure":"致命的な失敗","status":"合格判定","outputSize":"出力サイズ","meanRgbaError":"RGBA平均誤差","processingTime":"時間","exactMatch":"完全一致","yes":"はい","no":"いいえ","edgeF1":"輪郭F1","backgroundMaskIou":"背景マスクIoU","smallComponentRetention":"小要素保持率","diagnostics":"すべての画像と処理設定","details":"詳細","backToReport":"レポートに戻る","assertions":{"exact-image-match":"画像の完全一致","mean-rgba-error":"RGBA平均誤差","edge-f1":"輪郭の保持","background-mask-iou":"背景マスク","small-component-retention":"小要素の保持","expected-width":"期待する幅","expected-height":"期待する高さ","deterministic-output":"出力の再現性","catastrophic-failure":"致命的な失敗","output-size":"出力サイズ"},"processingWarnings":{"LOW_GRID_CONFIDENCE":"グリッド判定の信頼度が低いため、結果を確認してください。","BACKGROUND_UNCERTAIN":"背景の判定が不確かです。","BACKGROUND_REMOVAL_SKIPPED":"背景が消えすぎると判定したため、背景の透過を中止しました。","CONTENT_LOSS_RISK":"処理によって内容が大きく失われた可能性があります。","ONE_AXIS_DETECTION_FAILED":"片方向のグリッドを検出できませんでした。","EXTREME_OUTPUT_SIZE":"出力サイズが非常に大きくなっています。","NO_CONTENT":"処理対象の内容を検出できませんでした。","FALLBACK_TO_PRESERVE":"安全のため元のサイズを維持しました。"},"warningTriggers":{"LOW_GRID_CONFIDENCE":"採用したグリッド候補の信頼度が閾値未満、縦横のスコアが食い違う、出力が退化または極小になる、片軸の検出に失敗した、のいずれかを検出した。","BACKGROUND_UNCERTAIN":"自動背景モデルの信頼度が下限を下回った。","BACKGROUND_REMOVAL_SKIPPED":"背景が消えすぎると判定し、背景除去をロールバックした。","CONTENT_LOSS_RISK":"処理の前後で前景の割合が上限を超えて減った。","ONE_AXIS_DETECTION_FAILED":"グリッド検出で縦横のうち片方だけ失敗した。","EXTREME_OUTPUT_SIZE":"出力が退化または極小になる、あるいは出力の幅か高さが上限を超えた。","NO_CONTENT":"処理前の前景画素が無く、処理対象が存在しない。","FALLBACK_TO_PRESERVE":"Autoの判定が低信頼、または検出したグリッドが縮退したため、原寸維持へ退避した。"},"candidateSuggestionReasons":{"LOW_GRID_CONFIDENCE":"グリッド信頼度が低く、候補を提示できる","NO_WARNING":"WARNINGが無い","NO_LOW_GRID_CONFIDENCE":"WARNINGはあるが、グリッド信頼度の低下ではない","NO_CANDIDATE_PREVIEW":"提示できる候補が無い","CANDIDATE_SELECTION_EXISTS":"すでに候補を選択済み","SHOW_CANDIDATES_DISABLED":"候補選択の表示が設定で無効","NOT_INITIAL":"初回処理ではない","NOT_AUTO":"Auto以外の処理モード"},"candidateKinds":{"auto-result":"Auto結果","cell-scale":"ドットの大きさ","preserve":"原寸維持","convert":"Convert候補"},"candidateCellScales":{"quarter":"ドットをとても小さく（1/4倍）","half":"ドットを小さく（1/2倍）","same":"検出したドットのまま（1倍）","double":"ドットを大きく（2倍）","quadruple":"ドットをとても大きく（4倍）"}},"zh-CN":{"title":"PixelRefiner 质量报告","groundTruth":"目标","input":"输入","baseline":"上次生成","result":"本次生成","groundTruthDifference":"与目标的差异","baselineDifference":"与上次生成的差异","backgroundMask":"背景蒙版","targetComparison":"与目标的比较","targetSource":"目标来源","targetUnregistered":"此用例未登记目标","sizeMatches":"尺寸一致","inputKind":"输入类型","route":"处理路径","classificationConfidence":"自动分类置信度","gridConfidence":"网格置信度","notAvailable":"不可用","metricReferenceUnavailable":"该用例没有可作为比较基准的输出，因此无法测量指标。","hasWarnings":"存在 WARNING","hasCandidateSelection":"有候选选择","warningDetails":"WARNING 详情","warningTrigger":"判定条件","candidateDiagnostics":"Auto 候选列表诊断","candidateSuggestion":"候选列表","candidateSuggestionWouldShow":"预计显示","candidateSuggestionWouldNotShow":"预计不显示","candidateSuggestionNotApplicable":"不适用","warningPresentation":"WARNING 显示位置","warningPresentationCandidateList":"候选列表","warningPresentationIndicator":"警告图标","warningPresentationNone":"无","candidateSuggestionReason":"判定原因","candidatePlanCount":"候选方案数","candidateOptions":"候选选择项","candidateOptionsUnavailable":"未生成候选项","candidateOptionFailed":"候选项生成失败","candidateRecommended":"推荐","colorCount":"色数","none":"无","topCandidates":"候选前三名","metrics":"指标","options":"处理设置","filterCases":"筛选用例","language":"显示语言","toggleTheme":"切换显示主题","allStatuses":"全部","passed":"通过","failed":"未达标准","targetMet":"达到目标","targetUnmet":"未达目标","targetMissing":"无法判定","preserve":"保留","refine":"优化","convert":"转换","workflow":"工作流","changed":"与上次运行 / 基础分支不同","unchanged":"与上次运行 / 基础分支相同","new":"新增用例","allChanges":"全部","qualityStatus":"目标质量","parameterMode":"参数","allParameters":"全部","explicitParameters":"指定选项","autoParameters":"自动判定","changeStatus":"与上次运行的比较","reportDetails":"报告信息","localReport":"正在本地查看","releaseReport":"版本报告","previousVersion":"上一版本","previousRunUnavailable":"无法获取上次运行结果，因此不显示与上次的比较。","pullRequest":"拉取请求","headCommit":"HEAD","baseCommit":"PR 基础提交","baselineCommit":"比较基准","generatedAt":"生成时间","displayConditions":"显示条件","casesShown":"个用例","changedPixels":"变更像素","comparison":"指标比较","metric":"指标","target":"目标","current":"当前","delta":"变化量","verdict":"判定","metricImproved":"指标优于基准","metricRegressed":"指标劣于基准","metricUnchanged":"指标与基准相同","regressedMetrics":"劣化的指标","catastrophicFailure":"灾难性失败","status":"达标判定","outputSize":"输出尺寸","meanRgbaError":"RGBA 平均误差","processingTime":"时间","exactMatch":"完全匹配","yes":"是","no":"否","edgeF1":"边缘 F1","backgroundMaskIou":"背景蒙版 IoU","smallComponentRetention":"小组件保留率","diagnostics":"所有图像和处理设置","details":"详情","backToReport":"返回报告","assertions":{"exact-image-match":"图像完全匹配","mean-rgba-error":"RGBA 平均误差","edge-f1":"边缘保留","background-mask-iou":"背景蒙版","small-component-retention":"小组件保留","expected-width":"预期宽度","expected-height":"预期高度","deterministic-output":"输出可重复性","catastrophic-failure":"灾难性失败","output-size":"输出尺寸"},"processingWarnings":{"LOW_GRID_CONFIDENCE":"网格置信度较低，请检查结果。","BACKGROUND_UNCERTAIN":"背景判断存在不确定性。","BACKGROUND_REMOVAL_SKIPPED":"检测到背景可能被过度移除，已中止背景透明化。","CONTENT_LOSS_RISK":"处理可能导致大量内容丢失。","ONE_AXIS_DETECTION_FAILED":"无法检测一个方向的网格。","EXTREME_OUTPUT_SIZE":"输出尺寸非常大。","NO_CONTENT":"未检测到可处理的内容。","FALLBACK_TO_PRESERVE":"为安全起见，已保留原始尺寸。"},"warningTriggers":{"LOW_GRID_CONFIDENCE":"采用的网格方案置信度低于阈值、两轴评分不一致、输出会退化或极小、或某一轴检测失败。","BACKGROUND_UNCERTAIN":"自动背景模型的置信度低于下限。","BACKGROUND_REMOVAL_SKIPPED":"判断背景会被过度移除，已回滚背景透明化。","CONTENT_LOSS_RISK":"处理前后前景比例的下降超过上限。","ONE_AXIS_DETECTION_FAILED":"网格检测仅在一个方向上失败。","EXTREME_OUTPUT_SIZE":"输出会退化或极小，或输出的宽或高超过上限。","NO_CONTENT":"处理前不存在前景像素，没有可处理的内容。","FALLBACK_TO_PRESERVE":"Auto 的判定置信度低，或检测到的网格退化，因此退回保持原尺寸。"},"candidateSuggestionReasons":{"LOW_GRID_CONFIDENCE":"网格置信度低，可以提供候选","NO_WARNING":"没有 WARNING","NO_LOW_GRID_CONFIDENCE":"有 WARNING，但不是网格置信度低","NO_CANDIDATE_PREVIEW":"没有可提供的候选","CANDIDATE_SELECTION_EXISTS":"已经选择过候选","SHOW_CANDIDATES_DISABLED":"设置中已关闭候选选择","NOT_INITIAL":"不是首次处理","NOT_AUTO":"处理模式不是 Auto"},"candidateKinds":{"auto-result":"Auto结果","cell-scale":"像素大小","preserve":"保持原尺寸","convert":"转换方案"},"candidateCellScales":{"quarter":"像素小很多（1/4 倍）","half":"像素更小（1/2 倍）","same":"保持检测到的像素（1 倍）","double":"像素更大（2 倍）","quadruple":"像素大很多（4 倍）"}}};((config) => {
+	const isTheme = (value) => value === "light" || value === "dark";
+	const requestedTheme = new URLSearchParams(window.location.search).get(config.queryParameter);
+	let storedTheme = null;
+	try {
+		storedTheme = window.localStorage?.getItem(config.storageKey) ?? null;
+	} catch {};
+	const queryTheme = isTheme(requestedTheme) ? requestedTheme : null;
+	const savedTheme = isTheme(storedTheme) ? storedTheme : null;
+	const themeMediaQuery = typeof window.matchMedia === "function" ? window.matchMedia(config.mediaQuery) : null;
+	const themePinned = window.__QUALITY_REPORT_THEME__?.queryPinned ?? queryTheme !== null;
+	let themeManuallySelected = themePinned || savedTheme !== null;
+	let theme = window.__QUALITY_REPORT_THEME__?.theme ?? queryTheme ?? savedTheme ?? (themeMediaQuery?.matches === true ? "dark" : "light");
+	document.documentElement.dataset.theme = theme;
+	document.documentElement.style.colorScheme = theme;
+	const translations = window.__QUALITY_REPORT_TRANSLATIONS__;
+	const preferredLanguage = (navigator.languages?.[0] ?? navigator.language ?? "en").toLowerCase();
+	// [Intended] 言語切り替えは一覧のサイドバーにしかないので、選択結果をクエリで運んで
+	// ケース詳細へ引き継ぐ。ブラウザ言語のままなら遷移先でも同じ判定になるため、
+	// 明示的に選ばれた言語だけをクエリとリンクに残す。
+	const requestedLocale = new URLSearchParams(window.location.search).get("locale");
+	const pinnedLocale = requestedLocale !== null && requestedLocale in translations ? requestedLocale : null;
+	let localePinned = pinnedLocale !== null;
+	let locale = pinnedLocale ?? (preferredLanguage.startsWith("ja") ? "ja" : preferredLanguage.startsWith("zh") ? "zh-CN" : "en");
+	let messages = translations[locale];
+	const translate = (key) => {
+		let value = messages;
+		for (const part of key.split(".")) {
+			if (typeof value !== "object" || value === null) return undefined;
+			value = value[part];
+		};
+		return typeof value === "string" ? value : undefined;
+	};
+	const applyTranslations = () => {
+		document.documentElement.lang = locale;
+		for (const element of document.querySelectorAll("[data-i18n]")) {
+			element.textContent = translate(element.dataset.i18n ?? "") ?? element.textContent;
+		};
+		for (const element of document.querySelectorAll("[data-i18n-alt]")) {
+			element.alt = translate(element.dataset.i18nAlt ?? "") ?? element.alt;
+		};
+		for (const element of document.querySelectorAll("[data-i18n-placeholder]")) {
+			element.placeholder = translate(element.dataset.i18nPlaceholder ?? "") ?? element.placeholder;
+		};
+		for (const element of document.querySelectorAll("[data-description-en]")) {
+			element.textContent = locale === "ja" ? element.dataset.descriptionJa ?? element.textContent : element.dataset.descriptionEn ?? element.textContent;
+		}
+	};
+	const localeButtons = [...document.querySelectorAll("[data-locale]")];
+	const localeLinks = [...document.querySelectorAll("a.detail-link, a.back-link")];
+	const setLinkParameter = (link, name, value) => {
+		const href = link.getAttribute("href");
+		if (href === null) return;
+		// [Intended] 相対URLのままクエリだけを更新し、file:// レポートのリンクを維持する。
+		const [target, hash] = href.split("#");
+		const [pathOnly, query = ""] = target.split("?");
+		const params = new URLSearchParams(query);
+		params.set(name, value);
+		link.setAttribute("href", `${pathOnly}?${params.toString()}` + (hash === undefined ? "" : `#${hash}`));
+	};
+	const replaceCurrentParameter = (name, value) => {
+		try {
+			const url = new URL(window.location.href);
+			url.searchParams.set(name, value);
+			window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+		} catch {}
+	};
+	const themeToggle = document.querySelector("[data-theme-toggle]");
+	const applyTheme = (nextTheme) => {
+		theme = nextTheme;
+		document.documentElement.dataset.theme = theme;
+		document.documentElement.style.colorScheme = theme;
+		window.__QUALITY_REPORT_THEME__ = {
+			theme,
+			queryPinned: themePinned
+		};
+		if (!themeToggle) return;
+		themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+		for (const icon of themeToggle.querySelectorAll("[data-theme-icon]")) {
+			icon.toggleAttribute("hidden", icon.dataset.themeIcon !== theme);
+		}
+	};
+	const persistThemeQuery = () => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		};
+		replaceCurrentParameter(config.queryParameter, theme);
+	};
+	applyTheme(theme);
+	if (themePinned) {
+		for (const link of localeLinks) {
+			setLinkParameter(link, config.queryParameter, theme);
+		}
+	};
+	themeToggle?.addEventListener("click", () => {
+		themeManuallySelected = true;
+		applyTheme(theme === "light" ? "dark" : "light");
+		try {
+			window.localStorage?.setItem(config.storageKey, theme);
+		} catch {};
+		if (themePinned) persistThemeQuery();
+	});
+	themeMediaQuery?.addEventListener("change", (event) => {
+		if (!themeManuallySelected) applyTheme(event.matches ? "dark" : "light");
+	});
+	const persistLocale = () => {
+		for (const link of localeLinks) {
+			setLinkParameter(link, "locale", locale);
+		};
+		replaceCurrentParameter("locale", locale);
+	};
+	let refreshFilter = () => {};
+	const setLocale = (nextLocale) => {
+		if (!(nextLocale in translations)) return;
+		locale = nextLocale;
+		messages = translations[locale];
+		applyTranslations();
+		for (const button of localeButtons) {
+			const active = button.dataset.locale === locale;
+			button.classList.toggle("active", active);
+			button.setAttribute("aria-pressed", String(active));
+		};
+		if (localePinned) persistLocale();
+		refreshFilter();
+	};
+	for (const button of localeButtons) {
+		button.addEventListener("click", () => {
+			localePinned = true;
+			setLocale(button.dataset.locale ?? "en");
+		});
+	};
+	setLocale(locale);
+	const fitImage = (image) => {
+		if (!image.naturalWidth || !image.naturalHeight) return;
+		const stage = image.parentElement;
+		if (!stage) return;
+		const scale = Math.min(stage.clientWidth / image.naturalWidth, stage.clientHeight / image.naturalHeight);
+		image.style.width = `${image.naturalWidth * scale}px`;
+		image.style.height = `${image.naturalHeight * scale}px`;
+	};
+	const reportImages = [...document.querySelectorAll(".images img")];
+	for (const image of reportImages) {
+		image.addEventListener("load", () => fitImage(image));
+		if (image.complete) fitImage(image);
+	};
+	window.addEventListener("resize", () => {
+		for (const image of reportImages) fitImage(image);
+	});
+	const search = document.querySelector("#search");
+	if (search) {
+		const cards = [...document.querySelectorAll(".case")];
+		const visibleCount = document.querySelector("#visible-count");
+		// [Intended] 絞り込みの軸はすべて同じ形（data-<name>-filter のボタン群 ×
+		// カードの data-<name>）なので、軸ごとに同じ処理を書かず名前だけで束ねる。
+		// 軸を増やすときはこの配列に名前を足すだけで済む。
+		const groups = [
+			"quality",
+			"change",
+			"parameter"
+		].map((name) => ({
+			name,
+			buttons: [...document.querySelectorAll(`[data-${name}-filter]`)],
+			label: document.querySelector(`#active-${name}-label`),
+			active: ""
+		}));
+		const readFilterState = () => {
+			const params = new URLSearchParams(window.location.search);
+			const savedGroups = {};
+			for (const group of groups) {
+				const active = params.get(group.name);
+				if (active !== null) savedGroups[group.name] = active;
+			};
+			return {
+				search: params.get("search") ?? "",
+				groups: savedGroups
+			};
+		};
+		const initialFilterState = readFilterState();
+		search.value = initialFilterState.search;
+		const setGroupActive = (group, button) => {
+			group.active = button.dataset[`${group.name}Filter`] ?? "";
+			for (const other of group.buttons) {
+				const active = other === button;
+				other.classList.toggle("active", active);
+				other.setAttribute("aria-pressed", String(active));
+			}
+		};
+		for (const group of groups) {
+			const savedActive = initialFilterState.groups[group.name];
+			const button = group.buttons.find((candidate) => candidate.dataset[`${group.name}Filter`] === savedActive) ?? group.buttons.find((candidate) => candidate.dataset[`${group.name}Filter`] === "");
+			if (button) setGroupActive(group, button);
+		};
+		const saveFilterState = () => {
+			try {
+				const url = new URL(window.location.href);
+				url.searchParams.delete("search");
+				for (const group of groups) url.searchParams.delete(group.name);
+				if (search.value) url.searchParams.set("search", search.value);
+				for (const group of groups) {
+					if (group.active) url.searchParams.set(group.name, group.active);
+				};
+				// [Intended] URLに状態を残し、更新や共有リンクから同じ条件を復元する。
+				window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+			} catch {}
+		};
+		refreshFilter = () => {
+			const text = search.value.toLowerCase();
+			let visible = 0;
+			for (const card of cards) {
+				const matchesText = (card.dataset.search ?? "").toLowerCase().includes(text);
+				const matchesGroups = groups.every((group) => !group.active || card.dataset[group.name] === group.active);
+				card.hidden = !(matchesText && matchesGroups);
+				if (!card.hidden) visible += 1;
+			};
+			for (const group of groups) {
+				if (!group.label) continue;
+				group.label.textContent = group.buttons.find((button) => button.dataset[`${group.name}Filter`] === group.active)?.querySelector("[data-i18n]")?.textContent ?? "";
+			};
+			if (visibleCount) visibleCount.textContent = String(visible);
+		};
+		search.addEventListener("input", () => {
+			saveFilterState();
+			refreshFilter();
+		});
+		for (const group of groups) {
+			for (const button of group.buttons) {
+				button.addEventListener("click", () => {
+					setGroupActive(group, button);
+					saveFilterState();
+					refreshFilter();
+				});
+			}
+		};
+		refreshFilter();
+	};
+	const dialog = document.querySelector("#image-dialog");
+	const dialogImage = dialog?.querySelector("img");
+	if (dialog && dialogImage) {
+		dialogImage.addEventListener("load", () => fitImage(dialogImage));
+		for (const source of reportImages) {
+			source.addEventListener("click", () => {
+				dialogImage.src = source.src;
+				dialogImage.alt = source.alt;
+				dialog.showModal();
+				requestAnimationFrame(() => fitImage(dialogImage));
+			});
+		};
+		dialog.addEventListener("click", (event) => {
+			if (event.target === dialog) dialog.close();
+		});
+		document.querySelector("#dialog-close")?.addEventListener("click", () => dialog.close());
+	}
+})({"storageKey":"pixel-refiner-theme","queryParameter":"theme","mediaQuery":"(prefers-color-scheme: dark)"});</script>
+</body>
+</html>
