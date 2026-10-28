@@ -3,6 +3,11 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      automatic:
+        description: "日次実行と同じ自動運用（変更なしのスキップ・自動マージ）"
+        required: false
+        default: false
+        type: boolean
       version:
         description: "Release version (e.g. 1.3.0)。空なら bump で自動判定する"
         required: false
@@ -18,6 +23,9 @@ on:
           - minor
           - patch
 
+  schedule:
+    - cron: "17 18 * * *" # 毎日 03:17 JST
+
 # バージョンは実行後に確定するため、リリース同士は常に直列化する
 concurrency:
   group: release
@@ -29,12 +37,36 @@ permissions:
 
 jobs:
   prepare:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      AUTOMATIC_RELEASE: ${{ github.event_name == 'schedule' || inputs.automatic }}
     steps:
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
       - uses: HappyOnigiri/ReleaseActions/actions/prepare-release@main
+        id: prepare
         with:
           version: ${{ inputs.version }}
           # 共通Actionは version と bump の同時指定を拒むため、version を入れた実行では bump を none へ落とす。
-          bump: ${{ inputs.version != '' && 'none' || inputs.bump }}
+          bump: ${{ inputs.version != '' && 'none' || inputs.bump || 'auto' }}
+          skip-if-no-changes: ${{ env.AUTOMATIC_RELEASE }}
+          skip-if-open-release-pr: ${{ env.AUTOMATIC_RELEASE }}
+          initial-release: merged-prs
           version-bump-type: npm
+          github-token: ${{ secrets.GH_TOKEN }}
+
+      - uses: HappyOnigiri/ReleaseActions/actions/merge-release@main
+        if: env.AUTOMATIC_RELEASE == 'true' && steps.prepare.outputs.pr-number != ''
+        with:
+          pr-number: ${{ steps.prepare.outputs.pr-number }}
+          head-sha: ${{ steps.prepare.outputs.head-sha }}
+          workflow: ci.yml
+          events: pull_request
+          check-name: ci
+          timeout-seconds: "1800"
+          merge-method: merge
           github-token: ${{ secrets.GH_TOKEN }}
