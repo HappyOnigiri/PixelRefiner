@@ -39,7 +39,7 @@ jobs:
   prepare:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 65
     env:
       AUTOMATIC_RELEASE: ${{ github.event_name == 'schedule' || inputs.automatic }}
     steps:
@@ -58,6 +58,33 @@ jobs:
           initial-release: merged-prs
           version-bump-type: npm
           github-token: ${{ secrets.GH_TOKEN }}
+
+      # 画像品質ゲートは通常 CI と別の workflow で走るため、両方の成功を待つ。
+      - name: Wait for image quality gate
+        if: env.AUTOMATIC_RELEASE == 'true' && steps.prepare.outputs.pr-number != ''
+        timeout-minutes: 30
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ steps.prepare.outputs.head-sha }}
+        run: |
+          set -euo pipefail
+          run_id=""
+          for ((attempt = 0; attempt < 24; attempt++)); do
+            run_id=$(gh run list --workflow quality-report.yml --commit "$RELEASE_SHA" \
+              --event pull_request --limit 100 --json databaseId --jq '.[0].databaseId // empty')
+            if [ -n "$run_id" ]; then
+              break
+            fi
+            sleep 5
+          done
+          if [ -z "$run_id" ]; then
+            echo "::error::Image quality workflow did not start for $RELEASE_SHA"
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status --interval 10
+          test "$(gh run view "$run_id" --json jobs \
+            --jq '[.jobs[] | select(.name == "quality" and .conclusion == "success")] | length == 1')" = true
 
       - uses: HappyOnigiri/ReleaseActions/actions/merge-release@main
         if: env.AUTOMATIC_RELEASE == 'true' && steps.prepare.outputs.pr-number != ''
